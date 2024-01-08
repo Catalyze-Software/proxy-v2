@@ -35,7 +35,7 @@ impl Reports {
     /// # Panics
     /// Panics if the `report` associated with the given key is not a `report`.
     pub fn get(key: &u64) -> Option<Report> {
-        REPORTS.with(|p| p.borrow().get(&key))
+        REPORTS.with(|p| p.borrow().get(key))
     }
 
     /// Inserts or updates a `report` into the store at a given key's position.
@@ -58,6 +58,6 @@ impl Reports {
     /// # Note
     /// This function will do nothing if no `report` is associated with the given key.
     pub fn remove(key: &u64) {
-        REPORTS.with(|p| p.borrow_mut().remove(&key));
+        REPORTS.with(|p| p.borrow_mut().remove(key));
     }
 }

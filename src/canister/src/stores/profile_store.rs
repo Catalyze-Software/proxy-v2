@@ -55,7 +55,7 @@ impl Profiles {
     /// Panics if the `profile` associated with the given key is not a `Profile`.
     /// # Note
     /// This function will overwrite the `profile` at the given key's position if one already exists.
-    pub fn insert(key: Principal, value: Profile) {
+    pub fn insert(key: &Principal, value: Profile) {
         PROFILES.with(|p| p.borrow_mut().insert(key.to_string(), value));
     }
 

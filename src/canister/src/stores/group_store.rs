@@ -22,7 +22,7 @@ thread_local! {
     /// The `members` store.
     /// # Note
     /// This store is used to keep track of the members of groups.
-    pub static MEMBERS: RefCell<StableBTreeMap<u64, Member, Memory>> = RefCell::new(
+    pub static MEMBERS: RefCell<StableBTreeMap<String, Member, Memory>> = RefCell::new(
         StableBTreeMap::init(
             MEMORY_MANAGER.with(|m| m.borrow().get(MEMBERS_MEMORY_ID)),
         )
@@ -44,7 +44,7 @@ impl Groups {
     /// # Panics
     /// Panics if the `group` associated with the given key is not a `group`.
     pub fn get(key: &u64) -> Option<Group> {
-        GROUPS.with(|p| p.borrow().get(&key))
+        GROUPS.with(|p| p.borrow().get(key))
     }
 
     /// Inserts or updates a `group` into the store at a given key's position.
@@ -67,6 +67,6 @@ impl Groups {
     /// # Note
     /// This function will do nothing if no `group` is associated with the given key.
     pub fn remove(key: &u64) {
-        GROUPS.with(|p| p.borrow_mut().remove(&key));
+        GROUPS.with(|p| p.borrow_mut().remove(key));
     }
 }

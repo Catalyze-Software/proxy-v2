@@ -44,7 +44,7 @@ impl Events {
     /// # Panics
     /// Panics if the `event` associated with the given key is not a `event`.
     pub fn get(key: &u64) -> Option<Event> {
-        EVENTS.with(|p| p.borrow().get(&key))
+        EVENTS.with(|p| p.borrow().get(key))
     }
 
     /// Inserts or updates a `event` into the store at a given key's position.
@@ -67,6 +67,6 @@ impl Events {
     /// # Note
     /// This function will do nothing if no `event` is associated with the given key.
     pub fn remove(key: &u64) {
-        EVENTS.with(|p| p.borrow_mut().remove(&key));
+        EVENTS.with(|p| p.borrow_mut().remove(key));
     }
 }
