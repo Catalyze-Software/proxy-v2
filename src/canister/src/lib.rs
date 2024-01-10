@@ -1,3 +1,5 @@
+#![allow(deprecated)]
+
 // The different stores with subject specific business logic and storage
 pub mod stores {
     pub mod event_store;
@@ -28,12 +30,20 @@ pub mod entities {
 
 // Shared structs that are used by different entities and models
 pub mod models {
+    pub mod api_error;
     pub mod application_role;
     pub mod asset;
     pub mod date_range;
+    pub mod filter_type;
     pub mod location;
+    pub mod paged_response;
     pub mod privacy;
     pub mod role;
     pub mod sort_direction;
     pub mod storage;
+    pub mod validation;
+}
+
+pub mod helpers {
+    pub mod auth_helper;
 }
