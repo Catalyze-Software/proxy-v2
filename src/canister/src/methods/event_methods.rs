@@ -1,5 +1,3 @@
-use std::f32::consts::E;
-
 /// # Event methods
 /// # TODO:
 /// * Check if the guard are correctly placed
