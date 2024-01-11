@@ -539,7 +539,7 @@ fn get_group_members(group_identifier: Principal) -> Result<Vec<JoinedMemberResp
 
 /// Get the caller member entry - [`[query]`](query)
 /// # Returns
-/// * `Member` - The member entry
+/// * `(Principal, Member)` - (member identifier, member) The member entry
 /// # Errors
 /// * `ApiError` - If something went wrong while getting the member entry
 /// # Note
@@ -554,7 +554,7 @@ fn get_self() -> Result<(Principal, Member), ApiError> {
 /// * `member_identifier` - The identifier of the group member
 /// * `group_identifier` - The identifier of the group
 /// # Returns
-/// * `Vec<String>` - The roles of the group member
+/// * `(Principal, Vec<String>)` - (member identifier, roles) The roles of the group member
 /// # Errors
 /// * `String` - If something went wrong while getting the roles
 /// # Note
