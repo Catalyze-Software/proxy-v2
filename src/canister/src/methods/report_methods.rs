@@ -10,7 +10,7 @@ use ic_cdk::{query, update};
 
 use crate::{
     entities::report::{PostReport, ReportFilter, ReportResponse, ReportSort},
-    helpers::auth_helper::has_access,
+    helpers::guards::has_access,
     models::{api_error::ApiError, filter_type::FilterType, paged_response::PagedResponse},
 };
 

@@ -15,7 +15,7 @@ use crate::{
         group::{GroupFilter, GroupResponse, GroupSort, PostGroup, UpdateGroup},
         member::{InviteMemberResponse, JoinedMemberResponse, Member},
     },
-    helpers::auth_helper::has_access,
+    helpers::guards::has_access,
     models::{
         api_error::ApiError,
         filter_type::FilterType,
@@ -303,7 +303,7 @@ pub fn update_member_count(
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "has_access")]
-async fn join_group(
+pub fn join_group(
     group_identifier: Principal,
     account_identifier: Option<String>,
 ) -> Result<(Principal, Member), ApiError> {
@@ -323,7 +323,7 @@ async fn join_group(
 /// TODO: if used it required a auth guard so it can only be called by the known canisters
 #[update]
 #[deprecated = "This function was used as an inter-canister call, but should not be used anymore."]
-async fn create_empty_member(
+pub fn create_empty_member(
     caller: Principal,
     profile_identifier: Principal,
 ) -> Result<Principal, ApiError> {
@@ -343,7 +343,7 @@ async fn create_empty_member(
 /// This function is guarded by the [`has_access`](has_access) function.
 /// TODO: This action is guarded by group role based authorization
 #[update(guard = "has_access")]
-async fn invite_to_group(
+pub fn invite_to_group(
     member_principal: Principal,
     group_identifier: Principal,
 ) -> Result<(Principal, Member), ApiError> {
@@ -363,7 +363,7 @@ async fn invite_to_group(
 /// This function is guarded by the [`has_access`](has_access) function.
 /// TODO: This action is guarded by group role based authorization
 #[update(guard = "has_access")]
-async fn accept_user_request_group_invite(
+pub fn accept_user_request_group_invite(
     member_principal: Principal,
     group_identifier: Principal,
 ) -> Result<(Principal, Member), ApiError> {
@@ -379,7 +379,7 @@ async fn accept_user_request_group_invite(
 /// # Errors
 /// * `ApiError` - If something went wrong while accepting the invite
 #[update]
-async fn accept_owner_request_group_invite(
+pub fn accept_owner_request_group_invite(
     group_identifier: Principal,
 ) -> Result<(Principal, Member), ApiError> {
     Err(ApiError::NotImplemented)
@@ -399,7 +399,7 @@ async fn accept_owner_request_group_invite(
 /// TODO: if used it required a auth guard so it can only be called by the known canisters
 #[update]
 #[deprecated = "This function was used as an inter-canister call, but should not be used anymore."]
-async fn add_owner(
+pub fn add_owner(
     owner_principal: Principal,
     group_identifier: Principal,
 ) -> Result<Principal, ApiError> {
@@ -419,7 +419,7 @@ async fn add_owner(
 /// This function is guarded by the [`has_access`](has_access) function.
 /// TODO: This action is guarded by group role based authorization
 #[update(guard = "has_access")]
-async fn assign_role(
+pub fn assign_role(
     role: String,
     member_identifier: Principal,
     group_identifier: Principal,
@@ -442,7 +442,7 @@ async fn assign_role(
 /// This function is guarded by the [`has_access`](has_access) function.
 /// TODO: This action is guarded by group role based authorization
 #[update(guard = "has_access")]
-fn remove_member_role(
+pub fn remove_member_role(
     role: String,
     member_identifier: Principal,
     group_identifier: Principal,
@@ -465,7 +465,7 @@ fn remove_member_role(
 /// This function is guarded by the [`has_access`](has_access) function.
 /// TODO: This action is guarded by group role based authorization
 #[update(guard = "has_access")]
-async fn set_member_roles(
+pub fn set_member_roles(
     roles: Vec<String>,
     member_identifier: Principal,
     group_identifier: Principal,
@@ -482,7 +482,7 @@ async fn set_member_roles(
 /// # Errors
 /// * `ApiError` - If something went wrong while getting the member entry
 #[query]
-fn get_group_member(
+pub fn get_group_member(
     principal: Principal,
     group_identifier: Principal,
 ) -> Result<JoinedMemberResponse, ApiError> {
@@ -495,7 +495,7 @@ fn get_group_member(
 /// # Returns
 /// * `Vec<(Principal, usize)>` - `(group identifier, member count)` The member counts per group
 #[query]
-fn get_group_members_count(group_identifiers: Vec<Principal>) -> Vec<(Principal, usize)> {
+pub fn get_group_members_count(group_identifiers: Vec<Principal>) -> Vec<(Principal, usize)> {
     vec![]
 }
 
@@ -507,7 +507,9 @@ fn get_group_members_count(group_identifiers: Vec<Principal>) -> Vec<(Principal,
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 #[query(guard = "has_access")]
-fn get_groups_for_members(member_identifiers: Vec<Principal>) -> Vec<(Principal, Vec<Principal>)> {
+pub fn get_groups_for_members(
+    member_identifiers: Vec<Principal>,
+) -> Vec<(Principal, Vec<Principal>)> {
     vec![]
 }
 
@@ -519,7 +521,7 @@ fn get_groups_for_members(member_identifiers: Vec<Principal>) -> Vec<(Principal,
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 #[query(guard = "has_access")]
-fn get_group_invites_count(group_identifiers: Vec<Principal>) -> Vec<(Principal, usize)> {
+pub fn get_group_invites_count(group_identifiers: Vec<Principal>) -> Vec<(Principal, usize)> {
     vec![]
 }
 
@@ -533,7 +535,9 @@ fn get_group_invites_count(group_identifiers: Vec<Principal>) -> Vec<(Principal,
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 #[query(guard = "has_access")]
-fn get_group_members(group_identifier: Principal) -> Result<Vec<JoinedMemberResponse>, ApiError> {
+pub fn get_group_members(
+    group_identifier: Principal,
+) -> Result<Vec<JoinedMemberResponse>, ApiError> {
     Err(ApiError::NotImplemented)
 }
 
@@ -545,7 +549,7 @@ fn get_group_members(group_identifier: Principal) -> Result<Vec<JoinedMemberResp
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 #[query]
-fn get_self() -> Result<(Principal, Member), ApiError> {
+pub fn get_self() -> Result<(Principal, Member), ApiError> {
     Err(ApiError::NotImplemented)
 }
 
@@ -560,7 +564,7 @@ fn get_self() -> Result<(Principal, Member), ApiError> {
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 #[query(guard = "has_access")]
-fn get_member_roles(
+pub fn get_member_roles(
     member_identifier: Principal,
     group_identifier: Principal,
 ) -> Result<(Principal, Vec<String>), String> {
@@ -577,7 +581,7 @@ fn get_member_roles(
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "has_access")]
-fn leave_group(group_identifier: Principal) -> Result<(), ApiError> {
+pub fn leave_group(group_identifier: Principal) -> Result<(), ApiError> {
     Err(ApiError::NotImplemented)
 }
 
@@ -591,7 +595,7 @@ fn leave_group(group_identifier: Principal) -> Result<(), ApiError> {
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "has_access")]
-fn remove_invite(group_identifier: Principal) -> Result<(), ApiError> {
+pub fn remove_invite(group_identifier: Principal) -> Result<(), ApiError> {
     Err(ApiError::NotImplemented)
 }
 
@@ -607,7 +611,7 @@ fn remove_invite(group_identifier: Principal) -> Result<(), ApiError> {
 /// This function is guarded by the [`has_access`](has_access) function.
 /// TODO: This action is guarded by group role based authorization
 #[update(guard = "has_access")]
-async fn remove_member_from_group(
+pub fn remove_member_from_group(
     principal: Principal,
     group_identifier: Principal,
 ) -> Result<(), ApiError> {
@@ -626,7 +630,7 @@ async fn remove_member_from_group(
 /// This function is guarded by the [`has_access`](has_access) function.
 /// TODO: This action is guarded by group role based authorization
 #[update(guard = "has_access")]
-async fn remove_member_invite_from_group(
+pub fn remove_member_invite_from_group(
     principal: Principal,
     group_identifier: Principal,
 ) -> Result<(), ApiError> {
@@ -644,7 +648,7 @@ async fn remove_member_invite_from_group(
 /// This function is guarded by the [`has_access`](has_access) function.
 /// TODO: This action is guarded by group role based authorization
 #[update(guard = "has_access")]
-async fn get_group_invites(
+pub fn get_group_invites(
     group_identifier: Principal,
 ) -> Result<Vec<InviteMemberResponse>, ApiError> {
     Err(ApiError::NotImplemented)

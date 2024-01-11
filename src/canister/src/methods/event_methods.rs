@@ -15,7 +15,7 @@ use crate::{
         attendee::{Attendee, InviteAttendeeResponse, JoinedAttendeeResponse},
         event::{EventFilter, EventResponse, EventSort, PostEvent, UpdateEvent},
     },
-    helpers::auth_helper::has_access,
+    helpers::guards::has_access,
     models::{
         api_error::ApiError, filter_type::FilterType, paged_response::PagedResponse,
         privacy::Privacy,

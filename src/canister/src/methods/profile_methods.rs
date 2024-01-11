@@ -14,7 +14,7 @@ use crate::{
         FriendRequestResponse, PostProfile, PostWallet, ProfileResponse, RelationType,
         UpdateProfile,
     },
-    helpers::auth_helper::{has_access, is_not_anonymous},
+    helpers::guards::{has_access, is_not_anonymous},
     models::api_error::ApiError,
 };
 

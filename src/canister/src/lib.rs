@@ -47,5 +47,5 @@ pub mod models {
 }
 
 pub mod helpers {
-    pub mod auth_helper;
+    pub mod guards;
 }
