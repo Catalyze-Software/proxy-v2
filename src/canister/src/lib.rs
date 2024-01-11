@@ -1,4 +1,6 @@
+// should all be removed after implementation
 #![allow(deprecated)]
+#![allow(unused_variables)]
 
 // The different stores with subject specific business logic and storage
 pub mod stores {

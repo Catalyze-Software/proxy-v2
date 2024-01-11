@@ -1,5 +1,3 @@
-#![allow(unused_variables)] // should be removed after implementation
-
 /// # Event methods
 /// # TODO:
 /// * Check if the guard are correctly placed
