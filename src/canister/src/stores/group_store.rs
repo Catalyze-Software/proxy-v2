@@ -11,8 +11,8 @@ use super::memory_store::Memory;
 
 type GroupStoreRef = RefCell<StableBTreeMap<u64, Group, Memory>>;
 
-type GroupStore = Ref<'static, StableBTreeMap<u64, Group, Memory>>;
-type MutableGroupStore = RefMut<'static, StableBTreeMap<u64, Group, Memory>>;
+type GroupStore<'a> = Ref<'a, StableBTreeMap<u64, Group, Memory>>;
+type MutableGroupStore<'a> = RefMut<'a, StableBTreeMap<u64, Group, Memory>>;
 
 type MemberStore = RefCell<StableBTreeMap<String, Member, Memory>>;
 
@@ -33,7 +33,7 @@ thread_local! {
 }
 
 pub trait GroupManager {
-    fn groups(self) -> GroupStore;
+    fn groups(&self) -> GroupStore;
     fn groups_mut(&mut self) -> MutableGroupStore;
     // fn get(&self, key: &u64) -> Option<Group>;
     // fn add(&self, value: Group);
@@ -41,13 +41,13 @@ pub trait GroupManager {
     // fn remove(&self, key: &u64);
 }
 
-impl<'a> GroupManager for GroupStoreRef {
-    fn groups(self) -> GroupStore {
-        *self.borrow()
+impl GroupManager for GroupStoreRef {
+    fn groups(&self) -> GroupStore {
+        self.borrow()
     }
 
     fn groups_mut(&mut self) -> MutableGroupStore {
-        *self.borrow_mut()
+        self.borrow_mut()
     }
 }
 
