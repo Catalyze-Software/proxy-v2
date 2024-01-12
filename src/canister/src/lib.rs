@@ -6,6 +6,7 @@ pub mod misc {
     pub static CATALYZE_MULTI_SIG: &str = "fcygz-gqaaa-aaaap-abpaa-cai";
     pub static E8S_PER_DAY_BOOST_COST: u64 = 3500000;
 }
+
 // The different stores with subject specific business logic and storage
 pub mod stores {
     pub mod event_store;

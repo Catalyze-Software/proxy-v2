@@ -4,7 +4,7 @@ use ic_stable_structures::StableBTreeMap;
 
 use crate::{
     entities::{attendee::Attendee, event::Event},
-    stores::memory_store::StableMemory,
+    stores::memory_store::{MemManager, MEMORY_MANAGER},
 };
 
 use super::memory_store::Memory;
@@ -14,14 +14,14 @@ thread_local! {
     /// # Note
     /// This store is used to keep track of the events that have been created.
     pub static EVENTS: RefCell<StableBTreeMap<u64, Event, Memory>> = RefCell::new(
-        StableBTreeMap::init(StableMemory::events())
+        StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.events()))
     );
 
     /// The `attendees` store.
     /// # Note
     /// This store is used to keep track of the attendees of events.
     pub static ATTENDEES: RefCell<StableBTreeMap<u64, Attendee, Memory>> = RefCell::new(
-        StableBTreeMap::init(StableMemory::attendees())
+        StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.attendees()))
     );
 }
 

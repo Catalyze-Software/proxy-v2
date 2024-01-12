@@ -2,7 +2,10 @@ use std::cell::RefCell;
 
 use ic_stable_structures::StableBTreeMap;
 
-use crate::{entities::report::Report, stores::memory_store::StableMemory};
+use crate::{
+    entities::report::Report,
+    stores::memory_store::{MemManager, MEMORY_MANAGER},
+};
 
 use super::memory_store::Memory;
 
@@ -11,7 +14,7 @@ thread_local! {
     /// # Note
     /// This store is used to keep track of the reports that have been created.
     pub static REPORTS: RefCell<StableBTreeMap<u64, Report, Memory>> = RefCell::new(
-        StableBTreeMap::init(StableMemory::reports())
+        StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.reports()))
     );
 }
 
