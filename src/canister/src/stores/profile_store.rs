@@ -5,27 +5,23 @@ use ic_stable_structures::StableBTreeMap;
 
 use crate::{
     entities::profile::{FriendRequest, Profile},
-    stores::main_store::{FRIEND_REQUESTS_MEMORY_ID, MEMORY_MANAGER, PROFILES_MEMORY_ID},
+    stores::memory_store::StableMemory,
 };
 
-use super::main_store::Memory;
+use super::memory_store::Memory;
 
 thread_local! {
     /// The `profiles` store.
     /// # Note
     /// This store is used to keep track of the profiles of users.
     static PROFILES: RefCell<StableBTreeMap<String, Profile, Memory>> = RefCell::new(
-        StableBTreeMap::init(
-            MEMORY_MANAGER.with(|m| m.borrow().get(PROFILES_MEMORY_ID)),
-        )
+        StableBTreeMap::init(StableMemory::profiles())
     );
     /// The `friend_requests` store.
     /// # Note
     /// This store is used to keep track of friend requests that have been sent to a user.
     pub static FRIEND_REQUEST: RefCell<StableBTreeMap<u64, FriendRequest, Memory>> = RefCell::new(
-        StableBTreeMap::init(
-            MEMORY_MANAGER.with(|m| m.borrow().get(FRIEND_REQUESTS_MEMORY_ID)),
-        )
+        StableBTreeMap::init(StableMemory::friend_requests())
     );
 }
 

@@ -4,28 +4,24 @@ use ic_stable_structures::StableBTreeMap;
 
 use crate::{
     entities::{attendee::Attendee, event::Event},
-    stores::main_store::{ATTENDEES_MEMORY_ID, EVENTS_MEMORY_ID, MEMORY_MANAGER},
+    stores::memory_store::StableMemory,
 };
 
-use super::main_store::Memory;
+use super::memory_store::Memory;
 
 thread_local! {
     /// The `events` store.
     /// # Note
     /// This store is used to keep track of the events that have been created.
     pub static EVENTS: RefCell<StableBTreeMap<u64, Event, Memory>> = RefCell::new(
-        StableBTreeMap::init(
-            MEMORY_MANAGER.with(|m| m.borrow().get(EVENTS_MEMORY_ID)),
-        )
+        StableBTreeMap::init(StableMemory::events())
     );
 
     /// The `attendees` store.
     /// # Note
     /// This store is used to keep track of the attendees of events.
     pub static ATTENDEES: RefCell<StableBTreeMap<u64, Attendee, Memory>> = RefCell::new(
-        StableBTreeMap::init(
-            MEMORY_MANAGER.with(|m| m.borrow().get(ATTENDEES_MEMORY_ID)),
-        )
+        StableBTreeMap::init(StableMemory::attendees())
     );
 }
 

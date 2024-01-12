@@ -4,28 +4,24 @@ use ic_stable_structures::StableBTreeMap;
 
 use crate::{
     entities::{group::Group, member::Member},
-    stores::main_store::{GROUPS_MEMORY_ID, MEMBERS_MEMORY_ID, MEMORY_MANAGER},
+    stores::memory_store::StableMemory,
 };
 
-use super::main_store::Memory;
+use super::memory_store::Memory;
 
 thread_local! {
     /// The `groups` store.
     /// # Note
     /// This store is used to keep track of the groups that have been created.
     pub static GROUPS: RefCell<StableBTreeMap<u64, Group, Memory>> = RefCell::new(
-        StableBTreeMap::init(
-            MEMORY_MANAGER.with(|m| m.borrow().get(GROUPS_MEMORY_ID)),
-        )
+        StableBTreeMap::init(StableMemory::groups())
     );
 
     /// The `members` store.
     /// # Note
     /// This store is used to keep track of the members of groups.
     pub static MEMBERS: RefCell<StableBTreeMap<String, Member, Memory>> = RefCell::new(
-        StableBTreeMap::init(
-            MEMORY_MANAGER.with(|m| m.borrow().get(MEMBERS_MEMORY_ID)),
-        )
+        StableBTreeMap::init(StableMemory::members())
     );
 }
 
