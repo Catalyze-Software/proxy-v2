@@ -4,7 +4,7 @@ use ic_cdk::caller;
 use crate::{
     models::application_role::ApplicationRole,
     storage::{
-        profile_storage_api::ProfileStore,
+        profile_storage::ProfileStore,
         storage_api::{StorageMethods, PROFILES},
     },
 };

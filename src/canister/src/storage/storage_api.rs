@@ -41,7 +41,6 @@ static BOOSTED_MEMORY_ID: MemoryId = MemoryId::new(8);
 /// * `K` - The key type of the `StableBTreeMap`.
 /// * `V` - The value type of the `StableBTreeMap`.
 pub type StorageRef<K, V> = RefCell<StableBTreeMap<K, V, Memory>>;
-
 type MemManagerStore = RefCell<MemoryManager<DefaultMemoryImpl>>;
 
 pub trait StorageMethods<K, V> {
