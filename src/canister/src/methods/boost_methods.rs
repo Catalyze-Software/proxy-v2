@@ -1,7 +1,7 @@
 use candid::Principal;
 use ic_cdk::{query, update};
 
-use crate::{helpers::guards::has_access, misc::E8S_PER_DAY_BOOST_COST, models::boosted::Boosted};
+use crate::{helpers::guards::has_access, models::boosted::Boosted, E8S_PER_DAY_BOOST_COST};
 
 /// Returns the boosted groups
 /// # Returns

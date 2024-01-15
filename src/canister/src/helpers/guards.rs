@@ -1,7 +1,13 @@
 use candid::Principal;
 use ic_cdk::caller;
 
-use crate::{models::application_role::ApplicationRole, stores::profile_store::Profiles};
+use crate::{
+    models::application_role::ApplicationRole,
+    storage::{
+        profile_storage_api::ProfileStore,
+        storage_api::{StorageMethods, PROFILES},
+    },
+};
 
 /// Checks if the caller is an anonymous principal
 /// # Returns
@@ -30,22 +36,16 @@ pub fn has_access() -> Result<(), String> {
         return Err(err);
     }
 
-    // Check if the caller has a profile
-    match Profiles::get(&caller()) {
-        Some(profile) => {
-            // Check if the caller is blocked or banned on the application level
-            if vec![ApplicationRole::Blocked, ApplicationRole::Banned]
-                .contains(&profile.application_role)
-            {
-                Err("Blocked or banned profile".to_string())
-            } else {
-                Ok(())
-            }
-        }
-        None => Err("Profile not found".to_string()),
+    // Get the caller's profile
+    let profile = PROFILES.with(|store| ProfileStore::get(store, caller()))?;
+
+    // Check if the caller is blocked or banned on the application level
+    if vec![ApplicationRole::Blocked, ApplicationRole::Banned].contains(&profile.application_role) {
+        Err("Blocked or banned profile".to_string())
+    } else {
+        Ok(())
     }
 }
-
 // TODO: add guards for group role based access
 // https://forum.dfinity.org/t/rust-guard-access-arguments/22229?u=rmcs
 // https://docs.rs/ic-cdk/latest/ic_cdk/api/call/fn.arg_data.html
