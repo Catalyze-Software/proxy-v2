@@ -20,8 +20,7 @@ pub trait ProfileMethods {
     // Instead of using the `Default` trait we added the method here so we have it all in one place
     fn default() -> Self;
     // Instead of using the `From` trait we added the method here so we have it all in one place
-    fn from(&self, principal: Principal, group: PostProfile) -> Self;
-    fn update(&self, group: UpdateProfile) -> Self;
+    fn update(self, group: UpdateProfile) -> Self;
     // How are we going to handle this? Are we going to fetch the combined data from the different stores?
     // Or are we going to fetch the data before calling this method?
     // fn to_response()
@@ -107,9 +106,46 @@ impl ProfileMethods for Profile {
         }
     }
 
-    fn from(&self, principal: Principal, profile: PostProfile) -> Self {
+    fn update(self, profile: UpdateProfile) -> Self {
         Self {
-            principal: principal.clone(),
+            principal: self.principal,
+            username: self.username,
+            display_name: profile.display_name,
+            application_role: self.application_role,
+            first_name: profile.first_name,
+            last_name: profile.last_name,
+            privacy: profile.privacy,
+            about: profile.about,
+            email: profile.email.unwrap_or("".to_string()),
+            date_of_birth: profile.date_of_birth,
+            city: profile.city,
+            state_or_province: profile.state_or_province,
+            country: profile.country,
+            profile_image: profile.profile_image,
+            banner_image: profile.banner_image,
+            skills: profile.skills,
+            interests: profile.interests,
+            causes: profile.causes,
+            website: profile.website,
+            wallets: self.wallets,
+            starred: self.starred,
+            relations: self.relations,
+            code_of_conduct: self.code_of_conduct,
+            extra: profile.extra,
+            updated_on: time(),
+            created_on: self.created_on,
+            member_identifier: self.member_identifier,
+            privacy_policy: self.privacy_policy,
+            terms_of_service: self.terms_of_service,
+        }
+    }
+}
+
+impl From<PostProfile> for Profile {
+    fn from(profile: PostProfile) -> Self {
+        Self {
+            // The principal should be absolete and should be removed in favor of the stable storage key
+            principal: Principal::anonymous(),
             username: profile.username,
             display_name: profile.display_name,
             application_role: ApplicationRole::default(),
@@ -141,40 +177,6 @@ impl ProfileMethods for Profile {
             member_identifier: Principal::anonymous(),
             privacy_policy: None,
             terms_of_service: None,
-        }
-    }
-
-    fn update(&self, profile: UpdateProfile) -> Self {
-        Self {
-            principal: self.principal.clone(),
-            username: self.username.clone(),
-            display_name: profile.display_name,
-            application_role: self.application_role.clone(),
-            first_name: profile.first_name,
-            last_name: profile.last_name,
-            privacy: profile.privacy,
-            about: profile.about,
-            email: profile.email.unwrap_or("".to_string()),
-            date_of_birth: profile.date_of_birth,
-            city: profile.city,
-            state_or_province: profile.state_or_province,
-            country: profile.country,
-            profile_image: profile.profile_image,
-            banner_image: profile.banner_image,
-            skills: profile.skills,
-            interests: profile.interests,
-            causes: profile.causes,
-            website: profile.website,
-            wallets: self.wallets.clone(),
-            starred: self.starred.clone(),
-            relations: self.relations.clone(),
-            code_of_conduct: self.code_of_conduct.clone(),
-            extra: profile.extra,
-            updated_on: time(),
-            created_on: self.created_on,
-            member_identifier: self.member_identifier.clone(),
-            privacy_policy: self.privacy_policy.clone(),
-            terms_of_service: self.terms_of_service.clone(),
         }
     }
 }

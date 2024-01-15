@@ -3,10 +3,7 @@ use ic_cdk::caller;
 
 use crate::{
     models::application_role::ApplicationRole,
-    storage::{
-        profile_storage::ProfileStore,
-        storage_api::{StorageMethods, PROFILES},
-    },
+    storage::{profile_storage::ProfileStore, storage_api::StorageMethods},
 };
 
 /// Checks if the caller is an anonymous principal
