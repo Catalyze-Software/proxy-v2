@@ -37,7 +37,7 @@ pub fn has_access() -> Result<(), String> {
     }
 
     // Get the caller's profile
-    let profile = PROFILES.with(|store| ProfileStore::get(store, caller()))?;
+    let profile = ProfileStore::get(caller())?;
 
     // Check if the caller is blocked or banned on the application level
     if vec![ApplicationRole::Blocked, ApplicationRole::Banned].contains(&profile.application_role) {
