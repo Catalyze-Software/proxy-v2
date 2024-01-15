@@ -10,12 +10,12 @@ use candid::Principal;
 use ic_cdk::{query, update};
 
 use crate::{
-    entities::profile::{
-        FriendRequestResponse, PostProfile, PostWallet, ProfileResponse, RelationType,
-        UpdateProfile,
-    },
     helpers::guards::{has_access, is_not_anonymous},
-    models::api_error::ApiError,
+    models::{api_error::ApiError, relation_type::RelationType, wallet::PostWallet},
+    models::{
+        friend_request::FriendRequestResponse,
+        profile::{PostProfile, ProfileResponse, UpdateProfile},
+    },
 };
 
 /// Adds a profile to the canister - [`[update]`](update)

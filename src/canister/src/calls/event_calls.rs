@@ -11,14 +11,14 @@ use candid::Principal;
 use ic_cdk::{query, update};
 
 use crate::{
-    entities::{
-        attendee::{Attendee, InviteAttendeeResponse, JoinedAttendeeResponse},
-        event::{EventFilter, EventResponse, EventSort, PostEvent, UpdateEvent},
-    },
     helpers::guards::has_access,
     models::{
         api_error::ApiError, filter_type::FilterType, paged_response::PagedResponse,
         privacy::Privacy,
+    },
+    models::{
+        attendee::{Attendee, InviteAttendeeResponse, JoinedAttendeeResponse},
+        event::{EventFilter, EventResponse, EventSort, PostEvent, UpdateEvent},
     },
 };
 

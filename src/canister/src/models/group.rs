@@ -12,7 +12,6 @@ use crate::models::{
 pub trait GroupMethods {
     // Instead of using the `Default` trait we added the method here so we have it all in one place
     fn default() -> Self;
-    fn new(&self, group: Group) -> Self;
     // Instead of using the `From` trait we added the method here so we have it all in one place
     fn from(&self, group: PostGroup) -> Self;
     fn update(&self, group: UpdateGroup) -> Self;
@@ -64,29 +63,6 @@ impl GroupMethods for Group {
             updated_on: Default::default(),
             created_on: Default::default(),
             privacy_gated_type_amount: Default::default(),
-        }
-    }
-
-    fn new(&self, group: Group) -> Self {
-        Self {
-            name: group.name,
-            description: group.description,
-            website: group.website,
-            location: group.location,
-            privacy: group.privacy,
-            owner: group.owner,
-            created_by: group.created_by,
-            matrix_space_id: group.matrix_space_id,
-            image: group.image,
-            banner_image: group.banner_image,
-            tags: group.tags,
-            privacy_gated_type_amount: group.privacy_gated_type_amount,
-            roles: group.roles,
-            is_deleted: group.is_deleted,
-            member_count: group.member_count,
-            wallets: group.wallets,
-            updated_on: group.updated_on,
-            created_on: group.created_on,
         }
     }
 

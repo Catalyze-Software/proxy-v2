@@ -11,10 +11,6 @@ use candid::Principal;
 use ic_cdk::{query, update};
 
 use crate::{
-    entities::{
-        group::{GroupFilter, GroupResponse, GroupSort, PostGroup, UpdateGroup},
-        member::{InviteMemberResponse, JoinedMemberResponse, Member},
-    },
     helpers::guards::has_access,
     models::{
         api_error::ApiError,
@@ -22,6 +18,10 @@ use crate::{
         paged_response::PagedResponse,
         privacy::Privacy,
         role::{PostPermission, Role},
+    },
+    models::{
+        group::{GroupFilter, GroupResponse, GroupSort, PostGroup, UpdateGroup},
+        member::{InviteMemberResponse, JoinedMemberResponse, Member},
     },
 };
 

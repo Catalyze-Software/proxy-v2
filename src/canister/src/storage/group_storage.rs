@@ -1,5 +1,5 @@
 use super::storage_api::{StorageMethods, StorageRef};
-use crate::entities::group::Group;
+use crate::models::group::Group;
 
 pub type GroupStore = StorageRef<u64, Group>;
 
@@ -23,11 +23,15 @@ impl StorageMethods<u64, Group> for GroupStore {
         Ok(value)
     }
 
-    fn insert_by_key(&self, key: u64, value: Group) -> Result<Group, String> {
-        panic!("This value does not require a key to be inserted, use `insert` instead")
+    fn insert_by_key(&self, _key: u64, _value: Group) -> Result<Group, String> {
+        Err("This value does not require a key to be inserted, use `insert` instead".to_string())
     }
 
     fn update(&mut self, key: u64, value: Group) -> Result<Group, String> {
+        if !self.borrow().contains_key(&key) {
+            return Err("Key does not exists".to_string());
+        }
+
         self.borrow_mut().insert(key, value.clone());
         Ok(value)
     }

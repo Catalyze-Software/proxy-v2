@@ -1,7 +1,7 @@
 use candid::Principal;
 
 use super::storage_api::{StorageMethods, StorageRef};
-use crate::entities::member::Member;
+use crate::models::member::Member;
 
 pub type MemberStore = StorageRef<String, Member>;
 
@@ -14,8 +14,8 @@ impl StorageMethods<Principal, Member> for MemberStore {
             .clone())
     }
 
-    fn insert(&self, value: Member) -> Result<Member, String> {
-        panic!("This value requires a key to be inserted, use `insert_by_key` instead")
+    fn insert(&self, _value: Member) -> Result<Member, String> {
+        Err("This value requires a key to be inserted, use `insert_by_key` instead".to_string())
     }
 
     fn insert_by_key(&self, key: Principal, value: Member) -> Result<Member, String> {
@@ -28,6 +28,10 @@ impl StorageMethods<Principal, Member> for MemberStore {
     }
 
     fn update(&mut self, key: Principal, value: Member) -> Result<Member, String> {
+        if !self.borrow().contains_key(&key.to_string()) {
+            return Err("Key does not exists".to_string());
+        }
+
         self.borrow_mut().insert(key.to_string(), value.clone());
         Ok(value)
     }

@@ -9,8 +9,8 @@ use candid::Principal;
 use ic_cdk::{query, update};
 
 use crate::{
-    entities::report::{PostReport, ReportFilter, ReportResponse, ReportSort},
     helpers::guards::has_access,
+    models::report::{PostReport, ReportFilter, ReportResponse, ReportSort},
     models::{api_error::ApiError, filter_type::FilterType, paged_response::PagedResponse},
 };
 

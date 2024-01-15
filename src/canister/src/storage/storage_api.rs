@@ -5,13 +5,9 @@ use ic_stable_structures::{
     DefaultMemoryImpl, StableBTreeMap,
 };
 
-use crate::entities::{
-    attendee::Attendee,
-    event::Event,
-    group::Group,
-    member::Member,
-    profile::{FriendRequest, Profile},
-    report::Report,
+use crate::models::{
+    attendee::Attendee, event::Event, friend_request::FriendRequest, group::Group, member::Member,
+    profile::Profile, report::Report,
 };
 
 pub type Memory = VirtualMemory<DefaultMemoryImpl>;
