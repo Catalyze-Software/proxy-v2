@@ -2,25 +2,27 @@ use std::thread::LocalKey;
 
 use candid::Principal;
 
-use super::storage_api::{StorageMethods, StorageRef, PROFILES};
+use super::storage_api::{StorageMethods, StorageRef};
 use crate::models::profile::Profile;
 
-pub struct ProfileStore<'a>(&'a LocalKey<StorageRef<String, Profile>>);
+pub struct ProfileStore<'a> {
+    store: &'a LocalKey<StorageRef<String, Profile>>,
+}
 
 impl<'a> ProfileStore<'a> {
     pub fn new(store: &'a LocalKey<StorageRef<String, Profile>>) -> Self {
-        Self(store)
+        Self { store }
     }
 }
 
-impl<'a> StorageMethods<Principal, Profile> for ProfileStore<'a> {
+impl StorageMethods<Principal, Profile> for ProfileStore<'static> {
     /// Get a single user profile by key
     /// # Arguments
     /// * `key` - The key of the profile to get
     /// # Returns
     /// * `Result<Profile, String>` - The profile if found, otherwise an error
     fn get(&self, key: Principal) -> Result<Profile, String> {
-        self.0.with(|data| {
+        self.store.with(|data| {
             data.borrow()
                 .get(&key.to_string())
                 .ok_or("Profile not found".to_string())
@@ -44,7 +46,7 @@ impl<'a> StorageMethods<Principal, Profile> for ProfileStore<'a> {
     /// # Note
     /// Does check if a profile with the same key already exists, if so returns an error
     fn insert_by_key(&mut self, key: Principal, value: Profile) -> Result<Profile, String> {
-        PROFILES.with(|data| {
+        self.store.with(|data| {
             if data.borrow().contains_key(&key.to_string()) {
                 return Err("Key already exists".to_string());
             }
@@ -63,7 +65,7 @@ impl<'a> StorageMethods<Principal, Profile> for ProfileStore<'a> {
     /// # Note
     /// Does check if a profile with the same key already exists, if not returns an error
     fn update(&mut self, key: Principal, value: Profile) -> Result<Profile, String> {
-        PROFILES.with(|data| {
+        self.store.with(|data| {
             if !data.borrow().contains_key(&key.to_string()) {
                 return Err("Key does not exists".to_string());
             }
@@ -81,6 +83,7 @@ impl<'a> StorageMethods<Principal, Profile> for ProfileStore<'a> {
     /// # Note
     /// TODO: Check if we want to do a soft delete
     fn remove(&mut self, key: Principal) -> bool {
-        PROFILES.with(|data| data.borrow_mut().remove(&key.to_string()).is_some())
+        self.store
+            .with(|data| data.borrow_mut().remove(&key.to_string()).is_some())
     }
 }
