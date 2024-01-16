@@ -107,5 +107,5 @@ impl MemManager for MemManagerStore {
 }
 
 pub fn profiles() -> ProfileStore {
-    ProfileStore::new()
+    ProfileStore::new(PROFILES)
 }

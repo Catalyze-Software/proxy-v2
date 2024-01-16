@@ -1,17 +1,19 @@
+use std::thread::LocalKey;
+
 use candid::Principal;
 
 use super::storage_api::{StorageMethods, StorageRef, PROFILES};
 use crate::models::profile::Profile;
 
-pub struct ProfileStore(&'static StorageRef<String, Profile>);
+pub struct ProfileStore(LocalKey<StorageRef<String, Profile>>);
 
 impl ProfileStore {
-    pub fn new() -> Self {
-        PROFILES.with(|data| ProfileStore(data))
+    pub fn new(store: LocalKey<StorageRef<String, Profile>>) -> Self {
+        Self(store)
     }
 }
 
-impl StorageMethods<Principal, Profile> for ProfileStore {
+impl<'a> StorageMethods<Principal, Profile> for ProfileStore {
     /// Get a single user profile by key
     /// # Arguments
     /// * `key` - The key of the profile to get
