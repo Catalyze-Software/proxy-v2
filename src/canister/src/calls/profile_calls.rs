@@ -107,6 +107,8 @@ pub fn edit_profile(update_profile: UpdateProfile) -> Result<ProfileResponse, Ap
 }
 
 /// Adds a wallet to the caller his profile - [`[update]`](update)
+/// # Change
+/// * was `add_wallet` but due to conflict with other methods it was renamed
 /// # Arguments
 /// * `wallet` - The wallet to add
 /// # Returns
@@ -116,7 +118,7 @@ pub fn edit_profile(update_profile: UpdateProfile) -> Result<ProfileResponse, Ap
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "has_access")]
-pub fn add_wallet(wallet: PostWallet) -> Result<ProfileResponse, ApiError> {
+pub fn add_wallet_to_profile(wallet: PostWallet) -> Result<ProfileResponse, ApiError> {
     Err(ApiError::NotImplemented)
 }
 
@@ -135,6 +137,8 @@ pub fn set_wallet_as_primary(wallet_principal: Principal) -> Result<(), ()> {
 }
 
 /// Removes a wallet from the caller his profile - [`[update]`](update)
+/// # Change
+/// * was `remove_wallet` but due to conflict with other methods it was renamed
 /// # Arguments
 /// * `wallet` - The wallet to remove
 /// # Returns
@@ -144,7 +148,7 @@ pub fn set_wallet_as_primary(wallet_principal: Principal) -> Result<(), ()> {
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "has_access")]
-pub fn remove_wallet(wallet: Principal) -> Result<ProfileResponse, ApiError> {
+pub fn remove_wallet_from_profile(wallet: Principal) -> Result<ProfileResponse, ApiError> {
     Err(ApiError::NotImplemented)
 }
 

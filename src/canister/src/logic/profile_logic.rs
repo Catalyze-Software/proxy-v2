@@ -7,7 +7,7 @@ use crate::{
         profile::{PostProfile, Profile, ProfileMethods, UpdateProfile},
         validation::{ValidateField, ValidationType},
     },
-    storage::{profile_storage::ProfileStore, storage_api::StorageMethods},
+    storage::storage_api::{profiles, StorageMethods},
 };
 
 pub fn add_profile(post_profile: PostProfile) -> Result<Profile, String> {
@@ -16,7 +16,7 @@ pub fn add_profile(post_profile: PostProfile) -> Result<Profile, String> {
     }
 
     let new_profile = Profile::from(post_profile);
-    ProfileStore::insert_by_key(caller(), new_profile)
+    profiles().insert_by_key(caller(), new_profile)
 }
 
 pub fn update_profile(update_profile: UpdateProfile) -> Result<Profile, String> {
@@ -24,10 +24,10 @@ pub fn update_profile(update_profile: UpdateProfile) -> Result<Profile, String> 
         return Err("Validation error".to_string());
     }
 
-    let existing_profile = ProfileStore::get(caller())?;
+    let existing_profile = profiles().get(caller())?;
 
     let updated_profile = Profile::update(existing_profile, update_profile);
-    ProfileStore::update(caller(), updated_profile)
+    profiles().update(caller(), updated_profile)
 }
 
 // VALIDATION

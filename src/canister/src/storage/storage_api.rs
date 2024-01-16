@@ -10,6 +10,11 @@ use crate::models::{
     profile::Profile, report::Report,
 };
 
+use super::{
+    attendee_storage::AttendeeStore, event_storage::EventStore, group_storage::GroupStore,
+    member_storage::MemberStore, profile_storage::ProfileStore, report_storage::ReportStore,
+};
+
 pub type Memory = VirtualMemory<DefaultMemoryImpl>;
 
 /// The memory IDs for the different stores.
@@ -40,11 +45,17 @@ pub type StorageRef<K, V> = RefCell<StableBTreeMap<K, V, Memory>>;
 type MemManagerStore = RefCell<MemoryManager<DefaultMemoryImpl>>;
 
 pub trait StorageMethods<K, V> {
-    fn get(id: K) -> Result<V, String>;
-    fn insert(entity: V) -> Result<V, String>;
-    fn insert_by_key(key: K, entity: V) -> Result<V, String>;
-    fn update(id: K, entity: V) -> Result<V, String>;
-    fn remove(id: K) -> bool;
+    fn get(&self, id: K) -> Result<V, String>;
+    fn find<F>(&self, filter: F) -> Option<(K, V)>
+    where
+        F: Fn(&V) -> bool;
+    fn filter<F>(&self, filter: F) -> Vec<(K, V)>
+    where
+        F: Fn(&V) -> bool;
+    fn insert(&mut self, entity: V) -> Result<V, String>;
+    fn insert_by_key(&mut self, key: K, entity: V) -> Result<V, String>;
+    fn update(&mut self, id: K, entity: V) -> Result<V, String>;
+    fn remove(&mut self, id: K) -> bool;
 }
 
 thread_local! {
@@ -96,4 +107,28 @@ impl MemManager for MemManagerStore {
     fn get_memory(&self, id: MemoryId) -> Memory {
         self.borrow().get(id)
     }
+}
+
+pub fn profiles<'a>() -> ProfileStore<'a> {
+    ProfileStore::new(&PROFILES)
+}
+
+pub fn events<'a>() -> EventStore<'a> {
+    EventStore::new(&EVENTS)
+}
+
+pub fn attendees<'a>() -> AttendeeStore<'a> {
+    AttendeeStore::new(&ATTENDEES)
+}
+
+pub fn groups<'a>() -> GroupStore<'a> {
+    GroupStore::new(&GROUPS)
+}
+
+pub fn members<'a>() -> MemberStore<'a> {
+    MemberStore::new(&MEMBERS)
+}
+
+pub fn reports<'a>() -> ReportStore<'a> {
+    ReportStore::new(&REPORTS)
 }
