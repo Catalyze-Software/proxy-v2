@@ -150,6 +150,8 @@ pub fn delete_group(
 }
 
 /// Add a wallet reference to the group - [`[update]`](update)
+/// # Change
+/// * was `add_wallet` but due to conflict with other methods it was renamed
 /// # Arguments
 /// * `group_identifier` - The identifier of the group
 /// * `wallet_canister` - The wallet canister principal
@@ -161,7 +163,7 @@ pub fn delete_group(
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "has_access")]
-pub fn add_wallet(
+pub fn add_wallet_to_group(
     group_identifier: Principal,
     wallet_canister: Principal,
     description: String,
@@ -170,6 +172,8 @@ pub fn add_wallet(
 }
 
 /// Remove a wallet reference from the group - [`[update]`](update)
+/// # Change
+/// * was `remove_wallet` but due to conflict with other methods it was renamed
 /// # Arguments
 /// * `group_identifier` - The identifier of the group
 /// * `wallet_canister` - The wallet canister principal
@@ -180,7 +184,7 @@ pub fn add_wallet(
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "has_access")]
-pub fn remove_wallet(
+pub fn remove_wallet_from_group(
     group_identifier: Principal,
     wallet_canister: Principal,
 ) -> Result<(), ApiError> {
@@ -542,6 +546,8 @@ pub fn get_group_members(
 }
 
 /// Get the caller member entry - [`[query]`](query)
+/// # Change
+/// * was `get_self` but due to conflict with other methods it was renamed
 /// # Returns
 /// * `(Principal, Member)` - (member identifier, member) The member entry
 /// # Errors
@@ -549,7 +555,7 @@ pub fn get_group_members(
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 #[query]
-pub fn get_self() -> Result<(Principal, Member), ApiError> {
+pub fn get_self_group() -> Result<(Principal, Member), ApiError> {
     Err(ApiError::NotImplemented)
 }
 

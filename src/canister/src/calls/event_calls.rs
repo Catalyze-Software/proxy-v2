@@ -327,6 +327,8 @@ pub fn get_event_attendees(
 }
 
 /// Get the caller attendee entry - [`[query]`](query)
+/// # Change
+/// * was `get_self` but due to conflict with other methods it was renamed
 /// # Returns
 /// * `(Principal, Attendee)` - The attendee identifier and the attendee
 /// # Errors
@@ -334,7 +336,7 @@ pub fn get_event_attendees(
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 #[query(guard = "has_access")]
-pub fn get_self() -> Result<(Principal, Attendee), ApiError> {
+pub fn get_self_events() -> Result<(Principal, Attendee), ApiError> {
     Err(ApiError::NotImplemented)
 }
 

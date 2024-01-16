@@ -29,6 +29,41 @@ impl StorageMethods<Principal, Profile> for ProfileStore<'static> {
         })
     }
 
+    /// Find a single user profile by filter
+    /// # Arguments
+    /// * `filter` - The filter to apply
+    /// # Returns
+    /// * `Option<(Principal, Profile)>` - The profile if found, otherwise None
+    fn find<F>(&self, filter: F) -> Option<(Principal, Profile)>
+    where
+        F: Fn(&Profile) -> bool,
+    {
+        self.store.with(|data| {
+            data.borrow()
+                .iter()
+                .find(|(_, profile)| filter(profile))
+                .map(|(key, profile)| (Principal::from_text(key).unwrap(), profile.clone()))
+        })
+    }
+
+    /// Find all user profiles by filter
+    /// # Arguments
+    /// * `filter` - The filter to apply
+    /// # Returns
+    /// * `Vec<(Principal, Profile)>` - The profiles if found, otherwise an empty vector
+    fn filter<F>(&self, filter: F) -> Vec<(Principal, Profile)>
+    where
+        F: Fn(&Profile) -> bool,
+    {
+        self.store.with(|data| {
+            data.borrow()
+                .iter()
+                .filter(|(_, value)| filter(value))
+                .map(|(key, value)| (Principal::from_text(key).unwrap(), value.clone()))
+                .collect()
+        })
+    }
+
     /// This method is not supported for this storage
     /// # Note
     /// This method is not supported for this storage because the key is a `Principal`
