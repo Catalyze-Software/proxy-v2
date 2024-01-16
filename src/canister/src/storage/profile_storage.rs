@@ -3,7 +3,13 @@ use candid::Principal;
 use super::storage_api::{StorageMethods, StorageRef, PROFILES};
 use crate::models::profile::Profile;
 
-pub type ProfileStore = StorageRef<String, Profile>;
+pub struct ProfileStore(&'static StorageRef<String, Profile>);
+
+impl ProfileStore {
+    pub fn new() -> Self {
+        PROFILES.with(|data| ProfileStore(data))
+    }
+}
 
 impl StorageMethods<Principal, Profile> for ProfileStore {
     /// Get a single user profile by key
@@ -11,7 +17,7 @@ impl StorageMethods<Principal, Profile> for ProfileStore {
     /// * `key` - The key of the profile to get
     /// # Returns
     /// * `Result<Profile, String>` - The profile if found, otherwise an error
-    fn get(key: Principal) -> Result<Profile, String> {
+    fn get(&self, key: Principal) -> Result<Profile, String> {
         PROFILES.with(|data| {
             data.borrow()
                 .get(&key.to_string())
@@ -23,7 +29,7 @@ impl StorageMethods<Principal, Profile> for ProfileStore {
     /// # Note
     /// This method is not supported for this storage because the key is a `Principal`
     /// use `insert_by_key` instead
-    fn insert(_value: Profile) -> Result<Profile, String> {
+    fn insert(&mut self, _value: Profile) -> Result<Profile, String> {
         Err("This value requires a key to be inserted, use `insert_by_key` instead".to_string())
     }
 
@@ -35,7 +41,7 @@ impl StorageMethods<Principal, Profile> for ProfileStore {
     /// * `Result<Profile, String>` - The inserted profile if successful, otherwise an error
     /// # Note
     /// Does check if a profile with the same key already exists, if so returns an error
-    fn insert_by_key(key: Principal, value: Profile) -> Result<Profile, String> {
+    fn insert_by_key(&mut self, key: Principal, value: Profile) -> Result<Profile, String> {
         PROFILES.with(|data| {
             if data.borrow().contains_key(&key.to_string()) {
                 return Err("Key already exists".to_string());
@@ -54,7 +60,7 @@ impl StorageMethods<Principal, Profile> for ProfileStore {
     /// * `Result<Profile, String>` - The updated profile if successful, otherwise an error
     /// # Note
     /// Does check if a profile with the same key already exists, if not returns an error
-    fn update(key: Principal, value: Profile) -> Result<Profile, String> {
+    fn update(&mut self, key: Principal, value: Profile) -> Result<Profile, String> {
         PROFILES.with(|data| {
             if !data.borrow().contains_key(&key.to_string()) {
                 return Err("Key does not exists".to_string());
@@ -72,7 +78,7 @@ impl StorageMethods<Principal, Profile> for ProfileStore {
     /// * `bool` - True if the profile was removed, otherwise false
     /// # Note
     /// TODO: Check if we want to do a soft delete
-    fn remove(key: Principal) -> bool {
+    fn remove(&mut self, key: Principal) -> bool {
         PROFILES.with(|data| data.borrow_mut().remove(&key.to_string()).is_some())
     }
 }

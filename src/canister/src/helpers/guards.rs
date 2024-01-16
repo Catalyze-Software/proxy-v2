@@ -3,7 +3,7 @@ use ic_cdk::caller;
 
 use crate::{
     models::application_role::ApplicationRole,
-    storage::{profile_storage::ProfileStore, storage_api::StorageMethods},
+    storage::storage_api::{profiles, StorageMethods},
 };
 
 /// Checks if the caller is an anonymous principal
@@ -34,7 +34,7 @@ pub fn has_access() -> Result<(), String> {
     }
 
     // Get the caller's profile
-    let profile = ProfileStore::get(caller())?;
+    let profile = profiles().get(caller())?;
 
     // Check if the caller is blocked or banned on the application level
     if vec![ApplicationRole::Blocked, ApplicationRole::Banned].contains(&profile.application_role) {

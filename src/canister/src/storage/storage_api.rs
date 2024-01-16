@@ -10,6 +10,8 @@ use crate::models::{
     profile::Profile, report::Report,
 };
 
+use super::profile_storage::ProfileStore;
+
 pub type Memory = VirtualMemory<DefaultMemoryImpl>;
 
 /// The memory IDs for the different stores.
@@ -40,11 +42,17 @@ pub type StorageRef<K, V> = RefCell<StableBTreeMap<K, V, Memory>>;
 type MemManagerStore = RefCell<MemoryManager<DefaultMemoryImpl>>;
 
 pub trait StorageMethods<K, V> {
-    fn get(id: K) -> Result<V, String>;
-    fn insert(entity: V) -> Result<V, String>;
-    fn insert_by_key(key: K, entity: V) -> Result<V, String>;
-    fn update(id: K, entity: V) -> Result<V, String>;
-    fn remove(id: K) -> bool;
+    fn get(&self, id: K) -> Result<V, String>;
+    // fn find<F>(&self, filter: F) -> Option<(K, V)>
+    // where
+    //     F: Fn(&V) -> bool;
+    // fn filter<F>(&self, filter: F) -> Vec<(K, V)>
+    // where
+    //     F: Fn(&V) -> bool;
+    fn insert(&mut self, entity: V) -> Result<V, String>;
+    fn insert_by_key(&mut self, key: K, entity: V) -> Result<V, String>;
+    fn update(&mut self, id: K, entity: V) -> Result<V, String>;
+    fn remove(&mut self, id: K) -> bool;
 }
 
 thread_local! {
@@ -96,4 +104,8 @@ impl MemManager for MemManagerStore {
     fn get_memory(&self, id: MemoryId) -> Memory {
         self.borrow().get(id)
     }
+}
+
+pub fn profiles() -> ProfileStore {
+    ProfileStore::new()
 }
