@@ -106,6 +106,6 @@ impl MemManager for MemManagerStore {
     }
 }
 
-pub fn profiles() -> ProfileStore {
-    ProfileStore::new(PROFILES)
+pub fn profiles<'a>() -> ProfileStore<'a> {
+    ProfileStore::new(&PROFILES)
 }

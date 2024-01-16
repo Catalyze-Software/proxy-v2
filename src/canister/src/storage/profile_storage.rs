@@ -5,22 +5,22 @@ use candid::Principal;
 use super::storage_api::{StorageMethods, StorageRef, PROFILES};
 use crate::models::profile::Profile;
 
-pub struct ProfileStore(LocalKey<StorageRef<String, Profile>>);
+pub struct ProfileStore<'a>(&'a LocalKey<StorageRef<String, Profile>>);
 
-impl ProfileStore {
-    pub fn new(store: LocalKey<StorageRef<String, Profile>>) -> Self {
+impl<'a> ProfileStore<'a> {
+    pub fn new(store: &'a LocalKey<StorageRef<String, Profile>>) -> Self {
         Self(store)
     }
 }
 
-impl<'a> StorageMethods<Principal, Profile> for ProfileStore {
+impl<'a> StorageMethods<Principal, Profile> for ProfileStore<'a> {
     /// Get a single user profile by key
     /// # Arguments
     /// * `key` - The key of the profile to get
     /// # Returns
     /// * `Result<Profile, String>` - The profile if found, otherwise an error
     fn get(&self, key: Principal) -> Result<Profile, String> {
-        PROFILES.with(|data| {
+        self.0.with(|data| {
             data.borrow()
                 .get(&key.to_string())
                 .ok_or("Profile not found".to_string())
