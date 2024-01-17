@@ -1,7 +1,7 @@
-use core::fmt;
 use std::{borrow::Cow, collections::HashMap};
 
 use candid::{CandidType, Decode, Deserialize, Encode, Principal};
+use ic_cdk::api::time;
 use ic_stable_structures::{storable::Bound, Storable};
 use serde::Serialize;
 
@@ -9,6 +9,22 @@ use crate::models::{
     application_role::ApplicationRole, asset::Asset, date_range::DateRange,
     sort_direction::SortDirection,
 };
+
+use super::{
+    document_details::DocumentDetails,
+    profile_privacy::ProfilePrivacy,
+    wallet::{Wallet, WalletResponse},
+};
+
+pub trait ProfileMethods {
+    // Instead of using the `Default` trait we added the method here so we have it all in one place
+    fn default() -> Self;
+    // Instead of using the `From` trait we added the method here so we have it all in one place
+    fn update(self, group: UpdateProfile) -> Self;
+    // How are we going to handle this? Are we going to fetch the combined data from the different stores?
+    // Or are we going to fetch the data before calling this method?
+    // fn to_response()
+}
 
 #[derive(Clone, Debug, CandidType, Deserialize, Serialize)]
 pub struct Profile {
@@ -55,7 +71,7 @@ impl Storable for Profile {
     const BOUND: Bound = Bound::Unbounded;
 }
 
-impl Default for Profile {
+impl ProfileMethods for Profile {
     fn default() -> Self {
         Self {
             principal: Principal::anonymous(),
@@ -85,6 +101,80 @@ impl Default for Profile {
             extra: Default::default(),
             updated_on: Default::default(),
             created_on: Default::default(),
+            privacy_policy: None,
+            terms_of_service: None,
+        }
+    }
+
+    fn update(self, profile: UpdateProfile) -> Self {
+        Self {
+            principal: self.principal,
+            username: self.username,
+            display_name: profile.display_name,
+            application_role: self.application_role,
+            first_name: profile.first_name,
+            last_name: profile.last_name,
+            privacy: profile.privacy,
+            about: profile.about,
+            email: profile.email.unwrap_or("".to_string()),
+            date_of_birth: profile.date_of_birth,
+            city: profile.city,
+            state_or_province: profile.state_or_province,
+            country: profile.country,
+            profile_image: profile.profile_image,
+            banner_image: profile.banner_image,
+            skills: profile.skills,
+            interests: profile.interests,
+            causes: profile.causes,
+            website: profile.website,
+            wallets: self.wallets,
+            starred: self.starred,
+            relations: self.relations,
+            code_of_conduct: self.code_of_conduct,
+            extra: profile.extra,
+            updated_on: time(),
+            created_on: self.created_on,
+            member_identifier: self.member_identifier,
+            privacy_policy: self.privacy_policy,
+            terms_of_service: self.terms_of_service,
+        }
+    }
+}
+
+impl From<PostProfile> for Profile {
+    fn from(profile: PostProfile) -> Self {
+        Self {
+            // The principal should be absolete and should be removed in favor of the stable storage key
+            principal: Principal::anonymous(),
+            username: profile.username,
+            display_name: profile.display_name,
+            application_role: ApplicationRole::default(),
+            first_name: profile.first_name,
+            last_name: profile.last_name,
+            privacy: profile.privacy,
+            about: "".to_string(),
+            email: "".to_string(),
+            date_of_birth: 0,
+            city: "".to_string(),
+            state_or_province: "".to_string(),
+            country: "".to_string(),
+            profile_image: Asset::None,
+            banner_image: Asset::None,
+            skills: vec![],
+            interests: vec![],
+            causes: vec![],
+            website: "".to_string(),
+            wallets: HashMap::new(),
+            starred: HashMap::new(),
+            relations: HashMap::new(),
+            code_of_conduct: DocumentDetails {
+                approved_version: 0,
+                approved_date: 0,
+            },
+            extra: profile.extra,
+            updated_on: time(),
+            created_on: time(),
+            member_identifier: Principal::anonymous(),
             privacy_policy: None,
             terms_of_service: None,
         }
@@ -154,68 +244,6 @@ pub struct ProfileResponse {
     pub created_on: u64,
 }
 
-#[derive(Clone, Debug, Default, Serialize, CandidType, Deserialize)]
-pub struct DocumentDetails {
-    pub approved_version: u64,
-    pub approved_date: u64,
-}
-
-#[derive(Clone, Debug, Serialize, CandidType, Deserialize)]
-pub struct PostWallet {
-    pub provider: String,
-    pub principal: Principal,
-}
-
-#[derive(Clone, Debug, Serialize, CandidType, Deserialize)]
-pub struct Wallet {
-    pub provider: String,
-    pub is_primary: bool,
-}
-
-#[derive(Clone, Debug, Serialize, CandidType, Deserialize)]
-pub struct WalletResponse {
-    pub provider: String,
-    pub principal: Principal,
-    pub is_primary: bool,
-}
-
-impl Default for Wallet {
-    fn default() -> Self {
-        Self {
-            provider: Default::default(),
-            is_primary: Default::default(),
-        }
-    }
-}
-
-#[derive(CandidType, Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-pub enum ProfilePrivacy {
-    Public,
-    Private,
-}
-
-#[derive(CandidType, Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-pub enum RelationType {
-    Friend,
-    Blocked,
-}
-
-impl fmt::Display for RelationType {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        use RelationType::*;
-        match self {
-            Friend => write!(f, "friend"),
-            Blocked => write!(f, "blocked"),
-        }
-    }
-}
-
-impl Default for ProfilePrivacy {
-    fn default() -> Self {
-        ProfilePrivacy::Private
-    }
-}
-
 #[derive(Clone, Debug, CandidType, Deserialize)]
 pub enum ProfileSort {
     Username(SortDirection),
@@ -245,33 +273,4 @@ pub enum ProfileFilter {
     Interest(u32),
     Cause(u32),
     CreatedOn(DateRange),
-}
-
-#[derive(CandidType, Deserialize, Clone, Debug)]
-pub struct FriendRequest {
-    pub requested_by: Principal,
-    pub message: String,
-    pub to: Principal,
-    pub created_at: u64,
-}
-
-impl Storable for FriendRequest {
-    fn to_bytes(&self) -> std::borrow::Cow<[u8]> {
-        Cow::Owned(Encode!(self).unwrap())
-    }
-
-    fn from_bytes(bytes: std::borrow::Cow<[u8]>) -> Self {
-        Decode!(bytes.as_ref(), Self).unwrap()
-    }
-
-    const BOUND: Bound = Bound::Unbounded;
-}
-
-#[derive(CandidType, Deserialize, Clone, Debug)]
-pub struct FriendRequestResponse {
-    pub id: u64,
-    pub requested_by: Principal,
-    pub message: String,
-    pub to: Principal,
-    pub created_at: u64,
 }

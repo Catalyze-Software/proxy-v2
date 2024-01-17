@@ -9,6 +9,17 @@ use crate::models::{
     sort_direction::SortDirection,
 };
 
+pub trait GroupMethods {
+    // Instead of using the `Default` trait we added the method here so we have it all in one place
+    fn default() -> Self;
+    // Instead of using the `From` trait we added the method here so we have it all in one place
+    fn from(&self, group: PostGroup) -> Self;
+    fn update(&self, group: UpdateGroup) -> Self;
+    // How are we going to handle this? Are we going to fetch the combined data from the different stores?
+    // Or are we going to fetch the data before calling this method?
+    // fn to_response()
+}
+
 #[derive(Clone, CandidType, Serialize, Deserialize, Debug)]
 pub struct Group {
     pub name: String,
@@ -31,19 +42,7 @@ pub struct Group {
     pub created_on: u64,
 }
 
-impl Storable for Group {
-    fn to_bytes(&self) -> std::borrow::Cow<[u8]> {
-        Cow::Owned(Encode!(self).unwrap())
-    }
-
-    fn from_bytes(bytes: std::borrow::Cow<[u8]>) -> Self {
-        Decode!(bytes.as_ref(), Self).unwrap()
-    }
-
-    const BOUND: Bound = Bound::Unbounded;
-}
-
-impl Default for Group {
+impl GroupMethods for Group {
     fn default() -> Self {
         Self {
             name: Default::default(),
@@ -66,6 +65,65 @@ impl Default for Group {
             privacy_gated_type_amount: Default::default(),
         }
     }
+
+    fn from(&self, group: PostGroup) -> Self {
+        Self {
+            name: group.name,
+            description: group.description,
+            website: group.website,
+            location: group.location,
+            privacy: group.privacy,
+            owner: Principal::anonymous(),
+            created_by: Principal::anonymous(),
+            matrix_space_id: group.matrix_space_id,
+            image: group.image,
+            banner_image: group.banner_image,
+            tags: group.tags,
+            member_count: Default::default(),
+            wallets: Default::default(),
+            roles: Vec::default(),
+            is_deleted: Default::default(),
+            updated_on: Default::default(),
+            created_on: Default::default(),
+            privacy_gated_type_amount: group.privacy_gated_type_amount,
+        }
+    }
+
+    fn update(&self, group: UpdateGroup) -> Self {
+        Self {
+            name: group.name,
+            description: group.description,
+            website: group.website,
+            location: group.location,
+            privacy: group.privacy,
+            owner: self.owner,
+            created_by: self.created_by,
+            matrix_space_id: self.matrix_space_id.clone(),
+            image: group.image,
+            banner_image: group.banner_image,
+            tags: group.tags,
+            privacy_gated_type_amount: group.privacy_gated_type_amount,
+            roles: self.roles.clone(),
+            is_deleted: self.is_deleted,
+            member_count: self.member_count.clone(),
+            wallets: self.wallets.clone(),
+            updated_on: self.updated_on,
+            created_on: self.created_on,
+        }
+    }
+}
+
+// Stable storage
+impl Storable for Group {
+    fn to_bytes(&self) -> std::borrow::Cow<[u8]> {
+        Cow::Owned(Encode!(self).unwrap())
+    }
+
+    fn from_bytes(bytes: std::borrow::Cow<[u8]>) -> Self {
+        Decode!(bytes.as_ref(), Self).unwrap()
+    }
+
+    const BOUND: Bound = Bound::Unbounded;
 }
 
 #[derive(Clone, CandidType, Deserialize)]
