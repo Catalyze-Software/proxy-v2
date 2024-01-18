@@ -1,7 +1,7 @@
 use std::{borrow::Cow, collections::HashMap};
 
 use candid::{CandidType, Decode, Deserialize, Encode, Principal};
-use ic_cdk::api::time;
+use ic_cdk::{api::time, caller};
 use ic_stable_structures::{storable::Bound, Storable};
 use serde::Serialize;
 
@@ -144,8 +144,7 @@ impl ProfileMethods for Profile {
 impl From<PostProfile> for Profile {
     fn from(profile: PostProfile) -> Self {
         Self {
-            // The principal should be absolete and should be removed in favor of the stable storage key
-            principal: Principal::anonymous(),
+            principal: caller(),
             username: profile.username,
             display_name: profile.display_name,
             application_role: ApplicationRole::default(),
@@ -167,10 +166,7 @@ impl From<PostProfile> for Profile {
             wallets: HashMap::new(),
             starred: HashMap::new(),
             relations: HashMap::new(),
-            code_of_conduct: DocumentDetails {
-                approved_version: 0,
-                approved_date: 0,
-            },
+            code_of_conduct: DocumentDetails::new(0, 0),
             extra: profile.extra,
             updated_on: time(),
             created_on: time(),

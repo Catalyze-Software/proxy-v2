@@ -1,7 +1,7 @@
 use ic_cdk::caller;
 
 use crate::{
-    helpers::validation::Validator,
+    helpers::validator::Validator,
     models::{
         api_error::ApiError,
         profile::{PostProfile, Profile, ProfileMethods, UpdateProfile},
@@ -43,7 +43,7 @@ pub fn validate_post_profile(post_profile: &PostProfile) -> Result<(), ApiError>
         ),
     ];
 
-    Validator(validator_fields).validate()
+    Validator::new(validator_fields).validate()
 }
 
 pub fn validate_update_profile(update_profile: &UpdateProfile) -> Result<(), ApiError> {
@@ -90,5 +90,5 @@ pub fn validate_update_profile(update_profile: &UpdateProfile) -> Result<(), Api
         )),
     }
 
-    Validator(validator_fields).validate()
+    Validator::new(validator_fields).validate()
 }

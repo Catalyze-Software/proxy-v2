@@ -1,24 +1,19 @@
 use std::{borrow::Cow, collections::HashMap};
 
 use candid::{CandidType, Decode, Deserialize, Encode, Principal};
+use ic_cdk::{api::time, caller};
 use ic_stable_structures::{storable::Bound, Storable};
 use serde::Serialize;
 
-use crate::models::{
-    asset::Asset, date_range::DateRange, location::Location, privacy::Privacy, role::Role,
-    sort_direction::SortDirection,
+use crate::{
+    misc::role_misc::default_roles,
+    models::{
+        asset::Asset, date_range::DateRange, location::Location, privacy::Privacy, role::Role,
+        sort_direction::SortDirection,
+    },
 };
 
-pub trait GroupMethods {
-    // Instead of using the `Default` trait we added the method here so we have it all in one place
-    fn default() -> Self;
-    // Instead of using the `From` trait we added the method here so we have it all in one place
-    fn from(&self, group: PostGroup) -> Self;
-    fn update(&self, group: UpdateGroup) -> Self;
-    // How are we going to handle this? Are we going to fetch the combined data from the different stores?
-    // Or are we going to fetch the data before calling this method?
-    // fn to_response()
-}
+use super::permission::Permission;
 
 #[derive(Clone, CandidType, Serialize, Deserialize, Debug)]
 pub struct Group {
@@ -36,14 +31,15 @@ pub struct Group {
     pub privacy_gated_type_amount: Option<u64>,
     pub roles: Vec<Role>,
     pub is_deleted: bool,
+    // Shouldn't be used, use the member store data instead
     pub member_count: HashMap<Principal, usize>,
     pub wallets: HashMap<Principal, String>,
     pub updated_on: u64,
     pub created_on: u64,
 }
 
-impl GroupMethods for Group {
-    fn default() -> Self {
+impl Group {
+    pub fn default() -> Self {
         Self {
             name: Default::default(),
             description: Default::default(),
@@ -66,15 +62,15 @@ impl GroupMethods for Group {
         }
     }
 
-    fn from(&self, group: PostGroup) -> Self {
+    pub fn from(group: PostGroup) -> Self {
         Self {
             name: group.name,
             description: group.description,
             website: group.website,
             location: group.location,
             privacy: group.privacy,
-            owner: Principal::anonymous(),
-            created_by: Principal::anonymous(),
+            owner: caller(),
+            created_by: caller(),
             matrix_space_id: group.matrix_space_id,
             image: group.image,
             banner_image: group.banner_image,
@@ -82,14 +78,14 @@ impl GroupMethods for Group {
             member_count: Default::default(),
             wallets: Default::default(),
             roles: Vec::default(),
-            is_deleted: Default::default(),
-            updated_on: Default::default(),
-            created_on: Default::default(),
+            is_deleted: false,
+            updated_on: time(),
+            created_on: time(),
             privacy_gated_type_amount: group.privacy_gated_type_amount,
         }
     }
 
-    fn update(&self, group: UpdateGroup) -> Self {
+    pub fn update(&self, group: UpdateGroup) -> Self {
         Self {
             name: group.name,
             description: group.description,
@@ -110,6 +106,36 @@ impl GroupMethods for Group {
             updated_on: self.updated_on,
             created_on: self.created_on,
         }
+    }
+
+    pub fn set_owner(&mut self, owner: Principal) -> Self {
+        self.owner = owner;
+        self.updated_on = time();
+        self.clone()
+    }
+
+    pub fn delete(&mut self) -> Self {
+        self.is_deleted = true;
+        self.updated_on = time();
+        self.clone()
+    }
+
+    pub fn get_roles(&self) -> Vec<Role> {
+        // set the default roles
+        let mut roles = self.roles.clone();
+
+        // append the custom roles stored on the group
+        roles.append(&mut default_roles());
+        roles
+    }
+
+    pub fn get_role_permissions(&self, role: String) -> Vec<Permission> {
+        let roles = self.get_roles();
+        let role = roles.iter().find(|r| r.name == role);
+        if let Some(role) = role {
+            return role.permissions.clone();
+        }
+        vec![]
     }
 }
 

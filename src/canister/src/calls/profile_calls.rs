@@ -33,7 +33,7 @@ pub fn add_profile(
     post_profile: PostProfile,
     member_canister: Principal, // should be deprecated
 ) -> Result<ProfileResponse, ApiError> {
-    Err(ApiError::NotImplemented)
+    Err(ApiError::not_implemented())
 }
 
 /// Gets a profile by the given user principal - [`[query]`](query)
@@ -47,7 +47,7 @@ pub fn add_profile(
 /// This function is guarded by the [`has_access`](has_access) function.
 #[query(guard = "has_access")]
 pub fn get_profile_by_user_principal(principal: Principal) -> Result<ProfileResponse, ApiError> {
-    Err(ApiError::NotImplemented)
+    Err(ApiError::not_implemented())
 }
 
 /// Gets a profile by the given user identifier - [`[query]`](query)
@@ -64,7 +64,7 @@ pub fn get_profile_by_user_principal(principal: Principal) -> Result<ProfileResp
 #[query(guard = "has_access")]
 #[deprecated = "should be removed in favor of get_profile_by_user_principal"]
 pub fn get_profile_by_identifier(id: Principal) -> Result<ProfileResponse, ApiError> {
-    Err(ApiError::NotImplemented)
+    Err(ApiError::not_implemented())
 }
 
 /// Gets profiles by the given user principals - [`[query]`](query)
@@ -103,7 +103,7 @@ pub fn get_profiles_by_identifier(identifiers: Vec<Principal>) -> Vec<ProfileRes
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "has_access")]
 pub fn edit_profile(update_profile: UpdateProfile) -> Result<ProfileResponse, ApiError> {
-    Err(ApiError::NotImplemented)
+    Err(ApiError::not_implemented())
 }
 
 /// Adds a wallet to the caller his profile - [`[update]`](update)
@@ -119,7 +119,7 @@ pub fn edit_profile(update_profile: UpdateProfile) -> Result<ProfileResponse, Ap
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "has_access")]
 pub fn add_wallet_to_profile(wallet: PostWallet) -> Result<ProfileResponse, ApiError> {
-    Err(ApiError::NotImplemented)
+    Err(ApiError::not_implemented())
 }
 
 /// Sets a wallet as the primary wallet of the caller his profile - [`[update]`](update)
@@ -149,7 +149,7 @@ pub fn set_wallet_as_primary(wallet_principal: Principal) -> Result<(), ()> {
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "has_access")]
 pub fn remove_wallet_from_profile(wallet: Principal) -> Result<ProfileResponse, ApiError> {
-    Err(ApiError::NotImplemented)
+    Err(ApiError::not_implemented())
 }
 
 /// Adds a group, event or task reference to the caller his profile - [`[update]`](update)
@@ -163,7 +163,7 @@ pub fn remove_wallet_from_profile(wallet: Principal) -> Result<ProfileResponse, 
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "has_access")]
 pub fn add_starred(identifier: Principal) -> Result<ProfileResponse, ApiError> {
-    Err(ApiError::NotImplemented)
+    Err(ApiError::not_implemented())
 }
 
 /// Removes a group, event or task reference from the caller his profile - [`[update]`](update)
@@ -177,7 +177,7 @@ pub fn add_starred(identifier: Principal) -> Result<ProfileResponse, ApiError> {
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "has_access")]
 pub fn remove_starred(identifier: Principal) -> Result<ProfileResponse, ApiError> {
-    Err(ApiError::NotImplemented)
+    Err(ApiError::not_implemented())
 }
 
 /// Gets the starred events from the caller his profile - [`[query]`](query)
@@ -225,7 +225,7 @@ pub fn add_friend_request(
     principal: Principal,
     message: String,
 ) -> Result<FriendRequestResponse, ApiError> {
-    Err(ApiError::NotImplemented)
+    Err(ApiError::not_implemented())
 }
 
 /// Remove friend from caller profile and remove caller from friend profile - [`[update]`](update)
@@ -307,7 +307,7 @@ pub fn decline_friend_request(id: u64) -> Result<bool, String> {
 /// TODO: Check full implementation for this
 #[update(guard = "has_access")]
 pub fn block_user(principal: Principal) -> Result<ProfileResponse, ApiError> {
-    Err(ApiError::NotImplemented)
+    Err(ApiError::not_implemented())
 }
 
 /// Unblock a user on the application level - [`[update]`](update)
@@ -322,7 +322,7 @@ pub fn block_user(principal: Principal) -> Result<ProfileResponse, ApiError> {
 /// TODO: Check full implementation for this
 #[update(guard = "has_access")]
 pub fn unblock_user(principal: Principal) -> Result<ProfileResponse, ApiError> {
-    Err(ApiError::NotImplemented)
+    Err(ApiError::not_implemented())
 }
 
 /// Get the current relation for the caller based on the relation type - [`[query]`](query)
@@ -361,7 +361,7 @@ pub fn get_relations_count(principal: Principal, relation_type: RelationType) ->
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "has_access")]
 pub fn approve_code_of_conduct(version: u64) -> Result<bool, ApiError> {
-    Err(ApiError::NotImplemented)
+    Err(ApiError::not_implemented())
 }
 
 /// Approve a privacy policy version - [`[update]`](update)
@@ -375,7 +375,7 @@ pub fn approve_code_of_conduct(version: u64) -> Result<bool, ApiError> {
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "has_access")]
 pub fn approve_privacy_policy(version: u64) -> Result<bool, ApiError> {
-    Err(ApiError::NotImplemented)
+    Err(ApiError::not_implemented())
 }
 
 /// Approve a terms of service version - [`[update]`](update)
@@ -389,5 +389,5 @@ pub fn approve_privacy_policy(version: u64) -> Result<bool, ApiError> {
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "has_access")]
 pub fn approve_terms_of_service(version: u64) -> Result<bool, ApiError> {
-    Err(ApiError::NotImplemented)
+    Err(ApiError::not_implemented())
 }

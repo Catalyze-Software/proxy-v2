@@ -1,6 +1,7 @@
 use std::{borrow::Cow, collections::HashMap};
 
 use candid::{CandidType, Decode, Deserialize, Encode, Principal};
+use ic_cdk::{api::time, caller};
 use ic_stable_structures::{storable::Bound, Storable};
 use serde::Serialize;
 
@@ -11,26 +12,84 @@ use crate::models::{
 
 #[derive(Clone, CandidType, Serialize, Deserialize, Debug)]
 pub struct Event {
-    pub name: String,
-    pub description: String,
-    pub date: DateRange,
-    pub privacy: Privacy,
-    pub group_identifier: Principal,
-    pub created_by: Principal,
-    pub owner: Principal,
-    pub website: String,
-    #[serde(default)]
-    pub location: Location,
-    pub image: Asset,
-    pub banner_image: Asset,
-    pub tags: Vec<u32>,
-    pub is_canceled: (bool, String),
-    pub is_deleted: bool,
-    pub attendee_count: HashMap<Principal, usize>,
-    #[serde(default)]
-    pub metadata: Option<String>,
-    pub updated_on: u64,
-    pub created_on: u64,
+    name: String,
+    description: String,
+    date: DateRange,
+    privacy: Privacy,
+    group_identifier: Principal,
+    created_by: Principal,
+    owner: Principal,
+    website: String,
+    location: Location,
+    image: Asset,
+    banner_image: Asset,
+    tags: Vec<u32>,
+    is_canceled: (bool, String),
+    is_deleted: bool,
+    attendee_count: HashMap<Principal, usize>,
+    metadata: Option<String>,
+    updated_on: u64,
+    created_on: u64,
+}
+
+impl From<PostEvent> for Event {
+    fn from(post_event: PostEvent) -> Self {
+        Self {
+            name: post_event.name,
+            description: post_event.description,
+            date: post_event.date,
+            privacy: post_event.privacy,
+            group_identifier: Principal::anonymous(),
+            created_by: caller(),
+            owner: post_event.owner,
+            website: post_event.website,
+            location: post_event.location,
+            image: post_event.image,
+            banner_image: post_event.banner_image,
+            tags: post_event.tags,
+            is_canceled: (false, "".to_string()),
+            is_deleted: false,
+            attendee_count: Default::default(),
+            metadata: post_event.metadata,
+            updated_on: time(),
+            created_on: time(),
+        }
+    }
+}
+
+impl Event {
+    pub fn update(&mut self, update_event: UpdateEvent) -> Self {
+        self.name = update_event.name;
+        self.description = update_event.description;
+        self.date = update_event.date;
+        self.privacy = update_event.privacy;
+        self.website = update_event.website;
+        self.location = update_event.location;
+        self.image = update_event.image;
+        self.banner_image = update_event.banner_image;
+        self.tags = update_event.tags;
+        self.metadata = update_event.metadata;
+        self.updated_on = time();
+        self.clone()
+    }
+
+    pub fn set_owner(&mut self, owner: Principal) -> Self {
+        self.owner = owner;
+        self.updated_on = time();
+        self.clone()
+    }
+
+    pub fn cancel(&mut self, reason: String) -> Self {
+        self.is_canceled = (true, reason);
+        self.updated_on = time();
+        self.clone()
+    }
+
+    pub fn delete(&mut self) -> Self {
+        self.is_deleted = true;
+        self.updated_on = time();
+        self.clone()
+    }
 }
 
 impl Storable for Event {

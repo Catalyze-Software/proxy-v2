@@ -31,7 +31,7 @@ pub fn add_report(
     group_identifier: Principal,
     member_identifier: Principal,
 ) -> Result<ReportResponse, ApiError> {
-    Err(ApiError::NotImplemented)
+    Err(ApiError::not_implemented())
 }
 
 /// Get a report
@@ -51,7 +51,7 @@ pub fn get_report(
     group_identifier: Principal,
     member_identifier: Principal,
 ) -> Result<ReportResponse, ApiError> {
-    Err(ApiError::NotImplemented)
+    Err(ApiError::not_implemented())
 }
 
 /// Get reports
@@ -79,5 +79,5 @@ pub fn get_reports(
     group_identifier: Principal,
     member_identifier: Principal,
 ) -> Result<PagedResponse<ReportResponse>, ApiError> {
-    Err(ApiError::NotImplemented)
+    Err(ApiError::not_implemented())
 }
