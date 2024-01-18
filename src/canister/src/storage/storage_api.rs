@@ -59,42 +59,42 @@ pub trait StorageMethods<K, V> {
 }
 
 thread_local! {
-    pub static MEMORY_MANAGER: MemManagerStore =
+    static MEMORY_MANAGER: MemManagerStore =
         RefCell::new(MemoryManager::init(DefaultMemoryImpl::default()));
 
-    pub static PROFILES: StorageRef<String, Profile> = RefCell::new(
+    static PROFILES: StorageRef<String, Profile> = RefCell::new(
         StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.get_memory(PROFILES_MEMORY_ID)))
     );
 
-    pub static FRIEND_REQUEST: StorageRef<u64, FriendRequest> = RefCell::new(
+    static FRIEND_REQUEST: StorageRef<u64, FriendRequest> = RefCell::new(
         StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.get_memory(FRIEND_REQUESTS_MEMORY_ID)))
     );
 
-    pub static GROUPS: StorageRef<u64, Group> = RefCell::new(
+    static GROUPS: StorageRef<u64, Group> = RefCell::new(
         StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.get_memory(GROUPS_MEMORY_ID)))
     );
 
-    pub static MEMBERS: StorageRef<String, Member> = RefCell::new(
+    static MEMBERS: StorageRef<String, Member> = RefCell::new(
         StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.get_memory(MEMBERS_MEMORY_ID)))
     );
 
-    pub static EVENTS: StorageRef<u64, Event> = RefCell::new(
+    static EVENTS: StorageRef<u64, Event> = RefCell::new(
         StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.get_memory(EVENTS_MEMORY_ID)))
     );
 
-    pub static ATTENDEES: StorageRef<String, Attendee> = RefCell::new(
+    static ATTENDEES: StorageRef<String, Attendee> = RefCell::new(
         StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.get_memory(ATTENDEES_MEMORY_ID)))
     );
 
-    pub static REPORTS: StorageRef<u64, Report> = RefCell::new(
+    static REPORTS: StorageRef<u64, Report> = RefCell::new(
         StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.get_memory(REPORTS_MEMORY_ID)))
     );
 
-    pub static STATIC_FILES: StorageRef<u64, Report> = RefCell::new(
+    static STATIC_FILES: StorageRef<u64, Report> = RefCell::new(
         StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.get_memory(STATIC_FILES_MEMORY_ID)))
     );
 
-    pub static BOOSTED: StorageRef<u64, Report> = RefCell::new(
+    static BOOSTED: StorageRef<u64, Report> = RefCell::new(
         StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.get_memory(BOOSTED_MEMORY_ID)))
     );
 }

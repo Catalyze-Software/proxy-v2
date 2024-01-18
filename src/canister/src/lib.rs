@@ -8,5 +8,6 @@ pub static E8S_PER_DAY_BOOST_COST: u64 = 3500000;
 pub mod calls;
 pub mod helpers;
 pub mod logic;
+pub mod misc;
 pub mod models;
 pub mod storage;

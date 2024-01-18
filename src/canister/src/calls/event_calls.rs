@@ -41,7 +41,7 @@ pub fn add_event(
     member_identifier: Principal,
     event_attendee_canister: Principal,
 ) -> Result<EventResponse, ApiError> {
-    Err(ApiError::NotImplemented)
+    Err(ApiError::not_implemented())
 }
 
 /// Get an event - [`[query]`](query)
@@ -59,7 +59,7 @@ pub fn get_event(
     identifier: Principal,
     group_identifier: Option<Principal>,
 ) -> Result<EventResponse, ApiError> {
-    Err(ApiError::NotImplemented)
+    Err(ApiError::not_implemented())
 }
 
 /// Get an event privacy and owner - [`[query]`](query)
@@ -76,7 +76,7 @@ pub fn get_event_privacy_and_owner(
     identifier: Principal,
     group_identifier: Principal,
 ) -> Result<(Principal, Privacy), ApiError> {
-    Err(ApiError::NotImplemented)
+    Err(ApiError::not_implemented())
 }
 
 /// Get paged events - [`[query]`](query)
@@ -100,7 +100,7 @@ fn get_events(
     filter_type: FilterType,
     group_identifier: Option<Principal>,
 ) -> Result<PagedResponse<EventResponse>, ApiError> {
-    Err(ApiError::NotImplemented)
+    Err(ApiError::not_implemented())
 }
 
 /// Get the number of events per group - [`[query]`](query)
@@ -134,7 +134,7 @@ pub fn edit_event(
     member_identifier: Principal,
     event_attendee_canister: Principal,
 ) -> Result<EventResponse, ApiError> {
-    Err(ApiError::NotImplemented)
+    Err(ApiError::not_implemented())
 }
 
 /// Delete an event - [`[update]`](update)
@@ -154,7 +154,7 @@ pub fn delete_event(
     group_identifier: Principal,
     member_identifier: Principal,
 ) -> Result<(), ApiError> {
-    Err(ApiError::NotImplemented)
+    Err(ApiError::not_implemented())
 }
 
 /// Cancel an event - [`[update]`](update)
@@ -176,7 +176,7 @@ pub fn cancel_event(
     group_identifier: Principal,
     member_identifier: Principal,
 ) -> Result<(), ApiError> {
-    Err(ApiError::NotImplemented)
+    Err(ApiError::not_implemented())
 }
 
 /// Update the attendee count on the event - [`[update]`](update)
@@ -219,7 +219,7 @@ pub fn join_event(
     event_identifier: Principal,
     group_identifier: Principal,
 ) -> Result<(Principal, Attendee), ApiError> {
-    Err(ApiError::NotImplemented)
+    Err(ApiError::not_implemented())
 }
 
 /// Invite a user to an event - [`[update]`](update)
@@ -242,7 +242,7 @@ pub fn invite_to_event(
     member_identifier: Principal,
     group_identifier: Principal,
 ) -> Result<(Principal, Attendee), ApiError> {
-    Err(ApiError::NotImplemented)
+    Err(ApiError::not_implemented())
 }
 
 /// Accept an user invite to an event as a admin - [`[update]`](update)
@@ -265,7 +265,7 @@ pub fn accept_user_request_event_invite(
     member_identifier: Principal,
     group_identifier: Principal,
 ) -> Result<(Principal, Attendee), ApiError> {
-    Err(ApiError::NotImplemented)
+    Err(ApiError::not_implemented())
 }
 
 /// Accept an owner invite to an event as a user - [`[update]`](update)
@@ -281,7 +281,7 @@ pub fn accept_user_request_event_invite(
 pub fn accept_owner_request_event_invite(
     event_identifier: Principal,
 ) -> Result<(Principal, Attendee), ApiError> {
-    Err(ApiError::NotImplemented)
+    Err(ApiError::not_implemented())
 }
 
 /// Get the number of attendees for events - [`[query]`](query)
@@ -323,7 +323,7 @@ pub fn get_event_invites_count(event_identifiers: Vec<Principal>) -> Vec<(Princi
 pub fn get_event_attendees(
     event_identifier: Principal,
 ) -> Result<Vec<JoinedAttendeeResponse>, ApiError> {
-    Err(ApiError::NotImplemented)
+    Err(ApiError::not_implemented())
 }
 
 /// Get the caller attendee entry - [`[query]`](query)
@@ -337,7 +337,7 @@ pub fn get_event_attendees(
 /// This function is guarded by the [`has_access`](has_access) function.
 #[query(guard = "has_access")]
 pub fn get_self_events() -> Result<(Principal, Attendee), ApiError> {
-    Err(ApiError::NotImplemented)
+    Err(ApiError::not_implemented())
 }
 
 /// Get the joined events from a principal - [`[query]`](query)
@@ -353,7 +353,7 @@ pub fn get_self_events() -> Result<(Principal, Attendee), ApiError> {
 pub fn get_attending_from_principal(
     principal: Principal,
 ) -> Result<Vec<JoinedAttendeeResponse>, ApiError> {
-    Err(ApiError::NotImplemented)
+    Err(ApiError::not_implemented())
 }
 
 /// Leave an event - [`[update]`](update)
@@ -367,7 +367,7 @@ pub fn get_attending_from_principal(
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "has_access")]
 pub fn leave_event(event_identifier: Principal) -> Result<(), ApiError> {
-    Err(ApiError::NotImplemented)
+    Err(ApiError::not_implemented())
 }
 
 /// Remove an event invite as a user - [`[update]`](update)
@@ -384,7 +384,7 @@ pub fn leave_event(event_identifier: Principal) -> Result<(), ApiError> {
 /// TODO: This action is guarded by group role based authorization
 #[update(guard = "has_access")]
 pub fn remove_event_invite(event_identifier: Principal) -> Result<(), ApiError> {
-    Err(ApiError::NotImplemented)
+    Err(ApiError::not_implemented())
 }
 
 /// Remove an event attendee as a admin - [`[update]`](update)
@@ -407,7 +407,7 @@ pub fn remove_attendee_from_event(
     group_identifier: Principal,
     member_identifier: Principal,
 ) -> Result<(), ApiError> {
-    Err(ApiError::NotImplemented)
+    Err(ApiError::not_implemented())
 }
 
 /// Remove an event invite as a admin - [`[update]`](update)
@@ -430,7 +430,7 @@ pub fn remove_attendee_invite_from_event(
     group_identifier: Principal,
     member_identifier: Principal,
 ) -> Result<(), ApiError> {
-    Err(ApiError::NotImplemented)
+    Err(ApiError::not_implemented())
 }
 
 /// Get the invites for an event - [`[query]`](query)
@@ -451,7 +451,7 @@ pub fn get_event_invites(
     group_identifier: Principal,
     member_identifier: Principal,
 ) -> Result<Vec<InviteAttendeeResponse>, ApiError> {
-    Err(ApiError::NotImplemented)
+    Err(ApiError::not_implemented())
 }
 
 /// Add the event creator as an attendee - [`[update]`](update)

@@ -9,28 +9,32 @@ use crate::models::{
     validation::{ValidateField, ValidationResponse, ValidationType},
 };
 
-pub struct Validator(pub Vec<ValidateField>);
+pub struct Validator {
+    fields: Vec<ValidateField>,
+}
 
 impl Validator {
+    pub fn new(fields: Vec<ValidateField>) -> Self {
+        Validator { fields }
+    }
+
     pub fn validate(&self) -> Result<(), ApiError> {
         let mut errors: Vec<ValidationResponse> = vec![];
 
-        self.0.iter().for_each(|f| {
-            let check = Self::validate_field(f);
-            match check {
-                Ok(_) => {}
-                Err(err) => errors.push(err),
-            };
+        self.fields.iter().for_each(|f| {
+            if let Err(err) = Self::validate_field(f) {
+                errors.push(err);
+            }
         });
 
         if errors.len() > 0 {
-            return Err(ApiError::ValidationError(errors));
+            return Err(ApiError::validation_response(errors));
         }
 
         return Ok(());
     }
 
-    pub fn validate_field(validation_field: &ValidateField) -> Result<(), ValidationResponse> {
+    fn validate_field(validation_field: &ValidateField) -> Result<(), ValidationResponse> {
         let ValidateField(validation_type, field) = validation_field;
 
         use ValidationType::*;
@@ -43,7 +47,7 @@ impl Validator {
         }
     }
 
-    pub fn validate_string_length(
+    fn validate_string_length(
         value: &String,
         min: &usize,
         max: &usize,
@@ -64,7 +68,7 @@ impl Validator {
         }
     }
 
-    pub fn validate_count(
+    fn validate_count(
         value: &usize,
         min: &usize,
         max: &usize,
@@ -85,7 +89,7 @@ impl Validator {
         }
     }
 
-    pub fn validate_email(value: &String, field: &String) -> Result<(), ValidationResponse> {
+    fn validate_email(value: &String, field: &String) -> Result<(), ValidationResponse> {
         let email = EmailAddress::from_str(&value.as_str());
 
         match email {
@@ -97,16 +101,13 @@ impl Validator {
         }
     }
 
-    pub fn validate_date_range(
-        value: &DateRange,
-        field: &String,
-    ) -> Result<(), ValidationResponse> {
-        if value.start_date > value.end_date {
+    fn validate_date_range(value: &DateRange, field: &String) -> Result<(), ValidationResponse> {
+        if value.start_date() > value.end_date() {
             return Err(ValidationResponse {
                 field: field.to_string(),
                 message: format!("The start_date is after the end_date"),
             });
-        } else if value.start_date < time() {
+        } else if value.start_date() < time() {
             return Err(ValidationResponse {
                 field: field.to_string(),
                 message: format!("The start_date can't be in the past"),

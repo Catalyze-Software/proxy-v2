@@ -14,6 +14,8 @@ pub mod validation;
 pub mod wallet;
 
 pub mod document_details;
+pub mod identifier;
+pub mod permission;
 pub mod profile_privacy;
 pub mod relation_type;
 

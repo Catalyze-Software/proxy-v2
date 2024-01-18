@@ -25,7 +25,7 @@ impl StorageMethods<Principal, Member> for MemberStore<'static> {
         self.store.with(|data| {
             data.borrow()
                 .get(&key.to_string())
-                .ok_or("Entity not found".to_string())
+                .ok_or("Member not found".to_string())
         })
     }
 

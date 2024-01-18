@@ -13,11 +13,8 @@ use ic_cdk::{query, update};
 use crate::{
     helpers::guards::has_access,
     models::{
-        api_error::ApiError,
-        filter_type::FilterType,
-        paged_response::PagedResponse,
-        privacy::Privacy,
-        role::{PostPermission, Role},
+        api_error::ApiError, filter_type::FilterType, paged_response::PagedResponse,
+        permission::PostPermission, privacy::Privacy, role::Role,
     },
     models::{
         group::{GroupFilter, GroupResponse, GroupSort, PostGroup, UpdateGroup},
@@ -42,7 +39,7 @@ pub fn add_group(
     member_canister: Principal,
     account_identifier: Option<String>,
 ) -> Result<GroupResponse, ApiError> {
-    Err(ApiError::NotImplemented)
+    Err(ApiError::not_implemented())
 }
 
 /// Get a group - [`[query]`](query)
@@ -56,7 +53,7 @@ pub fn add_group(
 /// This function is guarded by the [`has_access`](has_access) function.
 #[query(guard = "has_access")]
 pub fn get_group(identifier: Principal) -> Result<GroupResponse, ApiError> {
-    Err(ApiError::NotImplemented)
+    Err(ApiError::not_implemented())
 }
 
 /// Get groups - [`[query]`](query)
@@ -80,7 +77,7 @@ pub fn get_groups(
     sort: GroupSort,
     include_invite_only: bool,
 ) -> Result<PagedResponse<GroupResponse>, ApiError> {
-    Err(ApiError::NotImplemented)
+    Err(ApiError::not_implemented())
 }
 
 /// Edit a group - [`[update]`](update)
@@ -100,7 +97,7 @@ pub fn edit_group(
     update_group: UpdateGroup,
     member_identifier: Principal,
 ) -> Result<GroupResponse, ApiError> {
-    Err(ApiError::NotImplemented)
+    Err(ApiError::not_implemented())
 }
 
 /// Get the group owner and privacy - [`[query]`](query)
@@ -116,7 +113,7 @@ pub fn edit_group(
 pub fn get_group_owner_and_privacy(
     group_identifier: Principal,
 ) -> Result<(Principal, Privacy), ApiError> {
-    Err(ApiError::NotImplemented)
+    Err(ApiError::not_implemented())
 }
 
 /// Get groups by their identifiers - [`[query]`](query)
@@ -128,7 +125,7 @@ pub fn get_group_owner_and_privacy(
 /// * `ApiError` - If something went wrong while getting the groups
 #[query]
 pub fn get_groups_by_id(group_identifiers: Vec<Principal>) -> Result<Vec<GroupResponse>, ApiError> {
-    Err(ApiError::NotImplemented)
+    Err(ApiError::not_implemented())
 }
 
 /// Soft deletes a group - [`[update]`](update)
@@ -146,7 +143,7 @@ pub fn delete_group(
     group_identifier: Principal,
     member_identifier: Principal,
 ) -> Result<GroupResponse, ApiError> {
-    Err(ApiError::NotImplemented)
+    Err(ApiError::not_implemented())
 }
 
 /// Add a wallet reference to the group - [`[update]`](update)
@@ -168,7 +165,7 @@ pub fn add_wallet_to_group(
     wallet_canister: Principal,
     description: String,
 ) -> Result<(), ApiError> {
-    Err(ApiError::NotImplemented)
+    Err(ApiError::not_implemented())
 }
 
 /// Remove a wallet reference from the group - [`[update]`](update)
@@ -188,7 +185,7 @@ pub fn remove_wallet_from_group(
     group_identifier: Principal,
     wallet_canister: Principal,
 ) -> Result<(), ApiError> {
-    Err(ApiError::NotImplemented)
+    Err(ApiError::not_implemented())
 }
 
 /// Add a role to the group - [`[update]`](update)
@@ -212,7 +209,7 @@ pub fn add_role(
     index: u64,
     member_identifier: Principal,
 ) -> Result<Role, ApiError> {
-    Err(ApiError::NotImplemented)
+    Err(ApiError::not_implemented())
 }
 
 /// Remove a role from the group - [`[update]`](update)
@@ -234,7 +231,7 @@ pub fn remove_group_role(
     role_name: String,
     member_identifier: Principal,
 ) -> Result<bool, ApiError> {
-    Err(ApiError::NotImplemented)
+    Err(ApiError::not_implemented())
 }
 
 /// Get the roles of the group - [`[query]`](query)
@@ -268,7 +265,7 @@ pub fn edit_role_permissions(
     post_permissions: Vec<PostPermission>,
     member_identifier: Principal,
 ) -> Result<bool, ApiError> {
-    Err(ApiError::NotImplemented)
+    Err(ApiError::not_implemented())
 }
 
 /// Update the member count on a group - [`[update]`](update)
@@ -311,7 +308,7 @@ pub fn join_group(
     group_identifier: Principal,
     account_identifier: Option<String>,
 ) -> Result<(Principal, Member), ApiError> {
-    Err(ApiError::NotImplemented)
+    Err(ApiError::not_implemented())
 }
 
 /// Create an empty member - [`[update]`](update)
@@ -331,7 +328,7 @@ pub fn create_empty_member(
     caller: Principal,
     profile_identifier: Principal,
 ) -> Result<Principal, ApiError> {
-    Err(ApiError::NotImplemented)
+    Err(ApiError::not_implemented())
 }
 
 /// Invite a user to a group - [`[update]`](update)
@@ -351,7 +348,7 @@ pub fn invite_to_group(
     member_principal: Principal,
     group_identifier: Principal,
 ) -> Result<(Principal, Member), ApiError> {
-    Err(ApiError::NotImplemented)
+    Err(ApiError::not_implemented())
 }
 
 /// Accept an invite to a group as a admin - [`[update]`](update)
@@ -371,7 +368,7 @@ pub fn accept_user_request_group_invite(
     member_principal: Principal,
     group_identifier: Principal,
 ) -> Result<(Principal, Member), ApiError> {
-    Err(ApiError::NotImplemented)
+    Err(ApiError::not_implemented())
 }
 
 /// Accept an invite from a group as a user - [`[update]`](update)
@@ -386,7 +383,7 @@ pub fn accept_user_request_group_invite(
 pub fn accept_owner_request_group_invite(
     group_identifier: Principal,
 ) -> Result<(Principal, Member), ApiError> {
-    Err(ApiError::NotImplemented)
+    Err(ApiError::not_implemented())
 }
 
 /// Add a group owner to the member entry - [`[update]`](update)
@@ -407,7 +404,7 @@ pub fn add_owner(
     owner_principal: Principal,
     group_identifier: Principal,
 ) -> Result<Principal, ApiError> {
-    Err(ApiError::NotImplemented)
+    Err(ApiError::not_implemented())
 }
 
 /// Assign a role to a specific group member - [`[update]`](update)
@@ -490,7 +487,7 @@ pub fn get_group_member(
     principal: Principal,
     group_identifier: Principal,
 ) -> Result<JoinedMemberResponse, ApiError> {
-    Err(ApiError::NotImplemented)
+    Err(ApiError::not_implemented())
 }
 
 /// Get the member counts of specific groups - [`[query]`](query)
@@ -542,7 +539,7 @@ pub fn get_group_invites_count(group_identifiers: Vec<Principal>) -> Vec<(Princi
 pub fn get_group_members(
     group_identifier: Principal,
 ) -> Result<Vec<JoinedMemberResponse>, ApiError> {
-    Err(ApiError::NotImplemented)
+    Err(ApiError::not_implemented())
 }
 
 /// Get the caller member entry - [`[query]`](query)
@@ -556,7 +553,7 @@ pub fn get_group_members(
 /// This function is guarded by the [`has_access`](has_access) function.
 #[query]
 pub fn get_self_group() -> Result<(Principal, Member), ApiError> {
-    Err(ApiError::NotImplemented)
+    Err(ApiError::not_implemented())
 }
 
 /// Get the roles of a specific group member - [`[query]`](query)
@@ -588,7 +585,7 @@ pub fn get_member_roles(
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "has_access")]
 pub fn leave_group(group_identifier: Principal) -> Result<(), ApiError> {
-    Err(ApiError::NotImplemented)
+    Err(ApiError::not_implemented())
 }
 
 /// Remove an invite for a group as a user
@@ -602,7 +599,7 @@ pub fn leave_group(group_identifier: Principal) -> Result<(), ApiError> {
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "has_access")]
 pub fn remove_invite(group_identifier: Principal) -> Result<(), ApiError> {
-    Err(ApiError::NotImplemented)
+    Err(ApiError::not_implemented())
 }
 
 /// Remove a member from a group
@@ -621,7 +618,7 @@ pub fn remove_member_from_group(
     principal: Principal,
     group_identifier: Principal,
 ) -> Result<(), ApiError> {
-    Err(ApiError::NotImplemented)
+    Err(ApiError::not_implemented())
 }
 
 /// Remove a member invite from a group as an admin
@@ -640,7 +637,7 @@ pub fn remove_member_invite_from_group(
     principal: Principal,
     group_identifier: Principal,
 ) -> Result<(), ApiError> {
-    Err(ApiError::NotImplemented)
+    Err(ApiError::not_implemented())
 }
 
 /// Get the group invites for a specific group - [`[query]`](query)
@@ -657,5 +654,5 @@ pub fn remove_member_invite_from_group(
 pub fn get_group_invites(
     group_identifier: Principal,
 ) -> Result<Vec<InviteMemberResponse>, ApiError> {
-    Err(ApiError::NotImplemented)
+    Err(ApiError::not_implemented())
 }
