@@ -1,7 +1,7 @@
 use std::thread::LocalKey;
 
 use super::storage_api::{StorageMethods, StorageRef};
-use crate::models::group::Group;
+use crate::models::{api_error::ApiError, group::Group};
 
 pub struct GroupStore<'a> {
     store: &'a LocalKey<StorageRef<u64, Group>>,
@@ -13,15 +13,37 @@ impl<'a> GroupStore<'a> {
     }
 }
 
+pub const NAME: &str = "groups";
+
 impl StorageMethods<u64, Group> for GroupStore<'static> {
     /// Get a single group by key
     /// # Arguments
     /// * `key` - The key of the group to get
     /// # Returns
-    /// * `Result<Group, String>` - The group if found, otherwise an error
-    fn get(&self, key: u64) -> Result<Group, String> {
-        self.store
-            .with(|data| data.borrow().get(&key).ok_or("Group not found".to_string()))
+    /// * `Result<Group, ApiError>` - The group if found, otherwise an error
+    fn get(&self, key: u64) -> Result<Group, ApiError> {
+        self.store.with(|data| {
+            data.borrow()
+                .get(&key)
+                .ok_or(ApiError::not_found().add_info(NAME))
+        })
+    }
+
+    /// Get multiple groups by key
+    /// # Arguments
+    /// * `ids` - The keys of the groups to get
+    /// # Returns
+    /// * `Vec<Group>` - The groups if found, otherwise an empty vector
+    fn get_many(&self, keys: Vec<u64>) -> Vec<Group> {
+        self.store.with(|data| {
+            let mut groups = Vec::new();
+            for key in keys {
+                if let Some(group) = data.borrow().get(&key) {
+                    groups.push(group.clone());
+                }
+            }
+            groups
+        })
     }
 
     /// Find a single group by filter
@@ -58,10 +80,10 @@ impl StorageMethods<u64, Group> for GroupStore<'static> {
     /// # Arguments
     /// * `value` - The group to insert
     /// # Returns
-    /// * `Result<Group, String>` - The inserted group if successful, otherwise an error
+    /// * `Result<Group, ApiError>` - The inserted group if successful, otherwise an error
     /// # Note
     /// Does check if a group with the same key already exists, if so returns an error
-    fn insert(&mut self, value: Group) -> Result<Group, String> {
+    fn insert(&mut self, value: Group) -> Result<Group, ApiError> {
         self.store.with(|data| {
             let key = data
                 .borrow()
@@ -70,7 +92,10 @@ impl StorageMethods<u64, Group> for GroupStore<'static> {
                 .unwrap_or(0);
 
             if data.borrow().contains_key(&key) {
-                return Err("Key already exists".to_string());
+                return Err(ApiError::duplicate()
+                    .add_method_name("insert")
+                    .add_info(NAME)
+                    .add_info("Key already exists"));
             }
 
             data.borrow_mut().insert(key, value.clone());
@@ -82,8 +107,11 @@ impl StorageMethods<u64, Group> for GroupStore<'static> {
     /// # Note
     /// This method is not supported for this storage because the key is supplied by the canister
     /// use `insert` instead
-    fn insert_by_key(&mut self, _key: u64, _value: Group) -> Result<Group, String> {
-        Err("This value does not require a key to be inserted, use `insert` instead".to_string())
+    fn insert_by_key(&mut self, _key: u64, _value: Group) -> Result<Group, ApiError> {
+        Err(ApiError::unsupported()
+            .add_method_name("insert_by_key") // value should be `insert` as a string value
+            .add_info(NAME)
+            .add_info("This value does not require a key to be inserted, use `insert` instead"))
     }
 
     /// Update a single group by key
@@ -91,13 +119,16 @@ impl StorageMethods<u64, Group> for GroupStore<'static> {
     /// * `key` - The key of the group to update
     /// * `value` - The group to update
     /// # Returns
-    /// * `Result<Group, String>` - The updated group if successful, otherwise an error
+    /// * `Result<Group, ApiError>` - The updated group if successful, otherwise an error
     /// # Note
     /// Does check if a group with the same key already exists, if not returns an error
-    fn update(&mut self, key: u64, value: Group) -> Result<Group, String> {
+    fn update(&mut self, key: u64, value: Group) -> Result<Group, ApiError> {
         self.store.with(|data| {
             if !data.borrow().contains_key(&key) {
-                return Err("Key does not exists".to_string());
+                return Err(ApiError::not_found()
+                    .add_method_name("update")
+                    .add_info(NAME)
+                    .add_info("Key does not exist"));
             }
 
             data.borrow_mut().insert(key, value.clone());

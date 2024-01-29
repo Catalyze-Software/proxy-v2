@@ -3,7 +3,7 @@ use std::thread::LocalKey;
 use candid::Principal;
 
 use super::storage_api::{StorageMethods, StorageRef};
-use crate::models::member::Member;
+use crate::models::{api_error::ApiError, member::Member};
 
 pub struct MemberStore<'a> {
     store: &'a LocalKey<StorageRef<String, Member>>,
@@ -15,17 +15,36 @@ impl<'a> MemberStore<'a> {
     }
 }
 
+pub const NAME: &str = "members";
+
 impl StorageMethods<Principal, Member> for MemberStore<'static> {
     /// Get a single member by key
     /// # Arguments
     /// * `key` - The key of the member to get
     /// # Returns
-    /// * `Result<Member, String>` - The member if found, otherwise an error
-    fn get(&self, key: Principal) -> Result<Member, String> {
+    /// * `Result<Member, ApiError>` - The member if found, otherwise an error
+    fn get(&self, key: Principal) -> Result<Member, ApiError> {
         self.store.with(|data| {
             data.borrow()
                 .get(&key.to_string())
-                .ok_or("Member not found".to_string())
+                .ok_or(ApiError::not_found().add_info(NAME))
+        })
+    }
+
+    /// Get multiple members by key
+    /// # Arguments
+    /// * `ids` - The keys of the members to get
+    /// # Returns
+    /// * `Vec<Group>` - The groups if found, otherwise an empty vector
+    fn get_many(&self, keys: Vec<Principal>) -> Vec<Member> {
+        self.store.with(|data| {
+            let mut members = Vec::new();
+            for key in keys {
+                if let Some(member) = data.borrow().get(&key.to_string()) {
+                    members.push(member.clone());
+                }
+            }
+            members
         })
     }
 
@@ -68,8 +87,11 @@ impl StorageMethods<Principal, Member> for MemberStore<'static> {
     /// # Note
     /// This method is not supported for this storage because the key is a `Principal`
     /// use `insert_by_key` instead
-    fn insert(&mut self, _value: Member) -> Result<Member, String> {
-        Err("This value requires a key to be inserted, use `insert_by_key` instead".to_string())
+    fn insert(&mut self, _value: Member) -> Result<Member, ApiError> {
+        Err(ApiError::unsupported()
+            .add_method_name("insert") // value should be `insert` as a string value
+            .add_info(NAME)
+            .add_info("This value requires a key to be inserted, use `insert_by_key` instead"))
     }
 
     /// Insert a single member by key
@@ -77,13 +99,16 @@ impl StorageMethods<Principal, Member> for MemberStore<'static> {
     /// * `key` - The user principal as key of the member to insert
     /// * `value` - The member to insert
     /// # Returns
-    /// * `Result<Member, String>` - The inserted member if successful, otherwise an error
+    /// * `Result<Member, ApiError>` - The inserted member if successful, otherwise an error
     /// # Note
     /// Does check if a member with the same key already exists, if so returns an error
-    fn insert_by_key(&mut self, key: Principal, value: Member) -> Result<Member, String> {
+    fn insert_by_key(&mut self, key: Principal, value: Member) -> Result<Member, ApiError> {
         self.store.with(|data| {
             if data.borrow().contains_key(&key.to_string()) {
-                return Err("Key already exists".to_string());
+                return Err(ApiError::duplicate()
+                    .add_method_name("insert_by_key")
+                    .add_info(NAME)
+                    .add_info("Key already exists"));
             }
 
             data.borrow_mut().insert(key.to_string(), value.clone());
@@ -96,13 +121,16 @@ impl StorageMethods<Principal, Member> for MemberStore<'static> {
     /// * `key` - The user principal key of the member to update
     /// * `value` - The member to update
     /// # Returns
-    /// * `Result<Member, String>` - The updated member if successful, otherwise an error
+    /// * `Result<Member, ApiError>` - The updated member if successful, otherwise an error
     /// # Note
     /// Does check if a member with the same key already exists, if not returns an error
-    fn update(&mut self, key: Principal, value: Member) -> Result<Member, String> {
+    fn update(&mut self, key: Principal, value: Member) -> Result<Member, ApiError> {
         self.store.with(|data| {
             if !data.borrow().contains_key(&key.to_string()) {
-                return Err("Key does not exists".to_string());
+                return Err(ApiError::not_found()
+                    .add_method_name("update")
+                    .add_info(NAME)
+                    .add_info("Key does not exist"));
             }
 
             data.borrow_mut().insert(key.to_string(), value.clone());

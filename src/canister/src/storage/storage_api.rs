@@ -6,8 +6,8 @@ use ic_stable_structures::{
 };
 
 use crate::models::{
-    attendee::Attendee, event::Event, friend_request::FriendRequest, group::Group, member::Member,
-    profile::Profile, report::Report,
+    api_error::ApiError, attendee::Attendee, event::Event, friend_request::FriendRequest,
+    group::Group, member::Member, profile::Profile, report::Report,
 };
 
 use super::{
@@ -45,16 +45,17 @@ pub type StorageRef<K, V> = RefCell<StableBTreeMap<K, V, Memory>>;
 type MemManagerStore = RefCell<MemoryManager<DefaultMemoryImpl>>;
 
 pub trait StorageMethods<K, V> {
-    fn get(&self, id: K) -> Result<V, String>;
+    fn get(&self, id: K) -> Result<V, ApiError>;
+    fn get_many(&self, ids: Vec<K>) -> Vec<V>;
     fn find<F>(&self, filter: F) -> Option<(K, V)>
     where
         F: Fn(&V) -> bool;
     fn filter<F>(&self, filter: F) -> Vec<(K, V)>
     where
         F: Fn(&V) -> bool;
-    fn insert(&mut self, entity: V) -> Result<V, String>;
-    fn insert_by_key(&mut self, key: K, entity: V) -> Result<V, String>;
-    fn update(&mut self, id: K, entity: V) -> Result<V, String>;
+    fn insert(&mut self, entity: V) -> Result<V, ApiError>;
+    fn insert_by_key(&mut self, key: K, entity: V) -> Result<V, ApiError>;
+    fn update(&mut self, id: K, entity: V) -> Result<V, ApiError>;
     fn remove(&mut self, id: K) -> bool;
 }
 

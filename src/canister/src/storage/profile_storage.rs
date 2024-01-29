@@ -3,7 +3,7 @@ use std::thread::LocalKey;
 use candid::Principal;
 
 use super::storage_api::{StorageMethods, StorageRef};
-use crate::models::profile::Profile;
+use crate::models::{api_error::ApiError, profile::Profile};
 
 pub struct ProfileStore<'a> {
     store: &'a LocalKey<StorageRef<String, Profile>>,
@@ -15,17 +15,36 @@ impl<'a> ProfileStore<'a> {
     }
 }
 
+pub const NAME: &str = "profiles";
+
 impl StorageMethods<Principal, Profile> for ProfileStore<'static> {
     /// Get a single user profile by key
     /// # Arguments
     /// * `key` - The key of the profile to get
     /// # Returns
-    /// * `Result<Profile, String>` - The profile if found, otherwise an error
-    fn get(&self, key: Principal) -> Result<Profile, String> {
+    /// * `Result<Profile, ApiError>` - The profile if found, otherwise an error
+    fn get(&self, key: Principal) -> Result<Profile, ApiError> {
         self.store.with(|data| {
             data.borrow()
                 .get(&key.to_string())
-                .ok_or("Profile not found".to_string())
+                .ok_or(ApiError::not_found().add_info(NAME))
+        })
+    }
+
+    /// Get multiple profiles by key
+    /// # Arguments
+    /// * `ids` - The keys of the profiles to get
+    /// # Returns
+    /// * `Vec<Profile>` - The reports if found, otherwise an empty vector
+    fn get_many(&self, keys: Vec<Principal>) -> Vec<Profile> {
+        self.store.with(|data| {
+            let mut profiles = Vec::new();
+            for key in keys {
+                if let Some(profile) = data.borrow().get(&key.to_string()) {
+                    profiles.push(profile.clone());
+                }
+            }
+            profiles
         })
     }
 
@@ -68,8 +87,11 @@ impl StorageMethods<Principal, Profile> for ProfileStore<'static> {
     /// # Note
     /// This method is not supported for this storage because the key is a `Principal`
     /// use `insert_by_key` instead
-    fn insert(&mut self, _value: Profile) -> Result<Profile, String> {
-        Err("This value requires a key to be inserted, use `insert_by_key` instead".to_string())
+    fn insert(&mut self, _value: Profile) -> Result<Profile, ApiError> {
+        Err(ApiError::unsupported()
+            .add_method_name("insert") // value should be `insert` as a string value
+            .add_info(NAME)
+            .add_info("This value requires a key to be inserted, use `insert_by_key` instead"))
     }
 
     /// Insert a single user profile by key
@@ -77,13 +99,16 @@ impl StorageMethods<Principal, Profile> for ProfileStore<'static> {
     /// * `key` - The user principal as key of the profile to insert
     /// * `value` - The profile to insert
     /// # Returns
-    /// * `Result<Profile, String>` - The inserted profile if successful, otherwise an error
+    /// * `Result<Profile, ApiError>` - The inserted profile if successful, otherwise an error
     /// # Note
     /// Does check if a profile with the same key already exists, if so returns an error
-    fn insert_by_key(&mut self, key: Principal, value: Profile) -> Result<Profile, String> {
+    fn insert_by_key(&mut self, key: Principal, value: Profile) -> Result<Profile, ApiError> {
         self.store.with(|data| {
             if data.borrow().contains_key(&key.to_string()) {
-                return Err("Key already exists".to_string());
+                return Err(ApiError::duplicate()
+                    .add_method_name("insert_by_key")
+                    .add_info(NAME)
+                    .add_info("Key already exists"));
             }
 
             data.borrow_mut().insert(key.to_string(), value.clone());
@@ -96,13 +121,16 @@ impl StorageMethods<Principal, Profile> for ProfileStore<'static> {
     /// * `key` - The user principal key of the profile to update
     /// * `value` - The profile to update
     /// # Returns
-    /// * `Result<Profile, String>` - The updated profile if successful, otherwise an error
+    /// * `Result<Profile, ApiError>` - The updated profile if successful, otherwise an error
     /// # Note
     /// Does check if a profile with the same key already exists, if not returns an error
-    fn update(&mut self, key: Principal, value: Profile) -> Result<Profile, String> {
+    fn update(&mut self, key: Principal, value: Profile) -> Result<Profile, ApiError> {
         self.store.with(|data| {
             if !data.borrow().contains_key(&key.to_string()) {
-                return Err("Key does not exists".to_string());
+                return Err(ApiError::not_found()
+                    .add_method_name("update")
+                    .add_info(NAME)
+                    .add_info("Key does not exist"));
             }
 
             data.borrow_mut().insert(key.to_string(), value.clone());

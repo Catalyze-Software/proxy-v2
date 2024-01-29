@@ -3,6 +3,7 @@ use ic_cdk::caller;
 
 use crate::{
     models::{
+        api_error::ApiError,
         identifier::Identifier,
         permission::{PermissionActionType, PermissionType},
         role::Role,
@@ -17,7 +18,7 @@ use crate::{
 pub fn can_edit(
     group_identifier: Principal,
     permission_type: &PermissionType,
-) -> Result<(), String> {
+) -> Result<(), ApiError> {
     has_permission(
         group_identifier,
         permission_type,
@@ -28,7 +29,7 @@ pub fn can_edit(
 pub fn can_write(
     group_identifier: Principal,
     permission_type: &PermissionType,
-) -> Result<(), String> {
+) -> Result<(), ApiError> {
     has_permission(
         group_identifier,
         permission_type,
@@ -39,7 +40,7 @@ pub fn can_write(
 pub fn can_delete(
     group_identifier: Principal,
     permission_type: &PermissionType,
-) -> Result<(), String> {
+) -> Result<(), ApiError> {
     has_permission(
         group_identifier,
         permission_type,
@@ -50,7 +51,7 @@ pub fn can_delete(
 pub fn can_read(
     group_identifier: Principal,
     permission_type: &PermissionType,
-) -> Result<(), String> {
+) -> Result<(), ApiError> {
     has_permission(
         group_identifier,
         permission_type,
@@ -71,7 +72,7 @@ fn has_permission(
     group_identifier: Principal,
     permission: &PermissionType,
     permission_action: &PermissionActionType,
-) -> Result<(), String> {
+) -> Result<(), ApiError> {
     let member_roles = members().get(caller())?.get_roles(group_identifier);
 
     let group_id = Identifier::decode(&group_identifier).0;
@@ -101,6 +102,6 @@ fn has_permission(
     if has_access {
         return Ok(());
     } else {
-        return Err("Unauthorized".to_string());
+        return Err(ApiError::unauthorized());
     }
 }
