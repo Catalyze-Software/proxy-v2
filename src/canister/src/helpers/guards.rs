@@ -16,7 +16,7 @@ use crate::{
 pub fn is_not_anonymous() -> Result<(), String> {
     match caller() == Principal::anonymous() {
         true => Err(ApiError::unauthorized()
-            .add_info("Anonymous principal")
+            .add_message("Anonymous principal")
             .to_string()),
         false => Ok(()),
     }
@@ -45,7 +45,7 @@ pub fn has_access() -> Result<(), String> {
                 .contains(&profile.application_role)
             {
                 Err(ApiError::unauthorized()
-                    .add_info("Blocked or banned")
+                    .add_message("Blocked or banned")
                     .to_string())
             } else {
                 Ok(())

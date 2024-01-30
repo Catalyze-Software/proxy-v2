@@ -75,7 +75,7 @@ fn has_permission(
 ) -> Result<(), ApiError> {
     let member_roles = members().get(caller())?.get_roles(group_identifier);
 
-    let group_id = Identifier::decode(&group_identifier).0;
+    let group_id = Identifier::from(group_identifier).id();
     let group_roles = groups().get(group_id)?.get_roles();
 
     let mut found_roles: Vec<&Role> = vec![];

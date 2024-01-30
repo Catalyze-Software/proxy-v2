@@ -5,6 +5,7 @@ use crate::{
     helpers::validator::Validator,
     models::{
         api_error::ApiError,
+        identifier::Identifier,
         profile::{PostProfile, Profile, ProfileMethods, ProfileResponse, UpdateProfile},
         validation::{ValidateField, ValidationType},
         wallet::{PostWallet, Wallet, WalletResponse},
@@ -41,9 +42,65 @@ impl ProfileCalls {
 
     pub fn add_wallet_to_profile(post_wallet: PostWallet) -> Result<ProfileResponse, ApiError> {
         let mut existing_profile = profiles().get(caller())?;
+
+        if existing_profile
+            .wallets
+            .contains_key(&post_wallet.principal)
+        {
+            return Err(ApiError::duplicate().add_message("Wallet already exists"));
+        }
+
+        existing_profile.wallets.insert(
+            post_wallet.principal,
+            Wallet {
+                provider: post_wallet.provider,
+                is_primary: existing_profile.wallets.len() == 0,
+            },
+        );
+
+        let updated_profile = profiles().update(caller(), existing_profile);
+
+        ProfileMapper::to_response(updated_profile)
+    }
+
+    pub fn remove_wallet_from_profile(principal: Principal) -> Result<ProfileResponse, ApiError> {
+        let mut existing_profile = profiles().get(caller())?;
+
+        if !existing_profile.wallets.contains_key(&principal) {
+            return Err(ApiError::not_found().add_message("Wallet does not exist"));
+        }
+
+        if existing_profile
+            .wallets
+            .get(&principal)
+            .is_some_and(|w| w.is_primary)
+        {
+            return Err(ApiError::bad_request().add_message("Cannot remove primary wallet"));
+        }
+
+        existing_profile.wallets.remove(&principal);
+
+        let updated_profile = profiles().update(caller(), existing_profile);
+
+        ProfileMapper::to_response(updated_profile)
+    }
+
+    pub fn set_wallet_as_primary(principal: Principal) -> Result<ProfileResponse, ApiError> {
+        let mut existing_profile = profiles().get(caller())?;
+
+        if !existing_profile.wallets.contains_key(&principal) {
+            return Err(ApiError::not_found().add_message("Wallet does not exist"));
+        }
+
+        for (_principal, wallet) in existing_profile.wallets.iter_mut() {
+            wallet.is_primary = false;
+        }
+
         existing_profile
             .wallets
-            .insert(post_wallet.principal, Wallet::from(post_wallet));
+            .get_mut(&principal)
+            .unwrap()
+            .is_primary = true;
 
         let updated_profile = profiles().update(caller(), existing_profile);
 
@@ -61,6 +118,69 @@ impl ProfileCalls {
             .into_iter()
             .map(|profile| ProfileMapper::to_response(Ok(profile)).unwrap())
             .collect()
+    }
+
+    pub fn add_starred(identifier_principal: Principal) -> Result<ProfileResponse, ApiError> {
+        let identifier = Identifier::from(identifier_principal);
+
+        if !identifier.is_valid() {
+            return Err(ApiError::bad_request().add_message("Invalid identifier"));
+        }
+
+        let mut existing_profile = profiles().get(caller())?;
+
+        if existing_profile.starred.contains_key(&identifier_principal) {
+            return Err(ApiError::duplicate()
+                .add_message(format!("{} already starred", identifier.kind()).as_str()));
+        }
+
+        existing_profile
+            .starred
+            .insert(identifier_principal, identifier.kind());
+
+        let updated_profile = profiles().update(caller(), existing_profile);
+
+        ProfileMapper::to_response(updated_profile)
+    }
+
+    pub fn remove_starred(identifier_principal: Principal) -> Result<ProfileResponse, ApiError> {
+        let identifier = Identifier::from(identifier_principal);
+
+        if !identifier.is_valid() {
+            return Err(ApiError::bad_request().add_message("Invalid identifier"));
+        }
+
+        let mut existing_profile = profiles().get(caller())?;
+
+        if !existing_profile.starred.contains_key(&identifier_principal) {
+            return Err(ApiError::not_found()
+                .add_message(format!("{} not starred", identifier.kind()).as_str()));
+        }
+
+        existing_profile.starred.remove(&identifier_principal);
+
+        let updated_profile = profiles().update(caller(), existing_profile);
+
+        ProfileMapper::to_response(updated_profile)
+    }
+
+    pub fn get_starred_by_kind(kind: &str) -> Vec<Principal> {
+        if let Ok(profile) = profiles().get(caller()) {
+            return profile
+                .starred
+                .iter()
+                .filter_map(
+                    |(principal, k)| {
+                        if k == &kind {
+                            Some(*principal)
+                        } else {
+                            None
+                        }
+                    },
+                )
+                .collect();
+        }
+        vec![]
     }
 }
 

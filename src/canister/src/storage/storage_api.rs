@@ -11,7 +11,8 @@ use crate::models::{
 };
 
 use super::{
-    attendee_storage::AttendeeStore, event_storage::EventStore, group_storage::GroupStore,
+    attendee_storage::AttendeeStore, event_storage::EventStore,
+    friend_request_storage::FriendRequestStore, group_storage::GroupStore,
     member_storage::MemberStore, profile_storage::ProfileStore, report_storage::ReportStore,
 };
 
@@ -112,6 +113,10 @@ impl MemManager for MemManagerStore {
 
 pub fn profiles<'a>() -> ProfileStore<'a> {
     ProfileStore::new(&PROFILES)
+}
+
+pub fn friend_requests<'a>() -> FriendRequestStore<'a> {
+    FriendRequestStore::new(&FRIEND_REQUEST)
 }
 
 pub fn events<'a>() -> EventStore<'a> {

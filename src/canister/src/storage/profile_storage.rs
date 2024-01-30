@@ -26,7 +26,7 @@ impl StorageMethods<Principal, Profile> for ProfileStore<'static> {
         self.store.with(|data| {
             data.borrow()
                 .get(&key.to_string())
-                .ok_or(ApiError::not_found().add_info(NAME))
+                .ok_or(ApiError::not_found().add_method_name("get").add_info(NAME))
         })
     }
 
@@ -90,7 +90,7 @@ impl StorageMethods<Principal, Profile> for ProfileStore<'static> {
         Err(ApiError::unsupported()
             .add_method_name("insert") // value should be `insert` as a string value
             .add_info(NAME)
-            .add_info("This value requires a key to be inserted, use `insert_by_key` instead"))
+            .add_message("This value requires a key to be inserted, use `insert_by_key` instead"))
     }
 
     /// Insert a single user profile by key
@@ -107,7 +107,7 @@ impl StorageMethods<Principal, Profile> for ProfileStore<'static> {
                 return Err(ApiError::duplicate()
                     .add_method_name("insert_by_key")
                     .add_info(NAME)
-                    .add_info("Key already exists"));
+                    .add_message("Key already exists"));
             }
 
             data.borrow_mut().insert(key.to_string(), value.clone());
@@ -129,7 +129,7 @@ impl StorageMethods<Principal, Profile> for ProfileStore<'static> {
                 return Err(ApiError::not_found()
                     .add_method_name("update")
                     .add_info(NAME)
-                    .add_info("Key does not exist"));
+                    .add_message("Key does not exist"));
             }
 
             data.borrow_mut().insert(key.to_string(), value.clone());

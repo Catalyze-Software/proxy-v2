@@ -120,7 +120,7 @@ pub fn edit_profile(update_profile: UpdateProfile) -> Result<ProfileResponse, Ap
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "has_access")]
 pub fn add_wallet_to_profile(wallet: PostWallet) -> Result<ProfileResponse, ApiError> {
-    Err(ApiError::not_implemented())
+    ProfileCalls::add_wallet_to_profile(wallet)
 }
 
 /// Sets a wallet as the primary wallet of the caller his profile - [`[update]`](update)
@@ -133,15 +133,15 @@ pub fn add_wallet_to_profile(wallet: PostWallet) -> Result<ProfileResponse, ApiE
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "has_access")]
-pub fn set_wallet_as_primary(wallet_principal: Principal) -> Result<(), ()> {
-    Err(())
+pub fn set_wallet_as_primary(wallet_principal: Principal) -> Result<ProfileResponse, ApiError> {
+    ProfileCalls::set_wallet_as_primary(wallet_principal)
 }
 
 /// Removes a wallet from the caller his profile - [`[update]`](update)
 /// # Change
 /// * was `remove_wallet` but due to conflict with other methods it was renamed
 /// # Arguments
-/// * `wallet` - The wallet to remove
+/// * `wallet_principal` - The wallet to remove
 /// # Returns
 /// * `ProfileResponse` - The profile that was updated
 /// # Errors
@@ -149,8 +149,10 @@ pub fn set_wallet_as_primary(wallet_principal: Principal) -> Result<(), ()> {
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "has_access")]
-pub fn remove_wallet_from_profile(wallet: Principal) -> Result<ProfileResponse, ApiError> {
-    Err(ApiError::not_implemented())
+pub fn remove_wallet_from_profile(
+    wallet_principal: Principal,
+) -> Result<ProfileResponse, ApiError> {
+    ProfileCalls::remove_wallet_from_profile(wallet_principal)
 }
 
 /// Adds a group, event or task reference to the caller his profile - [`[update]`](update)
@@ -164,7 +166,7 @@ pub fn remove_wallet_from_profile(wallet: Principal) -> Result<ProfileResponse, 
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "has_access")]
 pub fn add_starred(identifier: Principal) -> Result<ProfileResponse, ApiError> {
-    Err(ApiError::not_implemented())
+    ProfileCalls::add_starred(identifier)
 }
 
 /// Removes a group, event or task reference from the caller his profile - [`[update]`](update)
@@ -178,7 +180,7 @@ pub fn add_starred(identifier: Principal) -> Result<ProfileResponse, ApiError> {
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "has_access")]
 pub fn remove_starred(identifier: Principal) -> Result<ProfileResponse, ApiError> {
-    Err(ApiError::not_implemented())
+    ProfileCalls::remove_starred(identifier)
 }
 
 /// Gets the starred events from the caller his profile - [`[query]`](query)
@@ -188,7 +190,7 @@ pub fn remove_starred(identifier: Principal) -> Result<ProfileResponse, ApiError
 /// This function is guarded by the [`has_access`](has_access) function.
 #[query(guard = "has_access")]
 pub fn get_starred_events() -> Vec<Principal> {
-    vec![]
+    ProfileCalls::get_starred_by_kind("evt")
 }
 
 /// Gets the starred tasks from the caller his profile - [`[query]`](query)
@@ -198,7 +200,7 @@ pub fn get_starred_events() -> Vec<Principal> {
 /// This function is guarded by the [`has_access`](has_access) function.
 #[query(guard = "has_access")]
 pub fn get_starred_tasks() -> Vec<Principal> {
-    vec![]
+    ProfileCalls::get_starred_by_kind("tsk")
 }
 
 /// Gets the starred groups from the caller his profile - [`[query]`](query)
@@ -208,7 +210,7 @@ pub fn get_starred_tasks() -> Vec<Principal> {
 /// This function is guarded by the [`has_access`](has_access) function.
 #[query(guard = "has_access")]
 pub fn get_starred_groups() -> Vec<Principal> {
-    vec![]
+    ProfileCalls::get_starred_by_kind("grp")
 }
 
 /// Create a friend request on behalf of the caller - [`[update]`](update)

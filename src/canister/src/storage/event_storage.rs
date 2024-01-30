@@ -25,7 +25,7 @@ impl StorageMethods<u64, Event> for EventStore<'static> {
         self.store.with(|data| {
             data.borrow()
                 .get(&key)
-                .ok_or(ApiError::not_found().add_info(NAME))
+                .ok_or(ApiError::not_found().add_method_name("get").add_info(NAME))
         })
     }
 
@@ -95,7 +95,7 @@ impl StorageMethods<u64, Event> for EventStore<'static> {
                 return Err(ApiError::duplicate()
                     .add_method_name("insert")
                     .add_info(NAME)
-                    .add_info("Key already exists"));
+                    .add_message("Key already exists"));
             }
 
             data.borrow_mut().insert(key, value.clone());
@@ -111,7 +111,7 @@ impl StorageMethods<u64, Event> for EventStore<'static> {
         Err(ApiError::unsupported()
             .add_method_name("insert_by_key") // value should be `insert` as a string value
             .add_info(NAME)
-            .add_info("This value does not require a key to be inserted, use `insert` instead"))
+            .add_message("This value does not require a key to be inserted, use `insert` instead"))
     }
 
     /// Update a single event by key
@@ -128,7 +128,7 @@ impl StorageMethods<u64, Event> for EventStore<'static> {
                 return Err(ApiError::not_found()
                     .add_method_name("update")
                     .add_info(NAME)
-                    .add_info("Key does not exist"));
+                    .add_message("Key does not exist"));
             }
 
             data.borrow_mut().insert(key, value.clone());
