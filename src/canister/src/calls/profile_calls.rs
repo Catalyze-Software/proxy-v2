@@ -17,7 +17,6 @@ use crate::{
         friend_request::FriendRequestResponse,
         profile::{PostProfile, ProfileResponse, UpdateProfile},
     },
-    storage::storage_api::{profiles, StorageMethods},
 };
 
 /// Adds a profile to the canister - [`[update]`](update)

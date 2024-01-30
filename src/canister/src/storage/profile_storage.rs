@@ -16,7 +16,6 @@ impl<'a> ProfileStore<'a> {
 }
 
 pub const NAME: &str = "profiles";
-
 impl StorageMethods<Principal, Profile> for ProfileStore<'static> {
     /// Get a single user profile by key
     /// # Arguments

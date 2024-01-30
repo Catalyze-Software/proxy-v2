@@ -7,7 +7,7 @@ use crate::{
         api_error::ApiError,
         profile::{PostProfile, Profile, ProfileMethods, ProfileResponse, UpdateProfile},
         validation::{ValidateField, ValidationType},
-        wallet::WalletResponse,
+        wallet::{PostWallet, Wallet, WalletResponse},
     },
     storage::storage_api::{profiles, StorageMethods},
 };
@@ -37,6 +37,17 @@ impl ProfileCalls {
 
         let updated_profile_result = profiles().update(caller(), updated_profile);
         ProfileMapper::to_response(updated_profile_result)
+    }
+
+    pub fn add_wallet_to_profile(post_wallet: PostWallet) -> Result<ProfileResponse, ApiError> {
+        let mut existing_profile = profiles().get(caller())?;
+        existing_profile
+            .wallets
+            .insert(post_wallet.principal, Wallet::from(post_wallet));
+
+        let updated_profile = profiles().update(caller(), existing_profile);
+
+        ProfileMapper::to_response(updated_profile)
     }
 
     pub fn get_profile(principal: Principal) -> Result<ProfileResponse, ApiError> {

@@ -1,27 +1,19 @@
-use std::{borrow::Cow, collections::HashMap};
+use std::collections::HashMap;
 
-use candid::{CandidType, Decode, Deserialize, Encode, Principal};
-use ic_stable_structures::{storable::Bound, Storable};
+use candid::{CandidType, Deserialize, Principal};
 use serde::Serialize;
 
+use crate::impl_storable_for;
+
 pub type EventIdentifier = Principal;
+
+impl_storable_for!(Attendee);
+
 #[derive(Clone, Debug, CandidType, Deserialize, Serialize)]
 pub struct Attendee {
     pub principal: Principal,
     pub joined: HashMap<EventIdentifier, Join>,
     pub invites: HashMap<EventIdentifier, Invite>,
-}
-
-impl Storable for Attendee {
-    fn to_bytes(&self) -> std::borrow::Cow<[u8]> {
-        Cow::Owned(Encode!(self).unwrap())
-    }
-
-    fn from_bytes(bytes: std::borrow::Cow<[u8]>) -> Self {
-        Decode!(bytes.as_ref(), Self).unwrap()
-    }
-
-    const BOUND: Bound = Bound::Unbounded;
 }
 
 impl Default for Attendee {

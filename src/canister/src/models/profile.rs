@@ -1,13 +1,15 @@
-use std::{borrow::Cow, collections::HashMap};
+use std::collections::HashMap;
 
-use candid::{CandidType, Decode, Deserialize, Encode, Principal};
+use candid::{CandidType, Deserialize, Principal};
 use ic_cdk::{api::time, caller};
-use ic_stable_structures::{storable::Bound, Storable};
 use serde::Serialize;
 
-use crate::models::{
-    application_role::ApplicationRole, asset::Asset, date_range::DateRange,
-    sort_direction::SortDirection,
+use crate::{
+    impl_storable_for,
+    models::{
+        application_role::ApplicationRole, asset::Asset, date_range::DateRange,
+        sort_direction::SortDirection,
+    },
 };
 
 use super::{
@@ -25,6 +27,8 @@ pub trait ProfileMethods {
     // Or are we going to fetch the data before calling this method?
     // fn to_response()
 }
+
+impl_storable_for!(Profile);
 
 #[derive(Clone, Debug, CandidType, Deserialize, Serialize)]
 pub struct Profile {
@@ -57,18 +61,6 @@ pub struct Profile {
     pub extra: String,
     pub updated_on: u64,
     pub created_on: u64,
-}
-
-impl Storable for Profile {
-    fn to_bytes(&self) -> std::borrow::Cow<[u8]> {
-        Cow::Owned(Encode!(self).unwrap())
-    }
-
-    fn from_bytes(bytes: std::borrow::Cow<[u8]>) -> Self {
-        Decode!(bytes.as_ref(), Self).unwrap()
-    }
-
-    const BOUND: Bound = Bound::Unbounded;
 }
 
 impl ProfileMethods for Profile {
