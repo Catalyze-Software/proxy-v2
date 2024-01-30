@@ -1,14 +1,18 @@
-use std::{borrow::Cow, collections::HashMap};
+use std::collections::HashMap;
 
-use candid::{CandidType, Decode, Deserialize, Encode, Principal};
+use candid::{CandidType, Deserialize, Principal};
 use ic_cdk::{api::time, caller};
-use ic_stable_structures::{storable::Bound, Storable};
 use serde::Serialize;
 
-use crate::models::{
-    asset::Asset, date_range::DateRange, location::Location, privacy::Privacy,
-    sort_direction::SortDirection,
+use crate::{
+    impl_storable_for,
+    models::{
+        asset::Asset, date_range::DateRange, location::Location, privacy::Privacy,
+        sort_direction::SortDirection,
+    },
 };
+
+impl_storable_for!(Event);
 
 #[derive(Clone, CandidType, Serialize, Deserialize, Debug)]
 pub struct Event {
@@ -90,18 +94,6 @@ impl Event {
         self.updated_on = time();
         self.clone()
     }
-}
-
-impl Storable for Event {
-    fn to_bytes(&self) -> std::borrow::Cow<[u8]> {
-        Cow::Owned(Encode!(self).unwrap())
-    }
-
-    fn from_bytes(bytes: std::borrow::Cow<[u8]>) -> Self {
-        Decode!(bytes.as_ref(), Self).unwrap()
-    }
-
-    const BOUND: Bound = Bound::Unbounded;
 }
 
 impl Default for Event {

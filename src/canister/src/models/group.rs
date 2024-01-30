@@ -1,11 +1,11 @@
-use std::{borrow::Cow, collections::HashMap};
+use std::collections::HashMap;
 
-use candid::{CandidType, Decode, Deserialize, Encode, Principal};
+use candid::{CandidType, Deserialize, Principal};
 use ic_cdk::{api::time, caller};
-use ic_stable_structures::{storable::Bound, Storable};
 use serde::Serialize;
 
 use crate::{
+    impl_storable_for,
     misc::role_misc::default_roles,
     models::{
         asset::Asset, date_range::DateRange, location::Location, privacy::Privacy, role::Role,
@@ -14,6 +14,8 @@ use crate::{
 };
 
 use super::permission::Permission;
+
+impl_storable_for!(Group);
 
 #[derive(Clone, CandidType, Serialize, Deserialize, Debug)]
 pub struct Group {
@@ -137,19 +139,6 @@ impl Group {
         }
         vec![]
     }
-}
-
-// Stable storage
-impl Storable for Group {
-    fn to_bytes(&self) -> std::borrow::Cow<[u8]> {
-        Cow::Owned(Encode!(self).unwrap())
-    }
-
-    fn from_bytes(bytes: std::borrow::Cow<[u8]>) -> Self {
-        Decode!(bytes.as_ref(), Self).unwrap()
-    }
-
-    const BOUND: Bound = Bound::Unbounded;
 }
 
 #[derive(Clone, CandidType, Deserialize)]

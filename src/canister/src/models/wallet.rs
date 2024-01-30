@@ -7,6 +7,15 @@ pub struct Wallet {
     pub is_primary: bool,
 }
 
+impl From<PostWallet> for Wallet {
+    fn from(post_wallet: PostWallet) -> Self {
+        Self {
+            provider: post_wallet.provider,
+            is_primary: false,
+        }
+    }
+}
+
 #[derive(Clone, Debug, Serialize, CandidType, Deserialize)]
 pub struct PostWallet {
     pub provider: String,

@@ -1,11 +1,14 @@
-use std::{borrow::Cow, collections::HashMap};
+use std::collections::HashMap;
 
-use candid::{CandidType, Decode, Deserialize, Encode, Principal};
+use candid::{CandidType, Deserialize, Principal};
 use ic_cdk::api::time;
-use ic_stable_structures::{storable::Bound, Storable};
 use serde::Serialize;
 
+use crate::impl_storable_for;
+
 pub type GroupIdentifier = Principal;
+
+impl_storable_for!(Member);
 
 #[derive(Clone, Debug, CandidType, Deserialize, Serialize)]
 pub struct Member {
@@ -117,18 +120,6 @@ impl Member {
         }
         vec![]
     }
-}
-
-impl Storable for Member {
-    fn to_bytes(&self) -> std::borrow::Cow<[u8]> {
-        Cow::Owned(Encode!(self).unwrap())
-    }
-
-    fn from_bytes(bytes: std::borrow::Cow<[u8]>) -> Self {
-        Decode!(bytes.as_ref(), Self).unwrap()
-    }
-
-    const BOUND: Bound = Bound::Unbounded;
 }
 
 #[derive(CandidType, Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]

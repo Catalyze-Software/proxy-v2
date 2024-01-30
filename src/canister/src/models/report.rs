@@ -1,10 +1,13 @@
-use std::borrow::Cow;
+use candid::{CandidType, Deserialize, Principal};
 
-use candid::{CandidType, Decode, Deserialize, Encode, Principal};
-use ic_stable_structures::{storable::Bound, Storable};
 use serde::Serialize;
 
-use crate::models::{date_range::DateRange, sort_direction::SortDirection};
+use crate::{
+    impl_storable_for,
+    models::{date_range::DateRange, sort_direction::SortDirection},
+};
+
+impl_storable_for!(Report);
 
 #[derive(Clone, Debug, CandidType, Deserialize, Serialize, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Report {
@@ -13,18 +16,6 @@ pub struct Report {
     pub group_identifier: Principal,
     pub message: String,
     pub created_on: u64,
-}
-
-impl Storable for Report {
-    fn to_bytes(&self) -> std::borrow::Cow<[u8]> {
-        Cow::Owned(Encode!(self).unwrap())
-    }
-
-    fn from_bytes(bytes: std::borrow::Cow<[u8]>) -> Self {
-        Decode!(bytes.as_ref(), Self).unwrap()
-    }
-
-    const BOUND: Bound = Bound::Unbounded;
 }
 
 impl Default for Report {
