@@ -11,11 +11,13 @@ use ic_cdk::{query, update};
 
 use crate::{
     helpers::guards::{has_access, is_not_anonymous},
+    logic::profile_logic::ProfileCalls,
     models::{api_error::ApiError, relation_type::RelationType, wallet::PostWallet},
     models::{
         friend_request::FriendRequestResponse,
         profile::{PostProfile, ProfileResponse, UpdateProfile},
     },
+    storage::storage_api::{profiles, StorageMethods},
 };
 
 /// Adds a profile to the canister - [`[update]`](update)
@@ -33,7 +35,7 @@ pub fn add_profile(
     post_profile: PostProfile,
     member_canister: Principal, // should be deprecated
 ) -> Result<ProfileResponse, ApiError> {
-    Err(ApiError::not_implemented())
+    ProfileCalls::add_profile(post_profile)
 }
 
 /// Gets a profile by the given user principal - [`[query]`](query)
@@ -47,7 +49,7 @@ pub fn add_profile(
 /// This function is guarded by the [`has_access`](has_access) function.
 #[query(guard = "has_access")]
 pub fn get_profile_by_user_principal(principal: Principal) -> Result<ProfileResponse, ApiError> {
-    Err(ApiError::not_implemented())
+    ProfileCalls::get_profile(principal)
 }
 
 /// Gets a profile by the given user identifier - [`[query]`](query)
@@ -76,7 +78,7 @@ pub fn get_profile_by_identifier(id: Principal) -> Result<ProfileResponse, ApiEr
 /// This function is guarded by the [`has_access`](has_access) function.
 #[query(guard = "has_access")]
 pub fn get_profiles_by_user_principal(principals: Vec<Principal>) -> Vec<ProfileResponse> {
-    vec![]
+    ProfileCalls::get_profiles(principals)
 }
 
 /// Gets profiles by the given user identifiers - [`[query]`](query)
@@ -103,7 +105,7 @@ pub fn get_profiles_by_identifier(identifiers: Vec<Principal>) -> Vec<ProfileRes
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "has_access")]
 pub fn edit_profile(update_profile: UpdateProfile) -> Result<ProfileResponse, ApiError> {
-    Err(ApiError::not_implemented())
+    ProfileCalls::update_profile(update_profile)
 }
 
 /// Adds a wallet to the caller his profile - [`[update]`](update)

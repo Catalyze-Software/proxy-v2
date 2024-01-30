@@ -1,7 +1,7 @@
 use std::thread::LocalKey;
 
 use super::storage_api::{StorageMethods, StorageRef};
-use crate::models::event::Event;
+use crate::models::{api_error::ApiError, event::Event};
 
 pub struct EventStore<'a> {
     store: &'a LocalKey<StorageRef<u64, Event>>,
@@ -13,15 +13,37 @@ impl<'a> EventStore<'a> {
     }
 }
 
+pub const NAME: &str = "events";
+
 impl StorageMethods<u64, Event> for EventStore<'static> {
     /// Get a single event by key
     /// # Arguments
     /// * `key` - The key of the event to get
     /// # Returns
-    /// * `Result<Event, String>` - The event if found, otherwise an error
-    fn get(&self, key: u64) -> Result<Event, String> {
-        self.store
-            .with(|data| data.borrow().get(&key).ok_or("Event not found".to_string()))
+    /// * `Result<Event, ApiError>` - The event if found, otherwise an error
+    fn get(&self, key: u64) -> Result<Event, ApiError> {
+        self.store.with(|data| {
+            data.borrow()
+                .get(&key)
+                .ok_or(ApiError::not_found().add_info(NAME))
+        })
+    }
+
+    /// Get multiple events by key
+    /// # Arguments
+    /// * `ids` - The keys of the events to get
+    /// # Returns
+    /// * `Vec<Event>` - The events if found, otherwise an empty vector
+    fn get_many(&self, keys: Vec<u64>) -> Vec<Event> {
+        self.store.with(|data| {
+            let mut events = Vec::new();
+            for key in keys {
+                if let Some(event) = data.borrow().get(&key) {
+                    events.push(event.clone());
+                }
+            }
+            events
+        })
     }
 
     /// Find a single event by filter
@@ -58,10 +80,10 @@ impl StorageMethods<u64, Event> for EventStore<'static> {
     /// # Arguments
     /// * `value` - The event to insert
     /// # Returns
-    /// * `Result<Event, String>` - The inserted event if successful, otherwise an error
+    /// * `Result<Event, ApiError>` - The inserted event if successful, otherwise an error
     /// # Note
     /// Does check if a event with the same key already exists, if so returns an error
-    fn insert(&mut self, value: Event) -> Result<Event, String> {
+    fn insert(&mut self, value: Event) -> Result<Event, ApiError> {
         self.store.with(|data| {
             let key = data
                 .borrow()
@@ -70,7 +92,10 @@ impl StorageMethods<u64, Event> for EventStore<'static> {
                 .unwrap_or(0);
 
             if data.borrow().contains_key(&key) {
-                return Err("Key already exists".to_string());
+                return Err(ApiError::duplicate()
+                    .add_method_name("insert")
+                    .add_info(NAME)
+                    .add_info("Key already exists"));
             }
 
             data.borrow_mut().insert(key, value.clone());
@@ -82,8 +107,11 @@ impl StorageMethods<u64, Event> for EventStore<'static> {
     /// # Note
     /// This method is not supported for this storage because the key is supplied by the canister
     /// use `insert` instead
-    fn insert_by_key(&mut self, _key: u64, _value: Event) -> Result<Event, String> {
-        Err("This value does not require a key to be inserted, use `insert` instead".to_string())
+    fn insert_by_key(&mut self, _key: u64, _value: Event) -> Result<Event, ApiError> {
+        Err(ApiError::unsupported()
+            .add_method_name("insert_by_key") // value should be `insert` as a string value
+            .add_info(NAME)
+            .add_info("This value does not require a key to be inserted, use `insert` instead"))
     }
 
     /// Update a single event by key
@@ -91,13 +119,16 @@ impl StorageMethods<u64, Event> for EventStore<'static> {
     /// * `key` - The key of the event to update
     /// * `value` - The event to update
     /// # Returns
-    /// * `Result<Event, String>` - The updated event if successful, otherwise an error
+    /// * `Result<Event, ApiError>` - The updated event if successful, otherwise an error
     /// # Note
     /// Does check if a event with the same key already exists, if not returns an error
-    fn update(&mut self, key: u64, value: Event) -> Result<Event, String> {
+    fn update(&mut self, key: u64, value: Event) -> Result<Event, ApiError> {
         self.store.with(|data| {
             if !data.borrow().contains_key(&key) {
-                return Err("Key does not exists".to_string());
+                return Err(ApiError::not_found()
+                    .add_method_name("update")
+                    .add_info(NAME)
+                    .add_info("Key does not exist"));
             }
 
             data.borrow_mut().insert(key, value.clone());

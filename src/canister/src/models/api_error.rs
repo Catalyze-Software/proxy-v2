@@ -105,18 +105,43 @@ impl ApiError {
         }
     }
 
-    pub fn add_tag(mut self, tag: String) -> Self {
-        self.tag = Some(tag);
+    pub fn unsupported() -> Self {
+        ApiError {
+            tag: None,
+            message: Some("Unsupported".to_string()),
+            method_name: None,
+            error_type: ApiErrorType::Unsupported,
+            info: None,
+        }
+    }
+
+    pub fn duplicate() -> Self {
+        ApiError {
+            tag: None,
+            message: Some("Duplicate".to_string()),
+            method_name: None,
+            error_type: ApiErrorType::Unsupported,
+            info: None,
+        }
+    }
+
+    pub fn add_tag(mut self, tag: &str) -> Self {
+        self.tag = Some(tag.to_string());
         self
     }
 
-    pub fn add_info(mut self, info: Vec<String>) -> Self {
-        self.info = Some(info);
+    pub fn add_info(mut self, info: &str) -> Self {
+        if let Some(mut info_vec) = self.info {
+            info_vec.push(info.to_string());
+            self.info = Some(info_vec);
+        } else {
+            self.info = Some(vec![info.to_string()]);
+        }
         self
     }
 
-    pub fn add_method_name(mut self, method_name: String) -> Self {
-        self.method_name = Some(method_name);
+    pub fn add_method_name(mut self, method_name: &str) -> Self {
+        self.method_name = Some(method_name.to_string());
         self
     }
 }
@@ -128,9 +153,21 @@ pub enum ApiErrorType {
     Unauthorized,
     NotFound,
     BadRequest,
+    Unsupported,
+    Duplicate,
     ValidationError(Vec<ValidationResponse>),
     SerializeError,
     DeserializeError,
+}
+
+impl fmt::Display for ApiError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "ApiError: tag: {:?}, message: {:?}, method_name: {:?}, error_type: {:?}, info: {:?}",
+            self.tag, self.message, self.method_name, self.error_type, self.info
+        )
+    }
 }
 
 impl fmt::Display for ApiErrorType {
@@ -142,6 +179,8 @@ impl fmt::Display for ApiErrorType {
             Unauthorized => write!(f, "Unauthorized"),
             NotFound => write!(f, "NotFound"),
             BadRequest => write!(f, "BadRequest"),
+            Unsupported => write!(f, "Unsupported"),
+            Duplicate => write!(f, "Duplicate"),
             ValidationError(_) => write!(f, "ValidationError"),
             SerializeError => write!(f, "SerializeError"),
             DeserializeError => write!(f, "DeserializeError"),

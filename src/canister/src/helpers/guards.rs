@@ -2,7 +2,7 @@ use candid::Principal;
 use ic_cdk::caller;
 
 use crate::{
-    models::application_role::ApplicationRole,
+    models::{api_error::ApiError, application_role::ApplicationRole},
     storage::storage_api::{profiles, StorageMethods},
 };
 
@@ -15,7 +15,9 @@ use crate::{
 /// `Result<(), String>` type is required because of the usage as a guard in the `candid` attribute macro
 pub fn is_not_anonymous() -> Result<(), String> {
     match caller() == Principal::anonymous() {
-        true => Err("Unauthorized".to_string()),
+        true => Err(ApiError::unauthorized()
+            .add_info("Anonymous principal")
+            .to_string()),
         false => Ok(()),
     }
 }
@@ -34,13 +36,21 @@ pub fn has_access() -> Result<(), String> {
     }
 
     // Get the caller's profile
-    let profile = profiles().get(caller())?;
-
-    // Check if the caller is blocked or banned on the application level
-    if vec![ApplicationRole::Blocked, ApplicationRole::Banned].contains(&profile.application_role) {
-        Err("Blocked or banned profile".to_string())
-    } else {
-        Ok(())
+    match profiles().get(caller()) {
+        Err(err) => Err(err.to_string()),
+        Ok(profile) => {
+            // Check if the caller has a profile
+            // Check if the caller is blocked or banned on the application level
+            if vec![ApplicationRole::Blocked, ApplicationRole::Banned]
+                .contains(&profile.application_role)
+            {
+                Err(ApiError::unauthorized()
+                    .add_info("Blocked or banned")
+                    .to_string())
+            } else {
+                Ok(())
+            }
+        }
     }
 }
 // TODO: add guards for group role based access
