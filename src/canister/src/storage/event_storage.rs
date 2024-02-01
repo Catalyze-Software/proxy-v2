@@ -21,11 +21,12 @@ impl StorageMethods<u64, Event> for EventStore<'static> {
     /// * `key` - The key of the event to get
     /// # Returns
     /// * `Result<Event, ApiError>` - The event if found, otherwise an error
-    fn get(&self, key: u64) -> Result<Event, ApiError> {
+    fn get(&self, key: u64) -> Result<(u64, Event), ApiError> {
         self.store.with(|data| {
             data.borrow()
                 .get(&key)
                 .ok_or(ApiError::not_found().add_method_name("get").add_info(NAME))
+                .map(|value| (key, value))
         })
     }
 
@@ -34,12 +35,12 @@ impl StorageMethods<u64, Event> for EventStore<'static> {
     /// * `ids` - The keys of the events to get
     /// # Returns
     /// * `Vec<Event>` - The events if found, otherwise an empty vector
-    fn get_many(&self, keys: Vec<u64>) -> Vec<Event> {
+    fn get_many(&self, keys: Vec<u64>) -> Vec<(u64, Event)> {
         self.store.with(|data| {
             let mut events = Vec::new();
             for key in keys {
                 if let Some(event) = data.borrow().get(&key) {
-                    events.push(event.clone());
+                    events.push((key, event));
                 }
             }
             events
@@ -83,7 +84,7 @@ impl StorageMethods<u64, Event> for EventStore<'static> {
     /// * `Result<Event, ApiError>` - The inserted event if successful, otherwise an error
     /// # Note
     /// Does check if a event with the same key already exists, if so returns an error
-    fn insert(&mut self, value: Event) -> Result<Event, ApiError> {
+    fn insert(&mut self, value: Event) -> Result<(u64, Event), ApiError> {
         self.store.with(|data| {
             let key = data
                 .borrow()
@@ -99,7 +100,7 @@ impl StorageMethods<u64, Event> for EventStore<'static> {
             }
 
             data.borrow_mut().insert(key, value.clone());
-            Ok(value)
+            Ok((key, value))
         })
     }
 
@@ -107,7 +108,7 @@ impl StorageMethods<u64, Event> for EventStore<'static> {
     /// # Note
     /// This method is not supported for this storage because the key is supplied by the canister
     /// use `insert` instead
-    fn insert_by_key(&mut self, _key: u64, _value: Event) -> Result<Event, ApiError> {
+    fn insert_by_key(&mut self, _key: u64, _value: Event) -> Result<(u64, Event), ApiError> {
         Err(ApiError::unsupported()
             .add_method_name("insert_by_key") // value should be `insert` as a string value
             .add_info(NAME)
@@ -122,7 +123,7 @@ impl StorageMethods<u64, Event> for EventStore<'static> {
     /// * `Result<Event, ApiError>` - The updated event if successful, otherwise an error
     /// # Note
     /// Does check if a event with the same key already exists, if not returns an error
-    fn update(&mut self, key: u64, value: Event) -> Result<Event, ApiError> {
+    fn update(&mut self, key: u64, value: Event) -> Result<(u64, Event), ApiError> {
         self.store.with(|data| {
             if !data.borrow().contains_key(&key) {
                 return Err(ApiError::not_found()
@@ -132,7 +133,7 @@ impl StorageMethods<u64, Event> for EventStore<'static> {
             }
 
             data.borrow_mut().insert(key, value.clone());
-            Ok(value)
+            Ok((key, value))
         })
     }
 

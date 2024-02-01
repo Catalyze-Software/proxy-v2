@@ -21,11 +21,12 @@ impl StorageMethods<u64, Group> for GroupStore<'static> {
     /// * `key` - The key of the group to get
     /// # Returns
     /// * `Result<Group, ApiError>` - The group if found, otherwise an error
-    fn get(&self, key: u64) -> Result<Group, ApiError> {
+    fn get(&self, key: u64) -> Result<(u64, Group), ApiError> {
         self.store.with(|data| {
             data.borrow()
                 .get(&key)
                 .ok_or(ApiError::not_found().add_method_name("get").add_info(NAME))
+                .map(|value| (key, value))
         })
     }
 
@@ -34,12 +35,12 @@ impl StorageMethods<u64, Group> for GroupStore<'static> {
     /// * `ids` - The keys of the groups to get
     /// # Returns
     /// * `Vec<Group>` - The groups if found, otherwise an empty vector
-    fn get_many(&self, keys: Vec<u64>) -> Vec<Group> {
+    fn get_many(&self, keys: Vec<u64>) -> Vec<(u64, Group)> {
         self.store.with(|data| {
             let mut groups = Vec::new();
             for key in keys {
                 if let Some(group) = data.borrow().get(&key) {
-                    groups.push(group.clone());
+                    groups.push((key, group));
                 }
             }
             groups
@@ -83,7 +84,7 @@ impl StorageMethods<u64, Group> for GroupStore<'static> {
     /// * `Result<Group, ApiError>` - The inserted group if successful, otherwise an error
     /// # Note
     /// Does check if a group with the same key already exists, if so returns an error
-    fn insert(&mut self, value: Group) -> Result<Group, ApiError> {
+    fn insert(&mut self, value: Group) -> Result<(u64, Group), ApiError> {
         self.store.with(|data| {
             let key = data
                 .borrow()
@@ -99,7 +100,7 @@ impl StorageMethods<u64, Group> for GroupStore<'static> {
             }
 
             data.borrow_mut().insert(key, value.clone());
-            Ok(value)
+            Ok((key, value))
         })
     }
 
@@ -107,7 +108,7 @@ impl StorageMethods<u64, Group> for GroupStore<'static> {
     /// # Note
     /// This method is not supported for this storage because the key is supplied by the canister
     /// use `insert` instead
-    fn insert_by_key(&mut self, _key: u64, _value: Group) -> Result<Group, ApiError> {
+    fn insert_by_key(&mut self, _key: u64, _value: Group) -> Result<(u64, Group), ApiError> {
         Err(ApiError::unsupported()
             .add_method_name("insert_by_key") // value should be `insert` as a string value
             .add_info(NAME)
@@ -122,7 +123,7 @@ impl StorageMethods<u64, Group> for GroupStore<'static> {
     /// * `Result<Group, ApiError>` - The updated group if successful, otherwise an error
     /// # Note
     /// Does check if a group with the same key already exists, if not returns an error
-    fn update(&mut self, key: u64, value: Group) -> Result<Group, ApiError> {
+    fn update(&mut self, key: u64, value: Group) -> Result<(u64, Group), ApiError> {
         self.store.with(|data| {
             if !data.borrow().contains_key(&key) {
                 return Err(ApiError::not_found()
@@ -132,7 +133,7 @@ impl StorageMethods<u64, Group> for GroupStore<'static> {
             }
 
             data.borrow_mut().insert(key, value.clone());
-            Ok(value)
+            Ok((key, value))
         })
     }
 

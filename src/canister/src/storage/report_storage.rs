@@ -21,11 +21,12 @@ impl StorageMethods<u64, Report> for ReportStore<'static> {
     /// * `key` - The key of the report to get
     /// # Returns
     /// * `Result<Report, ApiError>` - The report if found, otherwise an error
-    fn get(&self, key: u64) -> Result<Report, ApiError> {
+    fn get(&self, key: u64) -> Result<(u64, Report), ApiError> {
         self.store.with(|data| {
             data.borrow()
                 .get(&key)
                 .ok_or(ApiError::not_found().add_method_name("get").add_info(NAME))
+                .map(|value| (key, value))
         })
     }
 
@@ -34,12 +35,12 @@ impl StorageMethods<u64, Report> for ReportStore<'static> {
     /// * `ids` - The keys of the reports to get
     /// # Returns
     /// * `Vec<Report>` - The reports if found, otherwise an empty vector
-    fn get_many(&self, ids: Vec<u64>) -> Vec<Report> {
+    fn get_many(&self, ids: Vec<u64>) -> Vec<(u64, Report)> {
         self.store.with(|data| {
             let mut reports = Vec::new();
             for id in ids {
                 if let Some(report) = data.borrow().get(&id) {
-                    reports.push(report.clone());
+                    reports.push((id, report));
                 }
             }
             reports
@@ -83,7 +84,7 @@ impl StorageMethods<u64, Report> for ReportStore<'static> {
     /// * `Result<Report, ApiError>` - The inserted report if successful, otherwise an error
     /// # Note
     /// Does check if a report with the same key already exists, if so returns an error
-    fn insert(&mut self, value: Report) -> Result<Report, ApiError> {
+    fn insert(&mut self, value: Report) -> Result<(u64, Report), ApiError> {
         self.store.with(|data| {
             let key = data
                 .borrow()
@@ -99,7 +100,7 @@ impl StorageMethods<u64, Report> for ReportStore<'static> {
             }
 
             data.borrow_mut().insert(key, value.clone());
-            Ok(value)
+            Ok((key, value))
         })
     }
 
@@ -107,7 +108,7 @@ impl StorageMethods<u64, Report> for ReportStore<'static> {
     /// # Note
     /// This method is not supported for this storage because the key is supplied by the canister
     /// use `insert` instead
-    fn insert_by_key(&mut self, _key: u64, _value: Report) -> Result<Report, ApiError> {
+    fn insert_by_key(&mut self, _key: u64, _value: Report) -> Result<(u64, Report), ApiError> {
         Err(ApiError::unsupported()
             .add_method_name("insert_by_key") // value should be `insert` as a string value
             .add_info(NAME)
@@ -122,7 +123,7 @@ impl StorageMethods<u64, Report> for ReportStore<'static> {
     /// * `Result<Report, ApiError>` - The updated report if successful, otherwise an error
     /// # Note
     /// Does check if a report with the same key already exists, if not returns an error
-    fn update(&mut self, key: u64, value: Report) -> Result<Report, ApiError> {
+    fn update(&mut self, key: u64, value: Report) -> Result<(u64, Report), ApiError> {
         self.store.with(|data| {
             if !data.borrow().contains_key(&key) {
                 return Err(ApiError::not_found()
@@ -132,7 +133,7 @@ impl StorageMethods<u64, Report> for ReportStore<'static> {
             }
 
             data.borrow_mut().insert(key, value.clone());
-            Ok(value)
+            Ok((key, value))
         })
     }
 

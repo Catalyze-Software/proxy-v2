@@ -23,11 +23,12 @@ impl StorageMethods<Principal, Attendee> for AttendeeStore<'static> {
     /// * `key` - The user principal as key of the attendee to get
     /// # Returns
     /// * `Result<Attendee, ApiError>` - The attendee if found, otherwise an error
-    fn get(&self, key: Principal) -> Result<Attendee, ApiError> {
+    fn get(&self, key: Principal) -> Result<(Principal, Attendee), ApiError> {
         self.store.with(|data| {
             data.borrow()
                 .get(&key.to_string())
                 .ok_or(ApiError::not_found().add_method_name("get").add_info(NAME))
+                .map(|value| (key, value))
         })
     }
 
@@ -36,12 +37,12 @@ impl StorageMethods<Principal, Attendee> for AttendeeStore<'static> {
     /// * `ids` - The keys of the attendees to get
     /// # Returns
     /// * `Vec<Attendee>` - The reports if found, otherwise an empty vector
-    fn get_many(&self, keys: Vec<Principal>) -> Vec<Attendee> {
+    fn get_many(&self, keys: Vec<Principal>) -> Vec<(Principal, Attendee)> {
         self.store.with(|data| {
             let mut attendees = Vec::new();
             for key in keys {
                 if let Some(attendee) = data.borrow().get(&key.to_string()) {
-                    attendees.push(attendee.clone());
+                    attendees.push((key, attendee));
                 }
             }
             attendees
@@ -61,7 +62,7 @@ impl StorageMethods<Principal, Attendee> for AttendeeStore<'static> {
             data.borrow()
                 .iter()
                 .find(|(_, value)| filter(value))
-                .map(|(key, value)| (Principal::from_text(key).unwrap(), value.clone()))
+                .map(|(key, value)| (Principal::from_text(key).unwrap(), value))
         })
     }
 
@@ -78,7 +79,7 @@ impl StorageMethods<Principal, Attendee> for AttendeeStore<'static> {
             data.borrow()
                 .iter()
                 .filter(|(_, value)| filter(value))
-                .map(|(key, value)| (Principal::from_text(key).unwrap(), value.clone()))
+                .map(|(key, value)| (Principal::from_text(key).unwrap(), value))
                 .collect()
         })
     }
@@ -87,7 +88,7 @@ impl StorageMethods<Principal, Attendee> for AttendeeStore<'static> {
     /// # Note
     /// This method is not supported for this storage because the key is a `Principal`
     /// use `insert_by_key` instead
-    fn insert(&mut self, _value: Attendee) -> Result<Attendee, ApiError> {
+    fn insert(&mut self, _value: Attendee) -> Result<(Principal, Attendee), ApiError> {
         Err(ApiError::unsupported()
             .add_method_name("insert") // value should be `insert` as a string value
             .add_info(NAME)
@@ -102,7 +103,11 @@ impl StorageMethods<Principal, Attendee> for AttendeeStore<'static> {
     /// * `Result<Attendee, ApiError>` - The inserted attendee if successful, otherwise an error
     /// # Note
     /// Does check if a attendee with the same key already exists, if so returns an error
-    fn insert_by_key(&mut self, key: Principal, value: Attendee) -> Result<Attendee, ApiError> {
+    fn insert_by_key(
+        &mut self,
+        key: Principal,
+        value: Attendee,
+    ) -> Result<(Principal, Attendee), ApiError> {
         self.store.with(|data| {
             if data.borrow().contains_key(&key.to_string()) {
                 return Err(ApiError::duplicate()
@@ -112,7 +117,7 @@ impl StorageMethods<Principal, Attendee> for AttendeeStore<'static> {
             }
 
             data.borrow_mut().insert(key.to_string(), value.clone());
-            Ok(value)
+            Ok((key, value))
         })
     }
 
@@ -124,7 +129,11 @@ impl StorageMethods<Principal, Attendee> for AttendeeStore<'static> {
     /// * `Result<Attendee, ApiError>` - The updated attendee if successful, otherwise an error
     /// # Note
     /// Does check if a attendee with the same key already exists, if not returns an error
-    fn update(&mut self, key: Principal, value: Attendee) -> Result<Attendee, ApiError> {
+    fn update(
+        &mut self,
+        key: Principal,
+        value: Attendee,
+    ) -> Result<(Principal, Attendee), ApiError> {
         self.store.with(|data| {
             if !data.borrow().contains_key(&key.to_string()) {
                 return Err(ApiError::not_found()
@@ -134,7 +143,7 @@ impl StorageMethods<Principal, Attendee> for AttendeeStore<'static> {
             }
 
             data.borrow_mut().insert(key.to_string(), value.clone());
-            Ok(value)
+            Ok((key, value))
         })
     }
 

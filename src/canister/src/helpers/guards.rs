@@ -38,7 +38,7 @@ pub fn has_access() -> Result<(), String> {
     // Get the caller's profile
     match profiles().get(caller()) {
         Err(err) => Err(err.to_string()),
-        Ok(profile) => {
+        Ok((_, profile)) => {
             // Check if the caller has a profile
             // Check if the caller is blocked or banned on the application level
             if vec![ApplicationRole::Blocked, ApplicationRole::Banned]

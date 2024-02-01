@@ -21,11 +21,12 @@ impl StorageMethods<u64, FriendRequest> for FriendRequestStore<'static> {
     /// * `key` - The key of the friend_request to get
     /// # Returns
     /// * `Result<FriendRequest, ApiError>` - The friend_request if found, otherwise an error
-    fn get(&self, key: u64) -> Result<FriendRequest, ApiError> {
+    fn get(&self, key: u64) -> Result<(u64, FriendRequest), ApiError> {
         self.store.with(|data| {
             data.borrow()
                 .get(&key)
                 .ok_or(ApiError::not_found().add_method_name("get").add_info(NAME))
+                .map(|value| (key, value))
         })
     }
 
@@ -34,12 +35,12 @@ impl StorageMethods<u64, FriendRequest> for FriendRequestStore<'static> {
     /// * `ids` - The keys of the friend_requests to get
     /// # Returns
     /// * `Vec<FriendRequest>` - The friend_requests if found, otherwise an empty vector
-    fn get_many(&self, keys: Vec<u64>) -> Vec<FriendRequest> {
+    fn get_many(&self, keys: Vec<u64>) -> Vec<(u64, FriendRequest)> {
         self.store.with(|data| {
             let mut friend_requests = Vec::new();
             for key in keys {
                 if let Some(friend_request) = data.borrow().get(&key) {
-                    friend_requests.push(friend_request.clone());
+                    friend_requests.push((key, friend_request));
                 }
             }
             friend_requests
@@ -83,7 +84,7 @@ impl StorageMethods<u64, FriendRequest> for FriendRequestStore<'static> {
     /// * `Result<FriendRequest, ApiError>` - The inserted friend_request if successful, otherwise an error
     /// # Note
     /// Does check if a friend_request with the same key already exists, if so returns an error
-    fn insert(&mut self, value: FriendRequest) -> Result<FriendRequest, ApiError> {
+    fn insert(&mut self, value: FriendRequest) -> Result<(u64, FriendRequest), ApiError> {
         self.store.with(|data| {
             let key = data
                 .borrow()
@@ -99,7 +100,7 @@ impl StorageMethods<u64, FriendRequest> for FriendRequestStore<'static> {
             }
 
             data.borrow_mut().insert(key, value.clone());
-            Ok(value)
+            Ok((key, value))
         })
     }
 
@@ -111,7 +112,7 @@ impl StorageMethods<u64, FriendRequest> for FriendRequestStore<'static> {
         &mut self,
         _key: u64,
         _value: FriendRequest,
-    ) -> Result<FriendRequest, ApiError> {
+    ) -> Result<(u64, FriendRequest), ApiError> {
         Err(ApiError::unsupported()
             .add_method_name("insert_by_key") // value should be `insert` as a string value
             .add_info(NAME)
@@ -126,7 +127,7 @@ impl StorageMethods<u64, FriendRequest> for FriendRequestStore<'static> {
     /// * `Result<FriendRequest, ApiError>` - The updated friend_request if successful, otherwise an error
     /// # Note
     /// Does check if a friend_request with the same key already exists, if not returns an error
-    fn update(&mut self, key: u64, value: FriendRequest) -> Result<FriendRequest, ApiError> {
+    fn update(&mut self, key: u64, value: FriendRequest) -> Result<(u64, FriendRequest), ApiError> {
         self.store.with(|data| {
             if !data.borrow().contains_key(&key) {
                 return Err(ApiError::not_found()
@@ -136,7 +137,7 @@ impl StorageMethods<u64, FriendRequest> for FriendRequestStore<'static> {
             }
 
             data.borrow_mut().insert(key, value.clone());
-            Ok(value)
+            Ok((key, value))
         })
     }
 
