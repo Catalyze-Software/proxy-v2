@@ -11,7 +11,11 @@ use ic_cdk::{query, update};
 
 use crate::{
     helpers::guards::{has_access, is_not_anonymous},
-    logic::{friend_request_logic::FriendRequestCalls, profile_logic::ProfileCalls},
+    logic::{
+        friend_request_logic::FriendRequestCalls, member_logic::MemberCalls,
+        profile_logic::ProfileCalls,
+    },
+    misc::identifier_misc::{generate_identifier, IdentifierKind},
     models::{api_error::ApiError, relation_type::RelationType, wallet::PostWallet},
     models::{
         friend_request::FriendRequestResponse,
@@ -34,7 +38,14 @@ pub fn add_profile(
     post_profile: PostProfile,
     member_canister: Principal, // should be deprecated
 ) -> Result<ProfileResponse, ApiError> {
-    ProfileCalls::add_profile(post_profile)
+    let new_profile = ProfileCalls::add_profile(post_profile)?;
+    let _ = MemberCalls::create_empty_member(
+        generate_identifier(IdentifierKind::Member(0))
+            .to_principal()
+            .unwrap(),
+        new_profile.principal,
+    );
+    Ok(new_profile)
 }
 
 /// Gets a profile by the given user principal - [`[query]`](query)

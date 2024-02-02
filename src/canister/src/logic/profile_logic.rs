@@ -8,7 +8,7 @@ use crate::{
         document_details::DocumentDetails,
         identifier::Identifier,
         profile::{PostProfile, Profile, ProfileMethods, ProfileResponse, UpdateProfile},
-        relation_type::{self, RelationType},
+        relation_type::RelationType,
         validation::{ValidateField, ValidationType},
         wallet::{PostWallet, Wallet, WalletResponse},
     },
