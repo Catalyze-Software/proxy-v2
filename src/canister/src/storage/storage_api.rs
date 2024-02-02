@@ -1,5 +1,6 @@
 use std::cell::RefCell;
 
+use candid::Principal;
 use ic_stable_structures::{
     memory_manager::{MemoryId, MemoryManager, VirtualMemory},
     DefaultMemoryImpl, StableBTreeMap,
@@ -64,7 +65,11 @@ thread_local! {
     static MEMORY_MANAGER: MemManagerStore =
         RefCell::new(MemoryManager::init(DefaultMemoryImpl::default()));
 
-    static PROFILES: StorageRef<String, Profile> = RefCell::new(
+    static PROFILES: StorageRef<Principal, Profile> = RefCell::new(
+        StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.get_memory(PROFILES_MEMORY_ID)))
+    );
+
+    static PROFILES_MAP: StorageRef<Principal, u64> = RefCell::new(
         StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.get_memory(PROFILES_MEMORY_ID)))
     );
 
@@ -76,7 +81,7 @@ thread_local! {
         StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.get_memory(GROUPS_MEMORY_ID)))
     );
 
-    static MEMBERS: StorageRef<String, Member> = RefCell::new(
+    static MEMBERS: StorageRef<Principal, Member> = RefCell::new(
         StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.get_memory(MEMBERS_MEMORY_ID)))
     );
 
@@ -84,7 +89,7 @@ thread_local! {
         StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.get_memory(EVENTS_MEMORY_ID)))
     );
 
-    static ATTENDEES: StorageRef<String, Attendee> = RefCell::new(
+    static ATTENDEES: StorageRef<Principal, Attendee> = RefCell::new(
         StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.get_memory(ATTENDEES_MEMORY_ID)))
     );
 

@@ -6,11 +6,11 @@ use super::storage_api::{StorageMethods, StorageRef};
 use crate::models::{api_error::ApiError, member::Member};
 
 pub struct MemberStore<'a> {
-    store: &'a LocalKey<StorageRef<String, Member>>,
+    store: &'a LocalKey<StorageRef<Principal, Member>>,
 }
 
 impl<'a> MemberStore<'a> {
-    pub fn new(store: &'a LocalKey<StorageRef<String, Member>>) -> Self {
+    pub fn new(store: &'a LocalKey<StorageRef<Principal, Member>>) -> Self {
         Self { store }
     }
 }
@@ -26,7 +26,7 @@ impl StorageMethods<Principal, Member> for MemberStore<'static> {
     fn get(&self, key: Principal) -> Result<(Principal, Member), ApiError> {
         self.store.with(|data| {
             data.borrow()
-                .get(&key.to_string())
+                .get(&key)
                 .ok_or(ApiError::not_found().add_method_name("get").add_info(NAME))
                 .map(|value| (key, value))
         })
@@ -41,7 +41,7 @@ impl StorageMethods<Principal, Member> for MemberStore<'static> {
         self.store.with(|data| {
             let mut members = Vec::new();
             for key in keys {
-                if let Some(member) = data.borrow().get(&key.to_string()) {
+                if let Some(member) = data.borrow().get(&key) {
                     members.push((key, member));
                 }
             }
@@ -62,7 +62,7 @@ impl StorageMethods<Principal, Member> for MemberStore<'static> {
             data.borrow()
                 .iter()
                 .find(|(_, value)| filter(value))
-                .map(|(key, value)| (Principal::from_text(key).unwrap(), value))
+                .map(|(key, value)| (key, value))
         })
     }
 
@@ -79,7 +79,7 @@ impl StorageMethods<Principal, Member> for MemberStore<'static> {
             data.borrow()
                 .iter()
                 .filter(|(_, value)| filter(value))
-                .map(|(key, value)| (Principal::from_text(key).unwrap(), value))
+                .map(|(key, value)| (key, value))
                 .collect()
         })
     }
@@ -109,14 +109,14 @@ impl StorageMethods<Principal, Member> for MemberStore<'static> {
         value: Member,
     ) -> Result<(Principal, Member), ApiError> {
         self.store.with(|data| {
-            if data.borrow().contains_key(&key.to_string()) {
+            if data.borrow().contains_key(&key) {
                 return Err(ApiError::duplicate()
                     .add_method_name("insert_by_key")
                     .add_info(NAME)
                     .add_message("Key already exists"));
             }
 
-            data.borrow_mut().insert(key.to_string(), value.clone());
+            data.borrow_mut().insert(key, value.clone());
             Ok((key, value))
         })
     }
@@ -131,14 +131,14 @@ impl StorageMethods<Principal, Member> for MemberStore<'static> {
     /// Does check if a member with the same key already exists, if not returns an error
     fn update(&mut self, key: Principal, value: Member) -> Result<(Principal, Member), ApiError> {
         self.store.with(|data| {
-            if !data.borrow().contains_key(&key.to_string()) {
+            if !data.borrow().contains_key(&key) {
                 return Err(ApiError::not_found()
                     .add_method_name("update")
                     .add_info(NAME)
                     .add_message("Key does not exist"));
             }
 
-            data.borrow_mut().insert(key.to_string(), value.clone());
+            data.borrow_mut().insert(key, value.clone());
             Ok((key, value))
         })
     }
@@ -152,6 +152,6 @@ impl StorageMethods<Principal, Member> for MemberStore<'static> {
     /// TODO: Check if we want to do a soft delete
     fn remove(&mut self, key: Principal) -> bool {
         self.store
-            .with(|data| data.borrow_mut().remove(&key.to_string()).is_some())
+            .with(|data| data.borrow_mut().remove(&key).is_some())
     }
 }
