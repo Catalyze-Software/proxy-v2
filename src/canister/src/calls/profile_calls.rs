@@ -11,12 +11,15 @@ use ic_cdk::{query, update};
 
 use crate::{
     helpers::guards::{has_access, is_not_anonymous},
-    logic::profile_logic::ProfileCalls,
-    models::{api_error::ApiError, relation_type::RelationType, wallet::PostWallet},
+    logic::{friend_request_logic::FriendRequestCalls, profile_logic::ProfileCalls},
     models::{
+        api_error::ApiError,
         friend_request::FriendRequestResponse,
         profile::{PostProfile, ProfileResponse, UpdateProfile},
+        relation_type::RelationType,
+        wallet::PostWallet,
     },
+    storage::storage_api::{profiles, IdentifierRefMethods},
 };
 
 /// Adds a profile to the canister - [`[update]`](update)
@@ -65,7 +68,15 @@ pub fn get_profile_by_user_principal(principal: Principal) -> Result<ProfileResp
 #[query(guard = "has_access")]
 #[deprecated = "should be removed in favor of get_profile_by_user_principal"]
 pub fn get_profile_by_identifier(id: Principal) -> Result<ProfileResponse, ApiError> {
-    Err(ApiError::not_implemented())
+    match profiles()
+        .get_id_by_identifier(&id)
+        .map(|id| get_profile_by_user_principal(id))
+    {
+        Some(profile) => profile,
+        None => Err(ApiError::not_found()
+            .add_method_name("get_profile_by_identifier")
+            .add_message("Profile not found")),
+    }
 }
 
 /// Gets profiles by the given user principals - [`[query]`](query)
@@ -90,7 +101,13 @@ pub fn get_profiles_by_user_principal(principals: Vec<Principal>) -> Vec<Profile
 #[query(guard = "has_access")]
 #[deprecated = "should be removed in favor of get_profiles_by_user_principal"]
 pub fn get_profiles_by_identifier(identifiers: Vec<Principal>) -> Vec<ProfileResponse> {
-    vec![]
+    identifiers
+        .iter()
+        .map(|id| profiles().get_id_by_identifier(id))
+        .filter_map(|id| id)
+        .map(|id| get_profile_by_user_principal(id).ok())
+        .filter_map(|profile| profile)
+        .collect()
 }
 
 /// Edit the caller his a profile - [`[update]`](update)
@@ -120,7 +137,7 @@ pub fn edit_profile(update_profile: UpdateProfile) -> Result<ProfileResponse, Ap
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "has_access")]
 pub fn add_wallet_to_profile(wallet: PostWallet) -> Result<ProfileResponse, ApiError> {
-    Err(ApiError::not_implemented())
+    ProfileCalls::add_wallet_to_profile(wallet)
 }
 
 /// Sets a wallet as the primary wallet of the caller his profile - [`[update]`](update)
@@ -133,15 +150,15 @@ pub fn add_wallet_to_profile(wallet: PostWallet) -> Result<ProfileResponse, ApiE
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "has_access")]
-pub fn set_wallet_as_primary(wallet_principal: Principal) -> Result<(), ()> {
-    Err(())
+pub fn set_wallet_as_primary(wallet_principal: Principal) -> Result<ProfileResponse, ApiError> {
+    ProfileCalls::set_wallet_as_primary(wallet_principal)
 }
 
 /// Removes a wallet from the caller his profile - [`[update]`](update)
 /// # Change
 /// * was `remove_wallet` but due to conflict with other methods it was renamed
 /// # Arguments
-/// * `wallet` - The wallet to remove
+/// * `wallet_principal` - The wallet to remove
 /// # Returns
 /// * `ProfileResponse` - The profile that was updated
 /// # Errors
@@ -149,8 +166,10 @@ pub fn set_wallet_as_primary(wallet_principal: Principal) -> Result<(), ()> {
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "has_access")]
-pub fn remove_wallet_from_profile(wallet: Principal) -> Result<ProfileResponse, ApiError> {
-    Err(ApiError::not_implemented())
+pub fn remove_wallet_from_profile(
+    wallet_principal: Principal,
+) -> Result<ProfileResponse, ApiError> {
+    ProfileCalls::remove_wallet_from_profile(wallet_principal)
 }
 
 /// Adds a group, event or task reference to the caller his profile - [`[update]`](update)
@@ -164,7 +183,7 @@ pub fn remove_wallet_from_profile(wallet: Principal) -> Result<ProfileResponse, 
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "has_access")]
 pub fn add_starred(identifier: Principal) -> Result<ProfileResponse, ApiError> {
-    Err(ApiError::not_implemented())
+    ProfileCalls::add_starred(identifier)
 }
 
 /// Removes a group, event or task reference from the caller his profile - [`[update]`](update)
@@ -178,7 +197,7 @@ pub fn add_starred(identifier: Principal) -> Result<ProfileResponse, ApiError> {
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "has_access")]
 pub fn remove_starred(identifier: Principal) -> Result<ProfileResponse, ApiError> {
-    Err(ApiError::not_implemented())
+    ProfileCalls::remove_starred(identifier)
 }
 
 /// Gets the starred events from the caller his profile - [`[query]`](query)
@@ -188,7 +207,7 @@ pub fn remove_starred(identifier: Principal) -> Result<ProfileResponse, ApiError
 /// This function is guarded by the [`has_access`](has_access) function.
 #[query(guard = "has_access")]
 pub fn get_starred_events() -> Vec<Principal> {
-    vec![]
+    ProfileCalls::get_starred_by_kind("evt")
 }
 
 /// Gets the starred tasks from the caller his profile - [`[query]`](query)
@@ -198,7 +217,7 @@ pub fn get_starred_events() -> Vec<Principal> {
 /// This function is guarded by the [`has_access`](has_access) function.
 #[query(guard = "has_access")]
 pub fn get_starred_tasks() -> Vec<Principal> {
-    vec![]
+    ProfileCalls::get_starred_by_kind("tsk")
 }
 
 /// Gets the starred groups from the caller his profile - [`[query]`](query)
@@ -208,12 +227,12 @@ pub fn get_starred_tasks() -> Vec<Principal> {
 /// This function is guarded by the [`has_access`](has_access) function.
 #[query(guard = "has_access")]
 pub fn get_starred_groups() -> Vec<Principal> {
-    vec![]
+    ProfileCalls::get_starred_by_kind("grp")
 }
 
 /// Create a friend request on behalf of the caller - [`[update]`](update)
 /// # Arguments
-/// * `principal` - The principal to send the friend request to
+/// * `to` - The principal to send the friend request to
 /// * `message` - The message to send with the friend request
 /// # Returns
 /// * `FriendRequestResponse` - The friend request that was created
@@ -223,24 +242,10 @@ pub fn get_starred_groups() -> Vec<Principal> {
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "has_access")]
 pub fn add_friend_request(
-    principal: Principal,
+    to: Principal,
     message: String,
 ) -> Result<FriendRequestResponse, ApiError> {
-    Err(ApiError::not_implemented())
-}
-
-/// Remove friend from caller profile and remove caller from friend profile - [`[update]`](update)
-/// # Arguments
-/// * `principal` - The friend principal to remove from the caller his profile
-/// # Returns
-/// * `bool` - If the friend was removed from the caller his profile
-/// # Errors
-/// * `String` - If something went wrong while removing the friend
-/// # Note
-/// This function is guarded by the [`has_access`](has_access) function.
-#[update(guard = "has_access")]
-pub fn remove_friend(principal: Principal) -> Result<bool, String> {
-    Ok(true)
+    FriendRequestCalls::add_friend_request(to, message)
 }
 
 /// Accept a friend request that is addressed to the caller - [`[update]`](update)
@@ -253,8 +258,8 @@ pub fn remove_friend(principal: Principal) -> Result<bool, String> {
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "has_access")]
-pub fn accept_friend_request(id: u64) -> Result<bool, String> {
-    Ok(true)
+pub fn accept_friend_request(id: u64) -> Result<bool, ApiError> {
+    FriendRequestCalls::accept_friend_request(id)
 }
 
 /// Remove a friend request created by the caller - [`[update]`](update)
@@ -268,8 +273,8 @@ pub fn accept_friend_request(id: u64) -> Result<bool, String> {
 /// This function is guarded by the [`has_access`](has_access) function.
 /// TODO: Not sure why the principal is needed here as an argument
 #[update(guard = "has_access")]
-pub fn remove_friend_request(principal: Principal, id: u64) -> Result<bool, String> {
-    Ok(true)
+pub fn remove_friend_request(id: u64) -> Result<bool, ApiError> {
+    FriendRequestCalls::remove_friend_request(id)
 }
 
 /// Gets the friend requests that are addressed to the caller - [`[query]`](query)
@@ -278,8 +283,18 @@ pub fn remove_friend_request(principal: Principal, id: u64) -> Result<bool, Stri
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 #[query(guard = "has_access")]
-pub fn get_friend_requests() -> Vec<FriendRequestResponse> {
-    vec![]
+pub fn get_incoming_friend_requests() -> Vec<FriendRequestResponse> {
+    FriendRequestCalls::get_incoming_friend_requests()
+}
+
+/// Gets the friend requests that are send by the caller - [`[query]`](query)
+/// # Returns
+/// * `Vec<FriendRequestResponse>` - The friend requests that were found
+/// # Note
+/// This function is guarded by the [`has_access`](has_access) function.
+#[query(guard = "has_access")]
+pub fn get_outgoing_friend_requests() -> Vec<FriendRequestResponse> {
+    FriendRequestCalls::get_outgoing_friend_requests()
 }
 
 /// Decline a friend request that is addressed to the caller - [`[update]`](update)
@@ -292,8 +307,22 @@ pub fn get_friend_requests() -> Vec<FriendRequestResponse> {
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "has_access")]
-pub fn decline_friend_request(id: u64) -> Result<bool, String> {
-    Ok(true)
+pub fn decline_friend_request(id: u64) -> Result<bool, ApiError> {
+    FriendRequestCalls::decline_friend_request(id)
+}
+
+/// Remove friend from caller profile and remove caller from friend profile - [`[update]`](update)
+/// # Arguments
+/// * `principal` - The friend principal to remove from the caller his profile
+/// # Returns
+/// * `bool` - If the friend was removed from the caller his profile
+/// # Errors
+/// * `String` - If something went wrong while removing the friend
+/// # Note
+/// This function is guarded by the [`has_access`](has_access) function.
+#[update(guard = "has_access")]
+pub fn remove_friend(principal: Principal) -> Result<ProfileResponse, ApiError> {
+    ProfileCalls::remove_friend(principal)
 }
 
 /// Block a user on the application level - [`[update]`](update)
@@ -308,7 +337,7 @@ pub fn decline_friend_request(id: u64) -> Result<bool, String> {
 /// TODO: Check full implementation for this
 #[update(guard = "has_access")]
 pub fn block_user(principal: Principal) -> Result<ProfileResponse, ApiError> {
-    Err(ApiError::not_implemented())
+    ProfileCalls::block_user(principal)
 }
 
 /// Unblock a user on the application level - [`[update]`](update)
@@ -323,7 +352,7 @@ pub fn block_user(principal: Principal) -> Result<ProfileResponse, ApiError> {
 /// TODO: Check full implementation for this
 #[update(guard = "has_access")]
 pub fn unblock_user(principal: Principal) -> Result<ProfileResponse, ApiError> {
-    Err(ApiError::not_implemented())
+    ProfileCalls::unblock_user(principal)
 }
 
 /// Get the current relation for the caller based on the relation type - [`[query]`](query)
@@ -335,7 +364,7 @@ pub fn unblock_user(principal: Principal) -> Result<ProfileResponse, ApiError> {
 /// This function is guarded by the [`has_access`](has_access) function.
 #[query(guard = "has_access")]
 pub fn get_relations(relation_type: RelationType) -> Vec<Principal> {
-    vec![]
+    ProfileCalls::get_relations(relation_type)
 }
 
 /// Get the current relation count for the caller based on the relation type - [`[query]`](query)
@@ -348,7 +377,7 @@ pub fn get_relations(relation_type: RelationType) -> Vec<Principal> {
 /// This function is guarded by the [`has_access`](has_access) function.
 #[query(guard = "has_access")]
 pub fn get_relations_count(principal: Principal, relation_type: RelationType) -> u64 {
-    0
+    ProfileCalls::get_relations(relation_type).len() as u64
 }
 
 /// Approve a code of conduct version - [`[update]`](update)
@@ -362,7 +391,7 @@ pub fn get_relations_count(principal: Principal, relation_type: RelationType) ->
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "has_access")]
 pub fn approve_code_of_conduct(version: u64) -> Result<bool, ApiError> {
-    Err(ApiError::not_implemented())
+    ProfileCalls::approve_code_of_conduct(version)
 }
 
 /// Approve a privacy policy version - [`[update]`](update)
@@ -376,7 +405,7 @@ pub fn approve_code_of_conduct(version: u64) -> Result<bool, ApiError> {
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "has_access")]
 pub fn approve_privacy_policy(version: u64) -> Result<bool, ApiError> {
-    Err(ApiError::not_implemented())
+    ProfileCalls::approve_privacy_policy(version)
 }
 
 /// Approve a terms of service version - [`[update]`](update)
@@ -390,5 +419,5 @@ pub fn approve_privacy_policy(version: u64) -> Result<bool, ApiError> {
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "has_access")]
 pub fn approve_terms_of_service(version: u64) -> Result<bool, ApiError> {
-    Err(ApiError::not_implemented())
+    ProfileCalls::approve_terms_of_service(version)
 }

@@ -15,10 +15,10 @@ pub struct ApiError {
 }
 
 impl ApiError {
-    pub fn new(error_type: ApiErrorType, message: Option<String>) -> Self {
+    pub fn new(error_type: ApiErrorType) -> Self {
         ApiError {
             tag: None,
-            message,
+            message: None,
             method_name: None,
             error_type,
             info: None,
@@ -26,107 +26,52 @@ impl ApiError {
     }
 
     pub fn validation_response(validation_response: Vec<ValidationResponse>) -> Self {
-        ApiError {
-            tag: None,
-            message: Some("Validation error".to_string()),
-            method_name: None,
-            error_type: ApiErrorType::ValidationError(validation_response),
-            info: None,
-        }
+        Self::new(ApiErrorType::ValidationError(validation_response))
     }
 
-    pub fn serialize(message: String) -> Self {
-        ApiError {
-            tag: None,
-            message: Some(message),
-            method_name: None,
-            error_type: ApiErrorType::SerializeError,
-            info: None,
-        }
+    pub fn serialize() -> Self {
+        Self::new(ApiErrorType::SerializeError)
     }
 
-    pub fn deserialize(message: String) -> Self {
-        ApiError {
-            tag: None,
-            message: Some(message),
-            method_name: None,
-            error_type: ApiErrorType::DeserializeError,
-            info: None,
-        }
+    pub fn deserialize() -> Self {
+        Self::new(ApiErrorType::DeserializeError)
     }
 
-    pub fn unexpected(message: String) -> Self {
-        ApiError {
-            tag: None,
-            message: Some(message),
-            method_name: None,
-            error_type: ApiErrorType::Unexpected,
-            info: None,
-        }
+    pub fn unexpected() -> Self {
+        Self::new(ApiErrorType::Unexpected)
     }
 
     pub fn not_implemented() -> Self {
-        ApiError {
-            tag: None,
-            message: Some("Not implemented".to_string()),
-            method_name: None,
-            error_type: ApiErrorType::NotImplemented,
-            info: None,
-        }
+        Self::new(ApiErrorType::NotImplemented)
     }
 
     pub fn unauthorized() -> Self {
-        ApiError {
-            tag: None,
-            message: Some("Unauthorized".to_string()),
-            method_name: None,
-            error_type: ApiErrorType::Unauthorized,
-            info: None,
-        }
+        Self::new(ApiErrorType::Unauthorized)
     }
 
     pub fn not_found() -> Self {
-        ApiError {
-            tag: None,
-            message: Some("Not found".to_string()),
-            method_name: None,
-            error_type: ApiErrorType::NotFound,
-            info: None,
-        }
+        Self::new(ApiErrorType::NotFound)
     }
 
     pub fn bad_request() -> Self {
-        ApiError {
-            tag: None,
-            message: Some("Bad request".to_string()),
-            method_name: None,
-            error_type: ApiErrorType::BadRequest,
-            info: None,
-        }
+        Self::new(ApiErrorType::BadRequest)
     }
 
     pub fn unsupported() -> Self {
-        ApiError {
-            tag: None,
-            message: Some("Unsupported".to_string()),
-            method_name: None,
-            error_type: ApiErrorType::Unsupported,
-            info: None,
-        }
+        Self::new(ApiErrorType::Unsupported)
     }
 
     pub fn duplicate() -> Self {
-        ApiError {
-            tag: None,
-            message: Some("Duplicate".to_string()),
-            method_name: None,
-            error_type: ApiErrorType::Unsupported,
-            info: None,
-        }
+        Self::new(ApiErrorType::Duplicate)
     }
 
     pub fn add_tag(mut self, tag: &str) -> Self {
         self.tag = Some(tag.to_string());
+        self
+    }
+
+    pub fn add_message(mut self, message: &str) -> Self {
+        self.message = Some(message.to_string());
         self
     }
 

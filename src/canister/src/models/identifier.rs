@@ -3,29 +3,90 @@ use std::fmt;
 use candid::{CandidType, Deserialize, Principal};
 use serde::Serialize;
 
+use super::api_error::ApiError;
+
 #[derive(Clone, Debug, CandidType, Serialize, Deserialize, Eq, Hash)]
 pub struct Identifier {
     id: u64,
     principal: Principal,
     kind: String,
+    valid: bool,
+}
+
+pub static PROFILE_CANISTER_ID: &str = "4vy4w-gaaaa-aaaap-aa4pa-cai";
+pub static MEMBER_CANISTER_ID: &str = "5nrjv-iaaaa-aaaap-aa4la-cai";
+pub static GROUP_CANISTER_ID: &str = "5rvte-7aaaa-aaaap-aa4ja-cai";
+pub static EVENT_CANISTER_ID: &str = "zocah-aqaaa-aaaap-aa4qa-cai";
+pub static EVENT_ATTENDEE_CANISTER_ID: &str = "zaanp-3aaaa-aaaap-aa4ra-cai";
+pub static REPORT_CANISTER_ID: &str = "zsg2w-xqaaa-aaaap-aa4sa-cai";
+
+pub enum IdentifierKind {
+    Profile(u64),
+    Member(u64),
+    Group(u64),
+    Event(u64),
+    EventAttendee(u64),
+    Report(u64),
 }
 
 impl Identifier {
-    pub fn new(id: u64, principal: Principal, kind: String) -> Result<Identifier, String> {
+    pub fn new(id: u64, principal: Principal, kind: String) -> Result<Identifier, ApiError> {
         if kind.len() != 3 {
-            return Err("New - Invalid identifier: 'kind' length needs to be 3".to_string());
+            return Err(ApiError::bad_request()
+                .add_message("Invalid identifier: 'kind' length needs to be 3"));
         }
 
         Ok(Identifier {
             id,
             principal,
             kind,
+            valid: true,
         })
     }
 
-    pub fn encode(&self) -> Result<Principal, String> {
+    #[deprecated = "Should be deprecated in the future, this only exists for backward compatibility"]
+    pub fn generate(identifier: IdentifierKind) -> Identifier {
+        let new_identifier = match identifier {
+            IdentifierKind::Profile(id) => Identifier::new(
+                id,
+                Principal::from_text(PROFILE_CANISTER_ID).unwrap(),
+                "pfe".to_string(),
+            ),
+            IdentifierKind::Member(id) => Identifier::new(
+                id,
+                Principal::from_text(MEMBER_CANISTER_ID).unwrap(),
+                "mbr".to_string(),
+            ),
+            IdentifierKind::Group(id) => Identifier::new(
+                id,
+                Principal::from_text(GROUP_CANISTER_ID).unwrap(),
+                "grp".to_string(),
+            ),
+            IdentifierKind::Event(id) => Identifier::new(
+                id,
+                Principal::from_text(EVENT_CANISTER_ID).unwrap(),
+                "evt".to_string(),
+            ),
+            IdentifierKind::EventAttendee(id) => Identifier::new(
+                id,
+                Principal::from_text(EVENT_ATTENDEE_CANISTER_ID).unwrap(),
+                "eae".to_string(),
+            ),
+            IdentifierKind::Report(id) => Identifier::new(
+                id,
+                Principal::from_text(REPORT_CANISTER_ID).unwrap(),
+                "rpt".to_string(),
+            ),
+        };
+
+        // We can unwrap here because we know that the identifier is valid
+        new_identifier.unwrap()
+    }
+
+    pub fn to_principal(&self) -> Result<Principal, ApiError> {
         if self.kind.len() != 3 {
-            return Err("Encode - Invalid identifier: 'kind' length needs to be 3".to_string());
+            return Err(ApiError::serialize()
+                .add_message("Invalid identifier: 'kind' length needs to be 3"));
         }
         let mut array = Vec::new();
         array.extend_from_slice(b"\x0Acat");
@@ -35,33 +96,20 @@ impl Identifier {
         Ok(Principal::from_slice(&array))
     }
 
-    pub fn decode(encoded_identifier: &Principal) -> (u64, Principal, String) {
-        let mut p = encoded_identifier.as_slice().to_vec();
-        let custom_identifier = p[..4].to_vec();
-
-        if custom_identifier == b"\x0Acat".to_vec() {
-            p.drain(..4);
-            let kind = String::from_utf8(p[..3].to_vec()).unwrap();
-            p.drain(..3);
-
-            let index_bytes = p.drain(p.len() - 4..).collect::<Vec<u8>>();
-            let index = Self::from32bits(&index_bytes);
-            return (index, Principal::from_slice(&p), kind);
-        } else {
-            return (0, *encoded_identifier, "principal".to_string());
-        }
+    pub fn id(&self) -> u64 {
+        self.id.clone()
     }
 
-    pub fn id(encoded_identifier: &Principal) -> u64 {
-        Self::decode(encoded_identifier).0
+    pub fn canister(&self) -> Principal {
+        self.principal.clone()
     }
 
-    pub fn principal(encoded_identifier: &Principal) -> Principal {
-        Self::decode(encoded_identifier).1
+    pub fn kind(&self) -> String {
+        self.kind.clone()
     }
 
-    pub fn kind(encoded_identifier: &Principal) -> String {
-        Self::decode(encoded_identifier).2
+    pub fn is_valid(&self) -> bool {
+        self.valid.clone()
     }
 
     fn to_u32_be_bytes(n: u64) -> [u8; 4] {
@@ -74,6 +122,35 @@ impl Identifier {
             value = (value << 8) | (ba[i] as u64);
         }
         value
+    }
+}
+
+impl From<Principal> for Identifier {
+    fn from(principal: Principal) -> Self {
+        let mut p = principal.as_slice().to_vec();
+        let custom_identifier = p[..4].to_vec();
+
+        if custom_identifier == b"\x0Acat".to_vec() {
+            p.drain(..4);
+            let kind = String::from_utf8(p[..3].to_vec()).unwrap();
+            p.drain(..3);
+
+            let index_bytes = p.drain(p.len() - 4..).collect::<Vec<u8>>();
+            let index = Self::from32bits(&index_bytes);
+            return Identifier {
+                id: index,
+                principal: Principal::from_slice(&p),
+                kind,
+                valid: true,
+            };
+        } else {
+            return Identifier {
+                id: 0,
+                principal,
+                kind: "principal".to_string(),
+                valid: false,
+            };
+        }
     }
 }
 
@@ -91,8 +168,9 @@ impl fmt::Display for Identifier {
 
 impl PartialEq for Identifier {
     fn eq(&self, other: &Self) -> bool {
-        self.encode()
-            .map_or(false, |s| Self::encode(other).map_or(false, |o| s == o))
+        self.to_principal().map_or(false, |s| {
+            Self::to_principal(other).map_or(false, |o| s == o)
+        })
     }
 }
 
@@ -102,6 +180,7 @@ impl Default for Identifier {
             id: Default::default(),
             principal: Principal::anonymous(),
             kind: Default::default(),
+            valid: Default::default(),
         }
     }
 }
@@ -115,7 +194,7 @@ fn test_decode() {
         "prl".to_string(),
     )
     .unwrap()
-    .encode();
+    .to_principal();
     match x {
         Ok(_id) => println!("{:?}", _id.to_string()),
         Err(_err) => println!("{:?}", _err),

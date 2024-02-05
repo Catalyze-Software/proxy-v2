@@ -16,7 +16,7 @@ use crate::{
 pub fn is_not_anonymous() -> Result<(), String> {
     match caller() == Principal::anonymous() {
         true => Err(ApiError::unauthorized()
-            .add_info("Anonymous principal")
+            .add_message("Anonymous principal")
             .to_string()),
         false => Ok(()),
     }
@@ -38,14 +38,14 @@ pub fn has_access() -> Result<(), String> {
     // Get the caller's profile
     match profiles().get(caller()) {
         Err(err) => Err(err.to_string()),
-        Ok(profile) => {
+        Ok((_, profile)) => {
             // Check if the caller has a profile
             // Check if the caller is blocked or banned on the application level
             if vec![ApplicationRole::Blocked, ApplicationRole::Banned]
                 .contains(&profile.application_role)
             {
                 Err(ApiError::unauthorized()
-                    .add_info("Blocked or banned")
+                    .add_message("Blocked or banned")
                     .to_string())
             } else {
                 Ok(())
