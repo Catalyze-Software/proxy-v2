@@ -1,21 +1,104 @@
 use std::thread::LocalKey;
 
 use candid::Principal;
+use ic_cdk::caller;
 
-use super::storage_api::{StorageMethods, StorageRef};
-use crate::models::{api_error::ApiError, profile::Profile};
+use super::storage_api::{IdentifierRefMethods, PrincipalIdentifier, StorageMethods, StorageRef};
+use crate::models::{
+    api_error::ApiError,
+    identifier::{Identifier, IdentifierKind},
+    profile::Profile,
+};
 
 pub struct ProfileStore<'a> {
     store: &'a LocalKey<StorageRef<Principal, Profile>>,
+    identifier_ref: &'a LocalKey<StorageRef<PrincipalIdentifier, Principal>>,
 }
 
 impl<'a> ProfileStore<'a> {
-    pub fn new(store: &'a LocalKey<StorageRef<Principal, Profile>>) -> Self {
-        Self { store }
+    pub fn new(
+        store: &'a LocalKey<StorageRef<Principal, Profile>>,
+        identifier_ref: &'a LocalKey<StorageRef<PrincipalIdentifier, Principal>>,
+    ) -> Self {
+        Self {
+            store,
+            identifier_ref,
+        }
     }
 }
 
 pub const NAME: &str = "profiles";
+
+impl IdentifierRefMethods<PrincipalIdentifier> for ProfileStore<'static> {
+    /// get a new identifier
+    /// # Returns
+    /// * `PrincipalIdentifier` - The new identifier
+    fn new_identifier(&self) -> PrincipalIdentifier {
+        let id = self.identifier_ref.with(|data| {
+            data.borrow()
+                .last_key_value()
+                .map(|(k, _)| Identifier::from(k).id() + 1)
+                .unwrap_or(0)
+        });
+
+        Identifier::generate(IdentifierKind::Profile(id))
+            .to_principal()
+            .unwrap()
+    }
+
+    /// Get the key by identifier
+    /// # Arguments
+    /// * `key` - The identifier to get the key for
+    /// # Returns
+    /// * `Option<Principal>` - The key if found, otherwise None
+    fn get_id_by_identifier(&self, key: &PrincipalIdentifier) -> Option<Principal> {
+        self.identifier_ref.with(|data| data.borrow().get(key))
+    }
+
+    /// Get the identifier by key
+    /// # Arguments
+    /// * `value` - The value to get the identifier for
+    /// # Returns
+    /// * `Option<PrincipalIdentifier>` - The identifier if found, otherwise None
+    fn get_identifier_by_id(&self, value: &Principal) -> Option<PrincipalIdentifier> {
+        self.identifier_ref.with(|data| {
+            data.borrow()
+                .iter()
+                .find(|(_, v)| v == value)
+                .map(|(k, _)| k.clone())
+        })
+    }
+
+    /// Insert an identifier reference
+    /// # Arguments
+    /// * `value` - The increment value to insert
+    /// # Returns
+    /// * `Result<Principal, ApiError>` - The inserted principal if successful, otherwise an error
+    fn insert_identifier_ref(&mut self, value: PrincipalIdentifier) -> Result<Principal, ApiError> {
+        self.identifier_ref.with(|data| {
+            if data.borrow().contains_key(&value) {
+                return Err(ApiError::duplicate()
+                    .add_method_name("insert_identifier_ref")
+                    .add_info(NAME)
+                    .add_message("Key already exists"));
+            }
+
+            data.borrow_mut().insert(value, caller());
+            Ok(caller())
+        })
+    }
+
+    /// Remove an identifier reference
+    /// # Arguments
+    /// * `key` - The identifier to remove
+    /// # Returns
+    /// * `bool` - True if the identifier was removed, otherwise false
+    fn remove_identifier_ref(&mut self, key: &PrincipalIdentifier) -> bool {
+        self.identifier_ref
+            .with(|data| data.borrow_mut().remove(key).is_some())
+    }
+}
+
 impl StorageMethods<Principal, Profile> for ProfileStore<'static> {
     /// Get a single user profile by key
     /// # Arguments

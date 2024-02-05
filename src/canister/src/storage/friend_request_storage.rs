@@ -1,7 +1,8 @@
 use std::thread::LocalKey;
 
-use super::storage_api::{StorageMethods, StorageRef};
 use crate::models::{api_error::ApiError, friend_request::FriendRequest};
+
+use super::storage_api::{StorageMethods, StorageRef};
 
 pub struct FriendRequestStore<'a> {
     store: &'a LocalKey<StorageRef<u64, FriendRequest>>,

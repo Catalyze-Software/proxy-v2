@@ -11,16 +11,15 @@ use ic_cdk::{query, update};
 
 use crate::{
     helpers::guards::{has_access, is_not_anonymous},
-    logic::{
-        friend_request_logic::FriendRequestCalls, member_logic::MemberCalls,
-        profile_logic::ProfileCalls,
-    },
-    misc::identifier_misc::{generate_identifier, IdentifierKind},
-    models::{api_error::ApiError, relation_type::RelationType, wallet::PostWallet},
+    logic::{friend_request_logic::FriendRequestCalls, profile_logic::ProfileCalls},
     models::{
+        api_error::ApiError,
         friend_request::FriendRequestResponse,
         profile::{PostProfile, ProfileResponse, UpdateProfile},
+        relation_type::RelationType,
+        wallet::PostWallet,
     },
+    storage::storage_api::{profiles, IdentifierRefMethods},
 };
 
 /// Adds a profile to the canister - [`[update]`](update)
@@ -38,14 +37,7 @@ pub fn add_profile(
     post_profile: PostProfile,
     member_canister: Principal, // should be deprecated
 ) -> Result<ProfileResponse, ApiError> {
-    let new_profile = ProfileCalls::add_profile(post_profile)?;
-    let _ = MemberCalls::create_empty_member(
-        generate_identifier(IdentifierKind::Member(0))
-            .to_principal()
-            .unwrap(),
-        new_profile.principal,
-    );
-    Ok(new_profile)
+    ProfileCalls::add_profile(post_profile)
 }
 
 /// Gets a profile by the given user principal - [`[query]`](query)
@@ -76,7 +68,15 @@ pub fn get_profile_by_user_principal(principal: Principal) -> Result<ProfileResp
 #[query(guard = "has_access")]
 #[deprecated = "should be removed in favor of get_profile_by_user_principal"]
 pub fn get_profile_by_identifier(id: Principal) -> Result<ProfileResponse, ApiError> {
-    Err(ApiError::not_implemented())
+    match profiles()
+        .get_id_by_identifier(&id)
+        .map(|id| get_profile_by_user_principal(id))
+    {
+        Some(profile) => profile,
+        None => Err(ApiError::not_found()
+            .add_method_name("get_profile_by_identifier")
+            .add_message("Profile not found")),
+    }
 }
 
 /// Gets profiles by the given user principals - [`[query]`](query)
@@ -101,7 +101,13 @@ pub fn get_profiles_by_user_principal(principals: Vec<Principal>) -> Vec<Profile
 #[query(guard = "has_access")]
 #[deprecated = "should be removed in favor of get_profiles_by_user_principal"]
 pub fn get_profiles_by_identifier(identifiers: Vec<Principal>) -> Vec<ProfileResponse> {
-    vec![]
+    identifiers
+        .iter()
+        .map(|id| profiles().get_id_by_identifier(id))
+        .filter_map(|id| id)
+        .map(|id| get_profile_by_user_principal(id).ok())
+        .filter_map(|profile| profile)
+        .collect()
 }
 
 /// Edit the caller his a profile - [`[update]`](update)

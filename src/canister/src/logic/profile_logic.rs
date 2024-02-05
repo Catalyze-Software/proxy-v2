@@ -6,14 +6,16 @@ use crate::{
     models::{
         api_error::ApiError,
         document_details::DocumentDetails,
-        identifier::Identifier,
+        identifier::{Identifier, IdentifierKind},
         profile::{PostProfile, Profile, ProfileMethods, ProfileResponse, UpdateProfile},
         relation_type::RelationType,
         validation::{ValidateField, ValidationType},
         wallet::{PostWallet, Wallet, WalletResponse},
     },
-    storage::storage_api::{profiles, StorageMethods},
+    storage::storage_api::{members, profiles, IdentifierRefMethods, StorageMethods},
 };
+
+use super::member_logic::MemberCalls;
 
 pub struct ProfileCalls;
 pub struct ProfileValidation;
@@ -27,6 +29,25 @@ impl ProfileCalls {
 
         let new_profile = Profile::from(post_profile);
         let stored_profile = profiles().insert_by_key(caller(), new_profile);
+
+        //////////////////////////////////////////////////////////////////////////////////////////
+        // TODO: REMOVE THIS SECTION
+        // ADDED FOR BACKWARD COMPATIBILITY
+        // SHOULD BE REMOVED IN THE FUTURE
+        //////////////////////////////////////////////////////////////////////////////////////////
+
+        // generate and store an profile identifier
+        let profile_identifier = profiles().new_identifier();
+        let _ = profiles().insert_identifier_ref(profile_identifier);
+
+        // generate and store an member identifier
+        let member_identifier = members().new_identifier();
+        let _ = members().insert_identifier_ref(member_identifier);
+
+        //////////////////////////////////////////////////////////////////////////////////////////
+        //////////////////////////////////////////////////////////////////////////////////////////
+
+        let _ = MemberCalls::create_empty_member(caller(), profile_identifier);
         ProfileMapper::to_response(stored_profile)
     }
 
