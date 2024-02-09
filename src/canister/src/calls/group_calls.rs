@@ -11,15 +11,23 @@ use candid::Principal;
 use ic_cdk::{query, update};
 
 use crate::{
-    helpers::guards::has_access,
-    models::{
-        api_error::ApiError, filter_type::FilterType, paged_response::PagedResponse,
-        permission::PostPermission, privacy::Privacy, role::Role,
+    helpers::{
+        group_permission::{can_delete, can_edit, can_read},
+        guards::has_access,
     },
+    logic::group_logic::GroupCalls,
     models::{
+        api_error::ApiError,
+        filter_type::FilterType,
         group::{GroupFilter, GroupResponse, GroupSort, PostGroup, UpdateGroup},
-        member::{InviteMemberResponse, JoinedMemberResponse, Member},
+        identifier::Identifier,
+        member::{self, InviteMemberResponse, JoinedMemberResponse, Member},
+        paged_response::PagedResponse,
+        permission::{PermissionType, PostPermission},
+        privacy::Privacy,
+        role::Role,
     },
+    storage::storage_api::{members, IdentifierRefMethods},
 };
 
 /// Add a group to the canister  - [`[update]`](update)
@@ -34,12 +42,11 @@ use crate::{
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "has_access")]
-pub fn add_group(
+pub async fn add_group(
     post_group: PostGroup,
-    member_canister: Principal,
     account_identifier: Option<String>,
 ) -> Result<GroupResponse, ApiError> {
-    Err(ApiError::not_implemented())
+    GroupCalls::add_group(post_group, account_identifier).await
 }
 
 /// Get a group - [`[query]`](query)
@@ -53,7 +60,7 @@ pub fn add_group(
 /// This function is guarded by the [`has_access`](has_access) function.
 #[query(guard = "has_access")]
 pub fn get_group(identifier: Principal) -> Result<GroupResponse, ApiError> {
-    Err(ApiError::not_implemented())
+    GroupCalls::get_group(Identifier::from(identifier).id())
 }
 
 /// Get groups - [`[query]`](query)
@@ -95,9 +102,10 @@ pub fn get_groups(
 pub fn edit_group(
     group_identifier: Principal,
     update_group: UpdateGroup,
-    member_identifier: Principal,
 ) -> Result<GroupResponse, ApiError> {
-    Err(ApiError::not_implemented())
+    let group_id = Identifier::from(group_identifier).id();
+    can_edit(group_id, PermissionType::Group(None))?;
+    GroupCalls::edit_group(group_id, update_group)
 }
 
 /// Get the group owner and privacy - [`[query]`](query)
@@ -111,7 +119,7 @@ pub fn edit_group(
 #[query]
 #[deprecated = "This function was used as an inter-canister call, but should not be used anymore."]
 pub fn get_group_owner_and_privacy(
-    group_identifier: Principal,
+    _group_identifier: Principal,
 ) -> Result<(Principal, Privacy), ApiError> {
     Err(ApiError::not_implemented())
 }
@@ -123,9 +131,14 @@ pub fn get_group_owner_and_privacy(
 /// * `Vec<GroupResponse>` - The groups
 /// # Errors
 /// * `ApiError` - If something went wrong while getting the groups
-#[query]
-pub fn get_groups_by_id(group_identifiers: Vec<Principal>) -> Result<Vec<GroupResponse>, ApiError> {
-    Err(ApiError::not_implemented())
+#[query(guard = "has_access")]
+pub fn get_groups_by_id(group_identifiers: Vec<Principal>) -> Vec<GroupResponse> {
+    let group_ids = group_identifiers
+        .iter()
+        .map(|identifier| Identifier::from(*identifier).id())
+        .collect();
+
+    GroupCalls::get_groups_by_id(group_ids)
 }
 
 /// Soft deletes a group - [`[update]`](update)
@@ -139,11 +152,10 @@ pub fn get_groups_by_id(group_identifiers: Vec<Principal>) -> Result<Vec<GroupRe
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "has_access")]
-pub fn delete_group(
-    group_identifier: Principal,
-    member_identifier: Principal,
-) -> Result<GroupResponse, ApiError> {
-    Err(ApiError::not_implemented())
+pub fn delete_group(group_identifier: Principal) -> Result<GroupResponse, ApiError> {
+    let group_id = Identifier::from(group_identifier).id();
+    can_delete(group_id, PermissionType::Group(None))?;
+    GroupCalls::delete_group(group_id)
 }
 
 /// Add a wallet reference to the group - [`[update]`](update)
@@ -164,8 +176,10 @@ pub fn add_wallet_to_group(
     group_identifier: Principal,
     wallet_canister: Principal,
     description: String,
-) -> Result<(), ApiError> {
-    Err(ApiError::not_implemented())
+) -> Result<GroupResponse, ApiError> {
+    let group_id = Identifier::from(group_identifier).id();
+    can_edit(group_id, PermissionType::Group(None))?;
+    GroupCalls::add_wallet_to_group(group_id, wallet_canister, description)
 }
 
 /// Remove a wallet reference from the group - [`[update]`](update)
@@ -184,8 +198,10 @@ pub fn add_wallet_to_group(
 pub fn remove_wallet_from_group(
     group_identifier: Principal,
     wallet_canister: Principal,
-) -> Result<(), ApiError> {
-    Err(ApiError::not_implemented())
+) -> Result<GroupResponse, ApiError> {
+    let group_id = Identifier::from(group_identifier).id();
+    can_edit(group_id, PermissionType::Group(None))?;
+    GroupCalls::remove_wallet_from_group(group_id, wallet_canister)
 }
 
 /// Add a role to the group - [`[update]`](update)
@@ -201,15 +217,17 @@ pub fn remove_wallet_from_group(
 /// * `ApiError` - If something went wrong while adding the role
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
+/// Was `add_role`
 #[update(guard = "has_access")]
-pub fn add_role(
+pub fn add_role_to_group(
     group_identifier: Principal,
     role_name: String,
     color: String,
     index: u64,
-    member_identifier: Principal,
 ) -> Result<Role, ApiError> {
-    Err(ApiError::not_implemented())
+    let group_id = Identifier::from(group_identifier).id();
+    can_edit(group_id, PermissionType::Group(None))?;
+    GroupCalls::add_role_to_group(group_id, role_name, color, index)
 }
 
 /// Remove a role from the group - [`[update]`](update)
@@ -226,12 +244,10 @@ pub fn add_role(
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "has_access")]
-pub fn remove_group_role(
-    group_identifier: Principal,
-    role_name: String,
-    member_identifier: Principal,
-) -> Result<bool, ApiError> {
-    Err(ApiError::not_implemented())
+pub fn remove_group_role(group_identifier: Principal, role_name: String) -> Result<bool, ApiError> {
+    let group_id = Identifier::from(group_identifier).id();
+    can_edit(group_id, PermissionType::Group(None))?;
+    GroupCalls::remove_group_role(group_id, role_name)
 }
 
 /// Get the roles of the group - [`[query]`](query)
@@ -241,9 +257,12 @@ pub fn remove_group_role(
 /// * `Vec<Role>` - The roles of the group
 /// # Note
 /// Default unmutable roles are always returned on top of the custom group specific roles.
-#[query]
-pub fn get_group_roles(group_identifier: Principal) -> Vec<Role> {
-    vec![]
+/// /// This function is guarded by the [`has_access`](has_access) function.
+#[update(guard = "has_access")]
+pub fn get_group_roles(group_identifier: Principal) -> Result<Vec<Role>, ApiError> {
+    let group_id = Identifier::from(group_identifier).id();
+    can_read(group_id, PermissionType::Group(None))?;
+    Ok(GroupCalls::get_group_roles(group_id))
 }
 
 /// Edit role permissions for a group role - [`[update]`](update)
@@ -263,34 +282,11 @@ pub fn edit_role_permissions(
     group_identifier: Principal,
     role_name: String,
     post_permissions: Vec<PostPermission>,
-    member_identifier: Principal,
 ) -> Result<bool, ApiError> {
-    Err(ApiError::not_implemented())
+    let group_id = Identifier::from(group_identifier).id();
+    can_edit(group_id, PermissionType::Group(None))?;
+    GroupCalls::edit_role_permissions(group_id, role_name, post_permissions)
 }
-
-/// Update the member count on a group - [`[update]`](update)
-/// # Arguments
-/// * `group_identifier` - The identifier of the group
-/// * `member_canister` - The member canister principal to do the call to
-/// * `member_count` - The member count to update
-/// # Returns
-/// * `()` - Empty tuple
-/// # Errors
-/// * `bool` - Whether the member count was updated
-/// # Note
-/// This function was triggered by an inter-canister call to update the member count on the group.
-/// TODO: if used it required a auth guard so it can only be called by the known canisters
-#[update]
-#[deprecated = "This function was used as an inter-canister call, but should not be used anymore."]
-pub fn update_member_count(
-    group_identifier: Principal,
-    member_canister: Principal,
-    member_count: usize,
-) -> Result<(), bool> {
-    Err(false)
-}
-
-// MEMBER METHODS
 
 /// Join a group - [`[update]`](update)
 /// # Arguments
@@ -307,28 +303,9 @@ pub fn update_member_count(
 pub fn join_group(
     group_identifier: Principal,
     account_identifier: Option<String>,
-) -> Result<(Principal, Member), ApiError> {
-    Err(ApiError::not_implemented())
-}
-
-/// Create an empty member - [`[update]`](update)
-/// # Arguments
-/// * `caller` - The caller of the function passed through as an argument by the inter-canister call
-/// * `profile_identifier` - The profile identifier of the user
-/// # Returns
-/// * `Principal` - The newly created member identifier
-/// # Errors
-/// * `ApiError` - If something went wrong while creating the empty member
-/// # Note
-/// This function was triggered by an inter-canister call to create an empty member during profile creation.
-/// TODO: if used it required a auth guard so it can only be called by the known canisters
-#[update]
-#[deprecated = "This function was used as an inter-canister call, but should not be used anymore."]
-pub fn create_empty_member(
-    caller: Principal,
-    profile_identifier: Principal,
-) -> Result<Principal, ApiError> {
-    Err(ApiError::not_implemented())
+) -> Result<JoinedMemberResponse, ApiError> {
+    let group_id = Identifier::from(group_identifier).id();
+    GroupCalls::join_group(group_id, account_identifier)
 }
 
 /// Invite a user to a group - [`[update]`](update)
@@ -336,7 +313,6 @@ pub fn create_empty_member(
 /// * `member_principal` - The principal of the user to invite
 /// * `group_identifier` - The identifier of the group to invite the user to
 /// # Returns
-/// * `Principal` - The invited member identifier
 /// * `Member` - The updated member entry
 /// # Errors
 /// * `ApiError` - If something went wrong while inviting the user
@@ -347,8 +323,10 @@ pub fn create_empty_member(
 pub fn invite_to_group(
     member_principal: Principal,
     group_identifier: Principal,
-) -> Result<(Principal, Member), ApiError> {
-    Err(ApiError::not_implemented())
+) -> Result<Member, ApiError> {
+    let group_id = Identifier::from(group_identifier).id();
+    can_edit(group_id, PermissionType::Invite(None))?;
+    GroupCalls::invite_to_group(member_principal, group_id)
 }
 
 /// Accept an invite to a group as a admin - [`[update]`](update)
@@ -356,7 +334,6 @@ pub fn invite_to_group(
 /// * `member_principal` - The principal of the user to accept the invite for
 /// * `group_identifier` - The identifier of the group to accept the invite for
 /// # Returns
-/// * `Principal` - The accepted member identifier
 /// * `Member` - The updated member entry
 /// # Errors
 /// * `ApiError` - If something went wrong while accepting the invite
@@ -367,44 +344,23 @@ pub fn invite_to_group(
 pub fn accept_user_request_group_invite(
     member_principal: Principal,
     group_identifier: Principal,
-) -> Result<(Principal, Member), ApiError> {
-    Err(ApiError::not_implemented())
+) -> Result<Member, ApiError> {
+    let group_id = Identifier::from(group_identifier).id();
+    can_edit(group_id, PermissionType::Invite(None))?;
+    GroupCalls::accept_user_request_group_invite(member_principal, group_id)
 }
 
 /// Accept an invite from a group as a user - [`[update]`](update)
 /// # Arguments
 /// * `group_identifier` - The identifier of the group to accept the invite for
 /// # Returns
-/// * `Principal` - The accepted member identifier
 /// * `Member` - The updated member entry
 /// # Errors
 /// * `ApiError` - If something went wrong while accepting the invite
-#[update]
-pub fn accept_owner_request_group_invite(
-    group_identifier: Principal,
-) -> Result<(Principal, Member), ApiError> {
-    Err(ApiError::not_implemented())
-}
-
-/// Add a group owner to the member entry - [`[update]`](update)
-/// # Arguments
-/// * `owner_principal` - The principal of the group owner
-/// * `group_identifier` - The identifier of the group
-/// # Returns
-/// * `Principal` - The updated member identifier
-/// * `Member` - The updated member entry
-/// # Errors
-/// * `ApiError` - If something went wrong while adding the group owner
-/// # Note
-/// This function was triggered by an inter-canister call to create an empty member during profile creation.
-/// TODO: if used it required a auth guard so it can only be called by the known canisters
-#[update]
-#[deprecated = "This function was used as an inter-canister call, but should not be used anymore."]
-pub fn add_owner(
-    owner_principal: Principal,
-    group_identifier: Principal,
-) -> Result<Principal, ApiError> {
-    Err(ApiError::not_implemented())
+#[update(guard = "has_access")]
+pub fn accept_owner_request_group_invite(group_identifier: Principal) -> Result<Member, ApiError> {
+    let group_id = Identifier::from(group_identifier).id();
+    GroupCalls::accept_owner_request_group_invite(group_id)
 }
 
 /// Assign a role to a specific group member - [`[update]`](update)
@@ -413,9 +369,9 @@ pub fn add_owner(
 /// * `member_identifier` - The identifier of the group member
 /// * `group_identifier` - The identifier of the group
 /// # Returns
-/// * `()` - Empty tuple
+/// * `Member` - The updated member entry
 /// # Errors
-/// * `()` - Empty tuple
+/// * `ApiError` - If something went wrong while assigning the role
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 /// TODO: This action is guarded by group role based authorization
@@ -424,8 +380,15 @@ pub fn assign_role(
     role: String,
     member_identifier: Principal,
     group_identifier: Principal,
-) -> Result<(), ()> {
-    Err(())
+) -> Result<Member, ApiError> {
+    let group_id = Identifier::from(group_identifier).id();
+    can_edit(group_id, PermissionType::Group(None))?;
+    match members().get_id_by_identifier(&member_identifier) {
+        Some(member_principal) => {
+            GroupCalls::add_group_role_to_member(role, member_principal, group_id)
+        }
+        None => Err(ApiError::not_found().add_message("Member not found in id - identifier map")),
+    }
 }
 
 /// Remove a role from a specific group member - [`[update]`](update)
@@ -436,9 +399,9 @@ pub fn assign_role(
 /// * `member_identifier` - The identifier of the group member
 /// * `group_identifier` - The identifier of the group
 /// # Returns
-/// * `()` - Empty tuple
+/// * `Member` - The updated member entry
 /// # Errors
-/// * `()` - Empty tuple
+/// * `ApiError` - If something went wrong while removing the role
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 /// TODO: This action is guarded by group role based authorization
@@ -447,31 +410,15 @@ pub fn remove_member_role(
     role: String,
     member_identifier: Principal,
     group_identifier: Principal,
-) -> Result<(), ()> {
-    Err(())
-}
-
-/// Set the member roles for a specific group member - [`[update]`](update)
-/// # Change
-/// * was `set_roles`
-/// # Arguments
-/// * `roles` - The roles to set
-/// * `member_identifier` - The identifier of the group member
-/// * `group_identifier` - The identifier of the group
-/// # Returns
-/// * `()` - Empty tuple
-/// # Errors
-/// * `()` - Empty tuple
-/// # Note
-/// This function is guarded by the [`has_access`](has_access) function.
-/// TODO: This action is guarded by group role based authorization
-#[update(guard = "has_access")]
-pub fn set_member_roles(
-    roles: Vec<String>,
-    member_identifier: Principal,
-    group_identifier: Principal,
-) -> Result<(), ()> {
-    Err(())
+) -> Result<Member, ApiError> {
+    let group_id = Identifier::from(group_identifier).id();
+    can_edit(group_id, PermissionType::Group(None))?;
+    match members().get_id_by_identifier(&member_identifier) {
+        Some(member_principal) => {
+            GroupCalls::remove_group_role_from_member(role, member_principal, group_id)
+        }
+        None => Err(ApiError::not_found().add_message("Member not found in id - identifier map")),
+    }
 }
 
 /// Get the member entry of a specific group member - [`[query]`](query)
@@ -482,23 +429,25 @@ pub fn set_member_roles(
 /// * `JoinedMemberResponse` - The member entry
 /// # Errors
 /// * `ApiError` - If something went wrong while getting the member entry
-#[query]
+#[query(guard = "has_access")]
 pub fn get_group_member(
     principal: Principal,
     group_identifier: Principal,
 ) -> Result<JoinedMemberResponse, ApiError> {
-    Err(ApiError::not_implemented())
+    let group_id = Identifier::from(group_identifier).id();
+    can_read(group_id, PermissionType::Group(None))?;
+    GroupCalls::get_group_member(principal, group_id)
 }
 
-/// Get the member counts of specific groups - [`[query]`](query)
-/// # Arguments
-/// * `group_identifiers` - The identifiers of the groups
-/// # Returns
-/// * `Vec<(Principal, usize)>` - `(group identifier, member count)` The member counts per group
-#[query]
-pub fn get_group_members_count(group_identifiers: Vec<Principal>) -> Vec<(Principal, usize)> {
-    vec![]
-}
+// /// Get the member counts of specific groups - [`[query]`](query)
+// /// # Arguments
+// /// * `group_identifiers` - The identifiers of the groups
+// /// # Returns
+// /// * `Vec<(Principal, usize)>` - `(group identifier, member count)` The member counts per group
+// #[query]
+// pub fn get_group_members_count(group_identifiers: Vec<Principal>) -> Vec<(Principal, usize)> {
+//      vec![]
+// }
 
 /// Get the groups for specific members - [`[query]`](query)
 /// # Arguments
@@ -508,23 +457,25 @@ pub fn get_group_members_count(group_identifiers: Vec<Principal>) -> Vec<(Princi
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 #[query(guard = "has_access")]
-pub fn get_groups_for_members(
-    member_identifiers: Vec<Principal>,
-) -> Vec<(Principal, Vec<Principal>)> {
-    vec![]
+pub fn get_groups_for_members(member_identifiers: Vec<Principal>) -> Vec<JoinedMemberResponse> {
+    let principals = member_identifiers
+        .iter()
+        .map(|identifier| members().get_id_by_identifier(identifier).unwrap())
+        .collect();
+    GroupCalls::get_groups_for_members(principals)
 }
 
-/// Get the group invites count for specific groups - [`[query]`](query)
-/// # Arguments
-/// * `group_identifiers` - The identifiers of the groups
-/// # Returns
-/// * `Vec<(Principal, usize)>` - `(group identifier, invite count)` The invite counts per group
-/// # Note
-/// This function is guarded by the [`has_access`](has_access) function.
-#[query(guard = "has_access")]
-pub fn get_group_invites_count(group_identifiers: Vec<Principal>) -> Vec<(Principal, usize)> {
-    vec![]
-}
+// /// Get the group invites count for specific groups - [`[query]`](query)
+// /// # Arguments
+// /// * `group_identifiers` - The identifiers of the groups
+// /// # Returns
+// /// * `Vec<(Principal, usize)>` - `(group identifier, invite count)` The invite counts per group
+// /// # Note
+// /// This function is guarded by the [`has_access`](has_access) function.
+// #[query(guard = "has_access")]
+// pub fn get_group_invites_count(group_identifiers: Vec<Principal>) -> Vec<(Principal, usize)> {
+//     vec![]
+// }
 
 /// Get the group members for a specific group - [`[query]`](query)
 /// # Arguments
@@ -539,7 +490,9 @@ pub fn get_group_invites_count(group_identifiers: Vec<Principal>) -> Vec<(Princi
 pub fn get_group_members(
     group_identifier: Principal,
 ) -> Result<Vec<JoinedMemberResponse>, ApiError> {
-    Err(ApiError::not_implemented())
+    let group_id = Identifier::from(group_identifier).id();
+    can_read(group_id, PermissionType::Group(None))?;
+    GroupCalls::get_group_members(group_id)
 }
 
 /// Get the caller member entry - [`[query]`](query)
@@ -552,8 +505,8 @@ pub fn get_group_members(
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 #[query]
-pub fn get_self_group() -> Result<(Principal, Member), ApiError> {
-    Err(ApiError::not_implemented())
+pub fn get_self_group() -> Result<Member, ApiError> {
+    GroupCalls::get_self_group()
 }
 
 /// Get the roles of a specific group member - [`[query]`](query)
@@ -570,8 +523,16 @@ pub fn get_self_group() -> Result<(Principal, Member), ApiError> {
 pub fn get_member_roles(
     member_identifier: Principal,
     group_identifier: Principal,
-) -> Result<(Principal, Vec<String>), String> {
-    Err("Not implemented".to_string())
+) -> Result<(Principal, Vec<String>), ApiError> {
+    let group_id = Identifier::from(group_identifier).id();
+    can_read(group_id, PermissionType::Group(None))?;
+    match members().get_id_by_identifier(&member_identifier) {
+        Some(member_principal) => Ok((
+            member_principal,
+            GroupCalls::get_member_roles(member_principal, group_id)?,
+        )),
+        None => Err(ApiError::not_found().add_message("Member not found in id - identifier map")),
+    }
 }
 
 /// Leave a group as a caller - [`[update]`](update)
@@ -585,7 +546,8 @@ pub fn get_member_roles(
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "has_access")]
 pub fn leave_group(group_identifier: Principal) -> Result<(), ApiError> {
-    Err(ApiError::not_implemented())
+    let group_id = Identifier::from(group_identifier).id();
+    GroupCalls::leave_group(group_id)
 }
 
 /// Remove an invite for a group as a user
@@ -599,7 +561,8 @@ pub fn leave_group(group_identifier: Principal) -> Result<(), ApiError> {
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "has_access")]
 pub fn remove_invite(group_identifier: Principal) -> Result<(), ApiError> {
-    Err(ApiError::not_implemented())
+    let group_id = Identifier::from(group_identifier).id();
+    GroupCalls::remove_invite(group_id)
 }
 
 /// Remove a member from a group
@@ -618,7 +581,9 @@ pub fn remove_member_from_group(
     principal: Principal,
     group_identifier: Principal,
 ) -> Result<(), ApiError> {
-    Err(ApiError::not_implemented())
+    let group_id = Identifier::from(group_identifier).id();
+    can_delete(group_id, PermissionType::Member(None))?;
+    GroupCalls::remove_member_from_group(principal, group_id)
 }
 
 /// Remove a member invite from a group as an admin
@@ -637,7 +602,9 @@ pub fn remove_member_invite_from_group(
     principal: Principal,
     group_identifier: Principal,
 ) -> Result<(), ApiError> {
-    Err(ApiError::not_implemented())
+    let group_id = Identifier::from(group_identifier).id();
+    can_delete(group_id, PermissionType::Invite(None))?;
+    GroupCalls::remove_member_invite_from_group(principal, group_id)
 }
 
 /// Get the group invites for a specific group - [`[query]`](query)
@@ -654,5 +621,7 @@ pub fn remove_member_invite_from_group(
 pub fn get_group_invites(
     group_identifier: Principal,
 ) -> Result<Vec<InviteMemberResponse>, ApiError> {
-    Err(ApiError::not_implemented())
+    let group_id = Identifier::from(group_identifier).id();
+    can_read(group_id, PermissionType::Invite(None))?;
+    GroupCalls::get_group_invites(group_id)
 }

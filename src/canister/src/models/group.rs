@@ -87,27 +87,17 @@ impl Group {
         }
     }
 
-    pub fn update(&self, group: UpdateGroup) -> Self {
-        Self {
-            name: group.name,
-            description: group.description,
-            website: group.website,
-            location: group.location,
-            privacy: group.privacy,
-            owner: self.owner,
-            created_by: self.created_by,
-            matrix_space_id: self.matrix_space_id.clone(),
-            image: group.image,
-            banner_image: group.banner_image,
-            tags: group.tags,
-            privacy_gated_type_amount: group.privacy_gated_type_amount,
-            roles: self.roles.clone(),
-            is_deleted: self.is_deleted,
-            member_count: self.member_count.clone(),
-            wallets: self.wallets.clone(),
-            updated_on: self.updated_on,
-            created_on: self.created_on,
-        }
+    pub fn update(&mut self, group: UpdateGroup) {
+        self.name = group.name;
+        self.description = group.description;
+        self.website = group.website;
+        self.location = group.location;
+        self.privacy = group.privacy;
+        self.image = group.image;
+        self.banner_image = group.banner_image;
+        self.tags = group.tags;
+        self.privacy_gated_type_amount = group.privacy_gated_type_amount;
+        self.updated_on = time();
     }
 
     pub fn set_owner(&mut self, owner: Principal) -> Self {

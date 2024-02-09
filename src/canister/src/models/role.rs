@@ -42,17 +42,17 @@ impl From<PostRole> for Role {
 
 impl Role {
     pub fn new(
-        name: &str,
+        name: String,
         protected: bool,
         permissions: Vec<Permission>,
-        color: &str,
+        color: String,
         index: Option<u64>,
     ) -> Self {
         Self {
-            name: name.to_string(),
+            name,
             protected,
             permissions,
-            color: color.to_string(),
+            color,
             index,
         }
     }

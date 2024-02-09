@@ -6,7 +6,7 @@ use crate::{
     models::{
         api_error::ApiError,
         document_details::DocumentDetails,
-        identifier::{Identifier, IdentifierKind},
+        identifier::Identifier,
         profile::{PostProfile, Profile, ProfileMethods, ProfileResponse, UpdateProfile},
         relation_type::RelationType,
         validation::{ValidateField, ValidationType},

@@ -69,21 +69,21 @@ impl IdentifierRefMethods<PrincipalIdentifier> for AttendeeStore<'static> {
         })
     }
 
-    /// Insert an identifier reference
+    /// Insert an identifier reference with the caller as value
     /// # Arguments
-    /// * `value` - The increment value to insert
+    /// * `key` - The increment value to insert
     /// # Returns
     /// * `Result<Principal, ApiError>` - The inserted principal if successful, otherwise an error
-    fn insert_identifier_ref(&mut self, value: PrincipalIdentifier) -> Result<Principal, ApiError> {
+    fn insert_identifier_ref(&mut self, key: PrincipalIdentifier) -> Result<Principal, ApiError> {
         self.identifier_ref.with(|data| {
-            if data.borrow().contains_key(&value) {
+            if data.borrow().contains_key(&key) {
                 return Err(ApiError::duplicate()
                     .add_method_name("insert_identifier_ref")
                     .add_info(NAME)
                     .add_message("Key already exists"));
             }
 
-            data.borrow_mut().insert(value, caller());
+            data.borrow_mut().insert(key, caller());
             Ok(caller())
         })
     }
