@@ -151,7 +151,7 @@ impl StorageMethods<u64, Group> for GroupStore<'static> {
     /// * `Vec<(u64, Group)>` - The groups if found, otherwise an empty vector
     fn filter<F>(&self, filter: F) -> Vec<(u64, Group)>
     where
-        F: Fn(&Group) -> bool,
+        F: Fn(&u64, &Group) -> bool,
     {
         self.store.with(|data| {
             data.borrow()

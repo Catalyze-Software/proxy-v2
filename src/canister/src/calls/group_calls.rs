@@ -79,12 +79,9 @@ pub fn get_group(identifier: Principal) -> Result<GroupResponse, ApiError> {
 pub fn get_groups(
     limit: usize,
     page: usize,
-    filters: Vec<GroupFilter>,
-    filter_type: FilterType,
+    filters: Vec<FilterType<GroupFilter>>,
     sort: GroupSort,
-    include_invite_only: bool,
 ) -> Result<PagedResponse<GroupResponse>, ApiError> {
-    Err(ApiError::not_implemented())
 }
 
 /// Edit a group - [`[update]`](update)

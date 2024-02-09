@@ -194,8 +194,37 @@ pub enum GroupFilter {
     Name(String),
     Owner(Principal),
     MemberCount((usize, usize)),
-    Identifiers(Vec<Principal>),
+    Ids(Vec<u64>),
     Tag(u32),
     UpdatedOn(DateRange),
     CreatedOn(DateRange),
+}
+
+impl GroupFilter {
+    pub fn is_match(&self, id: u64, group: &Group) -> bool {
+        match self {
+            GroupFilter::Name(name) => group.name.to_lowercase().contains(name.to_lowercase()),
+            GroupFilter::Owner(owner) => group.owner == *owner,
+            GroupFilter::MemberCount((min, max)) => {
+                let count = group.member_count.values().sum();
+                count >= *min && count <= *max
+            }
+            GroupFilter::Ids(ids) => ids.contains(&id),
+            GroupFilter::Tag(tag) => group.tags.contains(tag),
+            GroupFilter::UpdatedOn(range) => {
+                if range.end_date() > 0 {
+                    range.is_within(group.updated_on)
+                } else {
+                    range.is_after(group.updated_on)
+                }
+            }
+            GroupFilter::CreatedOn(range) => {
+                if range.end_date() > 0 {
+                    range.is_within(group.updated_on)
+                } else {
+                    range.is_after(group.updated_on)
+                }
+            }
+        }
+    }
 }

@@ -17,7 +17,7 @@ use crate::{
         filter_type::FilterType,
         group::{Group, GroupFilter, GroupResponse, GroupSort, PostGroup, UpdateGroup},
         identifier::Identifier,
-        member::{InviteMemberResponse, InviteType, JoinedMemberResponse, Member},
+        member::{self, InviteMemberResponse, InviteType, JoinedMemberResponse, Member},
         neuron::{DissolveState, ListNeurons, ListNeuronsResponse},
         paged_response::PagedResponse,
         permission::{Permission, PostPermission},
@@ -80,12 +80,49 @@ impl GroupCalls {
     pub fn get_groups(
         limit: usize,
         page: usize,
-        filters: Vec<GroupFilter>,
-        filter_type: FilterType,
+        filters: Vec<FilterType<GroupFilter>>,
         sort: GroupSort,
-        include_invite_only: bool,
     ) -> Result<PagedResponse<GroupResponse>, ApiError> {
-        Err(ApiError::not_implemented())
+        // get all the groups and filter them based on the privacy
+        let mut groups = groups().filter(|group_id, group| {
+            if group.privacy == Privacy::InviteOnly {
+                return members().get(caller())?.1.is_group_joined(group_id);
+            } else {
+                return true;
+            }
+
+            // filter groups by filters param
+            for filter_type in filters {
+                use GroupFilter::*;
+                match filter_type {
+                    FilterType::And(filter_value) => match filter_value {
+                        Name(value) => todo!(),
+                        Owner(value) => todo!(),
+                        MemberCount(value) => todo!(),
+                        Ids(value) => todo!(),
+                        Tag(value) => todo!(),
+                        UpdatedOn(value) => todo!(),
+                        CreatedOn(value) => todo!(),
+                    },
+                    FilterType::Or(filter_value) => match filter_value {
+                        Name(value) => todo!(),
+                        Owner(value) => todo!(),
+                        MemberCount(value) => todo!(),
+                        Ids(value) => todo!(),
+                        Tag(value) => todo!(),
+                        UpdatedOn(value) => todo!(),
+                        CreatedOn(value) => todo!(),
+                    },
+                }
+            }
+        });
+
+        let result: Vec<GroupResponse> = groups
+            .into_iter()
+            .map(|data| GroupMapper::to_response(data))
+            .collect();
+
+        Ok(PagedResponse::new(result, limit, page))
     }
 
     pub fn edit_group(id: u64, update_group: UpdateGroup) -> Result<GroupResponse, ApiError> {
