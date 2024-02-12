@@ -32,7 +32,7 @@ impl MemberMapper {
         member: Member,
         group_id: u64,
     ) -> Result<JoinedMemberResponse, ApiError> {
-        if !member.is_group_joined(group_id) {
+        if !member.is_group_joined(&group_id) {
             return Err(ApiError::not_found()
                 .add_method_name("to_joined_member_response")
                 .add_message("Member not joined the group"));

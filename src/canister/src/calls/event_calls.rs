@@ -97,7 +97,7 @@ fn get_events(
     page: usize,
     sort: EventSort,
     filter: Vec<EventFilter>,
-    filter_type: FilterType,
+    filter_type: Vec<FilterType<EventFilter>>,
     group_identifier: Option<Principal>,
 ) -> Result<PagedResponse<EventResponse>, ApiError> {
     Err(ApiError::not_implemented())

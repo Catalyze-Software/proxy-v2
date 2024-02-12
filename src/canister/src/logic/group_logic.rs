@@ -16,8 +16,7 @@ use crate::{
         api_error::ApiError,
         filter_type::FilterType,
         group::{Group, GroupFilter, GroupResponse, GroupSort, PostGroup, UpdateGroup},
-        identifier::Identifier,
-        member::{self, InviteMemberResponse, InviteType, JoinedMemberResponse, Member},
+        member::{InviteMemberResponse, InviteType, JoinedMemberResponse, Member},
         neuron::{DissolveState, ListNeurons, ListNeuronsResponse},
         paged_response::PagedResponse,
         permission::{Permission, PostPermission},
@@ -43,7 +42,7 @@ impl GroupCalls {
 
         // Check if the group name already exists
         if groups()
-            .find(|g| g.name.to_lowercase() == post_group.name.to_lowercase())
+            .find(|_, group| group.name.to_lowercase() == post_group.name.to_lowercase())
             .is_some()
         {
             return Err(ApiError::bad_request().add_message("Group name already exists"));
@@ -70,11 +69,11 @@ impl GroupCalls {
 
         members().update(caller(), member)?;
 
-        GroupMapper::to_response_result(Ok(new_group))
+        GroupResponse::from_result(Ok(new_group))
     }
 
     pub fn get_group(id: u64) -> Result<GroupResponse, ApiError> {
-        GroupMapper::to_response_result(groups().get(id))
+        GroupResponse::from_result(groups().get(id))
     }
 
     pub fn get_groups(
@@ -84,51 +83,62 @@ impl GroupCalls {
         sort: GroupSort,
     ) -> Result<PagedResponse<GroupResponse>, ApiError> {
         // get all the groups and filter them based on the privacy
-        let mut groups = groups().filter(|group_id, group| {
+        // exclude all InviteOnly groups that the caller is not a member of
+        let groups = groups().filter(|group_id, group| {
             if group.privacy == Privacy::InviteOnly {
-                return members().get(caller())?.1.is_group_joined(group_id);
+                if let Ok((_, caller_member)) = members().get(caller()) {
+                    return caller_member.is_group_joined(group_id);
+                }
+                return false;
             } else {
                 return true;
             }
-
-            // filter groups by filters param
-            for filter_type in filters {
-                use GroupFilter::*;
-                match filter_type {
-                    FilterType::And(filter_value) => match filter_value {
-                        Name(value) => todo!(),
-                        Owner(value) => todo!(),
-                        MemberCount(value) => todo!(),
-                        Ids(value) => todo!(),
-                        Tag(value) => todo!(),
-                        UpdatedOn(value) => todo!(),
-                        CreatedOn(value) => todo!(),
-                    },
-                    FilterType::Or(filter_value) => match filter_value {
-                        Name(value) => todo!(),
-                        Owner(value) => todo!(),
-                        MemberCount(value) => todo!(),
-                        Ids(value) => todo!(),
-                        Tag(value) => todo!(),
-                        UpdatedOn(value) => todo!(),
-                        CreatedOn(value) => todo!(),
-                    },
-                }
-            }
         });
 
-        let result: Vec<GroupResponse> = groups
+        // split the filters into or and and filters
+        let mut or_filters: Vec<GroupFilter> = vec![];
+        let mut and_filters: Vec<GroupFilter> = vec![];
+        for filter_type in filters {
+            use FilterType::*;
+            match filter_type {
+                And(filter_value) => and_filters.push(filter_value),
+                Or(filter_value) => or_filters.push(filter_value),
+            }
+        }
+
+        // filter the groups based on the `OR` filters
+        let mut or_filtered_groups: HashMap<u64, Group> = HashMap::new();
+        for filter in or_filters {
+            for (id, group) in &groups {
+                if filter.is_match(&id, &group) {
+                    or_filtered_groups.insert(id.clone(), group.clone());
+                }
+            }
+        }
+
+        // filter the `or_filtered` groups based on the `AND` filters
+        let mut and_filtered_groups: HashMap<u64, Group> = HashMap::new();
+        for filter in and_filters {
+            for (id, group) in &or_filtered_groups {
+                if filter.is_match(&id, &group) {
+                    and_filtered_groups.insert(id.clone(), group.clone());
+                }
+            }
+        }
+
+        let sorted_groups = sort.sort(and_filtered_groups);
+        let result: Vec<GroupResponse> = sorted_groups
             .into_iter()
-            .map(|data| GroupMapper::to_response(data))
+            .map(|data| GroupResponse::new(data.0, data.1))
             .collect();
 
-        Ok(PagedResponse::new(result, limit, page))
+        Ok(PagedResponse::new(page, limit, result))
     }
 
     pub fn edit_group(id: u64, update_group: UpdateGroup) -> Result<GroupResponse, ApiError> {
         let (id, mut group) = groups().get(id)?;
         group.update(update_group);
-        GroupMapper::to_response_result(groups().update(id, group))
+        GroupResponse::from_result(groups().update(id, group))
     }
 
     pub fn get_group_owner_and_privacy(id: u64) -> Result<(Principal, Privacy), ApiError> {
@@ -140,7 +150,7 @@ impl GroupCalls {
         groups()
             .get_many(group_ids)
             .into_iter()
-            .map(|data| GroupMapper::to_response(data))
+            .map(|data| GroupResponse::new(data.0, data.1))
             .collect()
     }
 
@@ -149,7 +159,7 @@ impl GroupCalls {
     pub fn delete_group(group_id: u64) -> Result<GroupResponse, ApiError> {
         let (id, mut group) = groups().get(group_id)?;
         group.is_deleted = true;
-        GroupMapper::to_response_result(groups().update(id, group))
+        GroupResponse::from_result(groups().update(id, group))
     }
 
     pub fn add_wallet_to_group(
@@ -159,7 +169,7 @@ impl GroupCalls {
     ) -> Result<GroupResponse, ApiError> {
         let (id, mut group) = groups().get(group_id)?;
         group.wallets.insert(wallet_canister, description);
-        GroupMapper::to_response_result(groups().update(id, group))
+        GroupResponse::from_result(groups().update(id, group))
     }
 
     pub fn remove_wallet_from_group(
@@ -168,7 +178,7 @@ impl GroupCalls {
     ) -> Result<GroupResponse, ApiError> {
         let (id, mut group) = groups().get(group_id)?;
         group.wallets.remove(&wallet_canister);
-        GroupMapper::to_response_result(groups().update(id, group))
+        GroupResponse::from_result(groups().update(id, group))
     }
 
     // Was add_role
@@ -203,7 +213,7 @@ impl GroupCalls {
 
             // get all members from the group with the role
             let group_members_with_role =
-                members().filter(|member| member.has_group_role(&group_id, &role_name));
+                members().filter(|_, member| member.has_group_role(&group_id, &role_name));
 
             // remove the role from the member
             for (member_id, mut member) in group_members_with_role {
@@ -253,7 +263,7 @@ impl GroupCalls {
         let (_, mut member) = members().get(caller())?;
 
         // Check if the member is already in the group
-        if member.is_group_joined(group_id) {
+        if member.is_group_joined(&group_id) {
             return Err(ApiError::bad_request().add_message("Member is already in the group"));
         }
 
@@ -278,12 +288,12 @@ impl GroupCalls {
         let (_, mut invitee_member) = members().get(invitee_principal)?;
 
         // Check if the member is already in the group
-        if invitee_member.is_group_joined(group_id) {
+        if invitee_member.is_group_joined(&group_id) {
             return Err(ApiError::bad_request().add_message("Member is already in the group"));
         }
 
         // Check if the member is already invited to the group
-        if invitee_member.is_group_invited(group_id) {
+        if invitee_member.is_group_invited(&group_id) {
             return Err(
                 ApiError::bad_request().add_message("Member is already invited to the group")
             );
@@ -393,7 +403,7 @@ impl GroupCalls {
         let (_, member) = members().get(principal)?;
 
         // Check if the member is in the group
-        if !member.is_group_joined(group_id) {
+        if !member.is_group_joined(&group_id) {
             return Err(ApiError::bad_request().add_message("Member is not in the group"));
         }
 
@@ -415,7 +425,7 @@ impl GroupCalls {
     }
 
     pub fn get_group_members(group_id: u64) -> Result<Vec<JoinedMemberResponse>, ApiError> {
-        let members = members().filter(|member| member.is_group_joined(group_id));
+        let members = members().filter(|_, member| member.is_group_joined(&group_id));
 
         let mut result: Vec<JoinedMemberResponse> = vec![];
 
@@ -440,7 +450,7 @@ impl GroupCalls {
         let (_, mut member) = members().get(caller())?;
 
         // Check if the member is in the group
-        if !member.is_group_joined(group_id) {
+        if !member.is_group_joined(&group_id) {
             return Err(ApiError::bad_request().add_message("Member is not in the group"));
         }
 
@@ -462,7 +472,7 @@ impl GroupCalls {
         let (_, mut member) = members().get(caller())?;
 
         // Check if the member is in the group
-        if !member.is_group_invited(group_id) {
+        if !member.is_group_invited(&group_id) {
             return Err(ApiError::bad_request().add_message("Member is not invited to the group"));
         }
 
@@ -478,7 +488,7 @@ impl GroupCalls {
         let (_, mut member) = members().get(principal)?;
 
         // Check if the member is in the group
-        if !member.is_group_joined(group_id) {
+        if !member.is_group_joined(&group_id) {
             return Err(ApiError::bad_request().add_message("Member is not in the group"));
         }
 
@@ -497,7 +507,7 @@ impl GroupCalls {
         let (_, mut member) = members().get(principal)?;
 
         // Check if the member is in the group
-        if !member.is_group_invited(group_id) {
+        if !member.is_group_invited(&group_id) {
             return Err(ApiError::bad_request().add_message("Member is not invited to the group"));
         }
 
@@ -510,7 +520,7 @@ impl GroupCalls {
     }
 
     pub fn get_group_invites(group_id: u64) -> Result<Vec<InviteMemberResponse>, ApiError> {
-        let members = members().filter(|member| member.is_group_invited(group_id));
+        let members = members().filter(|_, member| member.is_group_invited(&group_id));
 
         let mut result: Vec<InviteMemberResponse> = vec![];
 
@@ -519,81 +529,6 @@ impl GroupCalls {
         }
 
         Ok(result)
-    }
-}
-
-impl GroupMapper {
-    pub fn to_response((id, group): (u64, Group)) -> GroupResponse {
-        let result = GroupResponse {
-            identifier: Identifier::generate(crate::models::identifier::IdentifierKind::Group(id))
-                .to_principal()
-                .unwrap(),
-            name: group.name,
-            description: group.description,
-            website: group.website,
-            location: group.location,
-            privacy: group.privacy,
-            created_by: group.created_by,
-            owner: group.owner,
-            matrix_space_id: group.matrix_space_id,
-            image: group.image,
-            banner_image: group.banner_image,
-            tags: group.tags,
-            roles: group.roles,
-            // TODO: Add the correct member count after full migration
-            member_count: group.member_count.into_iter().map(|(_, value)| value).sum(),
-            wallets: group
-                .wallets
-                .into_iter()
-                .map(|(key, value)| (key, value))
-                .collect(),
-            is_deleted: group.is_deleted,
-            privacy_gated_type_amount: group.privacy_gated_type_amount,
-            updated_on: group.updated_on,
-            created_on: group.created_on,
-        };
-        result
-    }
-
-    pub fn to_response_result(
-        group_result: Result<(u64, Group), ApiError>,
-    ) -> Result<GroupResponse, ApiError> {
-        match group_result {
-            Err(err) => Err(err),
-            Ok((id, group)) => {
-                let result = GroupResponse {
-                    identifier: Identifier::generate(
-                        crate::models::identifier::IdentifierKind::Group(id),
-                    )
-                    .to_principal()
-                    .unwrap(),
-                    name: group.name,
-                    description: group.description,
-                    website: group.website,
-                    location: group.location,
-                    privacy: group.privacy,
-                    created_by: group.created_by,
-                    owner: group.owner,
-                    matrix_space_id: group.matrix_space_id,
-                    image: group.image,
-                    banner_image: group.banner_image,
-                    tags: group.tags,
-                    roles: group.roles,
-                    // TODO: Add the correct member count after full migration
-                    member_count: group.member_count.into_iter().map(|(_, value)| value).sum(),
-                    wallets: group
-                        .wallets
-                        .into_iter()
-                        .map(|(key, value)| (key, value))
-                        .collect(),
-                    is_deleted: group.is_deleted,
-                    privacy_gated_type_amount: group.privacy_gated_type_amount,
-                    updated_on: group.updated_on,
-                    created_on: group.created_on,
-                };
-                Ok(result)
-            }
-        }
     }
 }
 

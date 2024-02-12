@@ -55,10 +55,10 @@ impl StorageMethods<u64, FriendRequest> for FriendRequestStore<'static> {
     /// * `Option<(u64, FriendRequest)>` - The friend_request if found, otherwise None
     fn find<F>(&self, filter: F) -> Option<(u64, FriendRequest)>
     where
-        F: Fn(&FriendRequest) -> bool,
+        F: Fn(&u64, &FriendRequest) -> bool,
     {
         self.store
-            .with(|data| data.borrow().iter().find(|(_, value)| filter(value)))
+            .with(|data| data.borrow().iter().find(|(id, value)| filter(id, value)))
     }
 
     /// Find all friend_requests by filter
@@ -68,12 +68,12 @@ impl StorageMethods<u64, FriendRequest> for FriendRequestStore<'static> {
     /// * `Vec<(u64, FriendRequest)>` - The friend_requests if found, otherwise an empty vector
     fn filter<F>(&self, filter: F) -> Vec<(u64, FriendRequest)>
     where
-        F: Fn(&FriendRequest) -> bool,
+        F: Fn(&u64, &FriendRequest) -> bool,
     {
         self.store.with(|data| {
             data.borrow()
                 .iter()
-                .filter(|(_, value)| filter(value))
+                .filter(|(id, value)| filter(id, value))
                 .collect()
         })
     }

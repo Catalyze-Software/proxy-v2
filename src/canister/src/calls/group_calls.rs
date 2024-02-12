@@ -21,7 +21,7 @@ use crate::{
         filter_type::FilterType,
         group::{GroupFilter, GroupResponse, GroupSort, PostGroup, UpdateGroup},
         identifier::Identifier,
-        member::{self, InviteMemberResponse, JoinedMemberResponse, Member},
+        member::{InviteMemberResponse, JoinedMemberResponse, Member},
         paged_response::PagedResponse,
         permission::{PermissionType, PostPermission},
         privacy::Privacy,
@@ -82,6 +82,7 @@ pub fn get_groups(
     filters: Vec<FilterType<GroupFilter>>,
     sort: GroupSort,
 ) -> Result<PagedResponse<GroupResponse>, ApiError> {
+    Err(ApiError::not_implemented())
 }
 
 /// Edit a group - [`[update]`](update)

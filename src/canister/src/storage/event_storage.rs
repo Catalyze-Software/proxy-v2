@@ -138,10 +138,10 @@ impl StorageMethods<u64, Event> for EventStore<'static> {
     /// * `Option<(u64, Event)>` - The event if found, otherwise None
     fn find<F>(&self, filter: F) -> Option<(u64, Event)>
     where
-        F: Fn(&Event) -> bool,
+        F: Fn(&u64, &Event) -> bool,
     {
         self.store
-            .with(|data| data.borrow().iter().find(|(_, value)| filter(value)))
+            .with(|data| data.borrow().iter().find(|(id, value)| filter(id, value)))
     }
 
     /// Find all events by filter
@@ -151,12 +151,12 @@ impl StorageMethods<u64, Event> for EventStore<'static> {
     /// * `Vec<(u64, Event)>` - The events if found, otherwise an empty vector
     fn filter<F>(&self, filter: F) -> Vec<(u64, Event)>
     where
-        F: Fn(&Event) -> bool,
+        F: Fn(&u64, &Event) -> bool,
     {
         self.store.with(|data| {
             data.borrow()
                 .iter()
-                .filter(|(_, value)| filter(value))
+                .filter(|(id, value)| filter(id, value))
                 .collect()
         })
     }

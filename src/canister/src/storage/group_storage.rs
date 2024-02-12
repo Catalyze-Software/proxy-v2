@@ -138,10 +138,10 @@ impl StorageMethods<u64, Group> for GroupStore<'static> {
     /// * `Option<(u64, Group)>` - The group if found, otherwise None
     fn find<F>(&self, filter: F) -> Option<(u64, Group)>
     where
-        F: Fn(&Group) -> bool,
+        F: Fn(&u64, &Group) -> bool,
     {
         self.store
-            .with(|data| data.borrow().iter().find(|(_, value)| filter(value)))
+            .with(|data| data.borrow().iter().find(|(id, value)| filter(id, value)))
     }
 
     /// Find all groups by filter
@@ -156,7 +156,7 @@ impl StorageMethods<u64, Group> for GroupStore<'static> {
         self.store.with(|data| {
             data.borrow()
                 .iter()
-                .filter(|(_, value)| filter(value))
+                .filter(|(id, value)| filter(id, value))
                 .collect()
         })
     }

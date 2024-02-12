@@ -87,8 +87,8 @@ impl Member {
         self.invites.remove(&group_id);
     }
 
-    pub fn has_group_role(&self, group_id: &u64, role: &String) -> bool {
-        if let Some(group) = self.joined.get(group_id) {
+    pub fn has_group_role(&self, &group_id: &u64, role: &String) -> bool {
+        if let Some(group) = self.joined.get(&group_id) {
             return group.roles.contains(role);
         }
         false
@@ -110,12 +110,12 @@ impl Member {
         self.has_group_role(group_id, &"member".to_string())
     }
 
-    pub fn is_group_invited(&self, group_id: u64) -> bool {
+    pub fn is_group_invited(&self, group_id: &u64) -> bool {
         self.invites.contains_key(&group_id)
     }
 
-    pub fn is_group_joined(&self, group_id: u64) -> bool {
-        self.joined.contains_key(&group_id)
+    pub fn is_group_joined(&self, group_id: &u64) -> bool {
+        self.joined.contains_key(group_id)
     }
 
     /// Check if the member has a pending join request for the group

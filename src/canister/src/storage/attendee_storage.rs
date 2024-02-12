@@ -138,12 +138,12 @@ impl StorageMethods<Principal, Attendee> for AttendeeStore<'static> {
     /// * `Option<(Principal, Attendee)>` - The attendee if found, otherwise None
     fn find<F>(&self, filter: F) -> Option<(Principal, Attendee)>
     where
-        F: Fn(&Attendee) -> bool,
+        F: Fn(&Principal, &Attendee) -> bool,
     {
         self.store.with(|data| {
             data.borrow()
                 .iter()
-                .find(|(_, value)| filter(value))
+                .find(|(id, value)| filter(id, value))
                 .map(|(key, value)| (key, value))
         })
     }
@@ -155,12 +155,12 @@ impl StorageMethods<Principal, Attendee> for AttendeeStore<'static> {
     /// * `Vec<(Principal, Attendee)>` - The attendees if found, otherwise an empty vector
     fn filter<F>(&self, filter: F) -> Vec<(Principal, Attendee)>
     where
-        F: Fn(&Attendee) -> bool,
+        F: Fn(&Principal, &Attendee) -> bool,
     {
         self.store.with(|data| {
             data.borrow()
                 .iter()
-                .filter(|(_, value)| filter(value))
+                .filter(|(id, value)| filter(id, value))
                 .map(|(key, value)| (key, value))
                 .collect()
         })

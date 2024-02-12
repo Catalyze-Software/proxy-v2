@@ -3,7 +3,7 @@ use std::fmt;
 use candid::{CandidType, Deserialize};
 use serde::Serialize;
 
-#[derive(Clone, Debug, CandidType, Serialize, Deserialize)]
+#[derive(Clone, Debug, CandidType, Serialize, Deserialize, PartialEq, Eq)]
 pub enum SortDirection {
     Asc,
     Desc,

@@ -30,7 +30,7 @@ impl FriendRequestCalls {
 
         // if somebody tries to make the same friend request
         if friend_requests()
-            .find(|request| request.to == to && request.requested_by == caller())
+            .find(|_, request| request.to == to && request.requested_by == caller())
             .is_some()
         {
             return Err(ApiError::duplicate()
@@ -40,7 +40,7 @@ impl FriendRequestCalls {
 
         // if there is a friend request from the caller to the to
         if friend_requests()
-            .find(|request| request.to == caller() && request.requested_by == to)
+            .find(|_, request| request.to == caller() && request.requested_by == to)
             .is_some()
         {
             return Err(ApiError::duplicate()
@@ -91,7 +91,7 @@ impl FriendRequestCalls {
 
     pub fn get_incoming_friend_requests() -> Vec<FriendRequestResponse> {
         friend_requests()
-            .filter(|request| request.to == caller())
+            .filter(|_, request| request.to == caller())
             .into_iter()
             .map(|data| FriendRequestMapper::to_response(data))
             .collect()
@@ -99,7 +99,7 @@ impl FriendRequestCalls {
 
     pub fn get_outgoing_friend_requests() -> Vec<FriendRequestResponse> {
         friend_requests()
-            .filter(|request| request.requested_by == caller())
+            .filter(|_, request| request.requested_by == caller())
             .into_iter()
             .map(|data| FriendRequestMapper::to_response(data))
             .collect()

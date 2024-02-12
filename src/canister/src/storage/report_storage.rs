@@ -140,10 +140,10 @@ impl StorageMethods<u64, Report> for ReportStore<'static> {
     /// * `Option<(u64, Report)>` - The report if found, otherwise None
     fn find<F>(&self, filter: F) -> Option<(u64, Report)>
     where
-        F: Fn(&Report) -> bool,
+        F: Fn(&u64, &Report) -> bool,
     {
         self.store
-            .with(|data| data.borrow().iter().find(|(_, value)| filter(value)))
+            .with(|data| data.borrow().iter().find(|(id, value)| filter(id, value)))
     }
 
     /// Find all reports by filter
@@ -153,12 +153,12 @@ impl StorageMethods<u64, Report> for ReportStore<'static> {
     /// * `Vec<(u64, Report)>` - The reports if found, otherwise an empty vector
     fn filter<F>(&self, filter: F) -> Vec<(u64, Report)>
     where
-        F: Fn(&Report) -> bool,
+        F: Fn(&u64, &Report) -> bool,
     {
         self.store.with(|data| {
             data.borrow()
                 .iter()
-                .filter(|(_, value)| filter(value))
+                .filter(|(id, value)| filter(id, value))
                 .collect()
         })
     }
