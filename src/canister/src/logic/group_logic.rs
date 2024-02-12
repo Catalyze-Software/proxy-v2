@@ -29,7 +29,6 @@ use crate::{
 
 pub struct GroupCalls;
 pub struct GroupValidation;
-pub struct GroupMapper;
 
 impl GroupCalls {
     // TODO: add logic for nft and token gated groups
