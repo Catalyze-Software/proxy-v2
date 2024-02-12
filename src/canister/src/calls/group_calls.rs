@@ -298,12 +298,12 @@ pub fn edit_role_permissions(
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "has_access")]
-pub fn join_group(
+pub async fn join_group(
     group_identifier: Principal,
     account_identifier: Option<String>,
 ) -> Result<JoinedMemberResponse, ApiError> {
     let group_id = Identifier::from(group_identifier).id();
-    GroupCalls::join_group(group_id, account_identifier)
+    GroupCalls::join_group(group_id, account_identifier).await
 }
 
 /// Invite a user to a group - [`[update]`](update)

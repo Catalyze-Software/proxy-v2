@@ -254,26 +254,12 @@ impl GroupCalls {
         }
     }
 
-    // TODO: add logic for nft and token gated groups
-    pub fn join_group(
+    pub async fn join_group(
         group_id: u64,
         account_identifier: Option<String>,
     ) -> Result<JoinedMemberResponse, ApiError> {
-        let (_, mut member) = members().get(caller())?;
-
-        // Check if the member is already in the group
-        if member.is_group_joined(&group_id) {
-            return Err(ApiError::bad_request().add_message("Member is already in the group"));
-        }
-
-        let (_, group) = groups().get(group_id)?;
-        // Check if the group is invite only
-        if group.privacy == Privacy::InviteOnly {
-            return Err(ApiError::bad_request().add_message("Group is invite only"));
-        }
-
-        // Add the group to the member
-        member.add_joined(group_id, vec![]);
+        let member =
+            GroupValidation::validate_member_join(caller(), group_id, &account_identifier).await?;
 
         members().update(caller(), member.clone())?;
 
@@ -620,12 +606,8 @@ impl GroupValidation {
                     Token(nft_canisters) => {
                         // Loop over the canisters and check if the caller owns a specific NFT (inter-canister call)
                         for nft_canister in nft_canisters {
-                            if Self::validate_nft_gated(
-                                caller,
-                                account_identifier.clone(),
-                                &nft_canister,
-                            )
-                            .await
+                            if Self::validate_nft_gated(caller, &account_identifier, &nft_canister)
+                                .await
                             {
                                 is_valid += 1;
                             }
@@ -651,7 +633,7 @@ impl GroupValidation {
     // Method to check if the caller owns a specific NFT
     pub async fn validate_nft_gated(
         principal: &Principal,
-        account_identifier: Option<String>,
+        account_identifier: &Option<String>,
         nft_canister: &TokenGated,
     ) -> bool {
         // Check if the canister is a EXT, DIP20 or DIP721 canister
@@ -661,7 +643,7 @@ impl GroupValidation {
             "EXT" => match account_identifier {
                 Some(_account_identifier) => {
                     let response =
-                        ext_balance_of(nft_canister.principal, _account_identifier).await;
+                        ext_balance_of(nft_canister.principal, _account_identifier.clone()).await;
                     response as u64 >= nft_canister.amount
                 }
                 None => false,
@@ -785,6 +767,90 @@ impl GroupValidation {
                 return is_valid.iter().any(|v| v.1 == &true);
             }
             Err(_) => false,
+        }
+    }
+
+    async fn validate_member_join(
+        caller: Principal,
+        group_id: u64,
+        account_identifier: &Option<String>,
+    ) -> Result<Member, ApiError> {
+        let (group_id, group) = groups().get(group_id)?;
+        let (member_principal, mut member) = members().get(caller)?;
+
+        // Check if the member is already in the group
+        if member.is_group_joined(&group_id) {
+            return Err(ApiError::bad_request().add_message("Member is already in the group"));
+        }
+
+        use Privacy::*;
+        match group.privacy {
+            // If the group is public, add the member to the group
+            Public => {
+                member.add_joined(group_id, vec!["member".to_string()]);
+                Ok(member)
+            }
+            // If the group is private, add the invite to the member
+            Private => {
+                member.add_invite(group_id, InviteType::UserRequest);
+                Ok(member)
+            }
+            // If the group is invite only, throw an error
+            InviteOnly => Err(ApiError::bad_request().add_message("Group is invite only")),
+
+            // Self::validate_neuron(caller, neuron_canister.governance_canister, neuron_canister.rules).await
+            // If the group is gated, check if the caller owns a specific NFT
+            Gated(gated_type) => {
+                let mut is_valid = false;
+                use GatedType::*;
+                match gated_type {
+                    Neuron(neuron_canisters) => {
+                        for neuron_canister in neuron_canisters {
+                            is_valid = Self::validate_neuron_gated(
+                                caller,
+                                neuron_canister.governance_canister,
+                                neuron_canister.rules,
+                            )
+                            .await;
+                            if is_valid {
+                                break;
+                            }
+                        }
+                        if is_valid {
+                            member.add_joined(group_id, vec!["member".to_string()]);
+                            Ok(member)
+                            // If the caller does not own the neuron, throw an error
+                        } else {
+                            return Err(ApiError::unauthorized().add_message(
+                                "You are not owning the required neuron to join this group",
+                            ));
+                        }
+                    }
+                    Token(nft_canisters) => {
+                        // Loop over the canisters and check if the caller owns a specific NFT (inter-canister call)
+                        for nft_canister in nft_canisters {
+                            is_valid = Self::validate_nft_gated(
+                                &caller,
+                                account_identifier,
+                                &nft_canister,
+                            )
+                            .await;
+                            if is_valid {
+                                break;
+                            }
+                        }
+                        if is_valid {
+                            member.add_joined(group_id, vec!["member".to_string()]);
+                            Ok(member)
+                            // If the caller does not own the NFT, throw an error
+                        } else {
+                            return Err(ApiError::unauthorized().add_message(
+                                "You are not owning the required NFT to join this group",
+                            ));
+                        }
+                    }
+                }
+            }
         }
     }
 }
