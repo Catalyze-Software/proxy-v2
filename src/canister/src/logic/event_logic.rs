@@ -123,14 +123,31 @@ pub fn invite_to_event(
     ))
 }
 
-// pub fn accept_user_request_event_invite(
-//     attendee_principal: Principal,
-//     event_identifier: Principal,
-//     member_identifier: Principal,
-//     group_identifier: Principal,
-// ) -> Result<(Principal, Attendee), ApiError> {
-//     Err(ApiError::not_implemented())
-// }
+pub fn accept_user_request_event_invite(
+    event_id: u64,
+    attendee_principal: Principal,
+    group_id: u64,
+) -> Result<JoinedAttendeeResponse, ApiError> {
+    let (_, event) = events().get(event_id)?;
+
+    if !event.is_from_group(group_id) {
+        return Err(ApiError::unauthorized());
+    }
+
+    let (attendee_principal, mut attendee) = attendees().get(attendee_principal)?;
+
+    if !attendee.has_pending_join_request(event_id) {
+        return Err(ApiError::not_found());
+    }
+
+    attendee.add_joined(event_id, group_id);
+    attendees().update(attendee_principal, attendee)?;
+    Ok(JoinedAttendeeResponse::new(
+        event_id,
+        group_id,
+        attendee_principal,
+    ))
+}
 
 // pub fn accept_owner_request_event_invite(
 //     event_identifier: Principal,
