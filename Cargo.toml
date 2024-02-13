@@ -1,4 +1,5 @@
 [workspace]
 members = [
     "src/canister",
+    "src/test"
 ]
