@@ -1,6 +1,6 @@
 use candid::{encode_one, Principal};
-use canister::models::boosted::Boosted;
 use ic_cdk::api::management_canister::main::CanisterId;
+use models::models::boosted::Boosted;
 use pocket_ic::{self, PocketIc, WasmResult};
 
 #[test]
@@ -15,11 +15,14 @@ fn test_proxy() {
         std::fs::read("../../wasm/canister.wasm.gz").expect("Failed to read wasm file");
     pic.install_canister(canister_id, wasm_bytes, vec![], None);
 
-    let WasmResult::Reply(bytes) = call(&pic, canister_id, "get_boosted_groups");
+    if let WasmResult::Reply(bytes) = call(&pic, canister_id, "get_boosted_groups") {
+        println!("\n\n{:?}\n\n", &bytes);
 
-    println!("\n\n{:?}\n\n", &bytes);
-
-    let expected: Vec<Boosted> = candid::decode_one::<Vec<Boosted>>(&bytes).unwrap();
+        let expected: Vec<Boosted> = candid::decode_one(&bytes).unwrap();
+        println!("\n\n{:?}\n\n", &expected); 
+    } else {
+        panic!("Failed to call counter canister");
+    }
 }
 
 fn call(pic: &PocketIc, canister_id: CanisterId, method: &str) -> WasmResult {
