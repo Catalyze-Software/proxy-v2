@@ -21,10 +21,34 @@ pub fn all_access_permission_actions() -> PermissionActions {
 
 pub fn default_roles() -> Vec<Role> {
     vec![
-        Role::new("owner", true, all_access_permissions(), "#FFB800", None),
-        Role::new("admin", true, all_access_permissions(), "#F56E00", None),
-        Role::new("moderator", true, moderator_permissions(), "#06E143", None),
-        Role::new("member", true, read_only_permissions(), "#7A9CF2", None),
+        Role::new(
+            "owner".into(),
+            true,
+            all_access_permissions(),
+            "#FFB800".into(),
+            None,
+        ),
+        Role::new(
+            "admin".into(),
+            true,
+            all_access_permissions(),
+            "#F56E00".into(),
+            None,
+        ),
+        Role::new(
+            "moderator".into(),
+            true,
+            moderator_permissions(),
+            "#06E143".into(),
+            None,
+        ),
+        Role::new(
+            "member".into(),
+            true,
+            read_only_permissions(),
+            "#7A9CF2".into(),
+            None,
+        ),
     ]
 }
 
@@ -66,7 +90,7 @@ fn all_access_permissions() -> Vec<Permission> {
     ]
 }
 
-fn read_only_permissions() -> Vec<Permission> {
+pub fn read_only_permissions() -> Vec<Permission> {
     use PermissionType::*;
     vec![
         create_permission(&Task(None)),

@@ -1,10 +1,8 @@
-use candid::Principal;
 use ic_cdk::caller;
 
 use crate::{
     models::{
         api_error::ApiError,
-        identifier::Identifier,
         permission::{PermissionActionType, PermissionType},
         role::Role,
     },
@@ -15,48 +13,20 @@ use crate::{
 /// # Arguments
 /// * `group_identifier` - The group identifier
 /// * `permission_type` - The permission type to check
-pub fn can_edit(
-    group_identifier: Principal,
-    permission_type: &PermissionType,
-) -> Result<(), ApiError> {
-    has_permission(
-        group_identifier,
-        permission_type,
-        &PermissionActionType::Edit,
-    )
+pub fn can_edit(group_id: u64, permission_type: PermissionType) -> Result<(), ApiError> {
+    has_permission(group_id, &permission_type, &PermissionActionType::Edit)
 }
 
-pub fn can_write(
-    group_identifier: Principal,
-    permission_type: &PermissionType,
-) -> Result<(), ApiError> {
-    has_permission(
-        group_identifier,
-        permission_type,
-        &PermissionActionType::Write,
-    )
+pub fn can_write(group_id: u64, permission_type: PermissionType) -> Result<(), ApiError> {
+    has_permission(group_id, &permission_type, &PermissionActionType::Write)
 }
 
-pub fn can_delete(
-    group_identifier: Principal,
-    permission_type: &PermissionType,
-) -> Result<(), ApiError> {
-    has_permission(
-        group_identifier,
-        permission_type,
-        &PermissionActionType::Delete,
-    )
+pub fn can_delete(group_id: u64, permission_type: PermissionType) -> Result<(), ApiError> {
+    has_permission(group_id, &permission_type, &PermissionActionType::Delete)
 }
 
-pub fn can_read(
-    group_identifier: Principal,
-    permission_type: &PermissionType,
-) -> Result<(), ApiError> {
-    has_permission(
-        group_identifier,
-        permission_type,
-        &PermissionActionType::Read,
-    )
+pub fn can_read(group_id: u64, permission_type: PermissionType) -> Result<(), ApiError> {
+    has_permission(group_id, &permission_type, &PermissionActionType::Read)
 }
 
 /// Check if the caller has permission to perform an action on a group
@@ -69,13 +39,12 @@ pub fn can_read(
 /// # Returns
 /// * `Result<(), String>` - Returns an error if the caller does not have permission
 fn has_permission(
-    group_identifier: Principal,
+    group_id: u64,
     permission: &PermissionType,
     permission_action: &PermissionActionType,
 ) -> Result<(), ApiError> {
-    let member_roles = members().get(caller())?.1.get_roles(group_identifier);
+    let member_roles = members().get(caller())?.1.get_roles(group_id);
 
-    let group_id = Identifier::from(group_identifier).id();
     let group_roles = groups().get(group_id)?.1.get_roles();
 
     let mut found_roles: Vec<&Role> = vec![];

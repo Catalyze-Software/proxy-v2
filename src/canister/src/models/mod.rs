@@ -27,3 +27,5 @@ pub mod invite;
 pub mod member;
 pub mod profile;
 pub mod report;
+
+pub mod neuron;

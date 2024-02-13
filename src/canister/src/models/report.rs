@@ -57,7 +57,14 @@ pub enum ReportSort {
 
 #[derive(Clone, Debug, CandidType, Deserialize)]
 pub enum ReportFilter {
+    None,
     Kind(String),
     CreatedOn(DateRange),
     ReportedBy(Principal),
+}
+
+impl Default for ReportFilter {
+    fn default() -> Self {
+        ReportFilter::None
+    }
 }

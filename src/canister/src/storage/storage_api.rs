@@ -68,10 +68,10 @@ pub trait StorageMethods<K, V> {
     fn get_many(&self, ids: Vec<K>) -> Vec<(K, V)>;
     fn find<F>(&self, filter: F) -> Option<(K, V)>
     where
-        F: Fn(&V) -> bool;
+        F: Fn(&K, &V) -> bool;
     fn filter<F>(&self, filter: F) -> Vec<(K, V)>
     where
-        F: Fn(&V) -> bool;
+        F: Fn(&K, &V) -> bool;
     fn insert(&mut self, entity: V) -> Result<(K, V), ApiError>;
     fn insert_by_key(&mut self, key: K, entity: V) -> Result<(K, V), ApiError>;
     fn update(&mut self, id: K, entity: V) -> Result<(K, V), ApiError>;

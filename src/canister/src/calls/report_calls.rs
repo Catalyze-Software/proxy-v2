@@ -74,8 +74,7 @@ pub fn get_reports(
     limit: usize,
     page: usize,
     sort: ReportSort,
-    filters: Vec<ReportFilter>,
-    filter_type: FilterType,
+    filter_type: Vec<FilterType<ReportFilter>>,
     group_identifier: Principal,
     member_identifier: Principal,
 ) -> Result<PagedResponse<ReportResponse>, ApiError> {

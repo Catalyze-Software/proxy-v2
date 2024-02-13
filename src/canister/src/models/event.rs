@@ -162,6 +162,7 @@ pub enum EventSort {
 
 #[derive(Clone, Debug, CandidType, Deserialize)]
 pub enum EventFilter {
+    None,
     Name(String),
     StartDate(DateRange),
     EndDate(DateRange),
@@ -171,6 +172,12 @@ pub enum EventFilter {
     IsCanceled(bool),
     UpdatedOn(DateRange),
     CreatedOn(DateRange),
+}
+
+impl Default for EventFilter {
+    fn default() -> Self {
+        EventFilter::None
+    }
 }
 
 #[derive(Clone, Debug, CandidType, Deserialize, Serialize)]

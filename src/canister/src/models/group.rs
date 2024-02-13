@@ -13,7 +13,11 @@ use crate::{
     },
 };
 
-use super::permission::Permission;
+use super::{
+    api_error::ApiError,
+    identifier::{Identifier, MEMBER_CANISTER_ID},
+    permission::Permission,
+};
 
 impl_storable_for!(Group);
 
@@ -87,27 +91,17 @@ impl Group {
         }
     }
 
-    pub fn update(&self, group: UpdateGroup) -> Self {
-        Self {
-            name: group.name,
-            description: group.description,
-            website: group.website,
-            location: group.location,
-            privacy: group.privacy,
-            owner: self.owner,
-            created_by: self.created_by,
-            matrix_space_id: self.matrix_space_id.clone(),
-            image: group.image,
-            banner_image: group.banner_image,
-            tags: group.tags,
-            privacy_gated_type_amount: group.privacy_gated_type_amount,
-            roles: self.roles.clone(),
-            is_deleted: self.is_deleted,
-            member_count: self.member_count.clone(),
-            wallets: self.wallets.clone(),
-            updated_on: self.updated_on,
-            created_on: self.created_on,
-        }
+    pub fn update(&mut self, group: UpdateGroup) {
+        self.name = group.name;
+        self.description = group.description;
+        self.website = group.website;
+        self.location = group.location;
+        self.privacy = group.privacy;
+        self.image = group.image;
+        self.banner_image = group.banner_image;
+        self.tags = group.tags;
+        self.privacy_gated_type_amount = group.privacy_gated_type_amount;
+        self.updated_on = time();
     }
 
     pub fn set_owner(&mut self, owner: Principal) -> Self {
@@ -191,6 +185,74 @@ pub struct GroupResponse {
     pub created_on: u64,
 }
 
+impl GroupResponse {
+    pub fn new(id: u64, group: Group) -> Self {
+        let identifier = Identifier::generate(super::identifier::IdentifierKind::Group(id));
+        let member_count: usize = group.member_count.into_iter().map(|(_, value)| value).sum();
+
+        Self {
+            identifier: identifier.to_principal().unwrap(),
+            name: group.name,
+            description: group.description,
+            website: group.website,
+            location: group.location,
+            privacy: group.privacy,
+            created_by: group.created_by,
+            owner: group.owner,
+            matrix_space_id: group.matrix_space_id,
+            image: group.image,
+            banner_image: group.banner_image,
+            tags: group.tags,
+            roles: group.roles,
+            member_count: member_count.clone(),
+            wallets: group.wallets.into_iter().collect(),
+            is_deleted: group.is_deleted,
+            privacy_gated_type_amount: group.privacy_gated_type_amount,
+            updated_on: group.updated_on,
+            created_on: group.created_on,
+        }
+    }
+
+    pub fn from_result(group_result: Result<(u64, Group), ApiError>) -> Result<Self, ApiError> {
+        match group_result {
+            Err(err) => Err(err),
+            Ok((id, group)) => {
+                let result = Self {
+                    identifier: Identifier::generate(
+                        crate::models::identifier::IdentifierKind::Group(id),
+                    )
+                    .to_principal()
+                    .unwrap(),
+                    name: group.name,
+                    description: group.description,
+                    website: group.website,
+                    location: group.location,
+                    privacy: group.privacy,
+                    created_by: group.created_by,
+                    owner: group.owner,
+                    matrix_space_id: group.matrix_space_id,
+                    image: group.image,
+                    banner_image: group.banner_image,
+                    tags: group.tags,
+                    roles: group.roles,
+                    // TODO: Add the correct member count after full migration
+                    member_count: group.member_count.into_iter().map(|(_, value)| value).sum(),
+                    wallets: group
+                        .wallets
+                        .into_iter()
+                        .map(|(key, value)| (key, value))
+                        .collect(),
+                    is_deleted: group.is_deleted,
+                    privacy_gated_type_amount: group.privacy_gated_type_amount,
+                    updated_on: group.updated_on,
+                    created_on: group.created_on,
+                };
+                Ok(result)
+            }
+        }
+    }
+}
+
 #[derive(Clone, Debug, CandidType, Deserialize)]
 pub enum GroupSort {
     Name(SortDirection),
@@ -199,13 +261,88 @@ pub enum GroupSort {
     UpdatedOn(SortDirection),
 }
 
+impl GroupSort {
+    pub fn sort(&self, groups: HashMap<u64, Group>) -> Vec<(u64, Group)> {
+        let mut groups: Vec<(u64, Group)> = groups.into_iter().collect();
+        let member_canister_id = Principal::from_text(MEMBER_CANISTER_ID).unwrap();
+        use GroupSort::*;
+        use SortDirection::*;
+        match self {
+            Name(Asc) => {
+                groups.sort_by(|(_, a), (_, b)| a.name.to_lowercase().cmp(&b.name.to_lowercase()))
+            }
+            Name(Desc) => {
+                groups.sort_by(|(_, a), (_, b)| b.name.to_lowercase().cmp(&a.name.to_lowercase()))
+            }
+            MemberCount(Asc) => groups.sort_by(|(_, a), (_, b)| {
+                a.member_count
+                    .get(&member_canister_id)
+                    .unwrap()
+                    .cmp(b.member_count.get(&member_canister_id).unwrap())
+            }),
+            MemberCount(Desc) => groups.sort_by(|(_, a), (_, b)| {
+                b.member_count
+                    .get(&member_canister_id)
+                    .unwrap()
+                    .cmp(a.member_count.get(&member_canister_id).unwrap())
+            }),
+            CreatedOn(Asc) => groups.sort_by(|(_, a), (_, b)| a.created_on.cmp(&b.created_on)),
+            CreatedOn(Desc) => groups.sort_by(|(_, a), (_, b)| b.created_on.cmp(&a.created_on)),
+            UpdatedOn(Asc) => groups.sort_by(|(_, a), (_, b)| a.updated_on.cmp(&b.updated_on)),
+            UpdatedOn(Desc) => groups.sort_by(|(_, a), (_, b)| b.updated_on.cmp(&a.updated_on)),
+        }
+        groups
+    }
+}
+
 #[derive(Clone, Debug, CandidType, Deserialize)]
 pub enum GroupFilter {
+    None,
     Name(String),
     Owner(Principal),
     MemberCount((usize, usize)),
-    Identifiers(Vec<Principal>),
+    Ids(Vec<u64>),
     Tag(u32),
     UpdatedOn(DateRange),
     CreatedOn(DateRange),
+}
+
+impl Default for GroupFilter {
+    fn default() -> Self {
+        GroupFilter::None
+    }
+}
+
+impl GroupFilter {
+    pub fn is_match(&self, id: &u64, group: &Group) -> bool {
+        match self {
+            GroupFilter::None => true,
+            GroupFilter::Name(name) => group.name.to_lowercase().contains(&name.to_lowercase()),
+            GroupFilter::Owner(owner) => group.owner == *owner,
+            GroupFilter::MemberCount((min, max)) => {
+                // This gets the first value of the hashmap (should always be only one value)
+                let count = group
+                    .member_count
+                    .get(&Principal::from_text(MEMBER_CANISTER_ID).unwrap())
+                    .map_or(0, |f| *f);
+                count >= *min && count <= *max
+            }
+            GroupFilter::Ids(ids) => ids.contains(&id),
+            GroupFilter::Tag(tag) => group.tags.contains(tag),
+            GroupFilter::UpdatedOn(range) => {
+                if range.end_date() > 0 {
+                    range.is_within(group.updated_on)
+                } else {
+                    range.is_after(group.updated_on)
+                }
+            }
+            GroupFilter::CreatedOn(range) => {
+                if range.end_date() > 0 {
+                    range.is_within(group.updated_on)
+                } else {
+                    range.is_after(group.updated_on)
+                }
+            }
+        }
+    }
 }

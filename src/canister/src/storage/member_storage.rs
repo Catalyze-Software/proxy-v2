@@ -69,21 +69,21 @@ impl IdentifierRefMethods<PrincipalIdentifier> for MemberStore<'static> {
         })
     }
 
-    /// Insert an identifier reference
+    /// Insert an identifier reference with the caller as value
     /// # Arguments
-    /// * `value` - The increment value to insert
+    /// * `key` - The increment value to insert
     /// # Returns
     /// * `Result<Principal, ApiError>` - The inserted principal if successful, otherwise an error
-    fn insert_identifier_ref(&mut self, value: PrincipalIdentifier) -> Result<Principal, ApiError> {
+    fn insert_identifier_ref(&mut self, key: PrincipalIdentifier) -> Result<Principal, ApiError> {
         self.identifier_ref.with(|data| {
-            if data.borrow().contains_key(&value) {
+            if data.borrow().contains_key(&key) {
                 return Err(ApiError::duplicate()
                     .add_method_name("insert_identifier_ref")
                     .add_info(NAME)
                     .add_message("Key already exists"));
             }
 
-            data.borrow_mut().insert(value, caller());
+            data.borrow_mut().insert(key, caller());
             Ok(caller())
         })
     }
@@ -138,12 +138,12 @@ impl StorageMethods<Principal, Member> for MemberStore<'static> {
     /// * `Option<(Principal, Member)>` - The member if found, otherwise None
     fn find<F>(&self, filter: F) -> Option<(Principal, Member)>
     where
-        F: Fn(&Member) -> bool,
+        F: Fn(&Principal, &Member) -> bool,
     {
         self.store.with(|data| {
             data.borrow()
                 .iter()
-                .find(|(_, value)| filter(value))
+                .find(|(id, value)| filter(id, value))
                 .map(|(key, value)| (key, value))
         })
     }
@@ -155,12 +155,12 @@ impl StorageMethods<Principal, Member> for MemberStore<'static> {
     /// * `Vec<(Principal, Member)>` - The members if found, otherwise an empty vector
     fn filter<F>(&self, filter: F) -> Vec<(Principal, Member)>
     where
-        F: Fn(&Member) -> bool,
+        F: Fn(&Principal, &Member) -> bool,
     {
         self.store.with(|data| {
             data.borrow()
                 .iter()
-                .filter(|(_, value)| filter(value))
+                .filter(|(id, value)| filter(id, value))
                 .map(|(key, value)| (key, value))
                 .collect()
         })

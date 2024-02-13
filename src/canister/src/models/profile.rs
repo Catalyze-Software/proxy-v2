@@ -13,6 +13,7 @@ use crate::{
 };
 
 use super::{
+    api_error::ApiError,
     document_details::DocumentDetails,
     profile_privacy::ProfilePrivacy,
     wallet::{Wallet, WalletResponse},
@@ -230,6 +231,102 @@ pub struct ProfileResponse {
     pub extra: String,
     pub updated_on: u64,
     pub created_on: u64,
+}
+
+impl ProfileResponse {
+    pub fn new(id: Principal, profile: Profile) -> Self {
+        let wallets = profile
+            .wallets
+            .into_iter()
+            .map(|(principal, wallet)| WalletResponse {
+                provider: wallet.provider,
+                principal,
+                is_primary: wallet.is_primary,
+            })
+            .collect();
+
+        Self {
+            username: profile.username,
+            display_name: profile.display_name,
+            about: profile.about,
+            city: profile.city,
+            country: profile.country,
+            website: profile.website,
+            skills: profile.skills,
+            interests: profile.interests,
+            causes: profile.causes,
+            email: profile.email,
+            identifier: profile.principal,
+            principal: profile.principal,
+            member_identifier: profile.member_identifier,
+            application_role: profile.application_role,
+            first_name: profile.first_name,
+            last_name: profile.last_name,
+            privacy: profile.privacy,
+            date_of_birth: profile.date_of_birth,
+            state_or_province: profile.state_or_province,
+            profile_image: profile.profile_image,
+            banner_image: profile.banner_image,
+            code_of_conduct: profile.code_of_conduct,
+            privacy_policy: profile.privacy_policy,
+            terms_of_service: profile.terms_of_service,
+            wallets,
+            extra: profile.extra,
+            updated_on: profile.updated_on,
+            created_on: profile.created_on,
+        }
+    }
+
+    pub fn from_result(
+        profile_result: Result<(Principal, Profile), ApiError>,
+    ) -> Result<Self, ApiError> {
+        match profile_result {
+            Err(err) => Err(err),
+            Ok((_, profile)) => {
+                let wallets = profile
+                    .wallets
+                    .into_iter()
+                    .map(|(principal, wallet)| WalletResponse {
+                        provider: wallet.provider,
+                        principal,
+                        is_primary: wallet.is_primary,
+                    })
+                    .collect();
+
+                let result = Self {
+                    username: profile.username,
+                    display_name: profile.display_name,
+                    about: profile.about,
+                    city: profile.city,
+                    country: profile.country,
+                    website: profile.website,
+                    skills: profile.skills,
+                    interests: profile.interests,
+                    causes: profile.causes,
+                    email: profile.email,
+                    identifier: profile.principal,
+                    principal: profile.principal,
+                    member_identifier: profile.member_identifier,
+                    application_role: profile.application_role,
+                    first_name: profile.first_name,
+                    last_name: profile.last_name,
+                    privacy: profile.privacy,
+                    date_of_birth: profile.date_of_birth,
+                    state_or_province: profile.state_or_province,
+                    profile_image: profile.profile_image,
+                    banner_image: profile.banner_image,
+                    code_of_conduct: profile.code_of_conduct,
+                    privacy_policy: profile.privacy_policy,
+                    terms_of_service: profile.terms_of_service,
+                    wallets,
+                    extra: profile.extra,
+                    updated_on: profile.updated_on,
+                    created_on: profile.created_on,
+                };
+                Ok(result)
+            }
+        }
+    }
 }
 
 #[derive(Clone, Debug, CandidType, Deserialize)]

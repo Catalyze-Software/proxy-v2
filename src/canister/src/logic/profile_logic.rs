@@ -6,11 +6,11 @@ use crate::{
     models::{
         api_error::ApiError,
         document_details::DocumentDetails,
-        identifier::{Identifier, IdentifierKind},
+        identifier::Identifier,
         profile::{PostProfile, Profile, ProfileMethods, ProfileResponse, UpdateProfile},
         relation_type::RelationType,
         validation::{ValidateField, ValidationType},
-        wallet::{PostWallet, Wallet, WalletResponse},
+        wallet::{PostWallet, Wallet},
     },
     storage::storage_api::{members, profiles, IdentifierRefMethods, StorageMethods},
 };
@@ -19,7 +19,6 @@ use super::member_logic::MemberCalls;
 
 pub struct ProfileCalls;
 pub struct ProfileValidation;
-pub struct ProfileMapper;
 
 impl ProfileCalls {
     pub fn add_profile(post_profile: PostProfile) -> Result<ProfileResponse, ApiError> {
@@ -48,7 +47,7 @@ impl ProfileCalls {
         //////////////////////////////////////////////////////////////////////////////////////////
 
         let _ = MemberCalls::create_empty_member(caller(), profile_identifier);
-        ProfileMapper::to_response(stored_profile)
+        ProfileResponse::from_result(stored_profile)
     }
 
     pub fn update_profile(update_profile: UpdateProfile) -> Result<ProfileResponse, ApiError> {
@@ -60,7 +59,7 @@ impl ProfileCalls {
         let updated_profile = existing_profile.update(update_profile);
 
         let updated_profile_result = profiles().update(caller(), updated_profile);
-        ProfileMapper::to_response(updated_profile_result)
+        ProfileResponse::from_result(updated_profile_result)
     }
 
     pub fn add_wallet_to_profile(post_wallet: PostWallet) -> Result<ProfileResponse, ApiError> {
@@ -83,7 +82,7 @@ impl ProfileCalls {
 
         let updated_profile = profiles().update(caller(), existing_profile);
 
-        ProfileMapper::to_response(updated_profile)
+        ProfileResponse::from_result(updated_profile)
     }
 
     pub fn remove_wallet_from_profile(principal: Principal) -> Result<ProfileResponse, ApiError> {
@@ -105,7 +104,7 @@ impl ProfileCalls {
 
         let updated_profile = profiles().update(caller(), existing_profile);
 
-        ProfileMapper::to_response(updated_profile)
+        ProfileResponse::from_result(updated_profile)
     }
 
     pub fn set_wallet_as_primary(principal: Principal) -> Result<ProfileResponse, ApiError> {
@@ -127,19 +126,19 @@ impl ProfileCalls {
 
         let updated_profile = profiles().update(caller(), existing_profile);
 
-        ProfileMapper::to_response(updated_profile)
+        ProfileResponse::from_result(updated_profile)
     }
 
     pub fn get_profile(principal: Principal) -> Result<ProfileResponse, ApiError> {
         let profile_result = profiles().get(principal);
-        ProfileMapper::to_response(profile_result)
+        ProfileResponse::from_result(profile_result)
     }
 
     pub fn get_profiles(principals: Vec<Principal>) -> Vec<ProfileResponse> {
         let profiles_result = profiles().get_many(principals);
         profiles_result
             .into_iter()
-            .map(|profile| ProfileMapper::to_response(Ok(profile)).unwrap())
+            .map(|profile| ProfileResponse::new(profile.0, profile.1))
             .collect()
     }
 
@@ -163,7 +162,7 @@ impl ProfileCalls {
 
         let updated_profile = profiles().update(caller(), existing_profile);
 
-        ProfileMapper::to_response(updated_profile)
+        ProfileResponse::from_result(updated_profile)
     }
 
     pub fn remove_starred(identifier_principal: Principal) -> Result<ProfileResponse, ApiError> {
@@ -184,7 +183,7 @@ impl ProfileCalls {
 
         let updated_profile = profiles().update(caller(), existing_profile);
 
-        ProfileMapper::to_response(updated_profile)
+        ProfileResponse::from_result(updated_profile)
     }
 
     pub fn get_starred_by_kind(kind: &str) -> Vec<Principal> {
@@ -229,7 +228,7 @@ impl ProfileCalls {
 
         let updated_friend_profile = profiles().update(principal, friend_profile);
 
-        ProfileMapper::to_response(updated_caller_profile)
+        ProfileResponse::from_result(updated_caller_profile)
     }
 
     pub fn block_user(principal: Principal) -> Result<ProfileResponse, ApiError> {
@@ -249,7 +248,7 @@ impl ProfileCalls {
             let _ = profiles().update(principal, friend_profile);
         }
 
-        ProfileMapper::to_response(updated_profile)
+        ProfileResponse::from_result(updated_profile)
     }
 
     pub fn unblock_user(principal: Principal) -> Result<ProfileResponse, ApiError> {
@@ -262,7 +261,7 @@ impl ProfileCalls {
         {
             caller_profile.relations.remove(&principal);
             let updated_profile = profiles().update(caller(), caller_profile);
-            return ProfileMapper::to_response(updated_profile);
+            return ProfileResponse::from_result(updated_profile);
         }
 
         return Err(ApiError::not_found().add_message("User not blocked"));
@@ -311,59 +310,6 @@ impl ProfileCalls {
         let updated_profile = profiles().update(caller(), profile);
 
         Ok(updated_profile.is_ok())
-    }
-}
-
-impl ProfileMapper {
-    pub fn to_response(
-        profile_result: Result<(Principal, Profile), ApiError>,
-    ) -> Result<ProfileResponse, ApiError> {
-        match profile_result {
-            Err(err) => Err(err),
-            Ok((_, profile)) => {
-                let wallets = profile
-                    .wallets
-                    .into_iter()
-                    .map(|(principal, wallet)| WalletResponse {
-                        provider: wallet.provider,
-                        principal,
-                        is_primary: wallet.is_primary,
-                    })
-                    .collect();
-
-                let result = ProfileResponse {
-                    username: profile.username,
-                    display_name: profile.display_name,
-                    about: profile.about,
-                    city: profile.city,
-                    country: profile.country,
-                    website: profile.website,
-                    skills: profile.skills,
-                    interests: profile.interests,
-                    causes: profile.causes,
-                    email: profile.email,
-                    identifier: profile.principal, // chage
-                    principal: profile.principal,
-                    member_identifier: profile.member_identifier,
-                    application_role: profile.application_role,
-                    first_name: profile.first_name,
-                    last_name: profile.last_name,
-                    privacy: profile.privacy,
-                    date_of_birth: profile.date_of_birth,
-                    state_or_province: profile.state_or_province,
-                    profile_image: profile.profile_image,
-                    banner_image: profile.banner_image,
-                    code_of_conduct: profile.code_of_conduct,
-                    privacy_policy: profile.privacy_policy,
-                    terms_of_service: profile.terms_of_service,
-                    wallets,
-                    extra: profile.extra,
-                    updated_on: profile.updated_on,
-                    created_on: profile.created_on,
-                };
-                Ok(result)
-            }
-        }
     }
 }
 
