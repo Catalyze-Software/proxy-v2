@@ -1,3 +1,11 @@
+use crate::{
+    helpers::{
+        group_permission::{can_delete, can_edit, can_read},
+        guards::has_access,
+    },
+    logic::group_logic::GroupCalls,
+    storage::storage_api::{members, IdentifierRefMethods},
+};
 /// # Group methods
 /// # TODO:
 /// * Check if the guard are correctly placed
@@ -9,25 +17,16 @@
 ///
 use candid::Principal;
 use ic_cdk::{query, update};
-
-use crate::{
-    helpers::{
-        group_permission::{can_delete, can_edit, can_read},
-        guards::has_access,
-    },
-    logic::group_logic::GroupCalls,
-    models::{
-        api_error::ApiError,
-        filter_type::FilterType,
-        group::{GroupFilter, GroupResponse, GroupSort, PostGroup, UpdateGroup},
-        identifier::Identifier,
-        member::{InviteMemberResponse, JoinedMemberResponse, Member},
-        paged_response::PagedResponse,
-        permission::{PermissionType, PostPermission},
-        privacy::Privacy,
-        role::Role,
-    },
-    storage::storage_api::{members, IdentifierRefMethods},
+use models::models::{
+    api_error::ApiError,
+    filter_type::FilterType,
+    group::{GroupFilter, GroupResponse, GroupSort, PostGroup, UpdateGroup},
+    identifier::Identifier,
+    member::{InviteMemberResponse, JoinedMemberResponse, Member},
+    paged_response::PagedResponse,
+    permission::{PermissionType, PostPermission},
+    privacy::Privacy,
+    role::Role,
 };
 
 /// Add a group to the canister  - [`[update]`](update)

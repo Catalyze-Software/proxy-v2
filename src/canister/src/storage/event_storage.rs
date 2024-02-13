@@ -1,7 +1,7 @@
 use std::thread::LocalKey;
 
 use super::storage_api::{IdentifierRefMethods, PrincipalIdentifier, StorageMethods, StorageRef};
-use crate::models::{
+use models::models::{
     api_error::ApiError,
     event::Event,
     identifier::{Identifier, IdentifierKind},

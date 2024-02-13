@@ -3,7 +3,7 @@ use std::thread::LocalKey;
 use candid::Principal;
 
 use super::storage_api::{IdentifierRefMethods, PrincipalIdentifier, StorageMethods, StorageRef};
-use crate::models::{
+use models::models::{
     api_error::ApiError,
     identifier::{Identifier, IdentifierKind},
     report::Report,

@@ -1,6 +1,6 @@
 use std::thread::LocalKey;
 
-use crate::models::{api_error::ApiError, friend_request::FriendRequest};
+use models::models::{api_error::ApiError, friend_request::FriendRequest};
 
 use super::storage_api::{StorageMethods, StorageRef};
 

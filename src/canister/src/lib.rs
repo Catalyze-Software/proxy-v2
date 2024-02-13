@@ -12,29 +12,28 @@ pub mod calls;
 pub mod helpers;
 pub mod logic;
 pub mod misc;
-pub mod models;
 pub mod storage;
 
 // Hacky way to expose the candid interface to the outside world
 #[query(name = "__get_candid_interface_tmp_hack")]
 pub fn __export_did_tmp_() -> String {
-    use crate::models::api_error::*;
-    use crate::models::attendee::*;
-    use crate::models::boosted::*;
-    use crate::models::event::*;
-    use crate::models::filter_type::*;
-    use crate::models::friend_request::*;
-    use crate::models::group::*;
-    use crate::models::member::*;
-    use crate::models::paged_response::*;
-    use crate::models::permission::*;
-    use crate::models::privacy::*;
-    use crate::models::profile::*;
-    use crate::models::relation_type::*;
-    use crate::models::report::*;
-    use crate::models::role::*;
-    use crate::models::wallet::*;
     use candid::export_service;
+    use models::models::api_error::*;
+    use models::models::attendee::*;
+    use models::models::boosted::*;
+    use models::models::event::*;
+    use models::models::filter_type::*;
+    use models::models::friend_request::*;
+    use models::models::group::*;
+    use models::models::member::*;
+    use models::models::paged_response::*;
+    use models::models::permission::*;
+    use models::models::privacy::*;
+    use models::models::profile::*;
+    use models::models::relation_type::*;
+    use models::models::report::*;
+    use models::models::role::*;
+    use models::models::wallet::*;
     export_service!();
     __export_service()
 }
