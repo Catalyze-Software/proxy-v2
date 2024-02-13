@@ -1,4 +1,5 @@
 use candid::{CandidType, Deserialize};
+use serde::Serialize;
 
 #[derive(CandidType, Debug, Clone, Deserialize, PartialEq, Eq)]
 pub struct Invite {
@@ -15,7 +16,7 @@ impl Default for Invite {
     }
 }
 
-#[derive(CandidType, Debug, Clone, Deserialize, PartialEq, Eq)]
+#[derive(CandidType, Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 pub enum InviteType {
     OwnerRequest,
     UserRequest,
