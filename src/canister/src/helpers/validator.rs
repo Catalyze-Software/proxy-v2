@@ -3,7 +3,7 @@ use std::str::FromStr;
 use email_address::EmailAddress;
 use ic_cdk::api::time;
 
-use crate::models::{
+use models::models::{
     api_error::ApiError,
     date_range::DateRange,
     validation::{ValidateField, ValidationResponse, ValidationType},

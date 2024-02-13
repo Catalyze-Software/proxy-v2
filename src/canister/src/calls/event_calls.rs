@@ -9,18 +9,16 @@
 ///
 use candid::Principal;
 use ic_cdk::{query, update};
-
-use crate::{
-    helpers::guards::has_access,
-    models::{
-        api_error::ApiError, filter_type::FilterType, paged_response::PagedResponse,
-        privacy::Privacy,
-    },
-    models::{
-        attendee::{Attendee, InviteAttendeeResponse, JoinedAttendeeResponse},
-        event::{EventFilter, EventResponse, EventSort, PostEvent, UpdateEvent},
-    },
+use models::models::{
+    api_error::ApiError,
+    attendee::{Attendee, InviteAttendeeResponse, JoinedAttendeeResponse},
+    event::{EventFilter, EventResponse, EventSort, PostEvent, UpdateEvent},
+    filter_type::FilterType,
+    paged_response::PagedResponse,
+    privacy::Privacy,
 };
+
+use crate::helpers::guards::has_access;
 
 /// Add an event - [`[update]`](update)
 /// # Arguments

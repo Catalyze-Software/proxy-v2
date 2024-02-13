@@ -6,7 +6,7 @@ use ic_stable_structures::{
     DefaultMemoryImpl, StableBTreeMap,
 };
 
-use crate::models::{
+use models::models::{
     api_error::ApiError, attendee::Attendee, boosted::Boosted, event::Event,
     friend_request::FriendRequest, group::Group, member::Member, profile::Profile, report::Report,
 };

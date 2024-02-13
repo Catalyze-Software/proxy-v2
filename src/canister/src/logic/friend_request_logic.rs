@@ -1,13 +1,11 @@
 use candid::Principal;
 use ic_cdk::caller;
 
-use crate::{
-    models::{
-        api_error::ApiError,
-        friend_request::{FriendRequest, FriendRequestResponse},
-        relation_type::RelationType,
-    },
-    storage::storage_api::{friend_requests, profiles, StorageMethods},
+use crate::storage::storage_api::{friend_requests, profiles, StorageMethods};
+use models::models::{
+    api_error::ApiError,
+    friend_request::{FriendRequest, FriendRequestResponse},
+    relation_type::RelationType,
 };
 
 pub struct FriendRequestCalls;

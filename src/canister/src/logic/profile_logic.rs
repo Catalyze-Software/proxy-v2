@@ -3,16 +3,17 @@ use ic_cdk::{api::time, caller};
 
 use crate::{
     helpers::validator::Validator,
-    models::{
-        api_error::ApiError,
-        document_details::DocumentDetails,
-        identifier::Identifier,
-        profile::{PostProfile, Profile, ProfileMethods, ProfileResponse, UpdateProfile},
-        relation_type::RelationType,
-        validation::{ValidateField, ValidationType},
-        wallet::{PostWallet, Wallet},
-    },
     storage::storage_api::{members, profiles, IdentifierRefMethods, StorageMethods},
+};
+
+use models::models::{
+    api_error::ApiError,
+    document_details::DocumentDetails,
+    identifier::Identifier,
+    profile::{PostProfile, Profile, ProfileMethods, ProfileResponse, UpdateProfile},
+    relation_type::RelationType,
+    validation::{ValidateField, ValidationType},
+    wallet::{PostWallet, Wallet},
 };
 
 use super::member_logic::MemberCalls;

@@ -1,4 +1,4 @@
-use models::models::{
+use crate::models::{
     permission::{Permission, PermissionActions, PermissionType},
     role::Role,
 };

@@ -1,11 +1,9 @@
 use candid::Principal;
 
-use crate::{
-    models::{
-        api_error::ApiError,
-        member::{JoinedMemberResponse, Member},
-    },
-    storage::storage_api::{members, StorageMethods},
+use crate::storage::storage_api::{members, StorageMethods};
+use models::models::{
+    api_error::ApiError,
+    member::{JoinedMemberResponse, Member},
 };
 
 pub struct MemberCalls;
