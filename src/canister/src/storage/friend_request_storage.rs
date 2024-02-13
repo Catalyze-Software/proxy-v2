@@ -1,6 +1,6 @@
 use std::thread::LocalKey;
 
-use models::models::{api_error::ApiError, friend_request::FriendRequest};
+use canister_types::models::{api_error::ApiError, friend_request::FriendRequest};
 
 use super::storage_api::{StorageMethods, StorageRef};
 

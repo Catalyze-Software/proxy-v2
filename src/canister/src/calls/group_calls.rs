@@ -16,8 +16,7 @@ use crate::{
 /// And what about the public / private access of these calls?\
 ///
 use candid::Principal;
-use ic_cdk::{query, update};
-use models::models::{
+use canister_types::models::{
     api_error::ApiError,
     filter_type::FilterType,
     group::{GroupFilter, GroupResponse, GroupSort, PostGroup, UpdateGroup},
@@ -28,6 +27,7 @@ use models::models::{
     privacy::Privacy,
     role::Role,
 };
+use ic_cdk::{query, update};
 
 /// Add a group to the canister  - [`[update]`](update)
 /// # Arguments

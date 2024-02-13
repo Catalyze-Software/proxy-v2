@@ -15,7 +15,7 @@ use crate::{
     storage::storage_api::{groups, members, IdentifierRefMethods, StorageMethods},
 };
 
-use models::models::{
+use canister_types::models::{
     api_error::ApiError,
     filter_type::FilterType,
     group::{Group, GroupFilter, GroupResponse, GroupSort, PostGroup, UpdateGroup},

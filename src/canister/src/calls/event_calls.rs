@@ -8,8 +8,7 @@
 /// And what about the public / private access of these calls?
 ///
 use candid::Principal;
-use ic_cdk::{query, update};
-use models::models::{
+use canister_types::models::{
     api_error::ApiError,
     attendee::{Attendee, InviteAttendeeResponse, JoinedAttendeeResponse},
     event::{EventFilter, EventResponse, EventSort, PostEvent, UpdateEvent},
@@ -17,6 +16,7 @@ use models::models::{
     paged_response::PagedResponse,
     privacy::Privacy,
 };
+use ic_cdk::{query, update};
 
 use crate::helpers::guards::has_access;
 

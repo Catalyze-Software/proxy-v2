@@ -1,7 +1,7 @@
 use candid::Principal;
 
 use crate::storage::storage_api::{members, StorageMethods};
-use models::models::{
+use canister_types::models::{
     api_error::ApiError,
     member::{JoinedMemberResponse, Member},
 };

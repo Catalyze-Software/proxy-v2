@@ -12,14 +12,14 @@ use crate::{
 /// Check the public / private access of these calls? (anon / registered / application role)
 ///
 use candid::Principal;
-use ic_cdk::{query, update};
-use models::models::{
+use canister_types::models::{
     api_error::ApiError,
     friend_request::FriendRequestResponse,
     profile::{PostProfile, ProfileResponse, UpdateProfile},
     relation_type::RelationType,
     wallet::PostWallet,
 };
+use ic_cdk::{query, update};
 
 /// Adds a profile to the canister - [`[update]`](update)
 /// # Arguments

@@ -9,7 +9,7 @@ use candid::Principal;
 use ic_cdk::{query, update};
 
 use crate::helpers::guards::has_access;
-use models::models::{
+use canister_types::models::{
     api_error::ApiError,
     filter_type::FilterType,
     paged_response::PagedResponse,

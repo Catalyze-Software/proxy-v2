@@ -1,6 +1,6 @@
 use candid::Principal;
+use canister_types::models::boosted::Boosted;
 use ic_cdk::{query, update};
-use models::models::boosted::Boosted;
 
 use crate::{helpers::guards::has_access, E8S_PER_DAY_BOOST_COST};
 

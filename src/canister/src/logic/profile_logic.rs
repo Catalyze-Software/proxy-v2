@@ -6,7 +6,7 @@ use crate::{
     storage::storage_api::{members, profiles, IdentifierRefMethods, StorageMethods},
 };
 
-use models::models::{
+use canister_types::models::{
     api_error::ApiError,
     document_details::DocumentDetails,
     identifier::Identifier,

@@ -1,7 +1,7 @@
 use std::thread::LocalKey;
 
 use super::storage_api::{IdentifierRefMethods, PrincipalIdentifier, StorageMethods, StorageRef};
-use models::models::{
+use canister_types::models::{
     api_error::ApiError,
     event::Event,
     identifier::{Identifier, IdentifierKind},

@@ -4,7 +4,7 @@ use candid::Principal;
 use ic_cdk::caller;
 
 use super::storage_api::{IdentifierRefMethods, PrincipalIdentifier, StorageMethods, StorageRef};
-use models::models::{
+use canister_types::models::{
     api_error::ApiError,
     attendee::Attendee,
     identifier::{Identifier, IdentifierKind},

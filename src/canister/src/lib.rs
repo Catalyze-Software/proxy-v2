@@ -18,22 +18,22 @@ pub mod storage;
 #[query(name = "__get_candid_interface_tmp_hack")]
 pub fn __export_did_tmp_() -> String {
     use candid::export_service;
-    use models::models::api_error::*;
-    use models::models::attendee::*;
-    use models::models::boosted::*;
-    use models::models::event::*;
-    use models::models::filter_type::*;
-    use models::models::friend_request::*;
-    use models::models::group::*;
-    use models::models::member::*;
-    use models::models::paged_response::*;
-    use models::models::permission::*;
-    use models::models::privacy::*;
-    use models::models::profile::*;
-    use models::models::relation_type::*;
-    use models::models::report::*;
-    use models::models::role::*;
-    use models::models::wallet::*;
+    use canister_types::models::api_error::*;
+    use canister_types::models::attendee::*;
+    use canister_types::models::boosted::*;
+    use canister_types::models::event::*;
+    use canister_types::models::filter_type::*;
+    use canister_types::models::friend_request::*;
+    use canister_types::models::group::*;
+    use canister_types::models::member::*;
+    use canister_types::models::paged_response::*;
+    use canister_types::models::permission::*;
+    use canister_types::models::privacy::*;
+    use canister_types::models::profile::*;
+    use canister_types::models::relation_type::*;
+    use canister_types::models::report::*;
+    use canister_types::models::role::*;
+    use canister_types::models::wallet::*;
     export_service!();
     __export_service()
 }
