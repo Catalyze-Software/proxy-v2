@@ -1,7 +1,7 @@
 use crate::ENV;
 use candid::Principal;
 use models::models::boosted::Boosted;
-use pocket_ic::query_candid;
+use pocket_ic::{query_candid, update_candid};
 
 #[test]
 fn get_boosted_groups() {
@@ -21,7 +21,16 @@ fn get_e8s_per_day_boost_cost() {
         .expect("Failed to get e8s per day boost cost");
 }
 
-// TODO: async fn boost
+#[test]
+fn boost() {
+    update_candid::<(Principal, u64), (u64,)>(
+        &ENV.pic,
+        ENV.canister_id,
+        "boost",
+        (Principal::anonymous(), 0),
+    )
+    .expect("Failed to boost");
+}
 
 // ANON should fail?
 #[test]

@@ -4,6 +4,16 @@ use pocket_ic::PocketIc;
 
 #[cfg(test)]
 mod boost_calls;
+#[cfg(test)]
+mod event_calls;
+#[cfg(test)]
+mod generic_calls;
+#[cfg(test)]
+mod group_calls;
+#[cfg(test)]
+mod profile_calls;
+#[cfg(test)]
+mod report_calls;
 
 pub struct TestEnv {
     pub pic: PocketIc,
