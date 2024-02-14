@@ -216,39 +216,7 @@ impl GroupResponse {
     pub fn from_result(group_result: Result<(u64, Group), ApiError>) -> Result<Self, ApiError> {
         match group_result {
             Err(err) => Err(err),
-            Ok((id, group)) => {
-                let result = Self {
-                    identifier: Identifier::generate(
-                        crate::models::identifier::IdentifierKind::Group(id),
-                    )
-                    .to_principal()
-                    .unwrap(),
-                    name: group.name,
-                    description: group.description,
-                    website: group.website,
-                    location: group.location,
-                    privacy: group.privacy,
-                    created_by: group.created_by,
-                    owner: group.owner,
-                    matrix_space_id: group.matrix_space_id,
-                    image: group.image,
-                    banner_image: group.banner_image,
-                    tags: group.tags,
-                    roles: group.roles,
-                    // TODO: Add the correct member count after full migration
-                    member_count: group.member_count.into_iter().map(|(_, value)| value).sum(),
-                    wallets: group
-                        .wallets
-                        .into_iter()
-                        .map(|(key, value)| (key, value))
-                        .collect(),
-                    is_deleted: group.is_deleted,
-                    privacy_gated_type_amount: group.privacy_gated_type_amount,
-                    updated_on: group.updated_on,
-                    created_on: group.created_on,
-                };
-                Ok(result)
-            }
+            Ok((id, group)) => Ok(Self::new(id, group)),
         }
     }
 }

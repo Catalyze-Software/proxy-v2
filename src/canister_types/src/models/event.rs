@@ -12,6 +12,8 @@ use crate::{
     },
 };
 
+use super::{api_error::ApiError, identifier::Identifier};
+
 impl_storable_for!(Event);
 
 #[derive(Clone, CandidType, Serialize, Deserialize, Debug)]
@@ -93,6 +95,14 @@ impl Event {
         self.is_deleted = true;
         self.updated_on = time();
         self.clone()
+    }
+
+    pub fn is_from_group(&self, group_id: u64) -> bool {
+        let group_identifier =
+            Identifier::generate(super::identifier::IdentifierKind::Group(group_id))
+                .to_principal()
+                .unwrap();
+        self.group_identifier == group_identifier
     }
 }
 
@@ -201,4 +211,44 @@ pub struct EventResponse {
     pub updated_on: u64,
     pub created_on: u64,
     pub group_identifier: Principal,
+}
+
+impl EventResponse {
+    pub fn new(id: u64, event: Event) -> Self {
+        let identifier = Identifier::generate(super::identifier::IdentifierKind::Event(id));
+        let attendee_count: usize = event
+            .attendee_count
+            .into_iter()
+            .map(|(_, value)| value)
+            .sum();
+
+        Self {
+            identifier: identifier.to_principal().unwrap(),
+            name: event.name,
+            description: event.description,
+            date: event.date,
+            privacy: event.privacy,
+            created_by: event.created_by,
+            owner: event.owner,
+            website: event.website,
+            location: event.location,
+            image: event.image,
+            banner_image: event.banner_image,
+            attendee_count,
+            is_canceled: event.is_canceled,
+            is_deleted: event.is_deleted,
+            tags: event.tags,
+            metadata: event.metadata,
+            updated_on: event.updated_on,
+            created_on: event.created_on,
+            group_identifier: event.group_identifier,
+        }
+    }
+
+    pub fn from_result(id: u64, event: Result<Event, ApiError>) -> Result<Self, ApiError> {
+        match event {
+            Err(e) => Err(e),
+            Ok(event) => Ok(Self::new(id, event)),
+        }
+    }
 }
