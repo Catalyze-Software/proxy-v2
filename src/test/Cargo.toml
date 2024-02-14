@@ -15,3 +15,4 @@ ic-cdk = "0.12.0"
 pocket-ic = "2.1.0"
 
 models = { path = "../models"}
+lazy_static = "1.4.0"
