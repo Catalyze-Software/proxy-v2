@@ -1,4 +1,4 @@
-use canister_types::models::{
+use crate::models::{
     permission::{Permission, PermissionActions, PermissionType},
     role::Role,
 };

@@ -15,7 +15,7 @@ use crate::{
 
 use super::{
     api_error::ApiError,
-    identifier::{Identifier, MEMBER_CANISTER_ID},
+    identifier::{Identifier, IdentifierKind, MEMBER_CANISTER_ID},
     permission::Permission,
 };
 
@@ -187,7 +187,7 @@ pub struct GroupResponse {
 
 impl GroupResponse {
     pub fn new(id: u64, group: Group) -> Self {
-        let identifier = Identifier::generate(super::identifier::IdentifierKind::Group(id));
+        let identifier = Identifier::generate(IdentifierKind::Group(id));
         let member_count: usize = group.member_count.into_iter().map(|(_, value)| value).sum();
 
         Self {

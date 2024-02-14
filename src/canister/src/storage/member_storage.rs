@@ -4,7 +4,7 @@ use candid::Principal;
 use ic_cdk::caller;
 
 use super::storage_api::{IdentifierRefMethods, PrincipalIdentifier, StorageMethods, StorageRef};
-use crate::models::{
+use canister_types::models::{
     api_error::ApiError,
     identifier::{Identifier, IdentifierKind},
     member::Member,

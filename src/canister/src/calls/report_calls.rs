@@ -8,10 +8,12 @@
 use candid::Principal;
 use ic_cdk::{query, update};
 
-use crate::{
-    helpers::guards::has_access,
-    models::report::{PostReport, ReportFilter, ReportResponse, ReportSort},
-    models::{api_error::ApiError, filter_type::FilterType, paged_response::PagedResponse},
+use crate::helpers::guards::has_access;
+use canister_types::models::{
+    api_error::ApiError,
+    filter_type::FilterType,
+    paged_response::PagedResponse,
+    report::{PostReport, ReportFilter, ReportResponse, ReportSort},
 };
 
 /// Add a report

@@ -1,3 +1,8 @@
+use crate::{
+    helpers::guards::{has_access, is_not_anonymous},
+    logic::{friend_request_logic::FriendRequestCalls, profile_logic::ProfileCalls},
+    storage::storage_api::{profiles, IdentifierRefMethods},
+};
 /// # Profile methods
 /// # TODO:
 /// * Check if the guard are correctly placed
@@ -7,20 +12,14 @@
 /// Check the public / private access of these calls? (anon / registered / application role)
 ///
 use candid::Principal;
-use ic_cdk::{query, update};
-
-use crate::{
-    helpers::guards::{has_access, is_not_anonymous},
-    logic::{friend_request_logic::FriendRequestCalls, profile_logic::ProfileCalls},
-    models::{
-        api_error::ApiError,
-        friend_request::FriendRequestResponse,
-        profile::{PostProfile, ProfileResponse, UpdateProfile},
-        relation_type::RelationType,
-        wallet::PostWallet,
-    },
-    storage::storage_api::{profiles, IdentifierRefMethods},
+use canister_types::models::{
+    api_error::ApiError,
+    friend_request::FriendRequestResponse,
+    profile::{PostProfile, ProfileResponse, UpdateProfile},
+    relation_type::RelationType,
+    wallet::PostWallet,
 };
+use ic_cdk::{query, update};
 
 /// Adds a profile to the canister - [`[update]`](update)
 /// # Arguments

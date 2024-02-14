@@ -12,19 +12,20 @@ use crate::{
         validator::Validator,
     },
     misc::role_misc::read_only_permissions,
-    models::{
-        api_error::ApiError,
-        filter_type::FilterType,
-        group::{Group, GroupFilter, GroupResponse, GroupSort, PostGroup, UpdateGroup},
-        member::{InviteMemberResponse, InviteType, JoinedMemberResponse, Member},
-        neuron::{DissolveState, ListNeurons, ListNeuronsResponse},
-        paged_response::PagedResponse,
-        permission::{Permission, PostPermission},
-        privacy::{GatedType, NeuronGatedRules, Privacy, TokenGated},
-        role::Role,
-        validation::{ValidateField, ValidationType},
-    },
     storage::storage_api::{groups, members, IdentifierRefMethods, StorageMethods},
+};
+
+use canister_types::models::{
+    api_error::ApiError,
+    filter_type::FilterType,
+    group::{Group, GroupFilter, GroupResponse, GroupSort, PostGroup, UpdateGroup},
+    member::{InviteMemberResponse, InviteType, JoinedMemberResponse, Member},
+    neuron::{DissolveState, ListNeurons, ListNeuronsResponse},
+    paged_response::PagedResponse,
+    permission::{Permission, PostPermission},
+    privacy::{GatedType, NeuronGatedRules, Privacy, TokenGated},
+    role::Role,
+    validation::{ValidateField, ValidationType},
 };
 
 pub struct GroupCalls;
