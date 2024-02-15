@@ -81,7 +81,7 @@ pub fn get_groups(
     filters: Vec<FilterType<GroupFilter>>,
     sort: GroupSort,
 ) -> Result<PagedResponse<GroupResponse>, ApiError> {
-    Err(ApiError::not_implemented())
+    GroupCalls::get_groups(limit, page, filters, sort)
 }
 
 /// Edit a group - [`[update]`](update)
