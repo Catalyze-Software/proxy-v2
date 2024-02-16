@@ -41,8 +41,8 @@ type ApplicationRole = variant {
 type Asset = variant { Url : text; None; CanisterStorage : CanisterStorage };
 type Attendee = record {
   "principal" : principal;
-  invites : vec record { principal; Invite };
-  joined : vec record { principal; Join };
+  invites : vec record { nat64; Invite };
+  joined : vec record { nat64; Join };
 };
 type Boosted = record {
   updated_at : nat64;
@@ -65,11 +65,12 @@ type DocumentDetails = record {
   approved_version : nat64;
 };
 type EventFilter = variant {
+  Ids : vec nat64;
   Tag : nat32;
   UpdatedOn : DateRange;
   Name : text;
   None;
-  Identifiers : vec principal;
+  Groups : vec nat64;
   IsCanceled : bool;
   StartDate : DateRange;
   Owner : principal;
@@ -79,7 +80,6 @@ type EventFilter = variant {
 type EventResponse = record {
   updated_on : nat64;
   banner_image : Asset;
-  group_identifier : principal;
   owner : principal;
   metadata : opt text;
   date : DateRange;
@@ -91,6 +91,7 @@ type EventResponse = record {
   created_on : nat64;
   website : text;
   privacy : Privacy;
+  group_id : nat64;
   is_canceled : record { bool; text };
   image : Asset;
   identifier : principal;
@@ -154,34 +155,28 @@ type GroupSort = variant {
 };
 type Invite = record {
   updated_at : nat64;
-  group_identifier : principal;
   invite_type : InviteType;
   created_at : nat64;
+  group_id : nat64;
 };
 type InviteAttendeeResponse = record {
   "principal" : principal;
-  group_identifier : principal;
-  attendee_identifier : principal;
   invite_type : InviteType;
-  event_identifier : principal;
+  group_id : nat64;
+  event_id : nat64;
 };
 type InviteMemberResponse = record {
   "principal" : principal;
   group_id : nat64;
   invite : opt Invite_1;
 };
-type InviteType = variant { None; OwnerRequest; UserRequest };
-type InviteType_1 = variant { OwnerRequest; UserRequest };
+type InviteType = variant { OwnerRequest; UserRequest };
 type Invite_1 = record {
   updated_at : nat64;
-  invite_type : InviteType_1;
+  invite_type : InviteType;
   created_at : nat64;
 };
-type Join = record {
-  updated_at : nat64;
-  group_identifier : principal;
-  created_at : nat64;
-};
+type Join = record { updated_at : nat64; created_at : nat64; group_id : nat64 };
 type Join_1 = record {
   updated_at : nat64;
   created_at : nat64;
@@ -189,9 +184,8 @@ type Join_1 = record {
 };
 type JoinedAttendeeResponse = record {
   "principal" : principal;
-  group_identifier : principal;
-  attendee_identifier : principal;
-  event_identifier : principal;
+  group_id : nat64;
+  event_id : nat64;
 };
 type JoinedMemberResponse = record {
   "principal" : principal;
@@ -264,7 +258,6 @@ type PhysicalLocation = record {
 };
 type PostEvent = record {
   banner_image : Asset;
-  owner : principal;
   metadata : opt text;
   date : DateRange;
   name : text;
@@ -272,6 +265,7 @@ type PostEvent = record {
   description : text;
   website : text;
   privacy : Privacy;
+  group_id : nat64;
   image : Asset;
   location : Location;
 };
@@ -356,16 +350,16 @@ type ReportSort = variant {
   CreatedOn : SortDirection;
 };
 type Result = variant { Ok : bool; Err : ApiError };
-type Result_1 = variant { Ok : record { principal; Attendee }; Err : ApiError };
+type Result_1 = variant { Ok : Attendee; Err : ApiError };
 type Result_10 = variant { Ok : nat64; Err : text };
 type Result_11 = variant { Ok; Err : ApiError };
 type Result_12 = variant { Ok : vec JoinedAttendeeResponse; Err : ApiError };
 type Result_13 = variant { Ok : vec InviteAttendeeResponse; Err : ApiError };
-type Result_14 = variant { Ok : record { principal; Privacy }; Err : ApiError };
-type Result_15 = variant { Ok : PagedResponse; Err : ApiError };
-type Result_16 = variant { Ok : vec InviteMemberResponse; Err : ApiError };
-type Result_17 = variant { Ok : JoinedMemberResponse; Err : ApiError };
-type Result_18 = variant { Ok : vec JoinedMemberResponse; Err : ApiError };
+type Result_14 = variant { Ok : PagedResponse; Err : ApiError };
+type Result_15 = variant { Ok : vec InviteMemberResponse; Err : ApiError };
+type Result_16 = variant { Ok : JoinedMemberResponse; Err : ApiError };
+type Result_17 = variant { Ok : vec JoinedMemberResponse; Err : ApiError };
+type Result_18 = variant { Ok : record { principal; Privacy }; Err : ApiError };
 type Result_19 = variant { Ok : vec Role; Err : ApiError };
 type Result_2 = variant { Ok : Member; Err : ApiError };
 type Result_20 = variant { Ok : PagedResponse_1; Err : ApiError };
@@ -374,10 +368,11 @@ type Result_21 = variant {
   Err : ApiError;
 };
 type Result_22 = variant { Ok : PagedResponse_2; Err : ApiError };
-type Result_3 = variant { Ok : EventResponse; Err : ApiError };
-type Result_4 = variant { Ok : FriendRequestResponse; Err : ApiError };
-type Result_5 = variant { Ok : GroupResponse; Err : ApiError };
-type Result_6 = variant { Ok; Err : bool };
+type Result_23 = variant { Ok : InviteAttendeeResponse; Err : ApiError };
+type Result_3 = variant { Ok : JoinedAttendeeResponse; Err : ApiError };
+type Result_4 = variant { Ok : EventResponse; Err : ApiError };
+type Result_5 = variant { Ok : FriendRequestResponse; Err : ApiError };
+type Result_6 = variant { Ok : GroupResponse; Err : ApiError };
 type Result_7 = variant { Ok : ProfileResponse; Err : ApiError };
 type Result_8 = variant { Ok : ReportResponse; Err : ApiError };
 type Result_9 = variant { Ok : Role; Err : ApiError };
@@ -395,6 +390,19 @@ type TokenGated = record {
   description : text;
   amount : nat64;
   standard : text;
+};
+type UpdateEvent = record {
+  banner_image : Asset;
+  owner : principal;
+  metadata : opt text;
+  date : DateRange;
+  name : text;
+  tags : vec nat32;
+  description : text;
+  website : text;
+  privacy : Privacy;
+  image : Asset;
+  location : Location;
 };
 type UpdateGroup = record {
   banner_image : Asset;
@@ -437,22 +445,18 @@ service : {
   accept_friend_request : (nat64) -> (Result);
   accept_owner_request_event_invite : (principal) -> (Result_1);
   accept_owner_request_group_invite : (principal) -> (Result_2);
-  accept_user_request_event_invite : (
-      principal,
-      principal,
-      principal,
-      principal,
-    ) -> (Result_1);
+  accept_user_request_event_invite : (principal, principal, principal) -> (
+      Result_3,
+    );
   accept_user_request_group_invite : (principal, principal) -> (Result_2);
-  add_event : (PostEvent, principal, principal, principal) -> (Result_3);
-  add_friend_request : (principal, text) -> (Result_4);
-  add_group : (PostGroup, opt text) -> (Result_5);
-  add_owner_as_attendee : (principal, principal, principal) -> (Result_6);
+  add_event : (PostEvent) -> (Result_4);
+  add_friend_request : (principal, text) -> (Result_5);
+  add_group : (PostGroup, opt text) -> (Result_6);
   add_profile : (PostProfile, principal) -> (Result_7);
   add_report : (PostReport, principal, principal) -> (Result_8);
   add_role_to_group : (principal, text, text, nat64) -> (Result_9);
   add_starred : (principal) -> (Result_7);
-  add_wallet_to_group : (principal, principal, text) -> (Result_5);
+  add_wallet_to_group : (principal, principal, text) -> (Result_6);
   add_wallet_to_profile : (PostWallet) -> (Result_7);
   approve_code_of_conduct : (nat64) -> (Result);
   approve_privacy_policy : (nat64) -> (Result);
@@ -460,44 +464,28 @@ service : {
   assign_role : (text, principal, principal) -> (Result_2);
   block_user : (principal) -> (Result_7);
   boost : (principal, nat64) -> (Result_10);
-  cancel_event : (principal, text, principal, principal) -> (Result_11);
+  cancel_event : (principal, text, principal) -> (Result_11);
   decline_friend_request : (nat64) -> (Result);
-  delete_event : (principal, principal, principal) -> (Result_11);
-  delete_group : (principal) -> (Result_5);
-  edit_event : (principal, PostEvent, principal, principal, principal) -> (
-      Result_3,
-    );
-  edit_group : (principal, UpdateGroup) -> (Result_5);
+  delete_event : (principal, principal) -> (Result_11);
+  delete_group : (principal) -> (Result_6);
+  edit_event : (principal, UpdateEvent, principal) -> (Result_4);
+  edit_group : (principal, UpdateGroup) -> (Result_6);
   edit_profile : (UpdateProfile) -> (Result_7);
   edit_role_permissions : (principal, text, vec PostPermission) -> (Result);
   get_attending_from_principal : (principal) -> (Result_12) query;
   get_boosted_events : () -> (vec Boosted) query;
   get_boosted_groups : () -> (vec Boosted) query;
   get_e8s_per_day_boost_cost : () -> (nat64) query;
-  get_event : (principal, opt principal) -> (Result_3) query;
+  get_event : (principal, principal) -> (Result_4) query;
   get_event_attendees : (principal) -> (Result_12) query;
-  get_event_attendees_count : (vec principal) -> (
-      vec record { principal; nat64 },
-    ) query;
-  get_event_invites : (principal, principal, principal) -> (Result_13) query;
-  get_event_invites_count : (vec principal) -> (
-      vec record { principal; nat64 },
-    ) query;
-  get_event_privacy_and_owner : (principal, principal) -> (Result_14) query;
-  get_events : (
-      nat64,
-      nat64,
-      EventSort,
-      vec EventFilter,
-      vec FilterType,
-      opt principal,
-    ) -> (Result_15) query;
+  get_event_invites : (principal, principal) -> (Result_13) query;
+  get_events : (nat64, nat64, EventSort, vec FilterType) -> (Result_14) query;
   get_events_count : (vec principal) -> (vec record { principal; nat64 }) query;
-  get_group : (principal) -> (Result_5) query;
-  get_group_invites : (principal) -> (Result_16);
-  get_group_member : (principal, principal) -> (Result_17) query;
-  get_group_members : (principal) -> (Result_18) query;
-  get_group_owner_and_privacy : (principal) -> (Result_14) query;
+  get_group : (principal) -> (Result_6) query;
+  get_group_invites : (principal) -> (Result_15);
+  get_group_member : (principal, principal) -> (Result_16) query;
+  get_group_members : (principal) -> (Result_17) query;
+  get_group_owner_and_privacy : (principal) -> (Result_18) query;
   get_group_roles : (principal) -> (Result_19);
   get_groups : (nat64, nat64, vec FilterType_1, GroupSort) -> (Result_20) query;
   get_groups_by_id : (vec principal) -> (vec GroupResponse) query;
@@ -528,21 +516,16 @@ service : {
   get_starred_events : () -> (vec principal) query;
   get_starred_groups : () -> (vec principal) query;
   get_starred_tasks : () -> (vec principal) query;
-  invite_to_event : (principal, principal, principal, principal) -> (Result_1);
+  invite_to_event : (principal, principal, principal) -> (Result_23);
   invite_to_group : (principal, principal) -> (Result_2);
-  join_event : (principal, principal) -> (Result_1);
-  join_group : (principal, opt text) -> (Result_17);
+  join_event : (principal, principal) -> (Result_3);
+  join_group : (principal, opt text) -> (Result_16);
   leave_event : (principal) -> (Result_11);
   leave_group : (principal) -> (Result_11);
-  remove_attendee_from_event : (principal, principal, principal, principal) -> (
+  remove_attendee_from_event : (principal, principal, principal) -> (Result_11);
+  remove_attendee_invite_from_event : (principal, principal, principal) -> (
       Result_11,
     );
-  remove_attendee_invite_from_event : (
-      principal,
-      principal,
-      principal,
-      principal,
-    ) -> (Result_11);
   remove_event_invite : (principal) -> (Result_11);
   remove_friend : (principal) -> (Result_7);
   remove_friend_request : (nat64) -> (Result);
@@ -552,9 +535,8 @@ service : {
   remove_member_invite_from_group : (principal, principal) -> (Result_11);
   remove_member_role : (text, principal, principal) -> (Result_2);
   remove_starred : (principal) -> (Result_7);
-  remove_wallet_from_group : (principal, principal) -> (Result_5);
+  remove_wallet_from_group : (principal, principal) -> (Result_6);
   remove_wallet_from_profile : (principal) -> (Result_7);
   set_wallet_as_primary : (principal) -> (Result_7);
   unblock_user : (principal) -> (Result_7);
-  update_attendee_count_on_event : (principal, principal, nat64) -> (Result_6);
 }
