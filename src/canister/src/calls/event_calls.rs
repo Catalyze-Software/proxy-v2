@@ -13,12 +13,19 @@ use canister_types::models::{
     attendee::{Attendee, InviteAttendeeResponse, JoinedAttendeeResponse},
     event::{EventFilter, EventResponse, EventSort, PostEvent, UpdateEvent},
     filter_type::FilterType,
+    identifier::Identifier,
     paged_response::PagedResponse,
-    privacy::Privacy,
+    permission::PermissionType,
 };
 use ic_cdk::{query, update};
 
-use crate::helpers::guards::has_access;
+use crate::{
+    helpers::{
+        group_permission::{can_delete, can_edit},
+        guards::has_access,
+    },
+    logic::event_logic::EventCalls,
+};
 
 /// Add an event - [`[update]`](update)
 /// # Arguments
@@ -33,13 +40,9 @@ use crate::helpers::guards::has_access;
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "has_access")]
-pub fn add_event(
-    value: PostEvent,
-    group_identifier: Principal,
-    member_identifier: Principal,
-    event_attendee_canister: Principal,
-) -> Result<EventResponse, ApiError> {
-    Err(ApiError::not_implemented())
+pub fn add_event(post_event: PostEvent) -> Result<EventResponse, ApiError> {
+    can_edit(post_event.group_id, PermissionType::Event(None))?;
+    EventCalls::add_event(post_event)
 }
 
 /// Get an event - [`[query]`](query)
@@ -54,27 +57,12 @@ pub fn add_event(
 /// This function is guarded by the [`has_access`](has_access) function.
 #[query]
 pub fn get_event(
-    identifier: Principal,
-    group_identifier: Option<Principal>,
-) -> Result<EventResponse, ApiError> {
-    Err(ApiError::not_implemented())
-}
-
-/// Get an event privacy and owner - [`[query]`](query)
-/// # Arguments
-/// * `identifier` - The identifier of the event
-/// * `group_identifier` - Used to check if the user has access to the group
-/// # Returns
-/// * `EventResponse` - The event
-/// # Errors
-/// * `ApiError` - If something went wrong while getting the event
-#[deprecated = "This function was used as an inter-canister call, but should not be used anymore."]
-#[query]
-pub fn get_event_privacy_and_owner(
-    identifier: Principal,
+    event_identifier: Principal,
     group_identifier: Principal,
-) -> Result<(Principal, Privacy), ApiError> {
-    Err(ApiError::not_implemented())
+) -> Result<EventResponse, ApiError> {
+    let event_id = Identifier::from(event_identifier).id();
+    let group_id = Identifier::from(group_identifier).id();
+    EventCalls::get_event(event_id, group_id)
 }
 
 /// Get paged events - [`[query]`](query)
@@ -94,11 +82,9 @@ fn get_events(
     limit: usize,
     page: usize,
     sort: EventSort,
-    filter: Vec<EventFilter>,
-    filter_type: Vec<FilterType<EventFilter>>,
-    group_identifier: Option<Principal>,
+    filter: Vec<FilterType<EventFilter>>,
 ) -> Result<PagedResponse<EventResponse>, ApiError> {
-    Err(ApiError::not_implemented())
+    EventCalls::get_events(limit, page, sort, filter)
 }
 
 /// Get the number of events per group - [`[query]`](query)
@@ -107,8 +93,12 @@ fn get_events(
 /// # Returns
 /// * `Vec<(Principal, usize)>` - The events count per group
 #[query]
-pub fn get_events_count(group_identifiers: Vec<Principal>) -> Vec<(Principal, usize)> {
-    vec![]
+pub fn get_events_count(group_identifiers: Vec<Principal>) -> Vec<(Principal, u64)> {
+    let _group_identifiers = group_identifiers
+        .into_iter()
+        .map(|identifier| Identifier::from(identifier).id())
+        .collect();
+    EventCalls::get_events_count(_group_identifiers)
 }
 
 /// edit an event - [`[update]`](update)
@@ -126,13 +116,14 @@ pub fn get_events_count(group_identifiers: Vec<Principal>) -> Vec<(Principal, us
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "has_access")]
 pub fn edit_event(
-    identifier: Principal,
-    value: UpdateEvent,
+    event_identifier: Principal,
+    update_event: UpdateEvent,
     group_identifier: Principal,
-    member_identifier: Principal,
-    event_attendee_canister: Principal,
 ) -> Result<EventResponse, ApiError> {
-    Err(ApiError::not_implemented())
+    let event_id = Identifier::from(event_identifier).id();
+    let group_id = Identifier::from(group_identifier).id();
+    can_edit(group_id, PermissionType::Event(None))?;
+    EventCalls::edit_event(event_id, update_event, group_id)
 }
 
 /// Delete an event - [`[update]`](update)
@@ -148,11 +139,13 @@ pub fn edit_event(
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "has_access")]
 pub fn delete_event(
-    identifier: Principal,
+    event_identifier: Principal,
     group_identifier: Principal,
-    member_identifier: Principal,
 ) -> Result<(), ApiError> {
-    Err(ApiError::not_implemented())
+    let event_id = Identifier::from(event_identifier).id();
+    let group_id = Identifier::from(group_identifier).id();
+    can_delete(group_id, PermissionType::Event(None))?;
+    EventCalls::delete_event(event_id, group_id)
 }
 
 /// Cancel an event - [`[update]`](update)
@@ -169,34 +162,14 @@ pub fn delete_event(
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "has_access")]
 pub fn cancel_event(
-    identifier: Principal,
+    event_identifier: Principal,
     reason: String,
     group_identifier: Principal,
-    member_identifier: Principal,
 ) -> Result<(), ApiError> {
-    Err(ApiError::not_implemented())
-}
-
-/// Update the attendee count on the event - [`[update]`](update)
-/// # Arguments
-/// * `event_identifier` - The identifier of the event
-/// * `event_attendee_canister` - The event attendee canister to store the event owner on (icc)
-/// * `attendee_count` - The new attendee count
-/// # Returns
-/// * `()` - If the attendee count was updated
-/// # Errors
-/// * `bool` - If something went wrong while updating the attendee count
-/// # Note
-/// This function was triggered by an inter-canister call to update the event attendee count on the event.
-/// TODO: if used it required a auth guard so it can only be called by the known canisters
-#[deprecated = "This function was used as an inter-canister call, but should not be used anymore."]
-#[update]
-pub fn update_attendee_count_on_event(
-    event_identifier: Principal,
-    event_attendee_canister: Principal,
-    attendee_count: usize,
-) -> Result<(), bool> {
-    Err(false)
+    let event_id = Identifier::from(event_identifier).id();
+    let group_id = Identifier::from(group_identifier).id();
+    can_edit(group_id, PermissionType::Event(None))?;
+    EventCalls::cancel_event(event_id, reason, group_id)
 }
 
 // Attendee methods
@@ -216,8 +189,10 @@ pub fn update_attendee_count_on_event(
 pub fn join_event(
     event_identifier: Principal,
     group_identifier: Principal,
-) -> Result<(Principal, Attendee), ApiError> {
-    Err(ApiError::not_implemented())
+) -> Result<JoinedAttendeeResponse, ApiError> {
+    let event_id = Identifier::from(event_identifier).id();
+    let group_id = Identifier::from(group_identifier).id();
+    EventCalls::join_event(event_id, group_id)
 }
 
 /// Invite a user to an event - [`[update]`](update)
@@ -227,7 +202,7 @@ pub fn join_event(
 /// * `member_identifier` - Used to check if the user has the correct group roles
 /// * `group_identifier` - Used to check if the user has access to the group the event belongs to
 /// # Returns
-/// * `(Principal, Attendee)` - The event identifier and the attendee
+/// * `InviteAttendeeResponse` - The event identifier and the attendee
 /// # Errors
 /// * `ApiError` - If something went wrong while inviting the user to the event
 /// # Note
@@ -237,10 +212,12 @@ pub fn join_event(
 pub fn invite_to_event(
     event_identifier: Principal,
     attendee_principal: Principal,
-    member_identifier: Principal,
     group_identifier: Principal,
-) -> Result<(Principal, Attendee), ApiError> {
-    Err(ApiError::not_implemented())
+) -> Result<InviteAttendeeResponse, ApiError> {
+    let event_id = Identifier::from(event_identifier).id();
+    let group_id = Identifier::from(group_identifier).id();
+    can_edit(group_id, PermissionType::Event(None))?;
+    EventCalls::invite_to_event(event_id, attendee_principal, group_id)
 }
 
 /// Accept an user invite to an event as a admin - [`[update]`](update)
@@ -260,10 +237,12 @@ pub fn invite_to_event(
 pub fn accept_user_request_event_invite(
     attendee_principal: Principal,
     event_identifier: Principal,
-    member_identifier: Principal,
     group_identifier: Principal,
-) -> Result<(Principal, Attendee), ApiError> {
-    Err(ApiError::not_implemented())
+) -> Result<JoinedAttendeeResponse, ApiError> {
+    let event_id = Identifier::from(event_identifier).id();
+    let group_id = Identifier::from(group_identifier).id();
+    can_edit(group_id, PermissionType::Event(None))?;
+    EventCalls::accept_user_request_event_invite(event_id, attendee_principal, group_id)
 }
 
 /// Accept an owner invite to an event as a user - [`[update]`](update)
@@ -278,34 +257,9 @@ pub fn accept_user_request_event_invite(
 #[update(guard = "has_access")]
 pub fn accept_owner_request_event_invite(
     event_identifier: Principal,
-) -> Result<(Principal, Attendee), ApiError> {
-    Err(ApiError::not_implemented())
-}
-
-/// Get the number of attendees for events - [`[query]`](query)
-/// # Arguments
-/// * `event_identifiers` - The event identifiers to get the attendees count from
-/// # Returns
-/// * `Vec<(Principal, usize)>` - (event identifier, attendee count) The attendees count per event
-/// # Note
-/// This call shouldnt be needed anymore, but is kept for now for backwards compatibility
-#[query]
-#[deprecated = "This function was used as an inter-canister call, but should not be used anymore."]
-pub fn get_event_attendees_count(event_identifiers: Vec<Principal>) -> Vec<(Principal, usize)> {
-    vec![]
-}
-
-/// Get the number of invites for events - [`[query]`](query)
-/// # Arguments
-/// * `event_identifiers` - The event identifiers to get the attendees count from
-/// # Returns
-/// * `Vec<(Principal, usize)>` - (event identifier, invite count) The invite count per event
-/// # Note
-/// This call shouldnt be needed anymore, but is kept for now for backwards compatibility
-#[query]
-#[deprecated = "This function was used as an inter-canister call, but should not be used anymore."]
-pub fn get_event_invites_count(event_identifiers: Vec<Principal>) -> Vec<(Principal, usize)> {
-    vec![]
+) -> Result<Attendee, ApiError> {
+    let event_id = Identifier::from(event_identifier).id();
+    EventCalls::accept_owner_request_event_invite(event_id)
 }
 
 /// Get the attendees for an event - [`[query]`](query)
@@ -321,7 +275,8 @@ pub fn get_event_invites_count(event_identifiers: Vec<Principal>) -> Vec<(Princi
 pub fn get_event_attendees(
     event_identifier: Principal,
 ) -> Result<Vec<JoinedAttendeeResponse>, ApiError> {
-    Err(ApiError::not_implemented())
+    let event_id = Identifier::from(event_identifier).id();
+    EventCalls::get_event_attendees(event_id)
 }
 
 /// Get the caller attendee entry - [`[query]`](query)
@@ -334,8 +289,8 @@ pub fn get_event_attendees(
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 #[query(guard = "has_access")]
-pub fn get_self_events() -> Result<(Principal, Attendee), ApiError> {
-    Err(ApiError::not_implemented())
+pub fn get_self_events() -> Result<Attendee, ApiError> {
+    EventCalls::get_self_events()
 }
 
 /// Get the joined events from a principal - [`[query]`](query)
@@ -351,7 +306,7 @@ pub fn get_self_events() -> Result<(Principal, Attendee), ApiError> {
 pub fn get_attending_from_principal(
     principal: Principal,
 ) -> Result<Vec<JoinedAttendeeResponse>, ApiError> {
-    Err(ApiError::not_implemented())
+    EventCalls::get_attending_from_principal(principal)
 }
 
 /// Leave an event - [`[update]`](update)
@@ -365,7 +320,8 @@ pub fn get_attending_from_principal(
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "has_access")]
 pub fn leave_event(event_identifier: Principal) -> Result<(), ApiError> {
-    Err(ApiError::not_implemented())
+    let event_id = Identifier::from(event_identifier).id();
+    EventCalls::leave_event(event_id)
 }
 
 /// Remove an event invite as a user - [`[update]`](update)
@@ -382,7 +338,8 @@ pub fn leave_event(event_identifier: Principal) -> Result<(), ApiError> {
 /// TODO: This action is guarded by group role based authorization
 #[update(guard = "has_access")]
 pub fn remove_event_invite(event_identifier: Principal) -> Result<(), ApiError> {
-    Err(ApiError::not_implemented())
+    let event_id = Identifier::from(event_identifier).id();
+    EventCalls::remove_event_invite(event_id)
 }
 
 /// Remove an event attendee as a admin - [`[update]`](update)
@@ -403,9 +360,11 @@ pub fn remove_attendee_from_event(
     attendee_principal: Principal,
     event_identifier: Principal,
     group_identifier: Principal,
-    member_identifier: Principal,
 ) -> Result<(), ApiError> {
-    Err(ApiError::not_implemented())
+    let event_id = Identifier::from(event_identifier).id();
+    let group_id = Identifier::from(group_identifier).id();
+    can_edit(group_id, PermissionType::Event(None))?;
+    EventCalls::remove_attendee_from_event(attendee_principal, event_id, group_id)
 }
 
 /// Remove an event invite as a admin - [`[update]`](update)
@@ -426,9 +385,11 @@ pub fn remove_attendee_invite_from_event(
     attendee_principal: Principal,
     event_identifier: Principal,
     group_identifier: Principal,
-    member_identifier: Principal,
 ) -> Result<(), ApiError> {
-    Err(ApiError::not_implemented())
+    let event_id = Identifier::from(event_identifier).id();
+    let group_id = Identifier::from(group_identifier).id();
+    can_edit(group_id, PermissionType::Event(None))?;
+    EventCalls::remove_attendee_invite_from_event(attendee_principal, event_id, group_id)
 }
 
 /// Get the invites for an event - [`[query]`](query)
@@ -447,28 +408,8 @@ pub fn remove_attendee_invite_from_event(
 pub fn get_event_invites(
     event_identifier: Principal,
     group_identifier: Principal,
-    member_identifier: Principal,
 ) -> Result<Vec<InviteAttendeeResponse>, ApiError> {
-    Err(ApiError::not_implemented())
-}
-
-/// Add the event creator as an attendee - [`[update]`](update)
-/// # Arguments
-/// * `user_principal` - The principal of the user to add
-/// * `event_identifier` - The identifier of the event
-/// * `group_identifier` - Used to check if the user has access to the group the event belongs to
-/// # Returns
-/// * `()` - If the user was added as an attendee
-/// # Errors
-/// * `bool` - If something went wrong while adding the user as an attendee
-/// # Note
-/// This method can probably be removed, but is kept for now for backwards compatibility
-#[deprecated = "Don't use this function anymore, it is kept for backwards compatibility"]
-#[update]
-pub fn add_owner_as_attendee(
-    user_principal: Principal,
-    event_identifier: Principal,
-    group_identifier: Principal,
-) -> Result<(), bool> {
-    Err(false)
+    let event_id = Identifier::from(event_identifier).id();
+    let group_id = Identifier::from(group_identifier).id();
+    EventCalls::get_event_invites(event_id, group_id)
 }

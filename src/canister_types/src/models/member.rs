@@ -6,6 +6,8 @@ use serde::Serialize;
 
 use crate::impl_storable_for;
 
+use super::invite::InviteType;
+
 pub type GroupIdentifier = Principal;
 
 impl_storable_for!(Member);
@@ -159,18 +161,6 @@ pub struct Invite {
     pub invite_type: InviteType,
     pub updated_at: u64,
     pub created_at: u64,
-}
-
-#[derive(CandidType, Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-pub enum InviteType {
-    OwnerRequest,
-    UserRequest,
-}
-
-impl Default for InviteType {
-    fn default() -> Self {
-        InviteType::UserRequest
-    }
 }
 
 #[derive(Clone, Debug, CandidType, Deserialize, Serialize)]
