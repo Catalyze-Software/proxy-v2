@@ -46,12 +46,11 @@ type Attendee = record {
 };
 type Boosted = record {
   updated_at : nat64;
-  type_ : text;
+  subject : Subject;
   owner : principal;
   seconds : nat64;
   created_at : nat64;
   blockheight : nat64;
-  identifier : principal;
 };
 type CanisterStorage = variant { None; Manifest : Manifest; Chunk : ChunkData };
 type ChunkData = record {
@@ -351,7 +350,7 @@ type ReportSort = variant {
 };
 type Result = variant { Ok : bool; Err : ApiError };
 type Result_1 = variant { Ok : Attendee; Err : ApiError };
-type Result_10 = variant { Ok : nat64; Err : text };
+type Result_10 = variant { Ok : nat64; Err : ApiError };
 type Result_11 = variant { Ok; Err : ApiError };
 type Result_12 = variant { Ok : vec JoinedAttendeeResponse; Err : ApiError };
 type Result_13 = variant { Ok : vec InviteAttendeeResponse; Err : ApiError };
@@ -384,6 +383,7 @@ type Role = record {
   index : opt nat64;
 };
 type SortDirection = variant { Asc; Desc };
+type Subject = variant { Event : nat64; Group : nat64 };
 type TokenGated = record {
   "principal" : principal;
   name : text;
@@ -473,8 +473,8 @@ service : {
   edit_profile : (UpdateProfile) -> (Result_7);
   edit_role_permissions : (principal, text, vec PostPermission) -> (Result);
   get_attending_from_principal : (principal) -> (Result_12) query;
-  get_boosted_events : () -> (vec Boosted) query;
-  get_boosted_groups : () -> (vec Boosted) query;
+  get_boosted_events : () -> (vec record { nat64; Boosted }) query;
+  get_boosted_groups : () -> (vec record { nat64; Boosted }) query;
   get_e8s_per_day_boost_cost : () -> (nat64) query;
   get_event : (principal, principal) -> (Result_4) query;
   get_event_attendees : (principal) -> (Result_12) query;
@@ -501,7 +501,7 @@ service : {
     ) query;
   get_relations : (RelationType) -> (vec principal) query;
   get_relations_count : (principal, RelationType) -> (nat64) query;
-  get_remaining_boost_time_in_seconds : (principal) -> (nat64) query;
+  get_remaining_boost_time_in_seconds : (principal) -> (Result_10) query;
   get_report : (principal, principal, principal) -> (Result_8) query;
   get_reports : (
       nat64,

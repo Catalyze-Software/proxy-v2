@@ -4,7 +4,6 @@ use candid::Principal;
 use canister_types::models::{
     api_error::ApiError,
     boosted::{Boosted, Subject},
-    identifier::Identifier,
 };
 use ic_cdk::{api::time, caller};
 use ic_cdk_timers::{clear_timer, set_timer, TimerId};
