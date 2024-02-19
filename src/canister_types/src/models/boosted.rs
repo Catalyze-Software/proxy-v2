@@ -1,29 +1,43 @@
 use candid::{CandidType, Principal};
+use ic_cdk::api::time;
 use serde::Deserialize;
-use std::borrow::Cow;
 
 use candid::{Decode, Encode};
-use ic_stable_structures::{storable::Bound, Storable};
+
+use crate::impl_storable_for;
+
+impl_storable_for!(Boosted);
 
 #[derive(CandidType, Deserialize, Clone, Debug)]
 pub struct Boosted {
-    pub identifier: Principal,
+    pub subject: Subject,
     pub seconds: u64,
+    pub owner: Principal,
+    pub blockheight: u64,
     pub created_at: u64,
     pub updated_at: u64,
-    pub owner: Principal,
-    pub type_: String,
-    pub blockheight: u64,
 }
 
-impl Storable for Boosted {
-    fn to_bytes(&self) -> std::borrow::Cow<[u8]> {
-        Cow::Owned(Encode!(self).unwrap())
+impl Boosted {
+    pub fn new(subject: Subject, seconds: u64, owner: Principal, blockheight: u64) -> Self {
+        Self {
+            subject,
+            seconds,
+            created_at: time(),
+            updated_at: time(),
+            owner,
+            blockheight,
+        }
     }
 
-    fn from_bytes(bytes: std::borrow::Cow<[u8]>) -> Self {
-        Decode!(bytes.as_ref(), Self).unwrap()
+    pub fn update(&mut self, seconds: u64) {
+        self.seconds = seconds;
+        self.updated_at = time();
     }
+}
 
-    const BOUND: Bound = Bound::Unbounded;
+#[derive(CandidType, Deserialize, Clone, Debug, PartialEq, Eq)]
+pub enum Subject {
+    Group(u64),
+    Event(u64),
 }

@@ -148,7 +148,6 @@ impl StorageMethods<u64, FriendRequest> for FriendRequestStore<'static> {
     /// # Returns
     /// * `bool` - True if the friend_request was removed, otherwise false
     /// # Note
-    /// TODO: Check if we want to do a soft delete
     fn remove(&mut self, key: u64) -> bool {
         self.store
             .with(|data| data.borrow_mut().remove(&key).is_some())

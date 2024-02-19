@@ -12,7 +12,7 @@ use canister_types::models::{
 };
 
 use super::{
-    attendee_storage::AttendeeStore, event_storage::EventStore,
+    attendee_storage::AttendeeStore, boosted_storage::BoostedStore, event_storage::EventStore,
     friend_request_storage::FriendRequestStore, group_storage::GroupStore,
     member_storage::MemberStore, profile_storage::ProfileStore, report_storage::ReportStore,
 };
@@ -203,6 +203,6 @@ pub fn static_files<'a>() -> LocalKey<StorageRef<u64, Vec<u8>>> {
     STATIC_FILES
 }
 
-pub fn boosted<'a>() -> LocalKey<StorageRef<u64, Boosted>> {
-    BOOSTED
+pub fn boosted<'a>() -> BoostedStore<'a> {
+    BoostedStore::new(&BOOSTED)
 }

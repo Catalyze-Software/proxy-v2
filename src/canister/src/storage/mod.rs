@@ -1,4 +1,5 @@
 pub mod attendee_storage;
+pub mod boosted_storage;
 pub mod event_storage;
 pub mod friend_request_storage;
 pub mod group_storage;
