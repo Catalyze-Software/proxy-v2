@@ -148,7 +148,7 @@ impl StorageMethods<u64, Boosted> for BoostedStore<'static> {
     }
 }
 
-impl<'a> BoostedStore<'a> {
+impl BoostedStore<'static> {
     /// Get all boosted by key
     /// # Returns
     /// * `Vec<Boosted>` - The boosted if found, otherwise an empty vector
