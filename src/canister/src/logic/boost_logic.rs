@@ -139,6 +139,34 @@ impl BoostCalls {
         Ok(time_left - Duration::from_nanos(time()).as_secs())
     }
 
+    pub fn get_boosted_by_subject(subject: Subject) -> Result<(u64, Boosted), ApiError> {
+        match boosted()
+            .get_all()
+            .into_iter()
+            .find(|(_, boosted)| boosted.subject == subject)
+        {
+            Some((id, boosted)) => Ok((id, boosted)),
+            None => Err(ApiError::not_found().add_message("No boosted group or event found")),
+        }
+    }
+
+    pub fn get_multiple_boost_by_subject(subject: Subject) -> Vec<(u64, Boosted)> {
+        boosted()
+            .get_all()
+            .into_iter()
+            .filter(|(_, boosted)| match boosted.subject {
+                Subject::Group(_) => match subject {
+                    Subject::Group(_) => true,
+                    _ => false,
+                },
+                Subject::Event(_) => match subject {
+                    Subject::Event(_) => true,
+                    _ => false,
+                },
+            })
+            .collect()
+    }
+
     pub fn start_timers_after_upgrade() -> Result<(), ApiError> {
         boosted().get_all().into_iter().for_each(|(boost_id, _)| {
             let seconds_left = Self::get_seconds_left_for_boosted(boost_id).unwrap_or(0);
