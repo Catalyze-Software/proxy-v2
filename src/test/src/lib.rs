@@ -1,14 +1,17 @@
+use candid::Principal;
 use ic_cdk::api::management_canister::provisional::CanisterId;
 use lazy_static::lazy_static;
 use pocket_ic::PocketIc;
+use crate::mock_ids::member_test_id;
+
+pub mod mock_ids;
 
 #[cfg(test)]
-mod flow1;
-
-#[cfg(test)]
-mod mock_ids;
+mod calls;
 #[cfg(test)]
 mod mock_models;
+#[cfg(test)]
+mod flow1;
 
 pub struct TestEnv {
     pub pic: PocketIc,
@@ -17,6 +20,8 @@ pub struct TestEnv {
 
 lazy_static! {
     pub static ref ENV: TestEnv = init_pocket_ic();
+
+    pub static ref SENDER: Principal = member_test_id();
 }
 
 fn init_pocket_ic() -> TestEnv {

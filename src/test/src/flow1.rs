@@ -1,17 +1,20 @@
 // Flow 1
 
 use crate::{
+    calls::{
+        group_calls::add_group,
+        profile_calls::{
+            add_profile, approve_code_of_conduct, approve_privacy_policy, approve_terms_of_service,
+        },
+    },
     mock_ids::{canister_test_id, member_test_id},
     mock_models::{mock_post_group, mock_post_profile},
-    ENV,
 };
 use candid::Principal;
 use models::models::{
-    api_error::ApiError,
     group::{GroupResponse, PostGroup},
     profile::{PostProfile, ProfileResponse},
 };
-use pocket_ic::update_candid_as;
 
 #[test]
 fn flow1() {
@@ -24,17 +27,7 @@ fn flow1() {
     // Deprecated
     let member_canister: Principal = canister_test_id();
 
-    let profile_response: ProfileResponse =
-        update_candid_as::<(PostProfile, Principal), (Result<ProfileResponse, ApiError>,)>(
-            &ENV.pic,
-            ENV.canister_id,
-            sender,
-            "add_profile",
-            (post_profile, member_canister),
-        )
-        .expect("Failed to call add_profile from pocketIC")
-        .0
-        .expect("Failed to add profile");
+    let profile_response: ProfileResponse = add_profile(post_profile, member_canister);
 
     // The `principal` field of the response should be the same as the sender.
     assert_eq!(profile_response.principal, sender);
@@ -44,16 +37,7 @@ fn flow1() {
      */
     let version: u64 = 1;
 
-    let code_of_conduct_approved: bool = update_candid_as::<(u64,), (Result<bool, ApiError>,)>(
-        &ENV.pic,
-        ENV.canister_id,
-        sender,
-        "approve_code_of_conduct",
-        (version,),
-    )
-    .expect("Failed to call approve_code_of_conduct from pocketIC")
-    .0
-    .expect("Failed to approve code of conduct");
+    let code_of_conduct_approved: bool = approve_code_of_conduct(version);
 
     assert_eq!(code_of_conduct_approved, true);
 
@@ -62,16 +46,7 @@ fn flow1() {
      */
     let version: u64 = 1;
 
-    let privacy_policy_approved: bool = update_candid_as::<(u64,), (Result<bool, ApiError>,)>(
-        &ENV.pic,
-        ENV.canister_id,
-        sender,
-        "approve_privacy_policy",
-        (version,),
-    )
-    .expect("Failed to call approve_privacy_policy from pocketIC")
-    .0
-    .expect("Failed to approve privacy policy");
+    let privacy_policy_approved: bool = approve_privacy_policy(version);
 
     assert_eq!(privacy_policy_approved, true);
 
@@ -80,16 +55,7 @@ fn flow1() {
      */
     let version: u64 = 1;
 
-    let terms_of_service_approved: bool = update_candid_as::<(u64,), (Result<bool, ApiError>,)>(
-        &ENV.pic,
-        ENV.canister_id,
-        sender,
-        "approve_terms_of_service",
-        (version,),
-    )
-    .expect("Failed to call approve_terms_of_service from pocketIC")
-    .0
-    .expect("Failed to approve terms of service");
+    let terms_of_service_approved: bool = approve_terms_of_service(version);
 
     assert_eq!(terms_of_service_approved, true);
 
@@ -99,15 +65,5 @@ fn flow1() {
     let post_group: PostGroup = mock_post_group();
     let account_identifier: Option<String> = None;
 
-    let _group_response: GroupResponse =
-        update_candid_as::<(PostGroup, Option<String>), (Result<GroupResponse, ApiError>,)>(
-            &ENV.pic,
-            ENV.canister_id,
-            sender,
-            "add_group",
-            (post_group, account_identifier),
-        )
-        .expect("Failed to call add_group from pocketIC")
-        .0
-        .expect("Failed to add group");
+    let _group_response: GroupResponse = add_group(post_group, account_identifier);
 }
