@@ -15,7 +15,7 @@ use crate::{
 use super::{
     api_error::ApiError,
     attendee::{InviteAttendeeResponse, JoinedAttendeeResponse},
-    boosted::Boosted,
+    boosted::Boost,
     identifier::Identifier,
 };
 
@@ -297,7 +297,7 @@ pub struct EventResponse {
     pub updated_on: u64,
     pub created_on: u64,
     pub group_id: u64,
-    pub boosted: Option<Boosted>,
+    pub boosted: Option<Boost>,
     pub caller_data: Option<EventCallerData>,
 }
 
@@ -305,7 +305,7 @@ impl EventResponse {
     pub fn new(
         id: u64,
         event: Event,
-        boosted: Option<Boosted>,
+        boosted: Option<Boost>,
         caller_data: Option<EventCallerData>,
     ) -> Self {
         let identifier = Identifier::generate(super::identifier::IdentifierKind::Event(id));
@@ -338,7 +338,7 @@ impl EventResponse {
     pub fn from_result(
         id: u64,
         event: Result<Event, ApiError>,
-        boosted: Option<Boosted>,
+        boosted: Option<Boost>,
         caller_data: Option<EventCallerData>,
     ) -> Result<Self, ApiError> {
         match event {

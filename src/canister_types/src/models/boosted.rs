@@ -6,10 +6,10 @@ use candid::{Decode, Encode};
 
 use crate::impl_storable_for;
 
-impl_storable_for!(Boosted);
+impl_storable_for!(Boost);
 
 #[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
-pub struct Boosted {
+pub struct Boost {
     pub subject: Subject,
     pub seconds: u64,
     pub owner: Principal,
@@ -18,7 +18,7 @@ pub struct Boosted {
     pub updated_at: u64,
 }
 
-impl Boosted {
+impl Boost {
     pub fn new(subject: Subject, seconds: u64, owner: Principal, blockheight: u64) -> Self {
         Self {
             subject,

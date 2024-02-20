@@ -6,7 +6,7 @@ use ic_cdk::caller;
 use canister_types::models::{
     api_error::ApiError,
     attendee::{Attendee, InviteAttendeeResponse, JoinedAttendeeResponse},
-    boosted::{Boosted, Subject},
+    boosted::{Boost, Subject},
     event::{
         Event, EventCallerData, EventFilter, EventResponse, EventSort, PostEvent, UpdateEvent,
     },
@@ -377,8 +377,8 @@ impl EventCalls {
         Ok(response)
     }
 
-    fn get_boosted_event(id: u64) -> Option<Boosted> {
-        match BoostCalls::get_boosted_by_subject(Subject::Event(id)) {
+    fn get_boosted_event(id: u64) -> Option<Boost> {
+        match BoostCalls::get_boost_by_subject(Subject::Event(id)) {
             Ok((_, boosted)) => Some(boosted),
             Err(_) => None,
         }

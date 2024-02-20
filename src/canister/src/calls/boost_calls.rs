@@ -1,7 +1,7 @@
 use candid::Principal;
 use canister_types::models::{
     api_error::ApiError,
-    boosted::{Boosted, Subject},
+    boosted::{Boost, Subject},
     identifier::Identifier,
 };
 use ic_cdk::{query, update};
@@ -10,18 +10,18 @@ use crate::{helpers::guards::has_access, logic::boost_logic::BoostCalls, E8S_PER
 
 /// Returns the boosted groups
 /// # Returns
-/// * `Vec<Boosted>` - the boosted groups
+/// * `Vec<(u64, Boost)>` - (boost id, boosted groups)
 #[query]
-fn get_boosted_groups() -> Vec<(u64, Boosted)> {
-    BoostCalls::get_multiple_boost_by_subject(Subject::Group(0))
+fn get_boosted_groups() -> Vec<(u64, Boost)> {
+    BoostCalls::get_boosts_by_subject(Subject::Group(0))
 }
 
 /// Returns the boosted events
 /// # Returns
-/// * `Vec<Boosted>` - the events groups
+/// * `Vec<(u64, Boost)>` - (boost id, boosted groups)
 #[query]
-fn get_boosted_events() -> Vec<(u64, Boosted)> {
-    BoostCalls::get_multiple_boost_by_subject(Subject::Event(0))
+fn get_boosted_events() -> Vec<(u64, Boost)> {
+    BoostCalls::get_boosts_by_subject(Subject::Event(0))
 }
 
 /// Returns the cost of boosting per day
@@ -39,7 +39,7 @@ fn get_e8s_per_day_boost_cost() -> u64 {
 /// # Returns
 /// * `u64` - the remaining boost time in seconds
 /// # Errors
-/// * `String` if something went wrong boosting the group
+/// * `ApiError` if something went wrong boosting the group
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 /// The identifier is used to determine if the group or event should be boosted.
@@ -58,15 +58,17 @@ async fn boost(identifier: Principal, blockheight: u64) -> Result<u64, ApiError>
 /// * `identifier` - the identifier of the group or event
 /// # Returns
 /// * `u64` - the remaining boost time in seconds
+/// # Errors
+/// * `ApiError` if something went wrong getting the remaining boost time
 #[query]
 fn get_remaining_boost_time_in_seconds(identifier: Principal) -> Result<u64, ApiError> {
     let _identifier = Identifier::from(identifier);
 
     let (id, _) = match _identifier.kind().as_str() {
-        "group" => BoostCalls::get_boosted_by_subject(Subject::Group(_identifier.id())),
-        "event" => BoostCalls::get_boosted_by_subject(Subject::Event(_identifier.id())),
+        "group" => BoostCalls::get_boost_by_subject(Subject::Group(_identifier.id())),
+        "event" => BoostCalls::get_boost_by_subject(Subject::Event(_identifier.id())),
         _ => return Err(ApiError::bad_request().add_message("Invalid identifier")),
     }?;
 
-    BoostCalls::get_seconds_left_for_boosted(id)
+    BoostCalls::get_seconds_left_for_boost(id)
 }

@@ -7,7 +7,7 @@ use ic_stable_structures::{
 };
 
 use canister_types::models::{
-    api_error::ApiError, attendee::Attendee, boosted::Boosted, event::Event,
+    api_error::ApiError, attendee::Attendee, boosted::Boost, event::Event,
     friend_request::FriendRequest, group::Group, member::Member, profile::Profile, report::Report,
 };
 
@@ -128,7 +128,7 @@ thread_local! {
         StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.get_memory(STATIC_FILES_MEMORY_ID)))
     );
 
-    static BOOSTED: StorageRef<u64, Boosted> = RefCell::new(
+    static BOOSTED: StorageRef<u64, Boost> = RefCell::new(
         StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.get_memory(BOOSTED_MEMORY_ID)))
     );
 

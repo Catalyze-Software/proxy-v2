@@ -15,7 +15,7 @@ use crate::{
 
 use super::{
     api_error::ApiError,
-    boosted::Boosted,
+    boosted::Boost,
     identifier::{Identifier, IdentifierKind, MEMBER_CANISTER_ID},
     member::{InviteMemberResponse, JoinedMemberResponse},
     permission::Permission,
@@ -206,7 +206,7 @@ pub struct GroupResponse {
     pub privacy_gated_type_amount: Option<u64>,
     pub updated_on: u64,
     pub created_on: u64,
-    pub boosted: Option<Boosted>,
+    pub boosted: Option<Boost>,
     pub caller_data: Option<GroupCallerData>,
 }
 
@@ -214,7 +214,7 @@ impl GroupResponse {
     pub fn new(
         id: u64,
         group: Group,
-        boosted: Option<Boosted>,
+        boosted: Option<Boost>,
         caller_data: Option<GroupCallerData>,
     ) -> Self {
         let identifier = Identifier::generate(IdentifierKind::Group(id));
@@ -247,7 +247,7 @@ impl GroupResponse {
 
     pub fn from_result(
         group_result: Result<(u64, Group), ApiError>,
-        boosted: Option<Boosted>,
+        boosted: Option<Boost>,
         caller_data: Option<GroupCallerData>,
     ) -> Result<Self, ApiError> {
         match group_result {

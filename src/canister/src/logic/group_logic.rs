@@ -18,7 +18,7 @@ use canister_types::{
     misc::role_misc::read_only_permissions,
     models::{
         api_error::ApiError,
-        boosted::{Boosted, Subject},
+        boosted::{Boost, Subject},
         filter_type::FilterType,
         group::{
             Group, GroupCallerData, GroupFilter, GroupResponse, GroupSort, PostGroup, UpdateGroup,
@@ -556,8 +556,8 @@ impl GroupCalls {
         Ok(result)
     }
 
-    fn get_boosted_group(id: u64) -> Option<Boosted> {
-        match BoostCalls::get_boosted_by_subject(Subject::Group(id)) {
+    fn get_boosted_group(id: u64) -> Option<Boost> {
+        match BoostCalls::get_boost_by_subject(Subject::Group(id)) {
             Ok((_, boosted)) => Some(boosted),
             Err(_) => None,
         }

@@ -3,7 +3,7 @@ use std::{cell::RefCell, collections::HashMap, time::Duration};
 use candid::Principal;
 use canister_types::models::{
     api_error::ApiError,
-    boosted::{Boosted, Subject},
+    boosted::{Boost, Subject},
 };
 use ic_cdk::{api::time, caller};
 use ic_cdk_timers::{clear_timer, set_timer, TimerId};
@@ -36,11 +36,11 @@ impl BoostCalls {
         let days = Self::calculate_days(tokens);
         let seconds = Self::get_seconds_from_days(days);
 
-        match boosted().find(|_, boosted| boosted.subject == subject) {
+        match boosted().find(|_, boost| boost.subject == subject) {
             None => Self::new_boost(subject, seconds, caller(), blockheight),
             // If there is an existing boost
-            Some((updating_boost_id, updating_boosted)) => {
-                Self::update_exisiting_boost(updating_boost_id, updating_boosted, seconds)
+            Some((updating_boost_id, updating_boost)) => {
+                Self::update_exisiting_boost(updating_boost_id, updating_boost, seconds)
             }
         }
     }
@@ -51,7 +51,7 @@ impl BoostCalls {
         owner: Principal,
         blockheight: u64,
     ) -> Result<u64, ApiError> {
-        let boost = Boosted::new(subject, seconds, owner, blockheight);
+        let boost = Boost::new(subject, seconds, owner, blockheight);
 
         let (new_boost_id, new_boost) = boosted().insert(boost)?;
 
@@ -66,7 +66,7 @@ impl BoostCalls {
 
     fn update_exisiting_boost(
         boost_id: u64,
-        mut boost: Boosted,
+        mut boost: Boost,
         seconds: u64,
     ) -> Result<u64, ApiError> {
         // Get and clear the existing timer
@@ -75,7 +75,7 @@ impl BoostCalls {
         }
 
         // Update the boost with the purchased seconds
-        let remaining_seconds = Self::get_seconds_left_for_boosted(boost_id)?;
+        let remaining_seconds = Self::get_seconds_left_for_boost(boost_id)?;
         let new_seconds = remaining_seconds + seconds;
 
         boost.seconds = new_seconds;
@@ -132,13 +132,13 @@ impl BoostCalls {
         });
     }
 
-    pub fn get_seconds_left_for_boosted(boost_id: u64) -> Result<u64, ApiError> {
+    pub fn get_seconds_left_for_boost(boost_id: u64) -> Result<u64, ApiError> {
         let (_, boosted) = boosted().get(boost_id)?;
         let time_left: u64 = Duration::from_nanos(boosted.updated_at).as_secs() + boosted.seconds;
         Ok(time_left - Duration::from_nanos(time()).as_secs())
     }
 
-    pub fn get_boosted_by_subject(subject: Subject) -> Result<(u64, Boosted), ApiError> {
+    pub fn get_boost_by_subject(subject: Subject) -> Result<(u64, Boost), ApiError> {
         match boosted()
             .get_all()
             .into_iter()
@@ -149,7 +149,7 @@ impl BoostCalls {
         }
     }
 
-    pub fn get_multiple_boost_by_subject(subject: Subject) -> Vec<(u64, Boosted)> {
+    pub fn get_boosts_by_subject(subject: Subject) -> Vec<(u64, Boost)> {
         boosted()
             .get_all()
             .into_iter()
@@ -168,7 +168,7 @@ impl BoostCalls {
 
     pub fn start_timers_after_upgrade() -> Result<(), ApiError> {
         boosted().get_all().into_iter().for_each(|(boost_id, _)| {
-            let seconds_left = Self::get_seconds_left_for_boosted(boost_id).unwrap_or(0);
+            let seconds_left = Self::get_seconds_left_for_boost(boost_id).unwrap_or(0);
             let timer_id = set_timer(Duration::from_secs(seconds_left), move || {
                 Self::remove_boost(boost_id)
             });
