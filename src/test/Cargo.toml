@@ -16,3 +16,4 @@ pocket-ic = "2.1.0"
 
 models = { path = "../models"}
 lazy_static = "1.4.0"
+ic-agent = "0.33.0"

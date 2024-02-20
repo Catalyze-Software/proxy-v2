@@ -3,17 +3,12 @@ use lazy_static::lazy_static;
 use pocket_ic::PocketIc;
 
 #[cfg(test)]
-mod boost_calls;
+mod flow1;
+
 #[cfg(test)]
-mod event_calls;
+mod mock_ids;
 #[cfg(test)]
-mod generic_calls;
-#[cfg(test)]
-mod group_calls;
-#[cfg(test)]
-mod profile_calls;
-#[cfg(test)]
-mod report_calls;
+mod mock_models;
 
 pub struct TestEnv {
     pub pic: PocketIc,
