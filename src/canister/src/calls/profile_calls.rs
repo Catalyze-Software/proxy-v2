@@ -24,7 +24,6 @@ use ic_cdk::{query, update};
 /// Adds a profile to the canister - [`[update]`](update)
 /// # Arguments
 /// * `post_profile` - The profile to add
-/// * `member_canister` - Canister ID of the member canister to add an empty member
 /// # Returns
 /// * `ProfileResponse` - The profile that was added
 /// # Errors
@@ -32,10 +31,7 @@ use ic_cdk::{query, update};
 /// # Note
 /// This function is guarded by the [`is_not_anonymous`](is_not_anonymous) function.
 #[update(guard = "is_not_anonymous")]
-pub fn add_profile(
-    post_profile: PostProfile,
-    member_canister: Principal, // should be deprecated
-) -> Result<ProfileResponse, ApiError> {
+pub fn add_profile(post_profile: PostProfile) -> Result<ProfileResponse, ApiError> {
     ProfileCalls::add_profile(post_profile)
 }
 
@@ -55,7 +51,7 @@ pub fn get_profile_by_user_principal(principal: Principal) -> Result<ProfileResp
 
 /// Gets a profile by the given user identifier - [`[query]`](query)
 /// # Arguments
-/// * `id` - The user identifier to get the profile by
+/// * `user_identifier` - The user identifier to get the profile by
 /// # Returns
 /// * `ProfileResponse` - The profile that was found
 /// # Errors
@@ -66,9 +62,9 @@ pub fn get_profile_by_user_principal(principal: Principal) -> Result<ProfileResp
 /// This function is deprecated and should be removed in favor of `get_profile_by_user_principal`
 #[query(guard = "has_access")]
 #[deprecated = "should be removed in favor of get_profile_by_user_principal"]
-pub fn get_profile_by_identifier(id: Principal) -> Result<ProfileResponse, ApiError> {
+pub fn get_profile_by_identifier(user_identifier: Principal) -> Result<ProfileResponse, ApiError> {
     match profiles()
-        .get_id_by_identifier(&id)
+        .get_id_by_identifier(&user_identifier)
         .map(|id| get_profile_by_user_principal(id))
     {
         Some(profile) => profile,
@@ -143,9 +139,9 @@ pub fn add_wallet_to_profile(wallet: PostWallet) -> Result<ProfileResponse, ApiE
 /// # Arguments
 /// * `wallet_principal` - The wallet principal to set as the primary wallet
 /// # Returns
-/// * `()` - If the wallet was set as the primary wallet
+/// * `ProfileResponse` - Profile response with the updated wallet
 /// # Errors
-/// * `()` - If something went wrong while setting the wallet as the primary wallet
+/// * `ApiError` - If something went wrong while setting the wallet as the primary wallet
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "has_access")]
@@ -249,31 +245,30 @@ pub fn add_friend_request(
 
 /// Accept a friend request that is addressed to the caller - [`[update]`](update)
 /// # Arguments
-/// * `id` - The friend request identifier to accept
+/// * `friend_request_id` - The friend request identifier to accept
 /// # Returns
 /// * `bool` - If the friend request was accepted
 /// # Errors
-/// * `String` - If something went wrong while accepting the friend request
+/// * `ApiError` - If something went wrong while accepting the friend request
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "has_access")]
-pub fn accept_friend_request(id: u64) -> Result<bool, ApiError> {
-    FriendRequestCalls::accept_friend_request(id)
+pub fn accept_friend_request(friend_request_id: u64) -> Result<bool, ApiError> {
+    FriendRequestCalls::accept_friend_request(friend_request_id)
 }
 
 /// Remove a friend request created by the caller - [`[update]`](update)
 /// # Arguments
-/// * `id` - The friend request identifier to remove
+/// * `friend_request_id` - The friend request identifier to remove
 /// # Returns
 /// * `bool` - If the friend request was removed
 /// # Errors
-/// * `String` - If something went wrong while removing the friend request
+/// * `ApiError` - If something went wrong while removing the friend request
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-/// TODO: Not sure why the principal is needed here as an argument
 #[update(guard = "has_access")]
-pub fn remove_friend_request(id: u64) -> Result<bool, ApiError> {
-    FriendRequestCalls::remove_friend_request(id)
+pub fn remove_friend_request(friend_request_id: u64) -> Result<bool, ApiError> {
+    FriendRequestCalls::remove_friend_request(friend_request_id)
 }
 
 /// Gets the friend requests that are addressed to the caller - [`[query]`](query)
@@ -298,16 +293,16 @@ pub fn get_outgoing_friend_requests() -> Vec<FriendRequestResponse> {
 
 /// Decline a friend request that is addressed to the caller - [`[update]`](update)
 /// # Arguments
-/// * `id` - The friend request identifier to decline
+/// * `friend_request_id` - The friend request identifier to decline
 /// # Returns
 /// * `bool` - If the friend request was declined
 /// # Errors
-/// * `String` - If something went wrong while declining the friend request
+/// * `ApiError` - If something went wrong while declining the friend request
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "has_access")]
-pub fn decline_friend_request(id: u64) -> Result<bool, ApiError> {
-    FriendRequestCalls::decline_friend_request(id)
+pub fn decline_friend_request(friend_request_id: u64) -> Result<bool, ApiError> {
+    FriendRequestCalls::decline_friend_request(friend_request_id)
 }
 
 /// Remove friend from caller profile and remove caller from friend profile - [`[update]`](update)
@@ -316,7 +311,7 @@ pub fn decline_friend_request(id: u64) -> Result<bool, ApiError> {
 /// # Returns
 /// * `bool` - If the friend was removed from the caller his profile
 /// # Errors
-/// * `String` - If something went wrong while removing the friend
+/// * `ApiError` - If something went wrong while removing the friend
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "has_access")]
@@ -358,7 +353,7 @@ pub fn unblock_user(principal: Principal) -> Result<ProfileResponse, ApiError> {
 /// # Arguments
 /// * `relation_type` - The relation type to get the relation for `friend` or `blocked`
 /// # Returns
-/// * `Option<Principal>` - The principal of the relation that was found
+/// * `Vec<Principal>` - The principals of the relations
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 #[query(guard = "has_access")]
