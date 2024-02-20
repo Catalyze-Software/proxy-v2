@@ -11,15 +11,19 @@ use crate::{
         },
         validator::Validator,
     },
-    storage::storage_api::{groups, members, IdentifierRefMethods, StorageMethods},
+    storage::storage_api::{groups, members, profiles, IdentifierRefMethods, StorageMethods},
 };
 
 use canister_types::{
     misc::role_misc::read_only_permissions,
     models::{
         api_error::ApiError,
+        boosted::{Boosted, Subject},
         filter_type::FilterType,
-        group::{Group, GroupFilter, GroupResponse, GroupSort, PostGroup, UpdateGroup},
+        group::{
+            Group, GroupCallerData, GroupFilter, GroupResponse, GroupSort, PostGroup, UpdateGroup,
+        },
+        identifier::{Identifier, IdentifierKind},
         invite::InviteType,
         member::{InviteMemberResponse, JoinedMemberResponse, Member},
         neuron::{DissolveState, ListNeurons, ListNeuronsResponse},
@@ -30,6 +34,8 @@ use canister_types::{
         validation::{ValidateField, ValidationType},
     },
 };
+
+use super::boost_logic::BoostCalls;
 
 pub struct GroupCalls;
 pub struct GroupValidation;
@@ -72,11 +78,43 @@ impl GroupCalls {
 
         members().update(caller(), member)?;
 
-        GroupResponse::from_result(Ok(new_group))
+        GroupResponse::from_result(Ok(new_group), None, Self::get_group_caller_data(group_id))
     }
 
     pub fn get_group(id: u64) -> Result<GroupResponse, ApiError> {
-        GroupResponse::from_result(groups().get(id))
+        GroupResponse::from_result(
+            groups().get(id),
+            Self::get_boosted_group(id),
+            Self::get_group_caller_data(id),
+        )
+    }
+
+    fn get_boosted_group(id: u64) -> Option<Boosted> {
+        match BoostCalls::get_boosted_by_subject(Subject::Group(id)) {
+            Ok((_, boosted)) => Some(boosted),
+            Err(_) => None,
+        }
+    }
+
+    fn get_group_caller_data(group_id: u64) -> Option<GroupCallerData> {
+        let group_identifier = Identifier::generate(IdentifierKind::Group(group_id))
+            .to_principal()
+            .unwrap();
+
+        let is_starred = profiles()
+            .get(caller())
+            .is_ok_and(|(_, profile)| profile.starred.get(&group_identifier).is_some());
+
+        let (joined, invite) = match members().get(caller()) {
+            Ok((_, member)) => {
+                let joined = JoinedMemberResponse::new(member.clone(), group_id);
+                let invite = InviteMemberResponse::new(member, group_id);
+                (Some(joined), Some(invite))
+            }
+            Err(_) => (None, None),
+        };
+
+        Some(GroupCallerData::new(joined, invite, is_starred))
     }
 
     pub fn get_groups(
@@ -132,7 +170,14 @@ impl GroupCalls {
         let sorted_groups = sort.sort(and_filtered_groups);
         let result: Vec<GroupResponse> = sorted_groups
             .into_iter()
-            .map(|data| GroupResponse::new(data.0, data.1))
+            .map(|data| {
+                GroupResponse::new(
+                    data.0,
+                    data.1,
+                    Self::get_boosted_group(data.0),
+                    Self::get_group_caller_data(data.0),
+                )
+            })
             .collect();
 
         Ok(PagedResponse::new(page, limit, result))
@@ -141,7 +186,11 @@ impl GroupCalls {
     pub fn edit_group(id: u64, update_group: UpdateGroup) -> Result<GroupResponse, ApiError> {
         let (id, mut group) = groups().get(id)?;
         group.update(update_group);
-        GroupResponse::from_result(groups().update(id, group))
+        GroupResponse::from_result(
+            groups().update(id, group),
+            Self::get_boosted_group(id),
+            Self::get_group_caller_data(id),
+        )
     }
 
     pub fn get_group_owner_and_privacy(id: u64) -> Result<(Principal, Privacy), ApiError> {
@@ -153,7 +202,14 @@ impl GroupCalls {
         groups()
             .get_many(group_ids)
             .into_iter()
-            .map(|data| GroupResponse::new(data.0, data.1))
+            .map(|data| {
+                GroupResponse::new(
+                    data.0,
+                    data.1,
+                    Self::get_boosted_group(data.0),
+                    Self::get_group_caller_data(data.0),
+                )
+            })
             .collect()
     }
 
@@ -162,7 +218,7 @@ impl GroupCalls {
     pub fn delete_group(group_id: u64) -> Result<GroupResponse, ApiError> {
         let (id, mut group) = groups().get(group_id)?;
         group.is_deleted = true;
-        GroupResponse::from_result(groups().update(id, group))
+        GroupResponse::from_result(groups().update(id, group), None, None)
     }
 
     pub fn add_wallet_to_group(
@@ -172,7 +228,11 @@ impl GroupCalls {
     ) -> Result<GroupResponse, ApiError> {
         let (id, mut group) = groups().get(group_id)?;
         group.wallets.insert(wallet_canister, description);
-        GroupResponse::from_result(groups().update(id, group))
+        GroupResponse::from_result(
+            groups().update(id, group),
+            Self::get_boosted_group(id),
+            Self::get_group_caller_data(id),
+        )
     }
 
     pub fn remove_wallet_from_group(
@@ -181,7 +241,11 @@ impl GroupCalls {
     ) -> Result<GroupResponse, ApiError> {
         let (id, mut group) = groups().get(group_id)?;
         group.wallets.remove(&wallet_canister);
-        GroupResponse::from_result(groups().update(id, group))
+        GroupResponse::from_result(
+            groups().update(id, group),
+            Self::get_boosted_group(id),
+            Self::get_group_caller_data(id),
+        )
     }
 
     // Was add_role
@@ -405,7 +469,7 @@ impl GroupCalls {
         let mut result: Vec<JoinedMemberResponse> = vec![];
 
         for (_, member) in members {
-            for (group_id, _) in member.get_joined() {
+            for (group_id, _) in member.get_multiple_joined() {
                 result.push(JoinedMemberResponse::new(member.clone(), group_id));
             }
         }

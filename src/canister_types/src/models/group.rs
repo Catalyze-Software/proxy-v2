@@ -15,7 +15,9 @@ use crate::{
 
 use super::{
     api_error::ApiError,
+    boosted::Boosted,
     identifier::{Identifier, IdentifierKind, MEMBER_CANISTER_ID},
+    member::{InviteMemberResponse, JoinedMemberResponse},
     permission::Permission,
 };
 
@@ -163,6 +165,27 @@ pub struct UpdateGroup {
 }
 
 #[derive(Clone, CandidType, Serialize, Deserialize, Debug)]
+pub struct GroupCallerData {
+    pub joined: Option<JoinedMemberResponse>,
+    pub invite: Option<InviteMemberResponse>,
+    pub is_starred: bool,
+}
+
+impl GroupCallerData {
+    pub fn new(
+        joined: Option<JoinedMemberResponse>,
+        invite: Option<InviteMemberResponse>,
+        is_starred: bool,
+    ) -> Self {
+        Self {
+            joined,
+            invite,
+            is_starred,
+        }
+    }
+}
+
+#[derive(Clone, CandidType, Serialize, Deserialize, Debug)]
 pub struct GroupResponse {
     pub identifier: Principal,
     pub name: String,
@@ -183,10 +206,17 @@ pub struct GroupResponse {
     pub privacy_gated_type_amount: Option<u64>,
     pub updated_on: u64,
     pub created_on: u64,
+    pub boosted: Option<Boosted>,
+    pub caller_data: Option<GroupCallerData>,
 }
 
 impl GroupResponse {
-    pub fn new(id: u64, group: Group) -> Self {
+    pub fn new(
+        id: u64,
+        group: Group,
+        boosted: Option<Boosted>,
+        caller_data: Option<GroupCallerData>,
+    ) -> Self {
         let identifier = Identifier::generate(IdentifierKind::Group(id));
         let member_count: usize = group.member_count.into_iter().map(|(_, value)| value).sum();
 
@@ -207,16 +237,22 @@ impl GroupResponse {
             member_count: member_count.clone(),
             wallets: group.wallets.into_iter().collect(),
             is_deleted: group.is_deleted,
+            caller_data,
             privacy_gated_type_amount: group.privacy_gated_type_amount,
+            boosted,
             updated_on: group.updated_on,
             created_on: group.created_on,
         }
     }
 
-    pub fn from_result(group_result: Result<(u64, Group), ApiError>) -> Result<Self, ApiError> {
+    pub fn from_result(
+        group_result: Result<(u64, Group), ApiError>,
+        boosted: Option<Boosted>,
+        caller_data: Option<GroupCallerData>,
+    ) -> Result<Self, ApiError> {
         match group_result {
             Err(err) => Err(err),
-            Ok((id, group)) => Ok(Self::new(id, group)),
+            Ok((id, group)) => Ok(Self::new(id, group, boosted, caller_data)),
         }
     }
 }

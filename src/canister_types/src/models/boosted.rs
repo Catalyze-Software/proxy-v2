@@ -1,6 +1,6 @@
 use candid::{CandidType, Principal};
 use ic_cdk::api::time;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use candid::{Decode, Encode};
 
@@ -8,7 +8,7 @@ use crate::impl_storable_for;
 
 impl_storable_for!(Boosted);
 
-#[derive(CandidType, Deserialize, Clone, Debug)]
+#[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
 pub struct Boosted {
     pub subject: Subject,
     pub seconds: u64,
@@ -36,7 +36,7 @@ impl Boosted {
     }
 }
 
-#[derive(CandidType, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[derive(CandidType, Deserialize, Serialize, Clone, Debug, PartialEq, Eq)]
 pub enum Subject {
     Group(u64),
     Event(u64),
