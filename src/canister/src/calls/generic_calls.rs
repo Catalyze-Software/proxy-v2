@@ -1,8 +1,10 @@
 use ic_cdk::{post_upgrade, pre_upgrade};
 
+use crate::logic::boost_logic::BoostCalls;
+
 #[post_upgrade]
 pub fn post_upgrade() {
-    // start boost timers after upgrade
+    let _ = BoostCalls::start_timers_after_upgrade();
 }
 
 #[pre_upgrade]

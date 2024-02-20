@@ -30,9 +30,6 @@ use crate::{
 /// Add an event - [`[update]`](update)
 /// # Arguments
 /// * `post_event` - The event to add
-/// * `group_identifier` - Used to check if the user has access to the group
-/// * `member_identifier` - Used to check if the user has the correct group roles
-/// * `event_attendee_canister` - The event attendee canister to store the event owner on (icc)
 /// # Returns
 /// * `EventResponse` - The added event
 /// # Errors
@@ -47,7 +44,7 @@ pub fn add_event(post_event: PostEvent) -> Result<EventResponse, ApiError> {
 
 /// Get an event - [`[query]`](query)
 /// # Arguments
-/// * `identifier` - The identifier of the event
+/// * `event_identifier` - The identifier of the event
 /// * `group_identifier` - Used to check if the user has access to the group
 /// # Returns
 /// * `EventResponse` - The event
@@ -71,8 +68,6 @@ pub fn get_event(
 /// * `page` - The page number
 /// * `sort` - The sort direction
 /// * `filters` - The filters to apply
-/// * `filter_type` - The filter type
-/// * `group_identifier` -The group identifier to get the events from
 /// # Returns
 /// * `PagedResponse<EventResponse>` - The events in a paged response
 /// # Errors
@@ -82,9 +77,9 @@ fn get_events(
     limit: usize,
     page: usize,
     sort: EventSort,
-    filter: Vec<FilterType<EventFilter>>,
+    filters: Vec<FilterType<EventFilter>>,
 ) -> Result<PagedResponse<EventResponse>, ApiError> {
-    EventCalls::get_events(limit, page, sort, filter)
+    EventCalls::get_events(limit, page, sort, filters)
 }
 
 /// Get the number of events per group - [`[query]`](query)
@@ -103,11 +98,9 @@ pub fn get_events_count(group_identifiers: Vec<Principal>) -> Vec<(Principal, u6
 
 /// edit an event - [`[update]`](update)
 /// # Arguments
-/// * `identifier` - The identifier of the event
-/// * `value` - The event to update
+/// * `event_identifier` - The identifier of the event
+/// * `update_event` - The event to update
 /// * `group_identifier` - Used to check if the user has access to the group
-/// * `member_identifier` - Used to check if the user has the correct group roles
-/// * `event_attendee_canister` - The event attendee canister to store the event owner on (icc)
 /// # Returns
 /// * `EventResponse` - The updated event
 /// # Errors
@@ -128,9 +121,8 @@ pub fn edit_event(
 
 /// Delete an event - [`[update]`](update)
 /// # Arguments
-/// * `identifier` - The identifier of the event
+/// * `event_identifier` - The identifier of the event
 /// * `group_identifier` - Used to check if the user has access to the group the event belongs to
-/// * `member_identifier` - Used to check if the user has the correct group roles
 /// # Returns
 /// * `()` - If the event was deleted
 /// # Errors
@@ -150,10 +142,9 @@ pub fn delete_event(
 
 /// Cancel an event - [`[update]`](update)
 /// # Arguments
-/// * `identifier` - The identifier of the event
+/// * `event_identifier` - The identifier of the event
 /// * `reason` - The reason why the event was cancelled
 /// * `group_identifier` - Used to check if the user has access to the group the event belongs to
-/// * `member_identifier` - Used to check if the user has the correct group roles
 /// # Returns
 /// * `()` - If the event was cancelled
 /// # Errors
@@ -179,12 +170,11 @@ pub fn cancel_event(
 /// * `event_identifier` - The identifier of the event
 /// * `group_identifier` - Used to check if the user has access to the group the event belongs to
 /// # Returns
-/// * `(Principal, Attendee)` - The event identifier and the attendee
+/// * `JoinedAttendeeResponse` - the event join details
 /// # Errors
 /// * `ApiError` - If something went wrong while joining the event
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-/// TODO: This action is guarded by group role based authorization
 #[update(guard = "has_access")]
 pub fn join_event(
     event_identifier: Principal,
@@ -199,10 +189,9 @@ pub fn join_event(
 /// # Arguments
 /// * `event_identifier` - The identifier of the event
 /// * `attendee_principal` - The principal of the user to invite
-/// * `member_identifier` - Used to check if the user has the correct group roles
 /// * `group_identifier` - Used to check if the user has access to the group the event belongs to
 /// # Returns
-/// * `InviteAttendeeResponse` - The event identifier and the attendee
+/// * `InviteAttendeeResponse` - The event invite details
 /// # Errors
 /// * `ApiError` - If something went wrong while inviting the user to the event
 /// # Note
@@ -224,10 +213,9 @@ pub fn invite_to_event(
 /// # Arguments
 /// * `attendee_principal` - The principal of the user to accept
 /// * `event_identifier` - The identifier of the event
-/// * `member_identifier` - Used to check if the user has the correct group roles
 /// * `group_identifier` - Used to check if the user has access to the group the event belongs to
 /// # Returns
-/// * `(Principal, Attendee)` - The event identifier and the attendee
+/// * `JoinedAttendeeResponse` - the event join details
 /// # Errors
 /// * `ApiError` - If something went wrong while accepting the user invite to the event
 /// # Note
@@ -249,7 +237,7 @@ pub fn accept_user_request_event_invite(
 /// # Arguments
 /// * `event_identifier` - The identifier of the event
 /// # Returns
-/// * `(Principal, Attendee)` - The event identifier and the attendee
+/// * `Attendee` - The attendee
 /// # Errors
 /// * `ApiError` - If something went wrong while accepting the owner invite to the event
 /// # Note
@@ -283,7 +271,7 @@ pub fn get_event_attendees(
 /// # Change
 /// * was `get_self` but due to conflict with other methods it was renamed
 /// # Returns
-/// * `(Principal, Attendee)` - The attendee identifier and the attendee
+/// * `Attendee` - The attendee
 /// # Errors
 /// * `ApiError` - If something went wrong while getting the attendee
 /// # Note
@@ -335,7 +323,6 @@ pub fn leave_event(event_identifier: Principal) -> Result<(), ApiError> {
 /// * `ApiError` - If something went wrong while removing the event
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-/// TODO: This action is guarded by group role based authorization
 #[update(guard = "has_access")]
 pub fn remove_event_invite(event_identifier: Principal) -> Result<(), ApiError> {
     let event_id = Identifier::from(event_identifier).id();
@@ -347,14 +334,12 @@ pub fn remove_event_invite(event_identifier: Principal) -> Result<(), ApiError> 
 /// * `attendee_principal` - The principal of the user to remove
 /// * `event_identifier` - The identifier of the event
 /// * `group_identifier` - Used to check if the user has access to the group the event belongs to
-/// * `member_identifier` - Used to check if the user has the correct group roles
 /// # Returns
 /// * `()` - If the user removed the event
 /// # Errors
 /// * `ApiError` - If something went wrong while removing the event
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-/// TODO: This action is guarded by group role based authorization
 #[update(guard = "has_access")]
 pub fn remove_attendee_from_event(
     attendee_principal: Principal,
@@ -372,14 +357,12 @@ pub fn remove_attendee_from_event(
 /// * `attendee_principal` - The principal of the user to remove
 /// * `event_identifier` - The identifier of the event
 /// * `group_identifier` - Used to check if the user has access to the group the event belongs to
-/// * `member_identifier` - Used to check if the user has the correct group roles
 /// # Returns
 /// * `()` - If the user removed the event
 /// # Errors
 /// * `ApiError` - If something went wrong while removing the event
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-/// TODO: This action is guarded by group role based authorization
 #[update(guard = "has_access")]
 pub fn remove_attendee_invite_from_event(
     attendee_principal: Principal,
