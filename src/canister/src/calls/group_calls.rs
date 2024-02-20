@@ -24,7 +24,6 @@ use canister_types::models::{
     member::{InviteMemberResponse, JoinedMemberResponse, Member},
     paged_response::PagedResponse,
     permission::{PermissionType, PostPermission},
-    privacy::Privacy,
     role::Role,
 };
 use ic_cdk::{query, update};
@@ -103,22 +102,6 @@ pub fn edit_group(
     let group_id = Identifier::from(group_identifier).id();
     can_edit(group_id, PermissionType::Group(None))?;
     GroupCalls::edit_group(group_id, update_group)
-}
-
-/// Get the group owner and privacy - [`[query]`](query)
-/// # Arguments
-/// * `group_identifier` - The identifier of the group
-/// # Returns
-/// * `Principal` - The group owner
-/// * `Privacy` - The group privacy
-/// # Errors
-/// * `ApiError` - If something went wrong while getting the group owner and privacy
-#[query]
-#[deprecated = "This function was used as an inter-canister call, but should not be used anymore."]
-pub fn get_group_owner_and_privacy(
-    _group_identifier: Principal,
-) -> Result<(Principal, Privacy), ApiError> {
-    Err(ApiError::not_implemented())
 }
 
 /// Get groups by their identifiers - [`[query]`](query)

@@ -27,7 +27,6 @@ pub fn __export_did_tmp_() -> String {
     use canister_types::models::member::*;
     use canister_types::models::paged_response::*;
     use canister_types::models::permission::*;
-    use canister_types::models::privacy::*;
     use canister_types::models::profile::*;
     use canister_types::models::relation_type::*;
     use canister_types::models::report::*;

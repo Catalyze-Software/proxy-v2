@@ -29,7 +29,7 @@ use crate::{
 
 /// Add an event - [`[update]`](update)
 /// # Arguments
-/// * `value` - The event to add
+/// * `post_event` - The event to add
 /// * `group_identifier` - Used to check if the user has access to the group
 /// * `member_identifier` - Used to check if the user has the correct group roles
 /// * `event_attendee_canister` - The event attendee canister to store the event owner on (icc)

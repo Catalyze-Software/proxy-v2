@@ -50,7 +50,11 @@ impl Member {
         );
     }
 
-    pub fn get_joined(&self) -> Vec<(u64, Join)> {
+    pub fn get_joined(&self, group_id: &u64) -> Option<Join> {
+        self.joined.get(group_id).cloned()
+    }
+
+    pub fn get_multiple_joined(&self) -> Vec<(u64, Join)> {
         self.joined.iter().map(|(k, v)| (*k, v.clone())).collect()
     }
 
@@ -81,8 +85,8 @@ impl Member {
         );
     }
 
-    pub fn get_invite(&self, group_id: u64) -> Option<Invite> {
-        self.invites.get(&group_id).cloned()
+    pub fn get_invite(&self, group_id: &u64) -> Option<Invite> {
+        self.invites.get(group_id).cloned()
     }
 
     pub fn remove_invite(&mut self, group_id: u64) {
@@ -192,7 +196,7 @@ impl InviteMemberResponse {
         Self {
             group_id,
             principal: member.principal,
-            invite: member.get_invite(group_id),
+            invite: member.get_invite(&group_id),
         }
     }
 }

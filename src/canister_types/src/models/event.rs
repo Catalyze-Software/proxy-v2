@@ -12,7 +12,12 @@ use crate::{
     },
 };
 
-use super::{api_error::ApiError, identifier::Identifier};
+use super::{
+    api_error::ApiError,
+    attendee::{InviteAttendeeResponse, JoinedAttendeeResponse},
+    boosted::Boost,
+    identifier::Identifier,
+};
 
 impl_storable_for!(Event);
 
@@ -163,6 +168,27 @@ pub struct UpdateEvent {
     pub tags: Vec<u32>,
 }
 
+#[derive(Clone, CandidType, Serialize, Deserialize, Debug)]
+pub struct EventCallerData {
+    pub joined: Option<JoinedAttendeeResponse>,
+    pub invite: Option<InviteAttendeeResponse>,
+    pub is_starred: bool,
+}
+
+impl EventCallerData {
+    pub fn new(
+        joined: Option<JoinedAttendeeResponse>,
+        invite: Option<InviteAttendeeResponse>,
+        is_starred: bool,
+    ) -> Self {
+        Self {
+            joined,
+            invite,
+            is_starred,
+        }
+    }
+}
+
 #[derive(Clone, Debug, CandidType, Deserialize)]
 pub enum EventSort {
     CreatedOn(SortDirection),
@@ -271,10 +297,17 @@ pub struct EventResponse {
     pub updated_on: u64,
     pub created_on: u64,
     pub group_id: u64,
+    pub boosted: Option<Boost>,
+    pub caller_data: Option<EventCallerData>,
 }
 
 impl EventResponse {
-    pub fn new(id: u64, event: Event) -> Self {
+    pub fn new(
+        id: u64,
+        event: Event,
+        boosted: Option<Boost>,
+        caller_data: Option<EventCallerData>,
+    ) -> Self {
         let identifier = Identifier::generate(super::identifier::IdentifierKind::Event(id));
 
         Self {
@@ -297,13 +330,20 @@ impl EventResponse {
             updated_on: event.updated_on,
             created_on: event.created_on,
             group_id: event.group_id,
+            boosted,
+            caller_data,
         }
     }
 
-    pub fn from_result(id: u64, event: Result<Event, ApiError>) -> Result<Self, ApiError> {
+    pub fn from_result(
+        id: u64,
+        event: Result<Event, ApiError>,
+        boosted: Option<Boost>,
+        caller_data: Option<EventCallerData>,
+    ) -> Result<Self, ApiError> {
         match event {
             Err(e) => Err(e),
-            Ok(event) => Ok(Self::new(id, event)),
+            Ok(event) => Ok(Self::new(id, event, boosted, caller_data)),
         }
     }
 }
