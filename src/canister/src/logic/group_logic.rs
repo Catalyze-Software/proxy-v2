@@ -89,34 +89,6 @@ impl GroupCalls {
         )
     }
 
-    fn get_boosted_group(id: u64) -> Option<Boosted> {
-        match BoostCalls::get_boosted_by_subject(Subject::Group(id)) {
-            Ok((_, boosted)) => Some(boosted),
-            Err(_) => None,
-        }
-    }
-
-    fn get_group_caller_data(group_id: u64) -> Option<GroupCallerData> {
-        let group_identifier = Identifier::generate(IdentifierKind::Group(group_id))
-            .to_principal()
-            .unwrap();
-
-        let is_starred = profiles()
-            .get(caller())
-            .is_ok_and(|(_, profile)| profile.starred.get(&group_identifier).is_some());
-
-        let (joined, invite) = match members().get(caller()) {
-            Ok((_, member)) => {
-                let joined = JoinedMemberResponse::new(member.clone(), group_id);
-                let invite = InviteMemberResponse::new(member, group_id);
-                (Some(joined), Some(invite))
-            }
-            Err(_) => (None, None),
-        };
-
-        Some(GroupCallerData::new(joined, invite, is_starred))
-    }
-
     pub fn get_groups(
         limit: usize,
         page: usize,
@@ -582,6 +554,34 @@ impl GroupCalls {
         }
 
         Ok(result)
+    }
+
+    fn get_boosted_group(id: u64) -> Option<Boosted> {
+        match BoostCalls::get_boosted_by_subject(Subject::Group(id)) {
+            Ok((_, boosted)) => Some(boosted),
+            Err(_) => None,
+        }
+    }
+
+    fn get_group_caller_data(group_id: u64) -> Option<GroupCallerData> {
+        let group_identifier = Identifier::generate(IdentifierKind::Group(group_id))
+            .to_principal()
+            .unwrap();
+
+        let is_starred = profiles()
+            .get(caller())
+            .is_ok_and(|(_, profile)| profile.starred.get(&group_identifier).is_some());
+
+        let (joined, invite) = match members().get(caller()) {
+            Ok((_, member)) => {
+                let joined = JoinedMemberResponse::new(member.clone(), group_id);
+                let invite = InviteMemberResponse::new(member, group_id);
+                (Some(joined), Some(invite))
+            }
+            Err(_) => (None, None),
+        };
+
+        Some(GroupCallerData::new(joined, invite, is_starred))
     }
 }
 

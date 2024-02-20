@@ -6,7 +6,10 @@ use ic_cdk::caller;
 use canister_types::models::{
     api_error::ApiError,
     attendee::{Attendee, InviteAttendeeResponse, JoinedAttendeeResponse},
-    event::{Event, EventFilter, EventResponse, EventSort, PostEvent, UpdateEvent},
+    boosted::{Boosted, Subject},
+    event::{
+        Event, EventCallerData, EventFilter, EventResponse, EventSort, PostEvent, UpdateEvent,
+    },
     filter_type::FilterType,
     identifier::{Identifier, IdentifierKind},
     invite::InviteType,
@@ -14,7 +17,11 @@ use canister_types::models::{
     privacy::Privacy,
 };
 
-use crate::storage::storage_api::{attendees, events, IdentifierRefMethods, StorageMethods};
+use crate::storage::storage_api::{
+    attendees, events, profiles, IdentifierRefMethods, StorageMethods,
+};
+
+use super::boost_logic::BoostCalls;
 pub struct EventCalls;
 
 impl EventCalls {
@@ -27,7 +34,12 @@ impl EventCalls {
         attendee.add_joined(new_event_id, new_event.group_id);
         attendees().update(caller(), attendee)?;
 
-        Ok(EventResponse::new(new_event_id, new_event))
+        Ok(EventResponse::new(
+            new_event_id,
+            new_event.clone(),
+            Self::get_boosted_event(new_event_id),
+            Self::get_event_caller_data(new_event_id, new_event.group_id),
+        ))
     }
 
     pub fn get_event(event_id: u64, group_id: u64) -> Result<EventResponse, ApiError> {
@@ -36,7 +48,12 @@ impl EventCalls {
         if !event.is_from_group(group_id) {
             return Err(ApiError::unauthorized());
         }
-        Ok(EventResponse::new(event_id, event))
+        Ok(EventResponse::new(
+            event_id,
+            event.clone(),
+            Self::get_boosted_event(event_id),
+            Self::get_event_caller_data(event_id, event.group_id),
+        ))
     }
 
     pub fn get_events_count(group_ids: Vec<u64>) -> Vec<(Principal, u64)> {
@@ -107,7 +124,14 @@ impl EventCalls {
         let sorted_groups = sort.sort(and_filtered_groups);
         let result: Vec<EventResponse> = sorted_groups
             .into_iter()
-            .map(|data| EventResponse::new(data.0, data.1))
+            .map(|data| {
+                EventResponse::new(
+                    data.0,
+                    data.1.clone(),
+                    Self::get_boosted_event(data.0),
+                    Self::get_event_caller_data(data.0, data.1.group_id),
+                )
+            })
             .collect();
 
         Ok(PagedResponse::new(page, limit, result))
@@ -127,7 +151,12 @@ impl EventCalls {
         event = event.update(update_event);
         events().update(event_id, event.clone())?;
 
-        Ok(EventResponse::new(event_id, event))
+        Ok(EventResponse::new(
+            event_id,
+            event.clone(),
+            Self::get_boosted_event(event_id),
+            Self::get_event_caller_data(event_id, event.group_id),
+        ))
     }
 
     pub fn delete_event(event_id: u64, group_id: u64) -> Result<(), ApiError> {
@@ -346,5 +375,43 @@ impl EventCalls {
             })
             .collect();
         Ok(response)
+    }
+
+    fn get_boosted_event(id: u64) -> Option<Boosted> {
+        match BoostCalls::get_boosted_by_subject(Subject::Event(id)) {
+            Ok((_, boosted)) => Some(boosted),
+            Err(_) => None,
+        }
+    }
+
+    fn get_event_caller_data(event_id: u64, group_id: u64) -> Option<EventCallerData> {
+        let event_identifier = Identifier::generate(IdentifierKind::Event(event_id))
+            .to_principal()
+            .unwrap();
+
+        let is_starred = profiles()
+            .get(caller())
+            .is_ok_and(|(_, profile)| profile.starred.get(&event_identifier).is_some());
+
+        let (joined, invite) = match attendees().get(caller()) {
+            Ok((principal, member)) => {
+                let joined = JoinedAttendeeResponse::new(event_id, group_id, principal);
+                match member.get_invite(event_id) {
+                    Some(invite) => {
+                        let invite = InviteAttendeeResponse::new(
+                            event_id,
+                            group_id,
+                            principal,
+                            invite.invite_type,
+                        );
+                        (Some(joined), Some(invite))
+                    }
+                    None => (Some(joined), None),
+                }
+            }
+            Err(_) => (None, None),
+        };
+
+        Some(EventCallerData::new(joined, invite, is_starred))
     }
 }
