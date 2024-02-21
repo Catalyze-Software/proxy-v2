@@ -1,9 +1,14 @@
 use models::models::{
-    asset::Asset, group::PostGroup, location::Location, privacy::Privacy, profile::{PostProfile, UpdateProfile},
-    profile_privacy::ProfilePrivacy, wallet::PostWallet,
+    asset::Asset,
+    group::PostGroup,
+    location::Location,
+    privacy::Privacy,
+    profile::{PostProfile, UpdateProfile},
+    profile_privacy::ProfilePrivacy,
+    wallet::PostWallet,
 };
 
-use super::principals::canister_test_id;
+use super::principals::{wallet_test_id, wallet_test_id2};
 
 pub fn mock_post_profile() -> PostProfile {
     PostProfile {
@@ -56,6 +61,13 @@ pub fn mock_post_group() -> PostGroup {
 pub fn mock_post_wallet() -> PostWallet {
     PostWallet {
         provider: "test_provider".to_string(),
-        principal: canister_test_id(),
+        principal: wallet_test_id(),
+    }
+}
+
+pub fn mock_post_wallet2() -> PostWallet {
+    PostWallet {
+        provider: "test_provider2".to_string(),
+        principal: wallet_test_id2(),
     }
 }

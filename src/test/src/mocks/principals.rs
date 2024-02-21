@@ -29,3 +29,13 @@ pub fn canister_test_id2() -> Principal {
     // Dapps 1
     Principal::from_text("5escj-6iaaa-aaaap-aa4kq-cai").expect("Failed to parse canister id")
 }
+
+pub fn wallet_test_id() -> Principal {
+    // Dapps 2
+    Principal::from_text("443xk-qiaaa-aaaap-aa4oq-cai").expect("Failed to parse canister id")
+}
+
+pub fn wallet_test_id2() -> Principal {
+    // Dapps 3
+    Principal::from_text("4sz2c-lyaaa-aaaap-aa4pq-cai").expect("Failed to parse canister id")
+}

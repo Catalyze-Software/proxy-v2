@@ -1,6 +1,5 @@
 use std::cell::RefCell;
 
-use crate::mocks::principals::member_test_id;
 use candid::Principal;
 use ic_cdk::api::management_canister::provisional::CanisterId;
 use lazy_static::lazy_static;
@@ -25,7 +24,9 @@ lazy_static! {
 }
 
 thread_local! {
-    pub static SENDER: RefCell<Principal> = RefCell::new(member_test_id());
+    pub static SENDER: RefCell<Option<Principal>> = RefCell::new(None);
+    pub static CANISTER_ID: RefCell<Option<Principal>> = RefCell::new(None);
+    pub static GROUP_ID: RefCell<Option<Principal>> = RefCell::new(None);
 }
 
 fn init_pocket_ic() -> TestEnv {

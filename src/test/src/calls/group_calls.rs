@@ -13,7 +13,7 @@ pub fn add_group(
         update_candid_as::<(PostGroup, Option<String>), (Result<GroupResponse, ApiError>,)>(
             &ENV.pic,
             ENV.canister_id,
-            SENDER.with(|s| *s.borrow()),
+            SENDER.with(|s| s.borrow().unwrap()),
             "add_group",
             (post_group, account_identifier),
         )
