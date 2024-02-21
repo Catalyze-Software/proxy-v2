@@ -14,7 +14,7 @@ use crate::{
     mocks::{
         models::{mock_post_profile, mock_post_wallet, mock_post_wallet2, mock_update_profile},
         principals::{
-            canister_test_id, canister_test_id2, member_test_id, member_test_id2, wallet_test_id,
+            canister_test_id2, member_test_id2, wallet_test_id,
             wallet_test_id2,
         },
     },
