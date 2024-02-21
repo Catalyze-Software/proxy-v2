@@ -1,7 +1,11 @@
 use crate::{ENV, SENDER};
 use candid::Principal;
 use models::models::{
-    api_error::ApiError, friend_request::FriendRequestResponse, profile::{PostProfile, ProfileResponse}, relation_type::RelationType, wallet::PostWallet
+    api_error::ApiError,
+    friend_request::FriendRequestResponse,
+    profile::{PostProfile, ProfileResponse, UpdateProfile},
+    relation_type::RelationType,
+    wallet::PostWallet,
 };
 use pocket_ic::{query_candid_as, update_candid_as};
 
@@ -10,7 +14,7 @@ pub fn add_profile(post_profile: PostProfile, member_canister: Principal) -> Pro
         update_candid_as::<(PostProfile, Principal), (Result<ProfileResponse, ApiError>,)>(
             &ENV.pic,
             ENV.canister_id,
-            *SENDER,
+            SENDER.with(|s| *s.borrow()),
             "add_profile",
             (post_profile, member_canister),
         )
@@ -26,7 +30,7 @@ pub fn get_profile_by_user_principal(principal: Principal) -> ProfileResponse {
         query_candid_as::<(Principal,), (Result<ProfileResponse, ApiError>,)>(
             &ENV.pic,
             ENV.canister_id,
-            *SENDER,
+            SENDER.with(|s| *s.borrow()),
             "get_profile_by_user_principal",
             (principal,),
         )
@@ -45,7 +49,7 @@ pub fn get_profiles_by_user_principal(principals: Vec<Principal>) -> Vec<Profile
         query_candid_as::<(Vec<Principal>,), (Result<Vec<ProfileResponse>, ApiError>,)>(
             &ENV.pic,
             ENV.canister_id,
-            *SENDER,
+            SENDER.with(|s| *s.borrow()),
             "get_profiles_by_user_principal",
             (principals,),
         )
@@ -59,12 +63,12 @@ pub fn get_profiles_by_user_principal(principals: Vec<Principal>) -> Vec<Profile
 // #[deprecated = "should be removed in favor of get_profiles_by_user_principal"]
 // pub fn get_profiles_by_identifier(identifiers: Vec<Principal>) -> Vec<ProfileResponse>
 
-pub fn edit_profile(update_profile: PostProfile) -> ProfileResponse {
+pub fn edit_profile(update_profile: UpdateProfile) -> ProfileResponse {
     let profile_response: ProfileResponse =
-        update_candid_as::<(PostProfile,), (Result<ProfileResponse, ApiError>,)>(
+        update_candid_as::<(UpdateProfile,), (Result<ProfileResponse, ApiError>,)>(
             &ENV.pic,
             ENV.canister_id,
-            *SENDER,
+            SENDER.with(|s| *s.borrow()),
             "edit_profile",
             (update_profile,),
         )
@@ -80,7 +84,7 @@ pub fn add_wallet_to_profile(wallet: PostWallet) -> ProfileResponse {
         update_candid_as::<(PostWallet,), (Result<ProfileResponse, ApiError>,)>(
             &ENV.pic,
             ENV.canister_id,
-            *SENDER,
+            SENDER.with(|s| *s.borrow()),
             "add_wallet_to_profile",
             (wallet,),
         )
@@ -96,7 +100,7 @@ pub fn set_wallet_as_primary(wallet_principal: Principal) -> ProfileResponse {
         update_candid_as::<(Principal,), (Result<ProfileResponse, ApiError>,)>(
             &ENV.pic,
             ENV.canister_id,
-            *SENDER,
+            SENDER.with(|s| *s.borrow()),
             "set_wallet_as_primary",
             (wallet_principal,),
         )
@@ -112,7 +116,7 @@ pub fn remove_wallet_from_profile(wallet_principal: Principal) -> ProfileRespons
         update_candid_as::<(Principal,), (Result<ProfileResponse, ApiError>,)>(
             &ENV.pic,
             ENV.canister_id,
-            *SENDER,
+            SENDER.with(|s| *s.borrow()),
             "remove_wallet_from_profile",
             (wallet_principal,),
         )
@@ -128,7 +132,7 @@ pub fn add_starred(identifier: Principal) -> ProfileResponse {
         update_candid_as::<(Principal,), (Result<ProfileResponse, ApiError>,)>(
             &ENV.pic,
             ENV.canister_id,
-            *SENDER,
+            SENDER.with(|s| *s.borrow()),
             "add_starred",
             (identifier,),
         )
@@ -144,7 +148,7 @@ pub fn remove_starred(identifier: Principal) -> ProfileResponse {
         update_candid_as::<(Principal,), (Result<ProfileResponse, ApiError>,)>(
             &ENV.pic,
             ENV.canister_id,
-            *SENDER,
+            SENDER.with(|s| *s.borrow()),
             "remove_starred",
             (identifier,),
         )
@@ -160,7 +164,7 @@ pub fn get_starred_events() -> Vec<Principal> {
         query_candid_as::<(), (Result<Vec<Principal>, ApiError>,)>(
             &ENV.pic,
             ENV.canister_id,
-            *SENDER,
+            SENDER.with(|s| *s.borrow()),
             "get_starred_events",
             (),
         )
@@ -172,17 +176,16 @@ pub fn get_starred_events() -> Vec<Principal> {
 }
 
 pub fn get_starred_tasks() -> Vec<Principal> {
-    let starred_tasks: Vec<Principal> =
-        query_candid_as::<(), (Result<Vec<Principal>, ApiError>,)>(
-            &ENV.pic,
-            ENV.canister_id,
-            *SENDER,
-            "get_starred_tasks",
-            (),
-        )
-        .expect("Failed to call get_starred_tasks from pocketIC")
-        .0
-        .expect("Failed to get starred tasks");
+    let starred_tasks: Vec<Principal> = query_candid_as::<(), (Result<Vec<Principal>, ApiError>,)>(
+        &ENV.pic,
+        ENV.canister_id,
+        SENDER.with(|s| *s.borrow()),
+        "get_starred_tasks",
+        (),
+    )
+    .expect("Failed to call get_starred_tasks from pocketIC")
+    .0
+    .expect("Failed to get starred tasks");
 
     starred_tasks
 }
@@ -192,7 +195,7 @@ pub fn get_starred_groups() -> Vec<Principal> {
         query_candid_as::<(), (Result<Vec<Principal>, ApiError>,)>(
             &ENV.pic,
             ENV.canister_id,
-            *SENDER,
+            SENDER.with(|s| *s.borrow()),
             "get_starred_groups",
             (),
         )
@@ -208,7 +211,7 @@ pub fn add_friend_request(to: Principal, message: String) -> FriendRequestRespon
         update_candid_as::<(Principal, String), (Result<FriendRequestResponse, ApiError>,)>(
             &ENV.pic,
             ENV.canister_id,
-            *SENDER,
+            SENDER.with(|s| *s.borrow()),
             "add_friend_request",
             (to, message),
         )
@@ -223,7 +226,7 @@ pub fn accept_friend_request(id: u64) -> bool {
     let friend_request_accepted: bool = update_candid_as::<(u64,), (Result<bool, ApiError>,)>(
         &ENV.pic,
         ENV.canister_id,
-        *SENDER,
+        SENDER.with(|s| *s.borrow()),
         "accept_friend_request",
         (id,),
     )
@@ -238,7 +241,7 @@ pub fn remove_friend_request(id: u64) -> bool {
     let friend_request_removed: bool = update_candid_as::<(u64,), (Result<bool, ApiError>,)>(
         &ENV.pic,
         ENV.canister_id,
-        *SENDER,
+        SENDER.with(|s| *s.borrow()),
         "remove_friend_request",
         (id,),
     )
@@ -254,7 +257,7 @@ pub fn get_incoming_friend_requests() -> Vec<FriendRequestResponse> {
         query_candid_as::<(), (Result<Vec<FriendRequestResponse>, ApiError>,)>(
             &ENV.pic,
             ENV.canister_id,
-            *SENDER,
+            SENDER.with(|s| *s.borrow()),
             "get_incoming_friend_requests",
             (),
         )
@@ -270,7 +273,7 @@ pub fn get_outgoing_friend_requests() -> Vec<FriendRequestResponse> {
         query_candid_as::<(), (Result<Vec<FriendRequestResponse>, ApiError>,)>(
             &ENV.pic,
             ENV.canister_id,
-            *SENDER,
+            SENDER.with(|s| *s.borrow()),
             "get_outgoing_friend_requests",
             (),
         )
@@ -285,7 +288,7 @@ pub fn decline_friend_request(id: u64) -> bool {
     let friend_request_declined: bool = update_candid_as::<(u64,), (Result<bool, ApiError>,)>(
         &ENV.pic,
         ENV.canister_id,
-        *SENDER,
+        SENDER.with(|s| *s.borrow()),
         "decline_friend_request",
         (id,),
     )
@@ -301,7 +304,7 @@ pub fn remove_friend(principal: Principal) -> ProfileResponse {
         update_candid_as::<(Principal,), (Result<ProfileResponse, ApiError>,)>(
             &ENV.pic,
             ENV.canister_id,
-            *SENDER,
+            SENDER.with(|s| *s.borrow()),
             "remove_friend",
             (principal,),
         )
@@ -317,7 +320,7 @@ pub fn block_user(principal: Principal) -> ProfileResponse {
         update_candid_as::<(Principal,), (Result<ProfileResponse, ApiError>,)>(
             &ENV.pic,
             ENV.canister_id,
-            *SENDER,
+            SENDER.with(|s| *s.borrow()),
             "block_user",
             (principal,),
         )
@@ -333,7 +336,7 @@ pub fn unblock_user(principal: Principal) -> ProfileResponse {
         update_candid_as::<(Principal,), (Result<ProfileResponse, ApiError>,)>(
             &ENV.pic,
             ENV.canister_id,
-            *SENDER,
+            SENDER.with(|s| *s.borrow()),
             "unblock_user",
             (principal,),
         )
@@ -349,7 +352,7 @@ pub fn get_relations(relation_type: String) -> Vec<Principal> {
         query_candid_as::<(String,), (Result<Vec<Principal>, ApiError>,)>(
             &ENV.pic,
             ENV.canister_id,
-            *SENDER,
+            SENDER.with(|s| *s.borrow()),
             "get_relations",
             (relation_type,),
         )
@@ -361,16 +364,15 @@ pub fn get_relations(relation_type: String) -> Vec<Principal> {
 }
 
 pub fn get_relations_count(principal: Principal, relation_type: RelationType) -> u64 {
-    let relations_count: u64 =
-        query_candid_as::<(Principal, RelationType), (u64,)>(
-            &ENV.pic,
-            ENV.canister_id,
-            *SENDER,
-            "get_relations_count",
-            (principal, relation_type),
-        )
-        .expect("Failed to get relations count")
-        .0;
+    let relations_count: u64 = query_candid_as::<(Principal, RelationType), (u64,)>(
+        &ENV.pic,
+        ENV.canister_id,
+        SENDER.with(|s| *s.borrow()),
+        "get_relations_count",
+        (principal, relation_type),
+    )
+    .expect("Failed to get relations count")
+    .0;
 
     relations_count
 }
@@ -379,7 +381,7 @@ pub fn approve_code_of_conduct(version: u64) -> bool {
     let code_of_conduct_approved: bool = update_candid_as::<(u64,), (Result<bool, ApiError>,)>(
         &ENV.pic,
         ENV.canister_id,
-        *SENDER,
+        SENDER.with(|s| *s.borrow()),
         "approve_code_of_conduct",
         (version,),
     )
@@ -394,7 +396,7 @@ pub fn approve_privacy_policy(version: u64) -> bool {
     let privacy_policy_approved: bool = update_candid_as::<(u64,), (Result<bool, ApiError>,)>(
         &ENV.pic,
         ENV.canister_id,
-        *SENDER,
+        SENDER.with(|s| *s.borrow()),
         "approve_privacy_policy",
         (version,),
     )
@@ -409,7 +411,7 @@ pub fn approve_terms_of_service(version: u64) -> bool {
     let terms_of_service_approved: bool = update_candid_as::<(u64,), (Result<bool, ApiError>,)>(
         &ENV.pic,
         ENV.canister_id,
-        *SENDER,
+        SENDER.with(|s| *s.borrow()),
         "approve_terms_of_service",
         (version,),
     )

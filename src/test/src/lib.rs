@@ -1,17 +1,19 @@
+use std::cell::RefCell;
+
+use crate::mocks::principals::member_test_id;
 use candid::Principal;
 use ic_cdk::api::management_canister::provisional::CanisterId;
 use lazy_static::lazy_static;
 use pocket_ic::PocketIc;
-use crate::mock_ids::member_test_id;
-
-pub mod mock_ids;
 
 #[cfg(test)]
 mod calls;
 #[cfg(test)]
-mod mock_models;
-#[cfg(test)]
 mod flow1;
+#[cfg(test)]
+mod flow2;
+#[cfg(test)]
+pub mod mocks;
 
 pub struct TestEnv {
     pub pic: PocketIc,
@@ -20,8 +22,10 @@ pub struct TestEnv {
 
 lazy_static! {
     pub static ref ENV: TestEnv = init_pocket_ic();
+}
 
-    pub static ref SENDER: Principal = member_test_id();
+thread_local! {
+    pub static SENDER: RefCell<Principal> = RefCell::new(member_test_id());
 }
 
 fn init_pocket_ic() -> TestEnv {
@@ -39,4 +43,10 @@ fn init_pocket_ic() -> TestEnv {
     pic.install_canister(canister_id, wasm_bytes, vec![], None);
 
     TestEnv { pic, canister_id }
+}
+
+#[test]
+fn run_tests() {
+    flow1::flow1();
+    flow2::flow2();
 }

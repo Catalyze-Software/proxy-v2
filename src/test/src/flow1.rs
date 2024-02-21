@@ -6,9 +6,7 @@ use crate::{
         profile_calls::{
             add_profile, approve_code_of_conduct, approve_privacy_policy, approve_terms_of_service,
         },
-    },
-    mock_ids::{canister_test_id, member_test_id},
-    mock_models::{mock_post_group, mock_post_profile},
+    }, mocks::{models::{mock_post_group, mock_post_profile}, principals::{canister_test_id, member_test_id}}, SENDER
 };
 use candid::Principal;
 use models::models::{
@@ -16,21 +14,21 @@ use models::models::{
     profile::{PostProfile, ProfileResponse},
 };
 
-#[test]
-fn flow1() {
-    let sender: Principal = member_test_id();
+pub fn flow1() {
+    // Set sender principal
+    SENDER.with(|s| *s.borrow_mut() = member_test_id());
+    // Deprecated
+    let member_canister: Principal = canister_test_id();
 
     /*
      * Add profile
      */
     let post_profile: PostProfile = mock_post_profile();
-    // Deprecated
-    let member_canister: Principal = canister_test_id();
-
+    
     let profile_response: ProfileResponse = add_profile(post_profile, member_canister);
 
     // The `principal` field of the response should be the same as the sender.
-    assert_eq!(profile_response.principal, sender);
+    assert_eq!(profile_response.principal, SENDER.with(|s| *s.borrow()));
 
     /*
      * Approve code of conduct
