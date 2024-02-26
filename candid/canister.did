@@ -304,8 +304,8 @@ type PostProfile = record {
   last_name : text;
 };
 type PostReport = record {
-  subject : principal;
-  group_identifier : principal;
+  subject : Subject;
+  group_id : nat64;
   message : text;
 };
 type PostWallet = record { "principal" : principal; provider : text };
@@ -343,24 +343,25 @@ type ProfileResponse = record {
 };
 type RelationType = variant { Blocked; Friend };
 type ReportFilter = variant {
-  Kind : text;
+  SubjectType : SubjectType;
   None;
+  GroupId : nat64;
   ReportedBy : principal;
   CreatedOn : DateRange;
+  Subject : Subject;
 };
 type ReportResponse = record {
-  subject : principal;
-  group_identifier : principal;
-  subject_kind : text;
+  id : nat64;
+  subject : Subject;
   created_on : nat64;
   message : text;
   reported_by : principal;
-  identifier : principal;
 };
 type ReportSort = variant {
-  Id : SortDirection;
-  Kind : SortDirection;
+  SubjectType : SortDirection;
+  ReportedBy : SortDirection;
   CreatedOn : SortDirection;
+  Subject : SortDirection;
 };
 type Result = variant { Ok : bool; Err : ApiError };
 type Result_1 = variant { Ok : Attendee; Err : ApiError };
@@ -375,10 +376,7 @@ type Result_17 = variant { Ok : vec JoinedMemberResponse; Err : ApiError };
 type Result_18 = variant { Ok : vec Role; Err : ApiError };
 type Result_19 = variant { Ok : PagedResponse_1; Err : ApiError };
 type Result_2 = variant { Ok : Member; Err : ApiError };
-type Result_20 = variant {
-  Ok : record { principal; vec text };
-  Err : ApiError;
-};
+type Result_20 = variant { Ok : vec text; Err : ApiError };
 type Result_21 = variant { Ok : PagedResponse_2; Err : ApiError };
 type Result_22 = variant { Ok : InviteAttendeeResponse; Err : ApiError };
 type Result_3 = variant { Ok : JoinedAttendeeResponse; Err : ApiError };
@@ -396,7 +394,15 @@ type Role = record {
   index : opt nat64;
 };
 type SortDirection = variant { Asc; Desc };
-type Subject = variant { Event : nat64; Group : nat64 };
+type Subject = variant {
+  Event : nat64;
+  Group : nat64;
+  Attendee : principal;
+  None;
+  Member : principal;
+  Profile : principal;
+};
+type SubjectType = variant { Event; Group; Attendee; None; Member; Profile };
 type TokenGated = record {
   "principal" : principal;
   name : text;
@@ -465,8 +471,8 @@ service : {
   add_event : (PostEvent) -> (Result_4);
   add_friend_request : (principal, text) -> (Result_5);
   add_group : (PostGroup, opt text) -> (Result_6);
-  add_profile : (PostProfile, principal) -> (Result_7);
-  add_report : (PostReport, principal, principal) -> (Result_8);
+  add_profile : (PostProfile) -> (Result_7);
+  add_report : (PostReport) -> (Result_8);
   add_role_to_group : (principal, text, text, nat64) -> (Result_9);
   add_starred : (principal) -> (Result_7);
   add_wallet_to_group : (principal, principal, text) -> (Result_6);
@@ -514,15 +520,10 @@ service : {
   get_relations : (RelationType) -> (vec principal) query;
   get_relations_count : (principal, RelationType) -> (nat64) query;
   get_remaining_boost_time_in_seconds : (principal) -> (Result_10) query;
-  get_report : (principal, principal, principal) -> (Result_8) query;
-  get_reports : (
-      nat64,
-      nat64,
-      ReportSort,
-      vec FilterType_2,
-      principal,
-      principal,
-    ) -> (Result_21) query;
+  get_report : (principal, principal) -> (Result_8) query;
+  get_reports : (nat64, nat64, ReportSort, vec FilterType_2, principal) -> (
+      Result_21,
+    ) query;
   get_self_events : () -> (Result_1) query;
   get_self_group : () -> (Result_2) query;
   get_starred_events : () -> (vec principal) query;

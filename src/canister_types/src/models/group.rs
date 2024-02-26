@@ -266,6 +266,10 @@ pub enum GroupSort {
 }
 
 impl GroupSort {
+    pub fn default() -> Self {
+        GroupSort::CreatedOn(SortDirection::Asc)
+    }
+
     pub fn sort(&self, groups: HashMap<u64, Group>) -> Vec<(u64, Group)> {
         let mut groups: Vec<(u64, Group)> = groups.into_iter().collect();
         let member_canister_id = Principal::from_text(MEMBER_CANISTER_ID).unwrap();

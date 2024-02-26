@@ -1,8 +1,6 @@
 use candid::Principal;
 use canister_types::models::{
-    api_error::ApiError,
-    boosted::{Boost, Subject},
-    identifier::Identifier,
+    api_error::ApiError, boosted::Boost, identifier::Identifier, subject::Subject,
 };
 use ic_cdk::{query, update};
 

@@ -1,10 +1,7 @@
 use std::{cell::RefCell, collections::HashMap, time::Duration};
 
 use candid::Principal;
-use canister_types::models::{
-    api_error::ApiError,
-    boosted::{Boost, Subject},
-};
+use canister_types::models::{api_error::ApiError, boosted::Boost, subject::Subject};
 use ic_cdk::{api::time, caller};
 use ic_cdk_timers::{clear_timer, set_timer, TimerId};
 use ic_ledger_types::Tokens;
@@ -25,6 +22,14 @@ pub struct BoostCalls;
 
 impl BoostCalls {
     pub async fn boost(subject: Subject, blockheight: u64) -> Result<u64, ApiError> {
+        let is_valid_subject = match subject {
+            Subject::Group(_) => true,
+            Subject::Event(_) => true,
+            _ => false,
+        };
+        if !is_valid_subject {
+            return Err(ApiError::bad_request().add_message("Invalid identifier"));
+        }
         let tokens = Ledger::validate_transaction(caller(), blockheight).await?;
         if blockheight > Self::get_last_block_height() {
             Self::set_last_block_height(blockheight);
@@ -162,6 +167,7 @@ impl BoostCalls {
                     Subject::Event(_) => true,
                     _ => false,
                 },
+                _ => false,
             })
             .collect()
     }
