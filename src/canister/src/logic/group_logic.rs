@@ -18,7 +18,7 @@ use canister_types::{
     misc::role_misc::read_only_permissions,
     models::{
         api_error::ApiError,
-        boosted::{Boost, Subject},
+        boosted::Boost,
         filter_type::FilterType,
         group::{
             Group, GroupCallerData, GroupFilter, GroupResponse, GroupSort, PostGroup, UpdateGroup,
@@ -31,6 +31,7 @@ use canister_types::{
         permission::{Permission, PostPermission},
         privacy::{GatedType, NeuronGatedRules, Privacy, TokenGated},
         role::Role,
+        subject::Subject,
         validation::{ValidateField, ValidationType},
     },
 };

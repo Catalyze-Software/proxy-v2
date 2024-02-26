@@ -6,6 +6,8 @@ use candid::{Decode, Encode};
 
 use crate::impl_storable_for;
 
+use super::subject::Subject;
+
 impl_storable_for!(Boost);
 
 #[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
@@ -34,10 +36,4 @@ impl Boost {
         self.seconds = seconds;
         self.updated_at = time();
     }
-}
-
-#[derive(CandidType, Deserialize, Serialize, Clone, Debug, PartialEq, Eq)]
-pub enum Subject {
-    Group(u64),
-    Event(u64),
 }

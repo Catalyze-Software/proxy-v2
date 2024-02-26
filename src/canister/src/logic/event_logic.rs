@@ -6,7 +6,7 @@ use ic_cdk::caller;
 use canister_types::models::{
     api_error::ApiError,
     attendee::{Attendee, InviteAttendeeResponse, JoinedAttendeeResponse},
-    boosted::{Boost, Subject},
+    boosted::Boost,
     event::{
         Event, EventCallerData, EventFilter, EventResponse, EventSort, PostEvent, UpdateEvent,
     },
@@ -15,6 +15,7 @@ use canister_types::models::{
     invite::InviteType,
     paged_response::PagedResponse,
     privacy::Privacy,
+    subject::Subject,
 };
 
 use crate::storage::storage_api::{
