@@ -4,6 +4,7 @@ pub mod event_storage;
 pub mod friend_request_storage;
 pub mod group_storage;
 pub mod member_storage;
+pub mod notification_storage;
 pub mod profile_storage;
 pub mod report_storage;
 pub mod storage_api;

@@ -8,7 +8,7 @@ use canister_types::models::{
 };
 use ic_cdk::caller;
 
-use crate::storage::storage_api::{members, reports, StorageMethods};
+use crate::storage::storage_api::{members, reports, IdentifierRefMethods, StorageMethods};
 
 pub struct ReportCalls;
 
@@ -21,8 +21,16 @@ impl ReportCalls {
         }
 
         let report = Report::new(post_report);
-        let result = reports().insert(report);
-        ReportResponse::from_result(result)
+        let new_report = reports().insert(report)?;
+
+        //////////////////////////////////////////////////////////////////////////////////////////
+        // TODO: REMOVE THIS SECTION
+        // ADDED FOR BACKWARD COMPATIBILITY
+        // SHOULD BE REMOVED IN THE FUTURE
+        let report_id = reports().insert_identifier_ref(new_report.0)?;
+        //////////////////////////////////////////////////////////////////////////////////////////
+
+        ReportResponse::from_result(Ok(new_report))
     }
 
     pub fn get_report(report_id: u64) -> Result<ReportResponse, ApiError> {

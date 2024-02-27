@@ -8,13 +8,15 @@ use ic_stable_structures::{
 
 use canister_types::models::{
     api_error::ApiError, attendee::Attendee, boosted::Boost, event::Event,
-    friend_request::FriendRequest, group::Group, member::Member, profile::Profile, report::Report,
+    friend_request::FriendRequest, group::Group, member::Member, notification::Notification,
+    profile::Profile, report::Report,
 };
 
 use super::{
     attendee_storage::AttendeeStore, boosted_storage::BoostedStore, event_storage::EventStore,
     friend_request_storage::FriendRequestStore, group_storage::GroupStore,
-    member_storage::MemberStore, profile_storage::ProfileStore, report_storage::ReportStore,
+    member_storage::MemberStore, notification_storage::NotificationStore,
+    profile_storage::ProfileStore, report_storage::ReportStore,
 };
 
 pub type Memory = VirtualMemory<DefaultMemoryImpl>;
@@ -34,7 +36,7 @@ static ATTENDEES_MEMORY_ID: MemoryId = MemoryId::new(4);
 
 static REPORTS_MEMORY_ID: MemoryId = MemoryId::new(5);
 
-static STATIC_FILES_MEMORY_ID: MemoryId = MemoryId::new(6);
+static NOTIFICATIONS_MEMORY_ID: MemoryId = MemoryId::new(6);
 
 static FRIEND_REQUESTS_MEMORY_ID: MemoryId = MemoryId::new(7);
 static BOOSTED_MEMORY_ID: MemoryId = MemoryId::new(8);
@@ -49,12 +51,12 @@ pub type PrincipalIdentifier = Principal;
 // Temporary memory IDs for the maps which are needed for backward compatibility
 // should be removed once the old data is migrated to the new data model
 
-static PROFILES_IDENTIFIER_REF_MEMORY_ID: MemoryId = MemoryId::new(9);
-static GROUPS_IDENTIFIER_REF_MEMORY_ID: MemoryId = MemoryId::new(10);
-static MEMBERS_IDENTIFIER_REF_MEMORY_ID: MemoryId = MemoryId::new(11);
-static EVENTS_IDENTIFIER_REF_MEMORY_ID: MemoryId = MemoryId::new(12);
-static ATTENDEES_IDENTIFIER_REF_MEMORY_ID: MemoryId = MemoryId::new(13);
-static REPORTS_IDENTIFIER_REF_MEMORY_ID: MemoryId = MemoryId::new(14);
+static PROFILES_IDENTIFIER_REF_MEMORY_ID: MemoryId = MemoryId::new(109);
+static GROUPS_IDENTIFIER_REF_MEMORY_ID: MemoryId = MemoryId::new(110);
+static MEMBERS_IDENTIFIER_REF_MEMORY_ID: MemoryId = MemoryId::new(111);
+static EVENTS_IDENTIFIER_REF_MEMORY_ID: MemoryId = MemoryId::new(112);
+static ATTENDEES_IDENTIFIER_REF_MEMORY_ID: MemoryId = MemoryId::new(113);
+static REPORTS_IDENTIFIER_REF_MEMORY_ID: MemoryId = MemoryId::new(114);
 
 /// A reference to a `StableBTreeMap` that is wrapped in a `RefCell`.
 ///# Generics
@@ -124,12 +126,12 @@ thread_local! {
         StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.get_memory(REPORTS_MEMORY_ID)))
     );
 
-    static STATIC_FILES: StorageRef<u64, Vec<u8>> = RefCell::new(
-        StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.get_memory(STATIC_FILES_MEMORY_ID)))
-    );
-
     static BOOSTED: StorageRef<u64, Boost> = RefCell::new(
         StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.get_memory(BOOSTED_MEMORY_ID)))
+    );
+
+    static NOTIFICATIONS: StorageRef<u64, Notification> = RefCell::new(
+        StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.get_memory(NOTIFICATIONS_MEMORY_ID)))
     );
 
     // TODO:
@@ -199,8 +201,8 @@ pub fn friend_requests<'a>() -> FriendRequestStore<'a> {
     FriendRequestStore::new(&FRIEND_REQUEST)
 }
 
-pub fn static_files<'a>() -> LocalKey<StorageRef<u64, Vec<u8>>> {
-    STATIC_FILES
+pub fn notifications<'a>() -> NotificationStore<'a> {
+    NotificationStore::new(&NOTIFICATIONS)
 }
 
 pub fn boosted<'a>() -> BoostedStore<'a> {
