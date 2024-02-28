@@ -6,13 +6,13 @@ use ic_stable_structures::{
     DefaultMemoryImpl, StableBTreeMap,
 };
 
-use models::models::{
-    api_error::ApiError, attendee::Attendee, boosted::Boosted, event::Event,
+use canister_types::models::{
+    api_error::ApiError, attendee::Attendee, boosted::Boost, event::Event,
     friend_request::FriendRequest, group::Group, member::Member, profile::Profile, report::Report,
 };
 
 use super::{
-    attendee_storage::AttendeeStore, event_storage::EventStore,
+    attendee_storage::AttendeeStore, boosted_storage::BoostedStore, event_storage::EventStore,
     friend_request_storage::FriendRequestStore, group_storage::GroupStore,
     member_storage::MemberStore, profile_storage::ProfileStore, report_storage::ReportStore,
 };
@@ -128,7 +128,7 @@ thread_local! {
         StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.get_memory(STATIC_FILES_MEMORY_ID)))
     );
 
-    static BOOSTED: StorageRef<u64, Boosted> = RefCell::new(
+    static BOOSTED: StorageRef<u64, Boost> = RefCell::new(
         StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.get_memory(BOOSTED_MEMORY_ID)))
     );
 
@@ -203,6 +203,6 @@ pub fn static_files<'a>() -> LocalKey<StorageRef<u64, Vec<u8>>> {
     STATIC_FILES
 }
 
-pub fn boosted<'a>() -> LocalKey<StorageRef<u64, Boosted>> {
-    BOOSTED
+pub fn boosted<'a>() -> BoostedStore<'a> {
+    BoostedStore::new(&BOOSTED)
 }

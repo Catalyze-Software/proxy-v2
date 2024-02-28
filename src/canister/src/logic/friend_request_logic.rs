@@ -2,7 +2,7 @@ use candid::Principal;
 use ic_cdk::caller;
 
 use crate::storage::storage_api::{friend_requests, profiles, StorageMethods};
-use models::models::{
+use canister_types::models::{
     api_error::ApiError,
     friend_request::{FriendRequest, FriendRequestResponse},
     relation_type::RelationType,

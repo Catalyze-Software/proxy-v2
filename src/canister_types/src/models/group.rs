@@ -15,7 +15,9 @@ use crate::{
 
 use super::{
     api_error::ApiError,
-    identifier::{Identifier, MEMBER_CANISTER_ID},
+    boosted::Boost,
+    identifier::{Identifier, IdentifierKind, MEMBER_CANISTER_ID},
+    member::{InviteMemberResponse, JoinedMemberResponse},
     permission::Permission,
 };
 
@@ -163,6 +165,27 @@ pub struct UpdateGroup {
 }
 
 #[derive(Clone, CandidType, Serialize, Deserialize, Debug)]
+pub struct GroupCallerData {
+    pub joined: Option<JoinedMemberResponse>,
+    pub invite: Option<InviteMemberResponse>,
+    pub is_starred: bool,
+}
+
+impl GroupCallerData {
+    pub fn new(
+        joined: Option<JoinedMemberResponse>,
+        invite: Option<InviteMemberResponse>,
+        is_starred: bool,
+    ) -> Self {
+        Self {
+            joined,
+            invite,
+            is_starred,
+        }
+    }
+}
+
+#[derive(Clone, CandidType, Serialize, Deserialize, Debug)]
 pub struct GroupResponse {
     pub identifier: Principal,
     pub name: String,
@@ -183,11 +206,18 @@ pub struct GroupResponse {
     pub privacy_gated_type_amount: Option<u64>,
     pub updated_on: u64,
     pub created_on: u64,
+    pub boosted: Option<Boost>,
+    pub caller_data: Option<GroupCallerData>,
 }
 
 impl GroupResponse {
-    pub fn new(id: u64, group: Group) -> Self {
-        let identifier = Identifier::generate(super::identifier::IdentifierKind::Group(id));
+    pub fn new(
+        id: u64,
+        group: Group,
+        boosted: Option<Boost>,
+        caller_data: Option<GroupCallerData>,
+    ) -> Self {
+        let identifier = Identifier::generate(IdentifierKind::Group(id));
         let member_count: usize = group.member_count.into_iter().map(|(_, value)| value).sum();
 
         Self {
@@ -207,48 +237,22 @@ impl GroupResponse {
             member_count: member_count.clone(),
             wallets: group.wallets.into_iter().collect(),
             is_deleted: group.is_deleted,
+            caller_data,
             privacy_gated_type_amount: group.privacy_gated_type_amount,
+            boosted,
             updated_on: group.updated_on,
             created_on: group.created_on,
         }
     }
 
-    pub fn from_result(group_result: Result<(u64, Group), ApiError>) -> Result<Self, ApiError> {
+    pub fn from_result(
+        group_result: Result<(u64, Group), ApiError>,
+        boosted: Option<Boost>,
+        caller_data: Option<GroupCallerData>,
+    ) -> Result<Self, ApiError> {
         match group_result {
             Err(err) => Err(err),
-            Ok((id, group)) => {
-                let result = Self {
-                    identifier: Identifier::generate(
-                        crate::models::identifier::IdentifierKind::Group(id),
-                    )
-                    .to_principal()
-                    .unwrap(),
-                    name: group.name,
-                    description: group.description,
-                    website: group.website,
-                    location: group.location,
-                    privacy: group.privacy,
-                    created_by: group.created_by,
-                    owner: group.owner,
-                    matrix_space_id: group.matrix_space_id,
-                    image: group.image,
-                    banner_image: group.banner_image,
-                    tags: group.tags,
-                    roles: group.roles,
-                    // TODO: Add the correct member count after full migration
-                    member_count: group.member_count.into_iter().map(|(_, value)| value).sum(),
-                    wallets: group
-                        .wallets
-                        .into_iter()
-                        .map(|(key, value)| (key, value))
-                        .collect(),
-                    is_deleted: group.is_deleted,
-                    privacy_gated_type_amount: group.privacy_gated_type_amount,
-                    updated_on: group.updated_on,
-                    created_on: group.created_on,
-                };
-                Ok(result)
-            }
+            Ok((id, group)) => Ok(Self::new(id, group, boosted, caller_data)),
         }
     }
 }
@@ -262,6 +266,10 @@ pub enum GroupSort {
 }
 
 impl GroupSort {
+    pub fn default() -> Self {
+        GroupSort::CreatedOn(SortDirection::Asc)
+    }
+
     pub fn sort(&self, groups: HashMap<u64, Group>) -> Vec<(u64, Group)> {
         let mut groups: Vec<(u64, Group)> = groups.into_iter().collect();
         let member_canister_id = Principal::from_text(MEMBER_CANISTER_ID).unwrap();

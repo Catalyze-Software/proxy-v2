@@ -1,7 +1,7 @@
 use ic_cdk::caller;
 
 use crate::storage::storage_api::{groups, members, StorageMethods};
-use models::models::{
+use canister_types::models::{
     api_error::ApiError,
     permission::{PermissionActionType, PermissionType},
     role::Role,

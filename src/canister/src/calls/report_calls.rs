@@ -8,19 +8,22 @@
 use candid::Principal;
 use ic_cdk::{query, update};
 
-use crate::helpers::guards::has_access;
-use models::models::{
+use crate::{
+    helpers::{group_permission::can_write, guards::has_access},
+    logic::report_logic::ReportCalls,
+};
+use canister_types::models::{
     api_error::ApiError,
     filter_type::FilterType,
+    identifier::Identifier,
     paged_response::PagedResponse,
+    permission::PermissionType,
     report::{PostReport, ReportFilter, ReportResponse, ReportSort},
 };
 
 /// Add a report
 /// # Arguments
-/// * `value` - The report to add
-/// * `group_identifier` - Used to check if the user has access to the group
-/// * `member_identifier` - Used to check if the user has the correct group roles
+/// * `post_report` - The report to add
 /// # Returns
 /// * `ReportResponse` - The added report
 /// # Errors
@@ -28,12 +31,8 @@ use models::models::{
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "has_access")]
-pub fn add_report(
-    value: PostReport,
-    group_identifier: Principal,
-    member_identifier: Principal,
-) -> Result<ReportResponse, ApiError> {
-    Err(ApiError::not_implemented())
+pub fn add_report(post_report: PostReport) -> Result<ReportResponse, ApiError> {
+    ReportCalls::add_report(post_report)
 }
 
 /// Get a report
@@ -51,9 +50,10 @@ pub fn add_report(
 pub fn get_report(
     identifier: Principal,
     group_identifier: Principal,
-    member_identifier: Principal,
 ) -> Result<ReportResponse, ApiError> {
-    Err(ApiError::not_implemented())
+    let group_id = Identifier::from(group_identifier).id();
+    can_write(group_id, PermissionType::Group(None))?;
+    ReportCalls::get_report(group_id)
 }
 
 /// Get reports
@@ -76,9 +76,10 @@ pub fn get_reports(
     limit: usize,
     page: usize,
     sort: ReportSort,
-    filter_type: Vec<FilterType<ReportFilter>>,
+    filters: Vec<FilterType<ReportFilter>>,
     group_identifier: Principal,
-    member_identifier: Principal,
 ) -> Result<PagedResponse<ReportResponse>, ApiError> {
-    Err(ApiError::not_implemented())
+    let group_id = Identifier::from(group_identifier).id();
+    can_write(group_id, PermissionType::Group(None))?;
+    ReportCalls::get_reports(limit, page, sort, filters, group_id)
 }

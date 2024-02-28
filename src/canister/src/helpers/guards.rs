@@ -2,7 +2,7 @@ use candid::Principal;
 use ic_cdk::caller;
 
 use crate::storage::storage_api::{profiles, StorageMethods};
-use models::models::{api_error::ApiError, application_role::ApplicationRole};
+use canister_types::models::{api_error::ApiError, application_role::ApplicationRole};
 
 /// Checks if the caller is an anonymous principal
 /// # Returns

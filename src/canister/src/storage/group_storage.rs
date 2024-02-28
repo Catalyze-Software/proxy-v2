@@ -1,7 +1,7 @@
 use std::thread::LocalKey;
 
 use super::storage_api::{IdentifierRefMethods, PrincipalIdentifier, StorageMethods, StorageRef};
-use models::models::{
+use canister_types::models::{
     api_error::ApiError,
     group::Group,
     identifier::{Identifier, IdentifierKind},
@@ -227,7 +227,6 @@ impl StorageMethods<u64, Group> for GroupStore<'static> {
     /// # Returns
     /// * `bool` - True if the group was removed, otherwise false
     /// # Note
-    /// TODO: Check if we want to do a soft delete
     fn remove(&mut self, key: u64) -> bool {
         self.store
             .with(|data| data.borrow_mut().remove(&key).is_some())

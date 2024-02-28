@@ -3,10 +3,10 @@ use ic_cdk::{api::time, caller};
 
 use crate::{
     helpers::validator::Validator,
-    storage::storage_api::{members, profiles, IdentifierRefMethods, StorageMethods},
+    storage::storage_api::{attendees, members, profiles, IdentifierRefMethods, StorageMethods},
 };
 
-use models::models::{
+use canister_types::models::{
     api_error::ApiError,
     document_details::DocumentDetails,
     identifier::Identifier,
@@ -43,6 +43,10 @@ impl ProfileCalls {
         // generate and store an member identifier
         let member_identifier = members().new_identifier();
         let _ = members().insert_identifier_ref(member_identifier);
+
+        // generate and store an attendee identifier
+        let attendee_identifier = attendees().new_identifier();
+        let _ = attendees().insert_identifier_ref(attendee_identifier);
 
         //////////////////////////////////////////////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////////////////////

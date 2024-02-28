@@ -4,7 +4,7 @@ use candid::Principal;
 use ic_cdk::caller;
 
 use super::storage_api::{IdentifierRefMethods, PrincipalIdentifier, StorageMethods, StorageRef};
-use models::models::{
+use canister_types::models::{
     api_error::ApiError,
     identifier::{Identifier, IdentifierKind},
     profile::Profile,
@@ -231,7 +231,6 @@ impl StorageMethods<Principal, Profile> for ProfileStore<'static> {
     /// # Returns
     /// * `bool` - True if the profile was removed, otherwise false
     /// # Note
-    /// TODO: Check if we want to do a soft delete
     fn remove(&mut self, key: Principal) -> bool {
         self.store
             .with(|data| data.borrow_mut().remove(&key).is_some())

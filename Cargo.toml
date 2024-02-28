@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "src/canister",
+    "src/canister_types",
     "src/models",
     "src/test",
 ]

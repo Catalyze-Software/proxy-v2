@@ -29,3 +29,4 @@ pub mod profile;
 pub mod report;
 
 pub mod neuron;
+pub mod subject;
