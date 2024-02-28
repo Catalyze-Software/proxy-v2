@@ -1,4 +1,4 @@
-use models::models::{
+use canister_types::models::{
     asset::Asset,
     group::PostGroup,
     location::Location,

@@ -1,10 +1,10 @@
 use crate::{ENV, SENDER};
 use candid::Principal;
-use models::models::boosted::Boosted;
+use canister_types::models::boosted::Boost;
 use pocket_ic::{query_candid_as, update_candid_as};
 
-pub fn get_boosted_groups() -> Vec<Boosted> {
-    query_candid_as::<(), (Vec<Boosted>,)>(
+pub fn get_boosted_groups() -> Vec<Boost> {
+    query_candid_as::<(), (Vec<Boost>,)>(
         &ENV.pic,
         ENV.canister_id,
         SENDER.with(|s| s.borrow().unwrap()),
@@ -15,8 +15,8 @@ pub fn get_boosted_groups() -> Vec<Boosted> {
     .0
 }
 
-pub fn get_boosted_events() -> Vec<Boosted> {
-    query_candid_as::<(), (Vec<Boosted>,)>(
+pub fn get_boosted_events() -> Vec<Boost> {
+    query_candid_as::<(), (Vec<Boost>,)>(
         &ENV.pic,
         ENV.canister_id,
         SENDER.with(|s| s.borrow().unwrap()),

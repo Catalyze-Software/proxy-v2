@@ -1,7 +1,7 @@
 // Flow 2
 
 use candid::Principal;
-use models::models::{
+use canister_types::models::{
     profile::{PostProfile, ProfileResponse, UpdateProfile},
     wallet::PostWallet,
 };

@@ -1,6 +1,6 @@
 use crate::{ENV, SENDER};
 use candid::Principal;
-use models::models::{
+use canister_types::models::{
     api_error::ApiError,
     friend_request::FriendRequestResponse,
     profile::{PostProfile, ProfileResponse, UpdateProfile},

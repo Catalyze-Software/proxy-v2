@@ -9,7 +9,7 @@ use crate::{
     }, mocks::{models::{mock_post_group, mock_post_profile}, principals::{canister_test_id, member_test_id}}, GROUP_ID, SENDER
 };
 use candid::Principal;
-use models::models::{
+use canister_types::models::{
     group::{GroupResponse, PostGroup},
     profile::{PostProfile, ProfileResponse},
 };

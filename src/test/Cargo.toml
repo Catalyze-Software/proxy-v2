@@ -14,6 +14,6 @@ candid = "0.10.3"
 ic-cdk = "0.12.0"
 pocket-ic = "2.1.0"
 
-models = { path = "../models"}
+canister_types = { path = "../canister_types"}
 lazy_static = "1.4.0"
 ic-agent = "0.33.0"
