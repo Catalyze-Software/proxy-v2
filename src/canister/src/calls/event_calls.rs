@@ -1,3 +1,10 @@
+use crate::{
+    helpers::{
+        group_permission::{can_delete, can_edit},
+        guards::has_access,
+    },
+    logic::event_logic::EventCalls,
+};
 /// # Event methods
 /// # TODO:
 /// * Check if the guard are correctly placed
@@ -18,14 +25,6 @@ use canister_types::models::{
     permission::PermissionType,
 };
 use ic_cdk::{query, update};
-
-use crate::{
-    helpers::{
-        group_permission::{can_delete, can_edit},
-        guards::has_access,
-    },
-    logic::event_logic::EventCalls,
-};
 
 /// Add an event - [`[update]`](update)
 /// # Arguments

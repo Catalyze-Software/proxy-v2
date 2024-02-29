@@ -1,10 +1,10 @@
 use candid::Principal;
-
-use crate::storage::storage_api::{members, StorageMethods};
 use canister_types::models::{
     api_error::ApiError,
     member::{JoinedMemberResponse, Member},
 };
+
+use crate::storage::{MemberStore, StorageMethods};
 
 pub struct MemberCalls;
 pub struct MemberMapper;
@@ -14,14 +14,14 @@ impl MemberCalls {
         principal: Principal,
         profile_identifier: Principal,
     ) -> Result<(Principal, Member), ApiError> {
-        if let Ok(_) = members().get(principal) {
+        if let Ok(_) = MemberStore::get(principal) {
             return Err(ApiError::duplicate()
                 .add_method_name("create_empty_member")
                 .add_message("Member already exists"));
         }
 
         let new_member = Member::new(principal, profile_identifier);
-        members().insert_by_key(principal, new_member)
+        MemberStore::insert_by_key(principal, new_member)
     }
 }
 

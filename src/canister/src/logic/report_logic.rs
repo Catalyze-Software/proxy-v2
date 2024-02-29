@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use canister_types::models::{
     api_error::ApiError,
     filter_type::FilterType,
@@ -7,26 +5,27 @@ use canister_types::models::{
     report::{PostReport, Report, ReportFilter, ReportResponse, ReportSort},
 };
 use ic_cdk::caller;
+use std::collections::HashMap;
 
-use crate::storage::storage_api::{members, reports, StorageMethods};
+use crate::storage::{MemberStore, ReportStore, StorageMethods};
 
 pub struct ReportCalls;
 
 impl ReportCalls {
     pub fn add_report(post_report: PostReport) -> Result<ReportResponse, ApiError> {
-        let (_, member) = members().get(caller())?;
+        let (_, member) = MemberStore::get(caller())?;
 
         if !member.is_group_joined(&post_report.group_id) {
             return Err(ApiError::bad_request());
         }
 
         let report = Report::new(post_report);
-        let result = reports().insert(report);
+        let result = ReportStore::insert(report);
         ReportResponse::from_result(result)
     }
 
     pub fn get_report(report_id: u64) -> Result<ReportResponse, ApiError> {
-        ReportResponse::from_result(reports().get(report_id))
+        ReportResponse::from_result(ReportStore::get(report_id))
     }
 
     pub fn get_reports(
@@ -37,7 +36,7 @@ impl ReportCalls {
         group_id: u64,
     ) -> Result<PagedResponse<ReportResponse>, ApiError> {
         let reports =
-            reports().filter(|_, report| report.group_id.is_some_and(|id| id == group_id));
+            ReportStore::filter(|_, report| report.group_id.is_some_and(|id| id == group_id));
 
         // split the filters into or and and filters
         let mut or_filters: Vec<ReportFilter> = vec![];

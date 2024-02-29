@@ -1,11 +1,9 @@
-use candid::Principal;
-use ic_cdk::{api::time, caller};
-
+use super::member_logic::MemberCalls;
 use crate::{
     helpers::validator::Validator,
-    storage::storage_api::{attendees, members, profiles, IdentifierRefMethods, StorageMethods},
+    storage::{AttendeeStore, IdentifierRefMethods, MemberStore, ProfileStore, StorageMethods},
 };
-
+use candid::Principal;
 use canister_types::models::{
     api_error::ApiError,
     document_details::DocumentDetails,
@@ -15,8 +13,7 @@ use canister_types::models::{
     validation::{ValidateField, ValidationType},
     wallet::{PostWallet, Wallet},
 };
-
-use super::member_logic::MemberCalls;
+use ic_cdk::{api::time, caller};
 
 pub struct ProfileCalls;
 pub struct ProfileValidation;
@@ -28,7 +25,7 @@ impl ProfileCalls {
         }
 
         let new_profile = Profile::from(post_profile);
-        let stored_profile = profiles().insert_by_key(caller(), new_profile);
+        let stored_profile = ProfileStore::insert_by_key(caller(), new_profile);
 
         //////////////////////////////////////////////////////////////////////////////////////////
         // TODO: REMOVE THIS SECTION
@@ -37,16 +34,16 @@ impl ProfileCalls {
         //////////////////////////////////////////////////////////////////////////////////////////
 
         // generate and store an profile identifier
-        let profile_identifier = profiles().new_identifier();
-        let _ = profiles().insert_identifier_ref(profile_identifier);
+        let profile_identifier = ProfileStore::new_identifier();
+        let _ = ProfileStore::insert_identifier_ref(profile_identifier);
 
         // generate and store an member identifier
-        let member_identifier = members().new_identifier();
-        let _ = members().insert_identifier_ref(member_identifier);
+        let member_identifier = MemberStore::new_identifier();
+        let _ = MemberStore::insert_identifier_ref(member_identifier);
 
         // generate and store an attendee identifier
-        let attendee_identifier = attendees().new_identifier();
-        let _ = attendees().insert_identifier_ref(attendee_identifier);
+        let attendee_identifier = AttendeeStore::new_identifier();
+        let _ = AttendeeStore::insert_identifier_ref(attendee_identifier);
 
         //////////////////////////////////////////////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////////////////////
@@ -60,15 +57,15 @@ impl ProfileCalls {
             return Err(err);
         }
 
-        let (_, existing_profile) = profiles().get(caller())?;
+        let (_, existing_profile) = ProfileStore::get(caller())?;
         let updated_profile = existing_profile.update(update_profile);
 
-        let updated_profile_result = profiles().update(caller(), updated_profile);
+        let updated_profile_result = ProfileStore::update(caller(), updated_profile);
         ProfileResponse::from_result(updated_profile_result)
     }
 
     pub fn add_wallet_to_profile(post_wallet: PostWallet) -> Result<ProfileResponse, ApiError> {
-        let (_, mut existing_profile) = profiles().get(caller())?;
+        let (_, mut existing_profile) = ProfileStore::get(caller())?;
 
         if existing_profile
             .wallets
@@ -85,13 +82,13 @@ impl ProfileCalls {
             },
         );
 
-        let updated_profile = profiles().update(caller(), existing_profile);
+        let updated_profile = ProfileStore::update(caller(), existing_profile);
 
         ProfileResponse::from_result(updated_profile)
     }
 
     pub fn remove_wallet_from_profile(principal: Principal) -> Result<ProfileResponse, ApiError> {
-        let (_, mut existing_profile) = profiles().get(caller())?;
+        let (_, mut existing_profile) = ProfileStore::get(caller())?;
 
         if !existing_profile.wallets.contains_key(&principal) {
             return Err(ApiError::not_found().add_message("Wallet does not exist"));
@@ -107,13 +104,13 @@ impl ProfileCalls {
 
         existing_profile.wallets.remove(&principal);
 
-        let updated_profile = profiles().update(caller(), existing_profile);
+        let updated_profile = ProfileStore::update(caller(), existing_profile);
 
         ProfileResponse::from_result(updated_profile)
     }
 
     pub fn set_wallet_as_primary(principal: Principal) -> Result<ProfileResponse, ApiError> {
-        let (_, mut existing_profile) = profiles().get(caller())?;
+        let (_, mut existing_profile) = ProfileStore::get(caller())?;
 
         if !existing_profile.wallets.contains_key(&principal) {
             return Err(ApiError::not_found().add_message("Wallet does not exist"));
@@ -129,18 +126,18 @@ impl ProfileCalls {
             .unwrap()
             .is_primary = true;
 
-        let updated_profile = profiles().update(caller(), existing_profile);
+        let updated_profile = ProfileStore::update(caller(), existing_profile);
 
         ProfileResponse::from_result(updated_profile)
     }
 
     pub fn get_profile(principal: Principal) -> Result<ProfileResponse, ApiError> {
-        let profile_result = profiles().get(principal);
+        let profile_result = ProfileStore::get(principal);
         ProfileResponse::from_result(profile_result)
     }
 
     pub fn get_profiles(principals: Vec<Principal>) -> Vec<ProfileResponse> {
-        let profiles_result = profiles().get_many(principals);
+        let profiles_result = ProfileStore::get_many(principals);
         profiles_result
             .into_iter()
             .map(|profile| ProfileResponse::new(profile.0, profile.1))
@@ -154,7 +151,7 @@ impl ProfileCalls {
             return Err(ApiError::bad_request().add_message("Invalid identifier"));
         }
 
-        let (_, mut existing_profile) = profiles().get(caller())?;
+        let (_, mut existing_profile) = ProfileStore::get(caller())?;
 
         if existing_profile.starred.contains_key(&identifier_principal) {
             return Err(ApiError::duplicate()
@@ -165,7 +162,7 @@ impl ProfileCalls {
             .starred
             .insert(identifier_principal, identifier.kind());
 
-        let updated_profile = profiles().update(caller(), existing_profile);
+        let updated_profile = ProfileStore::update(caller(), existing_profile);
 
         ProfileResponse::from_result(updated_profile)
     }
@@ -177,7 +174,7 @@ impl ProfileCalls {
             return Err(ApiError::bad_request().add_message("Invalid identifier"));
         }
 
-        let (_, mut existing_profile) = profiles().get(caller())?;
+        let (_, mut existing_profile) = ProfileStore::get(caller())?;
 
         if !existing_profile.starred.contains_key(&identifier_principal) {
             return Err(ApiError::not_found()
@@ -186,13 +183,13 @@ impl ProfileCalls {
 
         existing_profile.starred.remove(&identifier_principal);
 
-        let updated_profile = profiles().update(caller(), existing_profile);
+        let updated_profile = ProfileStore::update(caller(), existing_profile);
 
         ProfileResponse::from_result(updated_profile)
     }
 
     pub fn get_starred_by_kind(kind: &str) -> Vec<Principal> {
-        if let Ok((_, profile)) = profiles().get(caller()) {
+        if let Ok((_, profile)) = ProfileStore::get(caller()) {
             return profile
                 .starred
                 .iter()
@@ -212,7 +209,7 @@ impl ProfileCalls {
 
     pub fn remove_friend(principal: Principal) -> Result<ProfileResponse, ApiError> {
         // Remove the friend from the caller profile
-        let (_, mut caller_profile) = profiles().get(caller())?;
+        let (_, mut caller_profile) = ProfileStore::get(caller())?;
 
         if !caller_profile.relations.contains_key(&principal) {
             return Err(ApiError::not_found().add_message("Friend does not exist"));
@@ -220,9 +217,9 @@ impl ProfileCalls {
 
         caller_profile.relations.remove(&principal);
 
-        let updated_caller_profile = profiles().update(caller(), caller_profile);
+        let updated_caller_profile = ProfileStore::update(caller(), caller_profile);
 
-        let (_, mut friend_profile) = profiles().get(principal)?;
+        let (_, mut friend_profile) = ProfileStore::get(principal)?;
 
         // Remove the caller from the friend profile
         if !friend_profile.relations.contains_key(&caller()) {
@@ -231,33 +228,33 @@ impl ProfileCalls {
 
         friend_profile.relations.remove(&caller());
 
-        let updated_friend_profile = profiles().update(principal, friend_profile);
+        let updated_friend_profile = ProfileStore::update(principal, friend_profile);
 
         ProfileResponse::from_result(updated_caller_profile)
     }
 
     pub fn block_user(principal: Principal) -> Result<ProfileResponse, ApiError> {
-        let (_, mut caller_profile) = profiles().get(caller())?;
+        let (_, mut caller_profile) = ProfileStore::get(caller())?;
 
         caller_profile
             .relations
             .insert(principal, RelationType::Blocked.to_string());
 
-        let updated_profile = profiles().update(caller(), caller_profile);
+        let updated_profile = ProfileStore::update(caller(), caller_profile);
 
-        let (_, mut friend_profile) = profiles().get(principal)?;
+        let (_, mut friend_profile) = ProfileStore::get(principal)?;
 
         // In case the friend has the caller as a friend, remove it
         if friend_profile.relations.contains_key(&caller()) {
             friend_profile.relations.remove(&caller());
-            let _ = profiles().update(principal, friend_profile);
+            let _ = ProfileStore::update(principal, friend_profile);
         }
 
         ProfileResponse::from_result(updated_profile)
     }
 
     pub fn unblock_user(principal: Principal) -> Result<ProfileResponse, ApiError> {
-        let (_, mut caller_profile) = profiles().get(caller())?;
+        let (_, mut caller_profile) = ProfileStore::get(caller())?;
 
         if caller_profile
             .relations
@@ -265,7 +262,7 @@ impl ProfileCalls {
             .is_some_and(|data| data == &RelationType::Blocked.to_string())
         {
             caller_profile.relations.remove(&principal);
-            let updated_profile = profiles().update(caller(), caller_profile);
+            let updated_profile = ProfileStore::update(caller(), caller_profile);
             return ProfileResponse::from_result(updated_profile);
         }
 
@@ -273,7 +270,7 @@ impl ProfileCalls {
     }
 
     pub fn get_relations(relation_type: RelationType) -> Vec<Principal> {
-        if let Ok((_, profile)) = profiles().get(caller()) {
+        if let Ok((_, profile)) = ProfileStore::get(caller()) {
             return profile
                 .relations
                 .iter()
@@ -291,28 +288,28 @@ impl ProfileCalls {
 
     // TODO: add logic to check the current version of these documents and add something to prompt the user to approve the latest version
     pub fn approve_code_of_conduct(version: u64) -> Result<bool, ApiError> {
-        let (_, mut profile) = profiles().get(caller())?;
+        let (_, mut profile) = ProfileStore::get(caller())?;
 
         profile.code_of_conduct = DocumentDetails::new(version, time());
-        let updated_profile = profiles().update(caller(), profile);
+        let updated_profile = ProfileStore::update(caller(), profile);
 
         Ok(updated_profile.is_ok())
     }
 
     pub fn approve_privacy_policy(version: u64) -> Result<bool, ApiError> {
-        let (_, mut profile) = profiles().get(caller())?;
+        let (_, mut profile) = ProfileStore::get(caller())?;
 
         profile.privacy_policy = Some(DocumentDetails::new(version, time()));
-        let updated_profile = profiles().update(caller(), profile);
+        let updated_profile = ProfileStore::update(caller(), profile);
 
         Ok(updated_profile.is_ok())
     }
 
     pub fn approve_terms_of_service(version: u64) -> Result<bool, ApiError> {
-        let (_, mut profile) = profiles().get(caller())?;
+        let (_, mut profile) = ProfileStore::get(caller())?;
 
         profile.terms_of_service = Some(DocumentDetails::new(version, time()));
-        let updated_profile = profiles().update(caller(), profile);
+        let updated_profile = ProfileStore::update(caller(), profile);
 
         Ok(updated_profile.is_ok())
     }
