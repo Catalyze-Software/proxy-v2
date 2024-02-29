@@ -1,13 +1,11 @@
-use std::str::FromStr;
-
-use email_address::EmailAddress;
-use ic_cdk::api::time;
-
 use canister_types::models::{
     api_error::ApiError,
     date_range::DateRange,
     validation::{ValidateField, ValidationResponse, ValidationType},
 };
+use email_address::EmailAddress;
+use ic_cdk::api::time;
+use std::str::FromStr;
 
 pub struct Validator {
     fields: Vec<ValidateField>,

@@ -1,11 +1,11 @@
-use ic_cdk::caller;
-
-use crate::storage::storage_api::{groups, members, StorageMethods};
 use canister_types::models::{
     api_error::ApiError,
     permission::{PermissionActionType, PermissionType},
     role::Role,
 };
+use ic_cdk::caller;
+
+use crate::storage::{GroupStore, MemberStore, StorageMethods};
 
 /// Determine if the caller has permission to perform an action on group based entities
 /// # Arguments
@@ -41,9 +41,9 @@ fn has_permission(
     permission: &PermissionType,
     permission_action: &PermissionActionType,
 ) -> Result<(), ApiError> {
-    let member_roles = members().get(caller())?.1.get_roles(group_id);
+    let member_roles = MemberStore::get(caller())?.1.get_roles(group_id);
 
-    let group_roles = groups().get(group_id)?.1.get_roles();
+    let group_roles = GroupStore::get(group_id)?.1.get_roles();
 
     let mut found_roles: Vec<&Role> = vec![];
 

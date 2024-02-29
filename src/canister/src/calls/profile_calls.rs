@@ -1,7 +1,7 @@
 use crate::{
     helpers::guards::{has_access, is_not_anonymous},
     logic::{friend_request_logic::FriendRequestCalls, profile_logic::ProfileCalls},
-    storage::storage_api::{profiles, IdentifierRefMethods},
+    storage::{IdentifierRefMethods, ProfileStore},
 };
 /// # Profile methods
 /// # TODO:
@@ -63,8 +63,7 @@ pub fn get_profile_by_user_principal(principal: Principal) -> Result<ProfileResp
 #[query(guard = "has_access")]
 #[deprecated = "should be removed in favor of get_profile_by_user_principal"]
 pub fn get_profile_by_identifier(user_identifier: Principal) -> Result<ProfileResponse, ApiError> {
-    match profiles()
-        .get_id_by_identifier(&user_identifier)
+    match ProfileStore::get_id_by_identifier(&user_identifier)
         .map(|id| get_profile_by_user_principal(id))
     {
         Some(profile) => profile,
@@ -98,7 +97,7 @@ pub fn get_profiles_by_user_principal(principals: Vec<Principal>) -> Vec<Profile
 pub fn get_profiles_by_identifier(identifiers: Vec<Principal>) -> Vec<ProfileResponse> {
     identifiers
         .iter()
-        .map(|id| profiles().get_id_by_identifier(id))
+        .map(|id| ProfileStore::get_id_by_identifier(id))
         .filter_map(|id| id)
         .map(|id| get_profile_by_user_principal(id).ok())
         .filter_map(|profile| profile)

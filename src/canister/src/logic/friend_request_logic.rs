@@ -1,12 +1,12 @@
 use candid::Principal;
-use ic_cdk::caller;
-
-use crate::storage::storage_api::{friend_requests, profiles, StorageMethods};
 use canister_types::models::{
     api_error::ApiError,
     friend_request::{FriendRequest, FriendRequestResponse},
     relation_type::RelationType,
 };
+use ic_cdk::caller;
+
+use crate::storage::{FriendRequestStore, ProfileStore, StorageMethods};
 
 pub struct FriendRequestCalls;
 pub struct FriendRequestMapper;
@@ -18,7 +18,7 @@ impl FriendRequestCalls {
         message: String,
     ) -> Result<FriendRequestResponse, ApiError> {
         let friend_request = FriendRequest::new(caller(), to, message);
-        let (_, caller_profile) = profiles().get(caller())?;
+        let (_, caller_profile) = ProfileStore::get(caller())?;
 
         if caller_profile.relations.contains_key(&to) {
             return Err(ApiError::duplicate()
@@ -27,9 +27,10 @@ impl FriendRequestCalls {
         }
 
         // if somebody tries to make the same friend request
-        if friend_requests()
-            .find(|_, request| request.to == to && request.requested_by == caller())
-            .is_some()
+        if FriendRequestStore::find(|_, request| {
+            request.to == to && request.requested_by == caller()
+        })
+        .is_some()
         {
             return Err(ApiError::duplicate()
                 .add_method_name("add_friend_request")
@@ -37,9 +38,10 @@ impl FriendRequestCalls {
         }
 
         // if there is a friend request from the caller to the to
-        if friend_requests()
-            .find(|_, request| request.to == caller() && request.requested_by == to)
-            .is_some()
+        if FriendRequestStore::find(|_, request| {
+            request.to == caller() && request.requested_by == to
+        })
+        .is_some()
         {
             return Err(ApiError::duplicate()
                 .add_method_name("add_friend_request")
@@ -47,12 +49,12 @@ impl FriendRequestCalls {
         }
 
         // insert the friend request
-        let friend_request_result = friend_requests().insert(friend_request);
+        let friend_request_result = FriendRequestStore::insert(friend_request);
         FriendRequestMapper::to_result_response(friend_request_result)
     }
 
     pub fn accept_friend_request(id: u64) -> Result<bool, ApiError> {
-        let (_, friend_request) = friend_requests().get(id)?;
+        let (_, friend_request) = FriendRequestStore::get(id)?;
 
         if friend_request.to != caller() {
             return Err(ApiError::unauthorized()
@@ -60,23 +62,23 @@ impl FriendRequestCalls {
                 .add_message("You are not authorized to accept this friend request"));
         }
 
-        let (_, mut caller_profile) = profiles().get(caller())?;
+        let (_, mut caller_profile) = ProfileStore::get(caller())?;
 
         caller_profile.relations.insert(
             friend_request.requested_by,
             RelationType::Friend.to_string(),
         );
 
-        let (_, mut to_profile) = profiles().get(friend_request.requested_by)?;
+        let (_, mut to_profile) = ProfileStore::get(friend_request.requested_by)?;
         to_profile
             .relations
             .insert(friend_request.to, RelationType::Friend.to_string());
 
-        Ok(friend_requests().remove(id))
+        Ok(FriendRequestStore::remove(id))
     }
 
     pub fn remove_friend_request(id: u64) -> Result<bool, ApiError> {
-        let (_, friend_request) = friend_requests().get(id)?;
+        let (_, friend_request) = FriendRequestStore::get(id)?;
 
         if friend_request.requested_by != caller() {
             return Err(ApiError::unauthorized()
@@ -84,27 +86,25 @@ impl FriendRequestCalls {
                 .add_message("You are not authorized to remove this friend request"));
         }
 
-        Ok(friend_requests().remove(id))
+        Ok(FriendRequestStore::remove(id))
     }
 
     pub fn get_incoming_friend_requests() -> Vec<FriendRequestResponse> {
-        friend_requests()
-            .filter(|_, request| request.to == caller())
+        FriendRequestStore::filter(|_, request| request.to == caller())
             .into_iter()
             .map(|data| FriendRequestMapper::to_response(data))
             .collect()
     }
 
     pub fn get_outgoing_friend_requests() -> Vec<FriendRequestResponse> {
-        friend_requests()
-            .filter(|_, request| request.requested_by == caller())
+        FriendRequestStore::filter(|_, request| request.requested_by == caller())
             .into_iter()
             .map(|data| FriendRequestMapper::to_response(data))
             .collect()
     }
 
     pub fn decline_friend_request(id: u64) -> Result<bool, ApiError> {
-        let (_, friend_request) = friend_requests().get(id)?;
+        let (_, friend_request) = FriendRequestStore::get(id)?;
 
         if friend_request.to != caller() {
             return Err(ApiError::unauthorized()
@@ -112,7 +112,7 @@ impl FriendRequestCalls {
                 .add_message("You are not authorized to decline this friend request"));
         }
 
-        Ok(friend_requests().remove(id))
+        Ok(FriendRequestStore::remove(id))
     }
 }
 

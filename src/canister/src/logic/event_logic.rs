@@ -1,8 +1,9 @@
-use std::collections::HashMap;
+use crate::storage::{
+    AttendeeStore, EventStore, IdentifierRefMethods, ProfileStore, StorageMethods,
+};
 
+use super::boost_logic::BoostCalls;
 use candid::Principal;
-use ic_cdk::caller;
-
 use canister_types::models::{
     api_error::ApiError,
     attendee::{Attendee, InviteAttendeeResponse, JoinedAttendeeResponse},
@@ -17,23 +18,20 @@ use canister_types::models::{
     privacy::Privacy,
     subject::Subject,
 };
+use ic_cdk::caller;
+use std::collections::HashMap;
 
-use crate::storage::storage_api::{
-    attendees, events, profiles, IdentifierRefMethods, StorageMethods,
-};
-
-use super::boost_logic::BoostCalls;
 pub struct EventCalls;
 
 impl EventCalls {
     pub fn add_event(post_event: PostEvent) -> Result<EventResponse, ApiError> {
-        let (new_event_id, new_event) = events().insert(Event::from(post_event))?;
+        let (new_event_id, new_event) = EventStore::insert(Event::from(post_event))?;
 
-        events().insert_identifier_ref(new_event_id)?;
-        let (_, mut attendee) = attendees().get(caller())?;
+        EventStore::insert_identifier_ref(new_event_id)?;
+        let (_, mut attendee) = AttendeeStore::get(caller())?;
 
         attendee.add_joined(new_event_id, new_event.group_id);
-        attendees().update(caller(), attendee)?;
+        AttendeeStore::update(caller(), attendee)?;
 
         Ok(EventResponse::new(
             new_event_id,
@@ -44,7 +42,7 @@ impl EventCalls {
     }
 
     pub fn get_event(event_id: u64, group_id: u64) -> Result<EventResponse, ApiError> {
-        let (_, event) = events().get(event_id)?;
+        let (_, event) = EventStore::get(event_id)?;
 
         if !event.is_from_group(group_id) {
             return Err(ApiError::unauthorized());
@@ -58,7 +56,7 @@ impl EventCalls {
     }
 
     pub fn get_events_count(group_ids: Vec<u64>) -> Vec<(Principal, u64)> {
-        let events = events().filter(|event_id, event| group_ids.contains(&event.group_id));
+        let events = EventStore::filter(|event_id, event| group_ids.contains(&event.group_id));
         let mut event_count: HashMap<Principal, u64> = HashMap::new();
         for (_, event) in events {
             let count = event_count
@@ -81,9 +79,9 @@ impl EventCalls {
     ) -> Result<PagedResponse<EventResponse>, ApiError> {
         // get all the events and filter them based on the privacy
         // exclude all InviteOnly events that the caller is not a attendee of
-        let events = events().filter(|event_id, event| {
+        let events = EventStore::filter(|event_id, event| {
             if event.match_privacy(Privacy::InviteOnly) {
-                if let Ok((_, caller_attendee)) = attendees().get(caller()) {
+                if let Ok((_, caller_attendee)) = AttendeeStore::get(caller()) {
                     return caller_attendee.is_event_joined(event_id);
                 }
                 return false;
@@ -143,14 +141,14 @@ impl EventCalls {
         update_event: UpdateEvent,
         group_id: u64,
     ) -> Result<EventResponse, ApiError> {
-        let (_, mut event) = events().get(event_id)?;
+        let (_, mut event) = EventStore::get(event_id)?;
 
         if !event.is_from_group(group_id) {
             return Err(ApiError::unauthorized());
         }
 
         event = event.update(update_event);
-        events().update(event_id, event.clone())?;
+        EventStore::update(event_id, event.clone())?;
 
         Ok(EventResponse::new(
             event_id,
@@ -161,25 +159,25 @@ impl EventCalls {
     }
 
     pub fn delete_event(event_id: u64, group_id: u64) -> Result<(), ApiError> {
-        let (_, event) = events().get(event_id)?;
+        let (_, event) = EventStore::get(event_id)?;
 
         if !event.is_from_group(group_id) {
             return Err(ApiError::unauthorized());
         }
 
-        let _ = events().remove(event_id);
+        let _ = EventStore::remove(event_id);
         Ok(())
     }
 
     pub fn cancel_event(event_id: u64, reason: String, group_id: u64) -> Result<(), ApiError> {
-        let (_, mut event) = events().get(event_id)?;
+        let (_, mut event) = EventStore::get(event_id)?;
 
         if !event.is_from_group(group_id) {
             return Err(ApiError::unauthorized());
         }
 
         event = event.cancel(reason);
-        events().update(event_id, event.clone())?;
+        EventStore::update(event_id, event.clone())?;
 
         Ok(())
     }
@@ -187,15 +185,15 @@ impl EventCalls {
     // Attendee methods
     // TODO: add logic for event privacy
     pub fn join_event(event_id: u64, group_id: u64) -> Result<JoinedAttendeeResponse, ApiError> {
-        let (attendee_principal, mut attendee) = attendees().get(caller())?;
-        let (_, event) = events().get(event_id)?;
+        let (attendee_principal, mut attendee) = AttendeeStore::get(caller())?;
+        let (_, event) = EventStore::get(event_id)?;
 
         if !event.is_from_group(group_id) {
             return Err(ApiError::unauthorized());
         }
 
         attendee.add_joined(event_id, group_id);
-        attendees().update(attendee_principal, attendee)?;
+        AttendeeStore::update(attendee_principal, attendee)?;
 
         Ok(JoinedAttendeeResponse::new(
             event_id,
@@ -209,17 +207,17 @@ impl EventCalls {
         attendee_principal: Principal,
         group_id: u64,
     ) -> Result<InviteAttendeeResponse, ApiError> {
-        let (caller_principal, _) = attendees().get(caller())?;
-        let (_, event) = events().get(event_id)?;
+        let (caller_principal, _) = AttendeeStore::get(caller())?;
+        let (_, event) = EventStore::get(event_id)?;
 
         if !event.is_from_group(group_id) {
             return Err(ApiError::unauthorized());
         }
 
-        let (attendee_principal, mut attendee) = attendees().get(attendee_principal)?;
+        let (attendee_principal, mut attendee) = AttendeeStore::get(attendee_principal)?;
 
         attendee.add_invite(event_id, group_id, InviteType::OwnerRequest);
-        attendees().update(attendee_principal, attendee)?;
+        AttendeeStore::update(attendee_principal, attendee)?;
 
         Ok(InviteAttendeeResponse::new(
             event_id,
@@ -234,20 +232,20 @@ impl EventCalls {
         attendee_principal: Principal,
         group_id: u64,
     ) -> Result<JoinedAttendeeResponse, ApiError> {
-        let (_, event) = events().get(event_id)?;
+        let (_, event) = EventStore::get(event_id)?;
 
         if !event.is_from_group(group_id) {
             return Err(ApiError::unauthorized());
         }
 
-        let (attendee_principal, mut attendee) = attendees().get(attendee_principal)?;
+        let (attendee_principal, mut attendee) = AttendeeStore::get(attendee_principal)?;
 
         if !attendee.has_pending_join_request(event_id) {
             return Err(ApiError::not_found());
         }
 
         attendee.add_joined(event_id, group_id);
-        attendees().update(attendee_principal, attendee)?;
+        AttendeeStore::update(attendee_principal, attendee)?;
         Ok(JoinedAttendeeResponse::new(
             event_id,
             group_id,
@@ -256,21 +254,21 @@ impl EventCalls {
     }
 
     pub fn accept_owner_request_event_invite(event_id: u64) -> Result<Attendee, ApiError> {
-        let (_, mut attendee) = attendees().get(caller())?;
-        let (_, event) = events().get(event_id)?;
+        let (_, mut attendee) = AttendeeStore::get(caller())?;
+        let (_, event) = EventStore::get(event_id)?;
 
         if !attendee.has_pending_invite(event_id) {
             return Err(ApiError::not_found());
         }
 
         attendee.add_joined(event_id, event_id);
-        attendees().update(caller(), attendee.clone())?;
+        AttendeeStore::update(caller(), attendee.clone())?;
         Ok(attendee)
     }
 
     pub fn get_event_attendees(event_id: u64) -> Result<Vec<JoinedAttendeeResponse>, ApiError> {
         let attendees =
-            attendees().filter(|principal, attendee| attendee.is_event_joined(&event_id));
+            AttendeeStore::filter(|principal, attendee| attendee.is_event_joined(&event_id));
 
         let response = attendees
             .into_iter()
@@ -286,14 +284,14 @@ impl EventCalls {
     }
 
     pub fn get_self_events() -> Result<Attendee, ApiError> {
-        let (_, attendee) = attendees().get(caller())?;
+        let (_, attendee) = AttendeeStore::get(caller())?;
         Ok(attendee)
     }
 
     pub fn get_attending_from_principal(
         principal: Principal,
     ) -> Result<Vec<JoinedAttendeeResponse>, ApiError> {
-        let (_, attendee) = attendees().get(principal)?;
+        let (_, attendee) = AttendeeStore::get(principal)?;
         let response = attendee
             .joined
             .into_iter()
@@ -303,29 +301,29 @@ impl EventCalls {
     }
 
     pub fn leave_event(event_id: u64) -> Result<(), ApiError> {
-        let (_, mut attendee) = attendees().get(caller())?;
+        let (_, mut attendee) = AttendeeStore::get(caller())?;
         if !attendee.is_event_joined(&event_id) {
             return Err(ApiError::not_found());
         }
 
-        let (_, event) = events().get(event_id)?;
+        let (_, event) = EventStore::get(event_id)?;
         if event.owner == caller() {
             return Err(ApiError::bad_request().add_message("Owner cannot leave event"));
         }
 
         attendee.remove_joined(event_id);
-        attendees().update(caller(), attendee)?;
+        AttendeeStore::update(caller(), attendee)?;
         Ok(())
     }
 
     pub fn remove_event_invite(event_id: u64) -> Result<(), ApiError> {
-        let (_, mut attendee) = attendees().get(caller())?;
+        let (_, mut attendee) = AttendeeStore::get(caller())?;
         if !attendee.has_pending_invite(event_id) || !attendee.has_pending_join_request(event_id) {
             return Err(ApiError::not_found());
         }
 
         attendee.remove_invite(event_id);
-        attendees().update(caller(), attendee)?;
+        AttendeeStore::update(caller(), attendee)?;
         Ok(())
     }
 
@@ -334,13 +332,13 @@ impl EventCalls {
         event_id: u64,
         group_id: u64,
     ) -> Result<(), ApiError> {
-        let (_, mut attendee) = attendees().get(attendee_principal)?;
+        let (_, mut attendee) = AttendeeStore::get(attendee_principal)?;
         if !attendee.is_event_joined(&event_id) {
             return Err(ApiError::not_found());
         }
 
         attendee.remove_joined(group_id);
-        attendees().update(attendee_principal, attendee)?;
+        AttendeeStore::update(attendee_principal, attendee)?;
         Ok(())
     }
 
@@ -349,13 +347,13 @@ impl EventCalls {
         event_id: u64,
         group_id: u64,
     ) -> Result<(), ApiError> {
-        let (_, mut attendee) = attendees().get(attendee_principal)?;
+        let (_, mut attendee) = AttendeeStore::get(attendee_principal)?;
         if !attendee.has_pending_invite(event_id) || !attendee.has_pending_join_request(event_id) {
             return Err(ApiError::not_found());
         }
 
         attendee.remove_invite(event_id);
-        attendees().update(attendee_principal, attendee)?;
+        AttendeeStore::update(attendee_principal, attendee)?;
         Ok(())
     }
 
@@ -363,7 +361,7 @@ impl EventCalls {
         event_id: u64,
         group_id: u64,
     ) -> Result<Vec<InviteAttendeeResponse>, ApiError> {
-        let invites = attendees().filter(|principal, attendee| {
+        let invites = AttendeeStore::filter(|principal, attendee| {
             attendee.is_event_invited(&event_id)
                 && attendee.invites.get(&event_id).unwrap().group_id == group_id
         });
@@ -390,11 +388,10 @@ impl EventCalls {
             .to_principal()
             .unwrap();
 
-        let is_starred = profiles()
-            .get(caller())
+        let is_starred = ProfileStore::get(caller())
             .is_ok_and(|(_, profile)| profile.starred.get(&event_identifier).is_some());
 
-        let (joined, invite) = match attendees().get(caller()) {
+        let (joined, invite) = match AttendeeStore::get(caller()) {
             Ok((principal, member)) => {
                 let joined = JoinedAttendeeResponse::new(event_id, group_id, principal);
                 match member.get_invite(event_id) {

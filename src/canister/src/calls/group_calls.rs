@@ -4,8 +4,9 @@ use crate::{
         guards::has_access,
     },
     logic::group_logic::GroupCalls,
-    storage::storage_api::{members, IdentifierRefMethods},
+    storage::{IdentifierRefMethods, MemberStore},
 };
+
 /// # Group methods
 /// # TODO:
 /// * Check if the guard are correctly placed
@@ -352,7 +353,7 @@ pub fn assign_role(
 ) -> Result<Member, ApiError> {
     let group_id = Identifier::from(group_identifier).id();
     can_edit(group_id, PermissionType::Group(None))?;
-    match members().get_id_by_identifier(&member_identifier) {
+    match MemberStore::get_id_by_identifier(&member_identifier) {
         Some(member_principal) => {
             GroupCalls::add_group_role_to_member(role, member_principal, group_id)
         }
@@ -382,7 +383,7 @@ pub fn remove_member_role(
 ) -> Result<Member, ApiError> {
     let group_id = Identifier::from(group_identifier).id();
     can_edit(group_id, PermissionType::Group(None))?;
-    match members().get_id_by_identifier(&member_identifier) {
+    match MemberStore::get_id_by_identifier(&member_identifier) {
         Some(member_principal) => {
             GroupCalls::remove_group_role_from_member(role, member_principal, group_id)
         }
@@ -419,7 +420,7 @@ pub fn get_group_member(
 pub fn get_groups_for_members(member_identifiers: Vec<Principal>) -> Vec<JoinedMemberResponse> {
     let principals = member_identifiers
         .iter()
-        .map(|identifier| members().get_id_by_identifier(identifier).unwrap())
+        .map(|identifier| MemberStore::get_id_by_identifier(identifier).unwrap())
         .collect();
     GroupCalls::get_groups_for_members(principals)
 }
@@ -473,7 +474,7 @@ pub fn get_member_roles(
 ) -> Result<Vec<String>, ApiError> {
     let group_id = Identifier::from(group_identifier).id();
     can_read(group_id, PermissionType::Group(None))?;
-    match members().get_id_by_identifier(&member_identifier) {
+    match MemberStore::get_id_by_identifier(&member_identifier) {
         Some(member_principal) => Ok(GroupCalls::get_member_roles(member_principal, group_id)?),
         None => Err(ApiError::not_found().add_message("Member not found in id - identifier map")),
     }

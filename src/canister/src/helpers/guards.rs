@@ -1,8 +1,8 @@
 use candid::Principal;
+use canister_types::models::{api_error::ApiError, application_role::ApplicationRole};
 use ic_cdk::caller;
 
-use crate::storage::storage_api::{profiles, StorageMethods};
-use canister_types::models::{api_error::ApiError, application_role::ApplicationRole};
+use crate::storage::{ProfileStore, StorageMethods};
 
 /// Checks if the caller is an anonymous principal
 /// # Returns
@@ -34,7 +34,7 @@ pub fn has_access() -> Result<(), String> {
     }
 
     // Get the caller's profile
-    match profiles().get(caller()) {
+    match ProfileStore::get(caller()) {
         Err(err) => Err(err.to_string()),
         Ok((_, profile)) => {
             // Check if the caller has a profile
