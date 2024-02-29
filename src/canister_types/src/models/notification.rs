@@ -1,6 +1,5 @@
 use candid::{decode_one, encode_one, CandidType, Principal};
 use serde::{Deserialize, Serialize};
-use std::borrow::Cow;
 
 use candid::{Decode, Encode};
 
@@ -99,7 +98,7 @@ pub struct SendNotificationData {
 pub enum MessageType {
     UnreadCount(u64),
     Notification(NotificationDataResponse),
-    SilentNotification(SilentNotificationDataResponse),
+    // SilentNotification(SilentNotificationDataResponse),
     SendNotification(SendNotificationData),
     Error(String),
 }

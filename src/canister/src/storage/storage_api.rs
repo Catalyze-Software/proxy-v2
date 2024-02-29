@@ -131,8 +131,8 @@ thread_local! {
         StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.borrow().get(BOOSTED_MEMORY_ID)))
     );
 
-    static NOTIFICATIONS: StorageRef<u64, Notification> = RefCell::new(
-        StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.get_memory(NOTIFICATIONS_MEMORY_ID)))
+    pub static NOTIFICATIONS: StorageRef<u64, Notification> = RefCell::new(
+        StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.borrow().get(NOTIFICATIONS_MEMORY_ID)))
     );
 
     // TODO:
