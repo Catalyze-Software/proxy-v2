@@ -5,6 +5,7 @@ pub mod boosted;
 pub mod date_range;
 pub mod filter_type;
 pub mod location;
+pub mod notification;
 pub mod paged_response;
 pub mod privacy;
 pub mod role;

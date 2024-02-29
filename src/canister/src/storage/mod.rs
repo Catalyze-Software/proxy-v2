@@ -4,6 +4,7 @@ mod event_storage;
 mod friend_request_storage;
 mod group_storage;
 mod member_storage;
+mod notification_storage;
 mod profile_storage;
 mod report_storage;
 mod storage_api;
