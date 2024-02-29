@@ -9,16 +9,6 @@ use ic_stable_structures::{
 };
 use std::cell::RefCell;
 
-// Re-export stores
-pub use super::attendee_storage::AttendeeStore;
-pub use super::boosted_storage::BoostedStore;
-pub use super::event_storage::EventStore;
-pub use super::friend_request_storage::FriendRequestStore;
-pub use super::group_storage::GroupStore;
-pub use super::member_storage::MemberStore;
-pub use super::profile_storage::ProfileStore;
-pub use super::report_storage::ReportStore;
-
 pub type Memory = VirtualMemory<DefaultMemoryImpl>;
 
 /// The memory IDs for the different stores.
@@ -126,7 +116,7 @@ thread_local! {
         StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.borrow().get(REPORTS_MEMORY_ID)))
     );
 
-    pub static STATIC_FILES: StorageRef<u64, Vec<u8>> = RefCell::new(
+    pub static _STATIC_FILES: StorageRef<u64, Vec<u8>> = RefCell::new(
         StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.borrow().get(STATIC_FILES_MEMORY_ID)))
     );
 

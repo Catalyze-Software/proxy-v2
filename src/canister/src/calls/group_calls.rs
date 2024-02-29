@@ -4,8 +4,9 @@ use crate::{
         guards::has_access,
     },
     logic::group_logic::GroupCalls,
-    storage::storage_api::{IdentifierRefMethods, MemberStore},
+    storage::{IdentifierRefMethods, MemberStore},
 };
+
 /// # Group methods
 /// # TODO:
 /// * Check if the guard are correctly placed

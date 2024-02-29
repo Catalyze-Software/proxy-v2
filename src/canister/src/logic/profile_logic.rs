@@ -1,11 +1,7 @@
 use super::member_logic::MemberCalls;
 use crate::{
     helpers::validator::Validator,
-    storage::{
-        attendee_storage::AttendeeStore,
-        profile_storage::ProfileStore,
-        storage_api::{IdentifierRefMethods, MemberStore, StorageMethods},
-    },
+    storage::{AttendeeStore, IdentifierRefMethods, MemberStore, ProfileStore, StorageMethods},
 };
 use candid::Principal;
 use canister_types::models::{

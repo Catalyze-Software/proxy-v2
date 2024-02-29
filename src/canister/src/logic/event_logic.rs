@@ -1,7 +1,8 @@
-use super::boost_logic::BoostCalls;
-use crate::storage::storage_api::{
+use crate::storage::{
     AttendeeStore, EventStore, IdentifierRefMethods, ProfileStore, StorageMethods,
 };
+
+use super::boost_logic::BoostCalls;
 use candid::Principal;
 use canister_types::models::{
     api_error::ApiError,

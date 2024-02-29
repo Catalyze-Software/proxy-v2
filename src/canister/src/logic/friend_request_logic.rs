@@ -1,4 +1,3 @@
-use crate::storage::storage_api::{FriendRequestStore, ProfileStore, StorageMethods};
 use candid::Principal;
 use canister_types::models::{
     api_error::ApiError,
@@ -6,6 +5,8 @@ use canister_types::models::{
     relation_type::RelationType,
 };
 use ic_cdk::caller;
+
+use crate::storage::{FriendRequestStore, ProfileStore, StorageMethods};
 
 pub struct FriendRequestCalls;
 pub struct FriendRequestMapper;

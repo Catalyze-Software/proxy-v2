@@ -7,9 +7,7 @@ use crate::{
         },
         validator::Validator,
     },
-    storage::storage_api::{
-        GroupStore, IdentifierRefMethods, MemberStore, ProfileStore, StorageMethods,
-    },
+    storage::{GroupStore, IdentifierRefMethods, MemberStore, ProfileStore, StorageMethods},
 };
 use candid::Principal;
 use canister_types::{

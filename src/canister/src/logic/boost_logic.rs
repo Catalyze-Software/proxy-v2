@@ -1,6 +1,6 @@
 use super::ledger_logic::Ledger;
 use crate::{
-    storage::storage_api::{BoostedStore, StorageMethods},
+    storage::{BoostedStore, StorageMethods},
     E8S_PER_DAY_BOOST_COST,
 };
 use candid::Principal;
