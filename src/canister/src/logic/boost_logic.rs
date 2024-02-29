@@ -1,17 +1,14 @@
-use std::{cell::RefCell, collections::HashMap, time::Duration};
-
+use super::ledger_logic::Ledger;
+use crate::{
+    storage::storage_api::{BoostedStore, StorageMethods},
+    E8S_PER_DAY_BOOST_COST,
+};
 use candid::Principal;
 use canister_types::models::{api_error::ApiError, boosted::Boost, subject::Subject};
 use ic_cdk::{api::time, caller};
 use ic_cdk_timers::{clear_timer, set_timer, TimerId};
 use ic_ledger_types::Tokens;
-
-use crate::{
-    storage::storage_api::{boosted, StorageMethods},
-    E8S_PER_DAY_BOOST_COST,
-};
-
-use super::ledger_logic::Ledger;
+use std::{cell::RefCell, collections::HashMap, time::Duration};
 
 thread_local! {
     pub static LAST_BLOCK_HEIGHT: RefCell<u64> = RefCell::new(u64::default());
@@ -41,7 +38,7 @@ impl BoostCalls {
         let days = Self::calculate_days(tokens);
         let seconds = Self::get_seconds_from_days(days);
 
-        match boosted().find(|_, boost| boost.subject == subject) {
+        match BoostedStore::find(|_, boost: &Boost| boost.subject == subject) {
             None => Self::new_boost(subject, seconds, caller(), blockheight),
             // If there is an existing boost
             Some((updating_boost_id, updating_boost)) => {
@@ -58,7 +55,7 @@ impl BoostCalls {
     ) -> Result<u64, ApiError> {
         let boost = Boost::new(subject, seconds, owner, blockheight);
 
-        let (new_boost_id, new_boost) = boosted().insert(boost)?;
+        let (new_boost_id, new_boost) = BoostedStore::insert(boost)?;
 
         let timer_id = set_timer(Duration::from_secs(seconds), move || {
             Self::remove_boost(new_boost_id)
@@ -86,11 +83,11 @@ impl BoostCalls {
         boost.seconds = new_seconds;
         boost.updated_at = time();
 
-        boosted().update(boost_id, boost.clone())?;
+        BoostedStore::update(boost_id, boost.clone())?;
 
         // Remove the old timer and set a new timer with the updated seconds
         let timer_id = set_timer(Duration::from_secs(new_seconds), move || {
-            boosted().remove(boost_id);
+            BoostedStore::remove(boost_id);
         });
 
         Self::set_timer_id(boost_id, timer_id);
@@ -98,7 +95,7 @@ impl BoostCalls {
     }
 
     pub fn remove_boost(boost_id: u64) {
-        boosted().remove(boost_id);
+        BoostedStore::remove(boost_id);
         Self::remove_timer_id(&boost_id);
     }
 
@@ -138,14 +135,13 @@ impl BoostCalls {
     }
 
     pub fn get_seconds_left_for_boost(boost_id: u64) -> Result<u64, ApiError> {
-        let (_, boosted) = boosted().get(boost_id)?;
+        let (_, boosted) = BoostedStore::get(boost_id)?;
         let time_left: u64 = Duration::from_nanos(boosted.updated_at).as_secs() + boosted.seconds;
         Ok(time_left - Duration::from_nanos(time()).as_secs())
     }
 
     pub fn get_boost_by_subject(subject: Subject) -> Result<(u64, Boost), ApiError> {
-        match boosted()
-            .get_all()
+        match BoostedStore::get_all()
             .into_iter()
             .find(|(_, boosted)| boosted.subject == subject)
         {
@@ -155,8 +151,7 @@ impl BoostCalls {
     }
 
     pub fn get_boosts_by_subject(subject: Subject) -> Vec<(u64, Boost)> {
-        boosted()
-            .get_all()
+        BoostedStore::get_all()
             .into_iter()
             .filter(|(_, boosted)| match boosted.subject {
                 Subject::Group(_) => match subject {
@@ -173,14 +168,16 @@ impl BoostCalls {
     }
 
     pub fn start_timers_after_upgrade() -> Result<(), ApiError> {
-        boosted().get_all().into_iter().for_each(|(boost_id, _)| {
-            let seconds_left = Self::get_seconds_left_for_boost(boost_id).unwrap_or(0);
-            let timer_id = set_timer(Duration::from_secs(seconds_left), move || {
-                Self::remove_boost(boost_id)
-            });
+        BoostedStore::get_all()
+            .into_iter()
+            .for_each(|(boost_id, _)| {
+                let seconds_left = Self::get_seconds_left_for_boost(boost_id).unwrap_or(0);
+                let timer_id = set_timer(Duration::from_secs(seconds_left), move || {
+                    Self::remove_boost(boost_id)
+                });
 
-            Self::set_timer_id(boost_id, timer_id);
-        });
+                Self::set_timer_id(boost_id, timer_id);
+            });
 
         Ok(())
     }

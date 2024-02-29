@@ -1,8 +1,4 @@
-use std::collections::HashMap;
-
-use candid::Principal;
-use ic_cdk::{api::call, caller};
-
+use super::boost_logic::BoostCalls;
 use crate::{
     helpers::{
         token_balance::{
@@ -11,9 +7,11 @@ use crate::{
         },
         validator::Validator,
     },
-    storage::storage_api::{groups, members, profiles, IdentifierRefMethods, StorageMethods},
+    storage::storage_api::{
+        GroupStore, IdentifierRefMethods, MemberStore, ProfileStore, StorageMethods,
+    },
 };
-
+use candid::Principal;
 use canister_types::{
     misc::role_misc::read_only_permissions,
     models::{
@@ -35,8 +33,8 @@ use canister_types::{
         validation::{ValidateField, ValidationType},
     },
 };
-
-use super::boost_logic::BoostCalls;
+use ic_cdk::{api::call, caller};
+use std::collections::HashMap;
 
 pub struct GroupCalls;
 pub struct GroupValidation;
@@ -51,8 +49,7 @@ impl GroupCalls {
         GroupValidation::validate_post_group(post_group.clone())?;
 
         // Check if the group name already exists
-        if groups()
-            .find(|_, group| group.name.to_lowercase() == post_group.name.to_lowercase())
+        if GroupStore::find(|_, group| group.name.to_lowercase() == post_group.name.to_lowercase())
             .is_some()
         {
             return Err(ApiError::bad_request().add_message("Group name already exists"));
@@ -62,29 +59,29 @@ impl GroupCalls {
         GroupValidation::validate_group_privacy(&caller(), account_identifier, &post_group).await?;
 
         // Get the member and add the group to the member
-        let (_, mut member) = members().get(caller())?;
+        let (_, mut member) = MemberStore::get(caller())?;
 
         // Create and store the group
-        let new_group = groups().insert(Group::from(post_group))?;
+        let new_group = GroupStore::insert(Group::from(post_group))?;
 
         //////////////////////////////////////////////////////////////////////////////////////////
         // TODO: REMOVE THIS SECTION
         // ADDED FOR BACKWARD COMPATIBILITY
         // SHOULD BE REMOVED IN THE FUTURE
-        let group_id = groups().insert_identifier_ref(new_group.0)?;
+        let group_id = GroupStore::insert_identifier_ref(new_group.0)?;
         //////////////////////////////////////////////////////////////////////////////////////////
 
         // generate and store an group identifier
         member.add_joined(group_id, vec!["owner".to_string()]);
 
-        members().update(caller(), member)?;
+        MemberStore::update(caller(), member)?;
 
         GroupResponse::from_result(Ok(new_group), None, Self::get_group_caller_data(group_id))
     }
 
     pub fn get_group(id: u64) -> Result<GroupResponse, ApiError> {
         GroupResponse::from_result(
-            groups().get(id),
+            GroupStore::get(id),
             Self::get_boosted_group(id),
             Self::get_group_caller_data(id),
         )
@@ -98,9 +95,9 @@ impl GroupCalls {
     ) -> Result<PagedResponse<GroupResponse>, ApiError> {
         // get all the groups and filter them based on the privacy
         // exclude all InviteOnly groups that the caller is not a member of
-        let groups = groups().filter(|group_id, group| {
+        let groups = GroupStore::filter(|group_id, group| {
             if group.privacy == Privacy::InviteOnly {
-                if let Ok((_, caller_member)) = members().get(caller()) {
+                if let Ok((_, caller_member)) = MemberStore::get(caller()) {
                     return caller_member.is_group_joined(group_id);
                 }
                 return false;
@@ -157,23 +154,22 @@ impl GroupCalls {
     }
 
     pub fn edit_group(id: u64, update_group: UpdateGroup) -> Result<GroupResponse, ApiError> {
-        let (id, mut group) = groups().get(id)?;
+        let (id, mut group) = GroupStore::get(id)?;
         group.update(update_group);
         GroupResponse::from_result(
-            groups().update(id, group),
+            GroupStore::update(id, group),
             Self::get_boosted_group(id),
             Self::get_group_caller_data(id),
         )
     }
 
     pub fn get_group_owner_and_privacy(id: u64) -> Result<(Principal, Privacy), ApiError> {
-        let (_, group) = groups().get(id)?;
+        let (_, group) = GroupStore::get(id)?;
         Ok((group.owner, group.privacy))
     }
 
     pub fn get_groups_by_id(group_ids: Vec<u64>) -> Vec<GroupResponse> {
-        groups()
-            .get_many(group_ids)
+        GroupStore::get_many(group_ids)
             .into_iter()
             .map(|data| {
                 GroupResponse::new(
@@ -189,9 +185,9 @@ impl GroupCalls {
     // TODO: check if we need to hard delete it after a period of time
     // TODO: check if we need to remove the group from the members
     pub fn delete_group(group_id: u64) -> Result<GroupResponse, ApiError> {
-        let (id, mut group) = groups().get(group_id)?;
+        let (id, mut group) = GroupStore::get(group_id)?;
         group.is_deleted = true;
-        GroupResponse::from_result(groups().update(id, group), None, None)
+        GroupResponse::from_result(GroupStore::update(id, group), None, None)
     }
 
     pub fn add_wallet_to_group(
@@ -199,10 +195,10 @@ impl GroupCalls {
         wallet_canister: Principal,
         description: String,
     ) -> Result<GroupResponse, ApiError> {
-        let (id, mut group) = groups().get(group_id)?;
+        let (id, mut group) = GroupStore::get(group_id)?;
         group.wallets.insert(wallet_canister, description);
         GroupResponse::from_result(
-            groups().update(id, group),
+            GroupStore::update(id, group),
             Self::get_boosted_group(id),
             Self::get_group_caller_data(id),
         )
@@ -212,10 +208,10 @@ impl GroupCalls {
         group_id: u64,
         wallet_canister: Principal,
     ) -> Result<GroupResponse, ApiError> {
-        let (id, mut group) = groups().get(group_id)?;
+        let (id, mut group) = GroupStore::get(group_id)?;
         group.wallets.remove(&wallet_canister);
         GroupResponse::from_result(
-            groups().update(id, group),
+            GroupStore::update(id, group),
             Self::get_boosted_group(id),
             Self::get_group_caller_data(id),
         )
@@ -228,7 +224,7 @@ impl GroupCalls {
         color: String,
         index: u64,
     ) -> Result<Role, ApiError> {
-        let (id, mut group) = groups().get(group_id)?;
+        let (id, mut group) = GroupStore::get(group_id)?;
         let role = Role::new(
             role_name.into(),
             false,
@@ -237,28 +233,28 @@ impl GroupCalls {
             Some(index),
         );
         group.roles.push(role.clone());
-        groups().update(id, group)?;
+        GroupStore::update(id, group)?;
         Ok(role)
     }
 
     pub fn remove_group_role(group_id: u64, role_name: String) -> Result<bool, ApiError> {
-        let (group_id, mut group) = groups().get(group_id)?;
+        let (group_id, mut group) = GroupStore::get(group_id)?;
 
         // get the index of the role
         let index = group.roles.iter().position(|r| r.name == role_name);
         // remove the actual role from the group based on the index
         if let Some(index) = index {
             group.roles.remove(index);
-            groups().update(group_id, group)?;
+            GroupStore::update(group_id, group)?;
 
             // get all members from the group with the role
             let group_members_with_role =
-                members().filter(|_, member| member.has_group_role(&group_id, &role_name));
+                MemberStore::filter(|_, member| member.has_group_role(&group_id, &role_name));
 
             // remove the role from the member
             for (member_id, mut member) in group_members_with_role {
                 member.remove_group_role(&group_id, &role_name);
-                members().update(member_id, member)?;
+                MemberStore::update(member_id, member)?;
             }
             Ok(true)
         } else {
@@ -267,7 +263,7 @@ impl GroupCalls {
     }
 
     pub fn get_group_roles(group_id: u64) -> Vec<Role> {
-        let (_, group) = groups().get(group_id).unwrap();
+        let (_, group) = GroupStore::get(group_id).unwrap();
         group.roles
     }
 
@@ -276,7 +272,7 @@ impl GroupCalls {
         role_name: String,
         post_permissions: Vec<PostPermission>,
     ) -> Result<bool, ApiError> {
-        let (id, mut group) = groups().get(group_id)?;
+        let (id, mut group) = GroupStore::get(group_id)?;
 
         // get the index of the role
         let index = group.roles.iter().position(|r| r.name == role_name);
@@ -288,7 +284,7 @@ impl GroupCalls {
                 .map(|permission| Permission::from(permission))
                 .collect();
 
-            groups().update(id, group)?;
+            GroupStore::update(id, group)?;
             Ok(true)
         } else {
             Ok(false)
@@ -302,7 +298,7 @@ impl GroupCalls {
         let member =
             GroupValidation::validate_member_join(caller(), group_id, &account_identifier).await?;
 
-        members().update(caller(), member.clone())?;
+        MemberStore::update(caller(), member.clone())?;
 
         Ok(JoinedMemberResponse::new(member, group_id))
     }
@@ -311,7 +307,7 @@ impl GroupCalls {
         invitee_principal: Principal,
         group_id: u64,
     ) -> Result<Member, ApiError> {
-        let (_, mut invitee_member) = members().get(invitee_principal)?;
+        let (_, mut invitee_member) = MemberStore::get(invitee_principal)?;
 
         // Check if the member is already in the group
         if invitee_member.is_group_joined(&group_id) {
@@ -325,7 +321,7 @@ impl GroupCalls {
             );
         }
 
-        let (_, group) = groups().get(group_id)?;
+        let (_, group) = GroupStore::get(group_id)?;
         // Check if the group is invite only
         if group.privacy == Privacy::InviteOnly {
             return Err(ApiError::bad_request().add_message("Group is invite only"));
@@ -334,7 +330,7 @@ impl GroupCalls {
         // Add the group to the member
         invitee_member.add_invite(group_id, InviteType::OwnerRequest);
 
-        members().update(invitee_principal, invitee_member.clone())?;
+        MemberStore::update(invitee_principal, invitee_member.clone())?;
 
         Ok(invitee_member)
     }
@@ -343,7 +339,7 @@ impl GroupCalls {
         principal: Principal,
         group_id: u64,
     ) -> Result<Member, ApiError> {
-        let (_, mut member) = members().get(principal)?;
+        let (_, mut member) = MemberStore::get(principal)?;
 
         // Check if the member has a pending join request for the group
         if !member.has_pending_join_request(group_id) {
@@ -355,13 +351,13 @@ impl GroupCalls {
         // Add the group to the member and set the role
         member.add_joined(group_id, vec!["member".to_string()]);
 
-        members().update(principal, member.clone())?;
+        MemberStore::update(principal, member.clone())?;
 
         Ok(member)
     }
 
     pub fn accept_owner_request_group_invite(group_id: u64) -> Result<Member, ApiError> {
-        let (_, mut member) = members().get(caller())?;
+        let (_, mut member) = MemberStore::get(caller())?;
 
         // Check if the member has a pending join request for the group
         if !member.has_pending_group_invite(group_id) {
@@ -373,7 +369,7 @@ impl GroupCalls {
         // Add the group to the member and set the role
         member.add_joined(group_id, vec!["member".to_string()]);
 
-        members().update(caller(), member.clone())?;
+        MemberStore::update(caller(), member.clone())?;
 
         Ok(member)
     }
@@ -384,18 +380,18 @@ impl GroupCalls {
         member_principal: Principal,
         group_id: u64,
     ) -> Result<Member, ApiError> {
-        let (_, group) = groups().get(group_id)?;
+        let (_, group) = GroupStore::get(group_id)?;
 
         // Check if the role exists
         if !group.roles.iter().any(|r| r.name == role) {
             return Err(ApiError::bad_request().add_message("Role does not exist"));
         }
 
-        let (_, mut member) = members().get(member_principal)?;
+        let (_, mut member) = MemberStore::get(member_principal)?;
         // Add the role to the member
         member.add_group_role(&group_id, &role);
 
-        members().update(member_principal, member.clone())?;
+        MemberStore::update(member_principal, member.clone())?;
 
         Ok(member)
     }
@@ -406,18 +402,18 @@ impl GroupCalls {
         member_principal: Principal,
         group_id: u64,
     ) -> Result<Member, ApiError> {
-        let (_, group) = groups().get(group_id)?;
+        let (_, group) = GroupStore::get(group_id)?;
 
         // Check if the role exists
         if !group.roles.iter().any(|r| r.name == role) {
             return Err(ApiError::bad_request().add_message("Role does not exist"));
         }
 
-        let (_, mut member) = members().get(member_principal)?;
+        let (_, mut member) = MemberStore::get(member_principal)?;
         // Remove the role from the member
         member.remove_group_role(&group_id, &role);
 
-        members().update(member_principal, member.clone())?;
+        MemberStore::update(member_principal, member.clone())?;
 
         Ok(member)
     }
@@ -426,7 +422,7 @@ impl GroupCalls {
         principal: Principal,
         group_id: u64,
     ) -> Result<JoinedMemberResponse, ApiError> {
-        let (_, member) = members().get(principal)?;
+        let (_, member) = MemberStore::get(principal)?;
 
         // Check if the member is in the group
         if !member.is_group_joined(&group_id) {
@@ -437,7 +433,7 @@ impl GroupCalls {
     }
 
     pub fn get_groups_for_members(principals: Vec<Principal>) -> Vec<JoinedMemberResponse> {
-        let members = members().get_many(principals);
+        let members = MemberStore::get_many(principals);
 
         let mut result: Vec<JoinedMemberResponse> = vec![];
 
@@ -451,7 +447,7 @@ impl GroupCalls {
     }
 
     pub fn get_group_members(group_id: u64) -> Result<Vec<JoinedMemberResponse>, ApiError> {
-        let members = members().filter(|_, member| member.is_group_joined(&group_id));
+        let members = MemberStore::filter(|_, member| member.is_group_joined(&group_id));
 
         let mut result: Vec<JoinedMemberResponse> = vec![];
 
@@ -463,24 +459,24 @@ impl GroupCalls {
     }
 
     pub fn get_self_group() -> Result<Member, ApiError> {
-        let (_, member) = members().get(caller())?;
+        let (_, member) = MemberStore::get(caller())?;
         Ok(member)
     }
 
     pub fn get_member_roles(principal: Principal, group_id: u64) -> Result<Vec<String>, ApiError> {
-        let (_, member) = members().get(principal)?;
+        let (_, member) = MemberStore::get(principal)?;
         Ok(member.get_roles(group_id))
     }
 
     pub fn leave_group(group_id: u64) -> Result<(), ApiError> {
-        let (_, mut member) = members().get(caller())?;
+        let (_, mut member) = MemberStore::get(caller())?;
 
         // Check if the member is in the group
         if !member.is_group_joined(&group_id) {
             return Err(ApiError::bad_request().add_message("Member is not in the group"));
         }
 
-        let (id, group) = groups().get(group_id)?;
+        let (id, group) = GroupStore::get(group_id)?;
 
         if group.owner == caller() {
             return Err(ApiError::bad_request().add_message("Owner cannot leave the group"));
@@ -489,13 +485,13 @@ impl GroupCalls {
         // Remove the group from the member
         member.remove_joined(group_id);
 
-        members().update(caller(), member)?;
+        MemberStore::update(caller(), member)?;
 
         Ok(())
     }
 
     pub fn remove_invite(group_id: u64) -> Result<(), ApiError> {
-        let (_, mut member) = members().get(caller())?;
+        let (_, mut member) = MemberStore::get(caller())?;
 
         // Check if the member is in the group
         if !member.is_group_invited(&group_id) {
@@ -505,13 +501,13 @@ impl GroupCalls {
         // Remove the group from the member
         member.remove_invite(group_id);
 
-        members().update(caller(), member)?;
+        MemberStore::update(caller(), member)?;
 
         Ok(())
     }
 
     pub fn remove_member_from_group(principal: Principal, group_id: u64) -> Result<(), ApiError> {
-        let (_, mut member) = members().get(principal)?;
+        let (_, mut member) = MemberStore::get(principal)?;
 
         // Check if the member is in the group
         if !member.is_group_joined(&group_id) {
@@ -521,7 +517,7 @@ impl GroupCalls {
         // Remove the group from the member
         member.remove_joined(group_id);
 
-        members().update(principal, member)?;
+        MemberStore::update(principal, member)?;
 
         Ok(())
     }
@@ -530,7 +526,7 @@ impl GroupCalls {
         principal: Principal,
         group_id: u64,
     ) -> Result<(), ApiError> {
-        let (_, mut member) = members().get(principal)?;
+        let (_, mut member) = MemberStore::get(principal)?;
 
         // Check if the member is in the group
         if !member.is_group_invited(&group_id) {
@@ -540,13 +536,13 @@ impl GroupCalls {
         // Remove the group from the member
         member.remove_invite(group_id);
 
-        members().update(principal, member)?;
+        MemberStore::update(principal, member)?;
 
         Ok(())
     }
 
     pub fn get_group_invites(group_id: u64) -> Result<Vec<InviteMemberResponse>, ApiError> {
-        let members = members().filter(|_, member| member.is_group_invited(&group_id));
+        let members = MemberStore::filter(|_, member| member.is_group_invited(&group_id));
 
         let mut result: Vec<InviteMemberResponse> = vec![];
 
@@ -569,11 +565,10 @@ impl GroupCalls {
             .to_principal()
             .unwrap();
 
-        let is_starred = profiles()
-            .get(caller())
+        let is_starred = ProfileStore::get(caller())
             .is_ok_and(|(_, profile)| profile.starred.get(&group_identifier).is_some());
 
-        let (joined, invite) = match members().get(caller()) {
+        let (joined, invite) = match MemberStore::get(caller()) {
             Ok((_, member)) => {
                 let joined = JoinedMemberResponse::new(member.clone(), group_id);
                 let invite = InviteMemberResponse::new(member, group_id);
@@ -844,8 +839,8 @@ impl GroupValidation {
         group_id: u64,
         account_identifier: &Option<String>,
     ) -> Result<Member, ApiError> {
-        let (group_id, group) = groups().get(group_id)?;
-        let (member_principal, mut member) = members().get(caller)?;
+        let (group_id, group) = GroupStore::get(group_id)?;
+        let (member_principal, mut member) = MemberStore::get(caller)?;
 
         // Check if the member is already in the group
         if member.is_group_joined(&group_id) {

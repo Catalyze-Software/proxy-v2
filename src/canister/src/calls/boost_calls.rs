@@ -1,10 +1,9 @@
+use crate::{helpers::guards::has_access, logic::boost_logic::BoostCalls, E8S_PER_DAY_BOOST_COST};
 use candid::Principal;
 use canister_types::models::{
     api_error::ApiError, boosted::Boost, identifier::Identifier, subject::Subject,
 };
 use ic_cdk::{query, update};
-
-use crate::{helpers::guards::has_access, logic::boost_logic::BoostCalls, E8S_PER_DAY_BOOST_COST};
 
 /// Returns the boosted groups
 /// # Returns
