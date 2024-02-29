@@ -1,40 +1,24 @@
-use std::thread::LocalKey;
-
+use super::storage_api::{
+    IdentifierRefMethods, PrincipalIdentifier, StorageMethods, PROFILES, PROFILES_IDENTIFIER_REF,
+};
 use candid::Principal;
-use ic_cdk::caller;
-
-use super::storage_api::{IdentifierRefMethods, PrincipalIdentifier, StorageMethods, StorageRef};
 use canister_types::models::{
     api_error::ApiError,
     identifier::{Identifier, IdentifierKind},
     profile::Profile,
 };
+use ic_cdk::caller;
 
-pub struct ProfileStore<'a> {
-    store: &'a LocalKey<StorageRef<Principal, Profile>>,
-    identifier_ref: &'a LocalKey<StorageRef<PrincipalIdentifier, Principal>>,
-}
-
-impl<'a> ProfileStore<'a> {
-    pub fn new(
-        store: &'a LocalKey<StorageRef<Principal, Profile>>,
-        identifier_ref: &'a LocalKey<StorageRef<PrincipalIdentifier, Principal>>,
-    ) -> Self {
-        Self {
-            store,
-            identifier_ref,
-        }
-    }
-}
+pub struct ProfileStore;
 
 pub const NAME: &str = "profiles";
 
-impl IdentifierRefMethods<PrincipalIdentifier> for ProfileStore<'static> {
+impl IdentifierRefMethods<PrincipalIdentifier> for ProfileStore {
     /// get a new identifier
     /// # Returns
     /// * `PrincipalIdentifier` - The new identifier
     fn new_identifier(&self) -> PrincipalIdentifier {
-        let id = self.identifier_ref.with(|data| {
+        let id = PROFILES_IDENTIFIER_REF.with(|data| {
             data.borrow()
                 .last_key_value()
                 .map(|(k, _)| Identifier::from(k).id() + 1)
@@ -52,7 +36,7 @@ impl IdentifierRefMethods<PrincipalIdentifier> for ProfileStore<'static> {
     /// # Returns
     /// * `Option<Principal>` - The key if found, otherwise None
     fn get_id_by_identifier(&self, key: &PrincipalIdentifier) -> Option<Principal> {
-        self.identifier_ref.with(|data| data.borrow().get(key))
+        PROFILES_IDENTIFIER_REF.with(|data| data.borrow().get(key))
     }
 
     /// Get the identifier by key
@@ -61,7 +45,7 @@ impl IdentifierRefMethods<PrincipalIdentifier> for ProfileStore<'static> {
     /// # Returns
     /// * `Option<PrincipalIdentifier>` - The identifier if found, otherwise None
     fn get_identifier_by_id(&self, value: &Principal) -> Option<PrincipalIdentifier> {
-        self.identifier_ref.with(|data| {
+        PROFILES_IDENTIFIER_REF.with(|data| {
             data.borrow()
                 .iter()
                 .find(|(_, v)| v == value)
@@ -75,7 +59,7 @@ impl IdentifierRefMethods<PrincipalIdentifier> for ProfileStore<'static> {
     /// # Returns
     /// * `Result<Principal, ApiError>` - The inserted principal if successful, otherwise an error
     fn insert_identifier_ref(&mut self, key: PrincipalIdentifier) -> Result<Principal, ApiError> {
-        self.identifier_ref.with(|data| {
+        PROFILES_IDENTIFIER_REF.with(|data| {
             if data.borrow().contains_key(&key) {
                 return Err(ApiError::duplicate()
                     .add_method_name("insert_identifier_ref")
@@ -94,19 +78,18 @@ impl IdentifierRefMethods<PrincipalIdentifier> for ProfileStore<'static> {
     /// # Returns
     /// * `bool` - True if the identifier was removed, otherwise false
     fn remove_identifier_ref(&mut self, key: &PrincipalIdentifier) -> bool {
-        self.identifier_ref
-            .with(|data| data.borrow_mut().remove(key).is_some())
+        PROFILES_IDENTIFIER_REF.with(|data| data.borrow_mut().remove(key).is_some())
     }
 }
 
-impl StorageMethods<Principal, Profile> for ProfileStore<'static> {
+impl StorageMethods<Principal, Profile> for ProfileStore {
     /// Get a single user profile by key
     /// # Arguments
     /// * `key` - The key of the profile to get
     /// # Returns
     /// * `Result<Profile, ApiError>` - The profile if found, otherwise an error
     fn get(&self, key: Principal) -> Result<(Principal, Profile), ApiError> {
-        self.store.with(|data| {
+        PROFILES.with(|data| {
             data.borrow()
                 .get(&key)
                 .ok_or(ApiError::not_found().add_method_name("get").add_info(NAME))
@@ -120,7 +103,7 @@ impl StorageMethods<Principal, Profile> for ProfileStore<'static> {
     /// # Returns
     /// * `Vec<Profile>` - The reports if found, otherwise an empty vector
     fn get_many(&self, keys: Vec<Principal>) -> Vec<(Principal, Profile)> {
-        self.store.with(|data| {
+        PROFILES.with(|data| {
             let mut profiles = Vec::new();
             for key in keys {
                 if let Some(profile) = data.borrow().get(&key) {
@@ -140,7 +123,7 @@ impl StorageMethods<Principal, Profile> for ProfileStore<'static> {
     where
         F: Fn(&Principal, &Profile) -> bool,
     {
-        self.store.with(|data| {
+        PROFILES.with(|data| {
             data.borrow()
                 .iter()
                 .find(|(id, profile)| filter(id, profile))
@@ -157,7 +140,7 @@ impl StorageMethods<Principal, Profile> for ProfileStore<'static> {
     where
         F: Fn(&Principal, &Profile) -> bool,
     {
-        self.store.with(|data| {
+        PROFILES.with(|data| {
             data.borrow()
                 .iter()
                 .filter(|(id, value)| filter(id, value))
@@ -190,7 +173,7 @@ impl StorageMethods<Principal, Profile> for ProfileStore<'static> {
         key: Principal,
         value: Profile,
     ) -> Result<(Principal, Profile), ApiError> {
-        self.store.with(|data| {
+        PROFILES.with(|data| {
             if data.borrow().contains_key(&key) {
                 return Err(ApiError::duplicate()
                     .add_method_name("insert_by_key")
@@ -212,7 +195,7 @@ impl StorageMethods<Principal, Profile> for ProfileStore<'static> {
     /// # Note
     /// Does check if a profile with the same key already exists, if not returns an error
     fn update(&mut self, key: Principal, value: Profile) -> Result<(Principal, Profile), ApiError> {
-        self.store.with(|data| {
+        PROFILES.with(|data| {
             if !data.borrow().contains_key(&key) {
                 return Err(ApiError::not_found()
                     .add_method_name("update")
@@ -232,7 +215,6 @@ impl StorageMethods<Principal, Profile> for ProfileStore<'static> {
     /// * `bool` - True if the profile was removed, otherwise false
     /// # Note
     fn remove(&mut self, key: Principal) -> bool {
-        self.store
-            .with(|data| data.borrow_mut().remove(&key).is_some())
+        PROFILES.with(|data| data.borrow_mut().remove(&key).is_some())
     }
 }

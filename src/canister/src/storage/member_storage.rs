@@ -1,40 +1,24 @@
-use std::thread::LocalKey;
-
+use super::storage_api::{
+    IdentifierRefMethods, PrincipalIdentifier, StorageMethods, MEMBERS, MEMBERS_IDENTIFIER_REF,
+};
 use candid::Principal;
-use ic_cdk::caller;
-
-use super::storage_api::{IdentifierRefMethods, PrincipalIdentifier, StorageMethods, StorageRef};
 use canister_types::models::{
     api_error::ApiError,
     identifier::{Identifier, IdentifierKind},
     member::Member,
 };
+use ic_cdk::caller;
 
-pub struct MemberStore<'a> {
-    store: &'a LocalKey<StorageRef<Principal, Member>>,
-    identifier_ref: &'a LocalKey<StorageRef<PrincipalIdentifier, Principal>>,
-}
-
-impl<'a> MemberStore<'a> {
-    pub fn new(
-        store: &'a LocalKey<StorageRef<Principal, Member>>,
-        identifier_ref: &'a LocalKey<StorageRef<PrincipalIdentifier, Principal>>,
-    ) -> Self {
-        Self {
-            store,
-            identifier_ref,
-        }
-    }
-}
+pub struct MemberStore;
 
 pub const NAME: &str = "members";
 
-impl IdentifierRefMethods<PrincipalIdentifier> for MemberStore<'static> {
+impl IdentifierRefMethods<PrincipalIdentifier> for MemberStore {
     /// get a new identifier
     /// # Returns
     /// * `PrincipalIdentifier` - The new identifier
     fn new_identifier(&self) -> PrincipalIdentifier {
-        let id = self.identifier_ref.with(|data| {
+        let id = MEMBERS_IDENTIFIER_REF.with(|data| {
             data.borrow()
                 .last_key_value()
                 .map(|(k, _)| Identifier::from(k).id() + 1)
@@ -52,7 +36,7 @@ impl IdentifierRefMethods<PrincipalIdentifier> for MemberStore<'static> {
     /// # Returns
     /// * `Option<Principal>` - The key if found, otherwise None
     fn get_id_by_identifier(&self, key: &PrincipalIdentifier) -> Option<Principal> {
-        self.identifier_ref.with(|data| data.borrow().get(key))
+        MEMBERS_IDENTIFIER_REF.with(|data| data.borrow().get(key))
     }
 
     /// Get the identifier by key
@@ -61,7 +45,7 @@ impl IdentifierRefMethods<PrincipalIdentifier> for MemberStore<'static> {
     /// # Returns
     /// * `Option<PrincipalIdentifier>` - The identifier if found, otherwise None
     fn get_identifier_by_id(&self, value: &Principal) -> Option<PrincipalIdentifier> {
-        self.identifier_ref.with(|data| {
+        MEMBERS_IDENTIFIER_REF.with(|data| {
             data.borrow()
                 .iter()
                 .find(|(_, v)| v == value)
@@ -75,7 +59,7 @@ impl IdentifierRefMethods<PrincipalIdentifier> for MemberStore<'static> {
     /// # Returns
     /// * `Result<Principal, ApiError>` - The inserted principal if successful, otherwise an error
     fn insert_identifier_ref(&mut self, key: PrincipalIdentifier) -> Result<Principal, ApiError> {
-        self.identifier_ref.with(|data| {
+        MEMBERS_IDENTIFIER_REF.with(|data| {
             if data.borrow().contains_key(&key) {
                 return Err(ApiError::duplicate()
                     .add_method_name("insert_identifier_ref")
@@ -94,19 +78,18 @@ impl IdentifierRefMethods<PrincipalIdentifier> for MemberStore<'static> {
     /// # Returns
     /// * `bool` - True if the identifier was removed, otherwise false
     fn remove_identifier_ref(&mut self, key: &PrincipalIdentifier) -> bool {
-        self.identifier_ref
-            .with(|data| data.borrow_mut().remove(key).is_some())
+        MEMBERS_IDENTIFIER_REF.with(|data| data.borrow_mut().remove(key).is_some())
     }
 }
 
-impl StorageMethods<Principal, Member> for MemberStore<'static> {
+impl StorageMethods<Principal, Member> for MemberStore {
     /// Get a single member by key
     /// # Arguments
     /// * `key` - The key of the member to get
     /// # Returns
     /// * `Result<Member, ApiError>` - The member if found, otherwise an error
     fn get(&self, key: Principal) -> Result<(Principal, Member), ApiError> {
-        self.store.with(|data| {
+        MEMBERS.with(|data| {
             data.borrow()
                 .get(&key)
                 .ok_or(ApiError::not_found().add_method_name("get").add_info(NAME))
@@ -120,7 +103,7 @@ impl StorageMethods<Principal, Member> for MemberStore<'static> {
     /// # Returns
     /// * `Vec<Group>` - The groups if found, otherwise an empty vector
     fn get_many(&self, keys: Vec<Principal>) -> Vec<(Principal, Member)> {
-        self.store.with(|data| {
+        MEMBERS.with(|data| {
             let mut members = Vec::new();
             for key in keys {
                 if let Some(member) = data.borrow().get(&key) {
@@ -140,7 +123,7 @@ impl StorageMethods<Principal, Member> for MemberStore<'static> {
     where
         F: Fn(&Principal, &Member) -> bool,
     {
-        self.store.with(|data| {
+        MEMBERS.with(|data| {
             data.borrow()
                 .iter()
                 .find(|(id, value)| filter(id, value))
@@ -157,7 +140,7 @@ impl StorageMethods<Principal, Member> for MemberStore<'static> {
     where
         F: Fn(&Principal, &Member) -> bool,
     {
-        self.store.with(|data| {
+        MEMBERS.with(|data| {
             data.borrow()
                 .iter()
                 .filter(|(id, value)| filter(id, value))
@@ -190,7 +173,7 @@ impl StorageMethods<Principal, Member> for MemberStore<'static> {
         key: Principal,
         value: Member,
     ) -> Result<(Principal, Member), ApiError> {
-        self.store.with(|data| {
+        MEMBERS.with(|data| {
             if data.borrow().contains_key(&key) {
                 return Err(ApiError::duplicate()
                     .add_method_name("insert_by_key")
@@ -212,7 +195,7 @@ impl StorageMethods<Principal, Member> for MemberStore<'static> {
     /// # Note
     /// Does check if a member with the same key already exists, if not returns an error
     fn update(&mut self, key: Principal, value: Member) -> Result<(Principal, Member), ApiError> {
-        self.store.with(|data| {
+        MEMBERS.with(|data| {
             if !data.borrow().contains_key(&key) {
                 return Err(ApiError::not_found()
                     .add_method_name("update")
@@ -232,7 +215,6 @@ impl StorageMethods<Principal, Member> for MemberStore<'static> {
     /// * `bool` - True if the member was removed, otherwise false
     /// # Note
     fn remove(&mut self, key: Principal) -> bool {
-        self.store
-            .with(|data| data.borrow_mut().remove(&key).is_some())
+        MEMBERS.with(|data| data.borrow_mut().remove(&key).is_some())
     }
 }

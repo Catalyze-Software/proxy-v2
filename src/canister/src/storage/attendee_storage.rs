@@ -1,40 +1,22 @@
-use std::thread::LocalKey;
-
 use candid::Principal;
 use ic_cdk::caller;
-
-use super::storage_api::{IdentifierRefMethods, PrincipalIdentifier, StorageMethods, StorageRef};
+use super::storage_api::{IdentifierRefMethods, PrincipalIdentifier, StorageMethods, ATTENDEES, ATTENDEES_IDENTIFIER_REF};
 use canister_types::models::{
     api_error::ApiError,
     attendee::Attendee,
     identifier::{Identifier, IdentifierKind},
 };
 
-pub struct AttendeeStore<'a> {
-    store: &'a LocalKey<StorageRef<Principal, Attendee>>,
-    identifier_ref: &'a LocalKey<StorageRef<PrincipalIdentifier, Principal>>,
-}
-
-impl<'a> AttendeeStore<'a> {
-    pub fn new(
-        store: &'a LocalKey<StorageRef<Principal, Attendee>>,
-        identifier_ref: &'a LocalKey<StorageRef<PrincipalIdentifier, Principal>>,
-    ) -> Self {
-        Self {
-            store,
-            identifier_ref,
-        }
-    }
-}
+pub struct AttendeeStore;
 
 pub const NAME: &str = "attendees";
 
-impl IdentifierRefMethods<PrincipalIdentifier> for AttendeeStore<'static> {
+impl IdentifierRefMethods<PrincipalIdentifier> for AttendeeStore {
     /// get a new identifier
     /// # Returns
     /// * `PrincipalIdentifier` - The new identifier
     fn new_identifier(&self) -> PrincipalIdentifier {
-        let id = self.identifier_ref.with(|data| {
+        let id = ATTENDEES_IDENTIFIER_REF.with(|data| {
             data.borrow()
                 .last_key_value()
                 .map(|(k, _)| Identifier::from(k).id() + 1)
@@ -52,7 +34,7 @@ impl IdentifierRefMethods<PrincipalIdentifier> for AttendeeStore<'static> {
     /// # Returns
     /// * `Option<Principal>` - The key if found, otherwise None
     fn get_id_by_identifier(&self, key: &PrincipalIdentifier) -> Option<Principal> {
-        self.identifier_ref.with(|data| data.borrow().get(key))
+        ATTENDEES_IDENTIFIER_REF.with(|data| data.borrow().get(key))
     }
 
     /// Get the identifier by key
@@ -61,7 +43,7 @@ impl IdentifierRefMethods<PrincipalIdentifier> for AttendeeStore<'static> {
     /// # Returns
     /// * `Option<PrincipalIdentifier>` - The identifier if found, otherwise None
     fn get_identifier_by_id(&self, value: &Principal) -> Option<PrincipalIdentifier> {
-        self.identifier_ref.with(|data| {
+        ATTENDEES_IDENTIFIER_REF.with(|data| {
             data.borrow()
                 .iter()
                 .find(|(_, v)| v == value)
@@ -75,7 +57,7 @@ impl IdentifierRefMethods<PrincipalIdentifier> for AttendeeStore<'static> {
     /// # Returns
     /// * `Result<Principal, ApiError>` - The inserted principal if successful, otherwise an error
     fn insert_identifier_ref(&mut self, key: PrincipalIdentifier) -> Result<Principal, ApiError> {
-        self.identifier_ref.with(|data| {
+        ATTENDEES_IDENTIFIER_REF.with(|data| {
             if data.borrow().contains_key(&key) {
                 return Err(ApiError::duplicate()
                     .add_method_name("insert_identifier_ref")
@@ -94,19 +76,19 @@ impl IdentifierRefMethods<PrincipalIdentifier> for AttendeeStore<'static> {
     /// # Returns
     /// * `bool` - True if the identifier was removed, otherwise false
     fn remove_identifier_ref(&mut self, key: &PrincipalIdentifier) -> bool {
-        self.identifier_ref
+        ATTENDEES_IDENTIFIER_REF
             .with(|data| data.borrow_mut().remove(key).is_some())
     }
 }
 
-impl StorageMethods<Principal, Attendee> for AttendeeStore<'static> {
+impl StorageMethods<Principal, Attendee> for AttendeeStore {
     /// Get a single attendee by key
     /// # Arguments
     /// * `key` - The user principal as key of the attendee to get
     /// # Returns
     /// * `Result<Attendee, ApiError>` - The attendee if found, otherwise an error
     fn get(&self, key: Principal) -> Result<(Principal, Attendee), ApiError> {
-        self.store.with(|data| {
+        ATTENDEES.with(|data| {
             data.borrow()
                 .get(&key)
                 .ok_or(ApiError::not_found().add_method_name("get").add_info(NAME))
@@ -120,7 +102,7 @@ impl StorageMethods<Principal, Attendee> for AttendeeStore<'static> {
     /// # Returns
     /// * `Vec<Attendee>` - The reports if found, otherwise an empty vector
     fn get_many(&self, keys: Vec<Principal>) -> Vec<(Principal, Attendee)> {
-        self.store.with(|data| {
+        ATTENDEES.with(|data| {
             let mut attendees = Vec::new();
             for key in keys {
                 if let Some(attendee) = data.borrow().get(&key) {
@@ -140,7 +122,7 @@ impl StorageMethods<Principal, Attendee> for AttendeeStore<'static> {
     where
         F: Fn(&Principal, &Attendee) -> bool,
     {
-        self.store.with(|data| {
+        ATTENDEES.with(|data| {
             data.borrow()
                 .iter()
                 .find(|(id, value)| filter(id, value))
@@ -157,7 +139,7 @@ impl StorageMethods<Principal, Attendee> for AttendeeStore<'static> {
     where
         F: Fn(&Principal, &Attendee) -> bool,
     {
-        self.store.with(|data| {
+        ATTENDEES.with(|data| {
             data.borrow()
                 .iter()
                 .filter(|(id, value)| filter(id, value))
@@ -190,7 +172,7 @@ impl StorageMethods<Principal, Attendee> for AttendeeStore<'static> {
         key: Principal,
         value: Attendee,
     ) -> Result<(Principal, Attendee), ApiError> {
-        self.store.with(|data| {
+        ATTENDEES.with(|data| {
             if data.borrow().contains_key(&key) {
                 return Err(ApiError::duplicate()
                     .add_method_name("insert_by_key")
@@ -216,7 +198,7 @@ impl StorageMethods<Principal, Attendee> for AttendeeStore<'static> {
         key: Principal,
         value: Attendee,
     ) -> Result<(Principal, Attendee), ApiError> {
-        self.store.with(|data| {
+        ATTENDEES.with(|data| {
             if !data.borrow().contains_key(&key) {
                 return Err(ApiError::not_found()
                     .add_method_name("update")
@@ -236,7 +218,7 @@ impl StorageMethods<Principal, Attendee> for AttendeeStore<'static> {
     /// * `bool` - True if the attendee was removed, otherwise false
     /// # Note
     fn remove(&mut self, key: Principal) -> bool {
-        self.store
+        ATTENDEES
             .with(|data| data.borrow_mut().remove(&key).is_some())
     }
 }

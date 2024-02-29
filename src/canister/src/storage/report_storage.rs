@@ -1,39 +1,22 @@
-use std::thread::LocalKey;
-
-use candid::Principal;
-
-use super::storage_api::{IdentifierRefMethods, PrincipalIdentifier, StorageMethods, StorageRef};
+use super::storage_api::{
+    IdentifierRefMethods, PrincipalIdentifier, StorageMethods, REPORTS, REPORTS_IDENTIFIER_REF,
+};
 use canister_types::models::{
     api_error::ApiError,
     identifier::{Identifier, IdentifierKind},
     report::Report,
 };
 
-pub struct ReportStore<'a> {
-    store: &'a LocalKey<StorageRef<u64, Report>>,
-    identifier_ref: &'a LocalKey<StorageRef<Principal, u64>>,
-}
-
-impl<'a> ReportStore<'a> {
-    pub fn new(
-        store: &'a LocalKey<StorageRef<u64, Report>>,
-        identifier_ref: &'a LocalKey<StorageRef<Principal, u64>>,
-    ) -> Self {
-        Self {
-            store,
-            identifier_ref,
-        }
-    }
-}
+pub struct ReportStore;
 
 pub const NAME: &str = "reports";
 
-impl IdentifierRefMethods<u64> for ReportStore<'static> {
+impl IdentifierRefMethods<u64> for ReportStore {
     /// get a new identifier
     /// # Returns
     /// * `PrincipalIdentifier` - The new identifier
     fn new_identifier(&self) -> PrincipalIdentifier {
-        let id = self.identifier_ref.with(|data| {
+        let id = REPORTS_IDENTIFIER_REF.with(|data| {
             data.borrow()
                 .last_key_value()
                 .map(|(k, _)| Identifier::from(k).id() + 1)
@@ -51,7 +34,7 @@ impl IdentifierRefMethods<u64> for ReportStore<'static> {
     /// # Returns
     /// * `Option<u64>` - The key if found, otherwise None
     fn get_id_by_identifier(&self, key: &PrincipalIdentifier) -> Option<u64> {
-        self.identifier_ref.with(|data| data.borrow().get(key))
+        REPORTS_IDENTIFIER_REF.with(|data| data.borrow().get(key))
     }
 
     /// Get the identifier by key
@@ -60,7 +43,7 @@ impl IdentifierRefMethods<u64> for ReportStore<'static> {
     /// # Returns
     /// * `Option<PrincipalIdentifier>` - The identifier if found, otherwise None
     fn get_identifier_by_id(&self, value: &u64) -> Option<PrincipalIdentifier> {
-        self.identifier_ref.with(|data| {
+        REPORTS_IDENTIFIER_REF.with(|data| {
             data.borrow()
                 .iter()
                 .find(|(_, v)| v == value)
@@ -77,7 +60,7 @@ impl IdentifierRefMethods<u64> for ReportStore<'static> {
         let identifier_principal = Identifier::generate(IdentifierKind::Report(value))
             .to_principal()
             .unwrap();
-        self.identifier_ref.with(|data| {
+        REPORTS_IDENTIFIER_REF.with(|data| {
             if data.borrow().contains_key(&identifier_principal) {
                 return Err(ApiError::duplicate()
                     .add_method_name("insert_identifier_ref")
@@ -96,19 +79,18 @@ impl IdentifierRefMethods<u64> for ReportStore<'static> {
     /// # Returns
     /// * `bool` - True if the identifier was removed, otherwise false
     fn remove_identifier_ref(&mut self, key: &PrincipalIdentifier) -> bool {
-        self.identifier_ref
-            .with(|data| data.borrow_mut().remove(key).is_some())
+        REPORTS_IDENTIFIER_REF.with(|data| data.borrow_mut().remove(key).is_some())
     }
 }
 
-impl StorageMethods<u64, Report> for ReportStore<'static> {
+impl StorageMethods<u64, Report> for ReportStore {
     /// Get a single report by key
     /// # Arguments
     /// * `key` - The key of the report to get
     /// # Returns
     /// * `Result<Report, ApiError>` - The report if found, otherwise an error
     fn get(&self, key: u64) -> Result<(u64, Report), ApiError> {
-        self.store.with(|data| {
+        REPORTS.with(|data| {
             data.borrow()
                 .get(&key)
                 .ok_or(ApiError::not_found().add_method_name("get").add_info(NAME))
@@ -122,7 +104,7 @@ impl StorageMethods<u64, Report> for ReportStore<'static> {
     /// # Returns
     /// * `Vec<Report>` - The reports if found, otherwise an empty vector
     fn get_many(&self, ids: Vec<u64>) -> Vec<(u64, Report)> {
-        self.store.with(|data| {
+        REPORTS.with(|data| {
             let mut reports = Vec::new();
             for id in ids {
                 if let Some(report) = data.borrow().get(&id) {
@@ -142,8 +124,7 @@ impl StorageMethods<u64, Report> for ReportStore<'static> {
     where
         F: Fn(&u64, &Report) -> bool,
     {
-        self.store
-            .with(|data| data.borrow().iter().find(|(id, value)| filter(id, value)))
+        REPORTS.with(|data| data.borrow().iter().find(|(id, value)| filter(id, value)))
     }
 
     /// Find all reports by filter
@@ -155,7 +136,7 @@ impl StorageMethods<u64, Report> for ReportStore<'static> {
     where
         F: Fn(&u64, &Report) -> bool,
     {
-        self.store.with(|data| {
+        REPORTS.with(|data| {
             data.borrow()
                 .iter()
                 .filter(|(id, value)| filter(id, value))
@@ -171,7 +152,7 @@ impl StorageMethods<u64, Report> for ReportStore<'static> {
     /// # Note
     /// Does check if a report with the same key already exists, if so returns an error
     fn insert(&mut self, value: Report) -> Result<(u64, Report), ApiError> {
-        self.store.with(|data| {
+        REPORTS.with(|data| {
             let key = data
                 .borrow()
                 .last_key_value()
@@ -210,7 +191,7 @@ impl StorageMethods<u64, Report> for ReportStore<'static> {
     /// # Note
     /// Does check if a report with the same key already exists, if not returns an error
     fn update(&mut self, key: u64, value: Report) -> Result<(u64, Report), ApiError> {
-        self.store.with(|data| {
+        REPORTS.with(|data| {
             if !data.borrow().contains_key(&key) {
                 return Err(ApiError::not_found()
                     .add_method_name("update")
@@ -230,7 +211,6 @@ impl StorageMethods<u64, Report> for ReportStore<'static> {
     /// * `bool` - True if the report was removed, otherwise false
     /// # Note
     fn remove(&mut self, key: u64) -> bool {
-        self.store
-            .with(|data| data.borrow_mut().remove(&key).is_some())
+        REPORTS.with(|data| data.borrow_mut().remove(&key).is_some())
     }
 }
