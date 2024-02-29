@@ -1,4 +1,3 @@
-use crate::storage::storage_api::{MemberStore, ReportStore, StorageMethods};
 use canister_types::models::{
     api_error::ApiError,
     filter_type::FilterType,
@@ -7,6 +6,8 @@ use canister_types::models::{
 };
 use ic_cdk::caller;
 use std::collections::HashMap;
+
+use crate::storage::{MemberStore, ReportStore, StorageMethods};
 
 pub struct ReportCalls;
 

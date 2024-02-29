@@ -1,9 +1,10 @@
-use crate::storage::storage_api::{MemberStore, StorageMethods};
 use candid::Principal;
 use canister_types::models::{
     api_error::ApiError,
     member::{JoinedMemberResponse, Member},
 };
+
+use crate::storage::{MemberStore, StorageMethods};
 
 pub struct MemberCalls;
 pub struct MemberMapper;

@@ -1,7 +1,7 @@
 use crate::{
     helpers::guards::{has_access, is_not_anonymous},
     logic::{friend_request_logic::FriendRequestCalls, profile_logic::ProfileCalls},
-    storage::{profile_storage::ProfileStore, storage_api::IdentifierRefMethods},
+    storage::{IdentifierRefMethods, ProfileStore},
 };
 /// # Profile methods
 /// # TODO:

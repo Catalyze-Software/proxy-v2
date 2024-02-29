@@ -1,13 +1,11 @@
-use crate::storage::{
-    group_storage::GroupStore,
-    storage_api::{MemberStore, StorageMethods},
-};
 use canister_types::models::{
     api_error::ApiError,
     permission::{PermissionActionType, PermissionType},
     role::Role,
 };
 use ic_cdk::caller;
+
+use crate::storage::{GroupStore, MemberStore, StorageMethods};
 
 /// Determine if the caller has permission to perform an action on group based entities
 /// # Arguments
