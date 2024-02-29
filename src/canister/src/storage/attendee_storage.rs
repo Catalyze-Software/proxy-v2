@@ -1,11 +1,13 @@
+use super::storage_api::{
+    IdentifierRefMethods, PrincipalIdentifier, StorageMethods, ATTENDEES, ATTENDEES_IDENTIFIER_REF,
+};
 use candid::Principal;
-use ic_cdk::caller;
-use super::storage_api::{IdentifierRefMethods, PrincipalIdentifier, StorageMethods, ATTENDEES, ATTENDEES_IDENTIFIER_REF};
 use canister_types::models::{
     api_error::ApiError,
     attendee::Attendee,
     identifier::{Identifier, IdentifierKind},
 };
+use ic_cdk::caller;
 
 pub struct AttendeeStore;
 
@@ -15,7 +17,7 @@ impl IdentifierRefMethods<PrincipalIdentifier> for AttendeeStore {
     /// get a new identifier
     /// # Returns
     /// * `PrincipalIdentifier` - The new identifier
-    fn new_identifier(&self) -> PrincipalIdentifier {
+    fn new_identifier() -> PrincipalIdentifier {
         let id = ATTENDEES_IDENTIFIER_REF.with(|data| {
             data.borrow()
                 .last_key_value()
@@ -33,7 +35,7 @@ impl IdentifierRefMethods<PrincipalIdentifier> for AttendeeStore {
     /// * `key` - The identifier to get the key for
     /// # Returns
     /// * `Option<Principal>` - The key if found, otherwise None
-    fn get_id_by_identifier(&self, key: &PrincipalIdentifier) -> Option<Principal> {
+    fn get_id_by_identifier(key: &PrincipalIdentifier) -> Option<Principal> {
         ATTENDEES_IDENTIFIER_REF.with(|data| data.borrow().get(key))
     }
 
@@ -42,7 +44,7 @@ impl IdentifierRefMethods<PrincipalIdentifier> for AttendeeStore {
     /// * `value` - The value to get the identifier for
     /// # Returns
     /// * `Option<PrincipalIdentifier>` - The identifier if found, otherwise None
-    fn get_identifier_by_id(&self, value: &Principal) -> Option<PrincipalIdentifier> {
+    fn get_identifier_by_id(value: &Principal) -> Option<PrincipalIdentifier> {
         ATTENDEES_IDENTIFIER_REF.with(|data| {
             data.borrow()
                 .iter()
@@ -56,7 +58,7 @@ impl IdentifierRefMethods<PrincipalIdentifier> for AttendeeStore {
     /// * `key` - The increment value to insert
     /// # Returns
     /// * `Result<Principal, ApiError>` - The inserted principal if successful, otherwise an error
-    fn insert_identifier_ref(&mut self, key: PrincipalIdentifier) -> Result<Principal, ApiError> {
+    fn insert_identifier_ref(key: PrincipalIdentifier) -> Result<Principal, ApiError> {
         ATTENDEES_IDENTIFIER_REF.with(|data| {
             if data.borrow().contains_key(&key) {
                 return Err(ApiError::duplicate()
@@ -75,9 +77,8 @@ impl IdentifierRefMethods<PrincipalIdentifier> for AttendeeStore {
     /// * `key` - The identifier to remove
     /// # Returns
     /// * `bool` - True if the identifier was removed, otherwise false
-    fn remove_identifier_ref(&mut self, key: &PrincipalIdentifier) -> bool {
-        ATTENDEES_IDENTIFIER_REF
-            .with(|data| data.borrow_mut().remove(key).is_some())
+    fn remove_identifier_ref(key: &PrincipalIdentifier) -> bool {
+        ATTENDEES_IDENTIFIER_REF.with(|data| data.borrow_mut().remove(key).is_some())
     }
 }
 
@@ -87,7 +88,7 @@ impl StorageMethods<Principal, Attendee> for AttendeeStore {
     /// * `key` - The user principal as key of the attendee to get
     /// # Returns
     /// * `Result<Attendee, ApiError>` - The attendee if found, otherwise an error
-    fn get(&self, key: Principal) -> Result<(Principal, Attendee), ApiError> {
+    fn get(key: Principal) -> Result<(Principal, Attendee), ApiError> {
         ATTENDEES.with(|data| {
             data.borrow()
                 .get(&key)
@@ -101,7 +102,7 @@ impl StorageMethods<Principal, Attendee> for AttendeeStore {
     /// * `ids` - The keys of the attendees to get
     /// # Returns
     /// * `Vec<Attendee>` - The reports if found, otherwise an empty vector
-    fn get_many(&self, keys: Vec<Principal>) -> Vec<(Principal, Attendee)> {
+    fn get_many(keys: Vec<Principal>) -> Vec<(Principal, Attendee)> {
         ATTENDEES.with(|data| {
             let mut attendees = Vec::new();
             for key in keys {
@@ -118,7 +119,7 @@ impl StorageMethods<Principal, Attendee> for AttendeeStore {
     /// * `filter` - The filter to apply
     /// # Returns
     /// * `Option<(Principal, Attendee)>` - The attendee if found, otherwise None
-    fn find<F>(&self, filter: F) -> Option<(Principal, Attendee)>
+    fn find<F>(filter: F) -> Option<(Principal, Attendee)>
     where
         F: Fn(&Principal, &Attendee) -> bool,
     {
@@ -135,7 +136,7 @@ impl StorageMethods<Principal, Attendee> for AttendeeStore {
     /// * `filter` - The filter to apply
     /// # Returns
     /// * `Vec<(Principal, Attendee)>` - The attendees if found, otherwise an empty vector
-    fn filter<F>(&self, filter: F) -> Vec<(Principal, Attendee)>
+    fn filter<F>(filter: F) -> Vec<(Principal, Attendee)>
     where
         F: Fn(&Principal, &Attendee) -> bool,
     {
@@ -152,7 +153,7 @@ impl StorageMethods<Principal, Attendee> for AttendeeStore {
     /// # Note
     /// This method is not supported for this storage because the key is a `Principal`
     /// use `insert_by_key` instead
-    fn insert(&mut self, _value: Attendee) -> Result<(Principal, Attendee), ApiError> {
+    fn insert(_value: Attendee) -> Result<(Principal, Attendee), ApiError> {
         Err(ApiError::unsupported()
             .add_method_name("insert") // value should be `insert` as a string value
             .add_info(NAME)
@@ -167,11 +168,7 @@ impl StorageMethods<Principal, Attendee> for AttendeeStore {
     /// * `Result<Attendee, ApiError>` - The inserted attendee if successful, otherwise an error
     /// # Note
     /// Does check if a attendee with the same key already exists, if so returns an error
-    fn insert_by_key(
-        &mut self,
-        key: Principal,
-        value: Attendee,
-    ) -> Result<(Principal, Attendee), ApiError> {
+    fn insert_by_key(key: Principal, value: Attendee) -> Result<(Principal, Attendee), ApiError> {
         ATTENDEES.with(|data| {
             if data.borrow().contains_key(&key) {
                 return Err(ApiError::duplicate()
@@ -193,11 +190,7 @@ impl StorageMethods<Principal, Attendee> for AttendeeStore {
     /// * `Result<Attendee, ApiError>` - The updated attendee if successful, otherwise an error
     /// # Note
     /// Does check if a attendee with the same key already exists, if not returns an error
-    fn update(
-        &mut self,
-        key: Principal,
-        value: Attendee,
-    ) -> Result<(Principal, Attendee), ApiError> {
+    fn update(key: Principal, value: Attendee) -> Result<(Principal, Attendee), ApiError> {
         ATTENDEES.with(|data| {
             if !data.borrow().contains_key(&key) {
                 return Err(ApiError::not_found()
@@ -217,8 +210,7 @@ impl StorageMethods<Principal, Attendee> for AttendeeStore {
     /// # Returns
     /// * `bool` - True if the attendee was removed, otherwise false
     /// # Note
-    fn remove(&mut self, key: Principal) -> bool {
-        ATTENDEES
-            .with(|data| data.borrow_mut().remove(&key).is_some())
+    fn remove(key: Principal) -> bool {
+        ATTENDEES.with(|data| data.borrow_mut().remove(&key).is_some())
     }
 }

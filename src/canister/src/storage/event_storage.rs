@@ -15,7 +15,7 @@ impl IdentifierRefMethods<u64> for EventStore {
     /// get a new identifier
     /// # Returns
     /// * `PrincipalIdentifier` - The new identifier
-    fn new_identifier(&self) -> PrincipalIdentifier {
+    fn new_identifier() -> PrincipalIdentifier {
         let id = EVENTS_IDENTIFIER_REF.with(|data| {
             data.borrow()
                 .last_key_value()
@@ -33,7 +33,7 @@ impl IdentifierRefMethods<u64> for EventStore {
     /// * `key` - The identifier to get the key for
     /// # Returns
     /// * `Option<u64>` - The key if found, otherwise None
-    fn get_id_by_identifier(&self, key: &PrincipalIdentifier) -> Option<u64> {
+    fn get_id_by_identifier(key: &PrincipalIdentifier) -> Option<u64> {
         EVENTS_IDENTIFIER_REF.with(|data| data.borrow().get(key))
     }
 
@@ -42,7 +42,7 @@ impl IdentifierRefMethods<u64> for EventStore {
     /// * `value` - The value to get the identifier for
     /// # Returns
     /// * `Option<PrincipalIdentifier>` - The identifier if found, otherwise None
-    fn get_identifier_by_id(&self, value: &u64) -> Option<PrincipalIdentifier> {
+    fn get_identifier_by_id(value: &u64) -> Option<PrincipalIdentifier> {
         EVENTS_IDENTIFIER_REF.with(|data| {
             data.borrow()
                 .iter()
@@ -56,7 +56,7 @@ impl IdentifierRefMethods<u64> for EventStore {
     /// * `value` - The increment value to insert
     /// # Returns
     /// * `Result<u64, ApiError>` - The inserted u64 if successful, otherwise an error
-    fn insert_identifier_ref(&mut self, value: u64) -> Result<u64, ApiError> {
+    fn insert_identifier_ref(value: u64) -> Result<u64, ApiError> {
         let identifier_principal = Identifier::generate(IdentifierKind::Event(value))
             .to_principal()
             .unwrap();
@@ -78,7 +78,7 @@ impl IdentifierRefMethods<u64> for EventStore {
     /// * `key` - The identifier to remove
     /// # Returns
     /// * `bool` - True if the identifier was removed, otherwise false
-    fn remove_identifier_ref(&mut self, key: &PrincipalIdentifier) -> bool {
+    fn remove_identifier_ref(key: &PrincipalIdentifier) -> bool {
         EVENTS_IDENTIFIER_REF.with(|data| data.borrow_mut().remove(key).is_some())
     }
 }
@@ -89,7 +89,7 @@ impl StorageMethods<u64, Event> for EventStore {
     /// * `key` - The key of the event to get
     /// # Returns
     /// * `Result<Event, ApiError>` - The event if found, otherwise an error
-    fn get(&self, key: u64) -> Result<(u64, Event), ApiError> {
+    fn get(key: u64) -> Result<(u64, Event), ApiError> {
         EVENTS.with(|data| {
             data.borrow()
                 .get(&key)
@@ -103,7 +103,7 @@ impl StorageMethods<u64, Event> for EventStore {
     /// * `ids` - The keys of the events to get
     /// # Returns
     /// * `Vec<Event>` - The events if found, otherwise an empty vector
-    fn get_many(&self, keys: Vec<u64>) -> Vec<(u64, Event)> {
+    fn get_many(keys: Vec<u64>) -> Vec<(u64, Event)> {
         EVENTS.with(|data| {
             let mut events = Vec::new();
             for key in keys {
@@ -120,7 +120,7 @@ impl StorageMethods<u64, Event> for EventStore {
     /// * `filter` - The filter to apply
     /// # Returns
     /// * `Option<(u64, Event)>` - The event if found, otherwise None
-    fn find<F>(&self, filter: F) -> Option<(u64, Event)>
+    fn find<F>(filter: F) -> Option<(u64, Event)>
     where
         F: Fn(&u64, &Event) -> bool,
     {
@@ -132,7 +132,7 @@ impl StorageMethods<u64, Event> for EventStore {
     /// * `filter` - The filter to apply
     /// # Returns
     /// * `Vec<(u64, Event)>` - The events if found, otherwise an empty vector
-    fn filter<F>(&self, filter: F) -> Vec<(u64, Event)>
+    fn filter<F>(filter: F) -> Vec<(u64, Event)>
     where
         F: Fn(&u64, &Event) -> bool,
     {
@@ -151,7 +151,7 @@ impl StorageMethods<u64, Event> for EventStore {
     /// * `Result<Event, ApiError>` - The inserted event if successful, otherwise an error
     /// # Note
     /// Does check if a event with the same key already exists, if so returns an error
-    fn insert(&mut self, value: Event) -> Result<(u64, Event), ApiError> {
+    fn insert(value: Event) -> Result<(u64, Event), ApiError> {
         EVENTS.with(|data| {
             let key = data
                 .borrow()
@@ -175,7 +175,7 @@ impl StorageMethods<u64, Event> for EventStore {
     /// # Note
     /// This method is not supported for this storage because the key is supplied by the canister
     /// use `insert` instead
-    fn insert_by_key(&mut self, _key: u64, _value: Event) -> Result<(u64, Event), ApiError> {
+    fn insert_by_key(_key: u64, _value: Event) -> Result<(u64, Event), ApiError> {
         Err(ApiError::unsupported()
             .add_method_name("insert_by_key") // value should be `insert` as a string value
             .add_info(NAME)
@@ -190,7 +190,7 @@ impl StorageMethods<u64, Event> for EventStore {
     /// * `Result<Event, ApiError>` - The updated event if successful, otherwise an error
     /// # Note
     /// Does check if a event with the same key already exists, if not returns an error
-    fn update(&mut self, key: u64, value: Event) -> Result<(u64, Event), ApiError> {
+    fn update(key: u64, value: Event) -> Result<(u64, Event), ApiError> {
         EVENTS.with(|data| {
             if !data.borrow().contains_key(&key) {
                 return Err(ApiError::not_found()
@@ -210,7 +210,7 @@ impl StorageMethods<u64, Event> for EventStore {
     /// # Returns
     /// * `bool` - True if the event was removed, otherwise false
     /// # Note
-    fn remove(&mut self, key: u64) -> bool {
+    fn remove(key: u64) -> bool {
         EVENTS.with(|data| data.borrow_mut().remove(&key).is_some())
     }
 }

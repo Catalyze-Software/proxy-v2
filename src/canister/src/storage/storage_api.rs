@@ -66,18 +66,18 @@ pub type StorageRef<K, V> = RefCell<StableBTreeMap<K, V, Memory>>;
 type MemManagerStore = RefCell<MemoryManager<DefaultMemoryImpl>>;
 
 pub trait StorageMethods<K, V> {
-    fn get(&self, id: K) -> Result<(K, V), ApiError>;
-    fn get_many(&self, ids: Vec<K>) -> Vec<(K, V)>;
-    fn find<F>(&self, filter: F) -> Option<(K, V)>
+    fn get(id: K) -> Result<(K, V), ApiError>;
+    fn get_many(ids: Vec<K>) -> Vec<(K, V)>;
+    fn find<F>(filter: F) -> Option<(K, V)>
     where
         F: Fn(&K, &V) -> bool;
-    fn filter<F>(&self, filter: F) -> Vec<(K, V)>
+    fn filter<F>(filter: F) -> Vec<(K, V)>
     where
         F: Fn(&K, &V) -> bool;
-    fn insert(&mut self, entity: V) -> Result<(K, V), ApiError>;
-    fn insert_by_key(&mut self, key: K, entity: V) -> Result<(K, V), ApiError>;
-    fn update(&mut self, id: K, entity: V) -> Result<(K, V), ApiError>;
-    fn remove(&mut self, id: K) -> bool;
+    fn insert(entity: V) -> Result<(K, V), ApiError>;
+    fn insert_by_key(key: K, entity: V) -> Result<(K, V), ApiError>;
+    fn update(id: K, entity: V) -> Result<(K, V), ApiError>;
+    fn remove(id: K) -> bool;
 }
 
 /// A trait for the identifier reference maps.
@@ -87,11 +87,11 @@ pub trait StorageMethods<K, V> {
 /// This trait is used to define the methods that are common to the identifier reference maps.
 /// Temporary trait for backward compatibility
 pub trait IdentifierRefMethods<V> {
-    fn new_identifier(&self) -> PrincipalIdentifier;
-    fn get_id_by_identifier(&self, key: &PrincipalIdentifier) -> Option<V>;
-    fn get_identifier_by_id(&self, value: &V) -> Option<PrincipalIdentifier>;
-    fn insert_identifier_ref(&mut self, value: V) -> Result<V, ApiError>;
-    fn remove_identifier_ref(&mut self, key: &PrincipalIdentifier) -> bool;
+    fn new_identifier() -> PrincipalIdentifier;
+    fn get_id_by_identifier(key: &PrincipalIdentifier) -> Option<V>;
+    fn get_identifier_by_id(value: &V) -> Option<PrincipalIdentifier>;
+    fn insert_identifier_ref(value: V) -> Result<V, ApiError>;
+    fn remove_identifier_ref(key: &PrincipalIdentifier) -> bool;
 }
 
 thread_local! {

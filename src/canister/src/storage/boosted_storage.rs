@@ -11,7 +11,7 @@ impl StorageMethods<u64, Boost> for BoostedStore {
     /// * `key` - The key of the boosted to get
     /// # Returns
     /// * `Result<Boosted, ApiError>` - The boosted if found, otherwise an error
-    fn get(&self, key: u64) -> Result<(u64, Boost), ApiError> {
+    fn get(key: u64) -> Result<(u64, Boost), ApiError> {
         BOOSTED.with(|data| {
             data.borrow()
                 .get(&key)
@@ -25,7 +25,7 @@ impl StorageMethods<u64, Boost> for BoostedStore {
     /// * `ids` - The keys of the boosted to get
     /// # Returns
     /// * `Vec<Boosted>` - The boosted if found, otherwise an empty vector
-    fn get_many(&self, keys: Vec<u64>) -> Vec<(u64, Boost)> {
+    fn get_many(keys: Vec<u64>) -> Vec<(u64, Boost)> {
         BOOSTED.with(|data| {
             let mut boosted = Vec::new();
             for key in keys {
@@ -42,7 +42,7 @@ impl StorageMethods<u64, Boost> for BoostedStore {
     /// * `filter` - The filter to apply
     /// # Returns
     /// * `Option<(u64, Boosted)>` - The boosted if found, otherwise None
-    fn find<F>(&self, filter: F) -> Option<(u64, Boost)>
+    fn find<F>(filter: F) -> Option<(u64, Boost)>
     where
         F: Fn(&u64, &Boost) -> bool,
     {
@@ -54,7 +54,7 @@ impl StorageMethods<u64, Boost> for BoostedStore {
     /// * `filter` - The filter to apply
     /// # Returns
     /// * `Vec<(u64, Boosted)>` - The boosted if found, otherwise an empty vector
-    fn filter<F>(&self, filter: F) -> Vec<(u64, Boost)>
+    fn filter<F>(filter: F) -> Vec<(u64, Boost)>
     where
         F: Fn(&u64, &Boost) -> bool,
     {
@@ -73,7 +73,7 @@ impl StorageMethods<u64, Boost> for BoostedStore {
     /// * `Result<Boosted, ApiError>` - The inserted boosted if successful, otherwise an error
     /// # Note
     /// Does check if a boosted with the same key already exists, if so returns an error
-    fn insert(&mut self, value: Boost) -> Result<(u64, Boost), ApiError> {
+    fn insert(value: Boost) -> Result<(u64, Boost), ApiError> {
         BOOSTED.with(|data| {
             let key = data
                 .borrow()
@@ -97,7 +97,7 @@ impl StorageMethods<u64, Boost> for BoostedStore {
     /// # Note
     /// This method is not supported for this storage because the key is supplied by the canister
     /// use `insert` instead
-    fn insert_by_key(&mut self, _key: u64, _value: Boost) -> Result<(u64, Boost), ApiError> {
+    fn insert_by_key(_key: u64, _value: Boost) -> Result<(u64, Boost), ApiError> {
         Err(ApiError::unsupported()
             .add_method_name("insert_by_key") // value should be `insert` as a string value
             .add_info(NAME)
@@ -112,7 +112,7 @@ impl StorageMethods<u64, Boost> for BoostedStore {
     /// * `Result<Boosted, ApiError>` - The updated boosted if successful, otherwise an error
     /// # Note
     /// Does check if a boosted with the same key already exists, if not returns an error
-    fn update(&mut self, key: u64, value: Boost) -> Result<(u64, Boost), ApiError> {
+    fn update(key: u64, value: Boost) -> Result<(u64, Boost), ApiError> {
         BOOSTED.with(|data| {
             if !data.borrow().contains_key(&key) {
                 return Err(ApiError::not_found()
@@ -131,7 +131,7 @@ impl StorageMethods<u64, Boost> for BoostedStore {
     /// * `key` - The key of the boosted to remove
     /// # Returns
     /// * `bool` - True if the boosted was removed, otherwise false
-    fn remove(&mut self, key: u64) -> bool {
+    fn remove(key: u64) -> bool {
         BOOSTED.with(|data| data.borrow_mut().remove(&key).is_some())
     }
 }
@@ -140,7 +140,7 @@ impl BoostedStore {
     /// Get all boosted by key
     /// # Returns
     /// * `Vec<Boosted>` - The boosted if found, otherwise an empty vector
-    pub fn get_all(&self) -> Vec<(u64, Boost)> {
+    pub fn get_all() -> Vec<(u64, Boost)> {
         BOOSTED.with(|data| {
             data.borrow()
                 .iter()

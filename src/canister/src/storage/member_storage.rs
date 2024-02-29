@@ -17,7 +17,7 @@ impl IdentifierRefMethods<PrincipalIdentifier> for MemberStore {
     /// get a new identifier
     /// # Returns
     /// * `PrincipalIdentifier` - The new identifier
-    fn new_identifier(&self) -> PrincipalIdentifier {
+    fn new_identifier() -> PrincipalIdentifier {
         let id = MEMBERS_IDENTIFIER_REF.with(|data| {
             data.borrow()
                 .last_key_value()
@@ -35,7 +35,7 @@ impl IdentifierRefMethods<PrincipalIdentifier> for MemberStore {
     /// * `key` - The identifier to get the key for
     /// # Returns
     /// * `Option<Principal>` - The key if found, otherwise None
-    fn get_id_by_identifier(&self, key: &PrincipalIdentifier) -> Option<Principal> {
+    fn get_id_by_identifier(key: &PrincipalIdentifier) -> Option<Principal> {
         MEMBERS_IDENTIFIER_REF.with(|data| data.borrow().get(key))
     }
 
@@ -44,7 +44,7 @@ impl IdentifierRefMethods<PrincipalIdentifier> for MemberStore {
     /// * `value` - The value to get the identifier for
     /// # Returns
     /// * `Option<PrincipalIdentifier>` - The identifier if found, otherwise None
-    fn get_identifier_by_id(&self, value: &Principal) -> Option<PrincipalIdentifier> {
+    fn get_identifier_by_id(value: &Principal) -> Option<PrincipalIdentifier> {
         MEMBERS_IDENTIFIER_REF.with(|data| {
             data.borrow()
                 .iter()
@@ -58,7 +58,7 @@ impl IdentifierRefMethods<PrincipalIdentifier> for MemberStore {
     /// * `key` - The increment value to insert
     /// # Returns
     /// * `Result<Principal, ApiError>` - The inserted principal if successful, otherwise an error
-    fn insert_identifier_ref(&mut self, key: PrincipalIdentifier) -> Result<Principal, ApiError> {
+    fn insert_identifier_ref(key: PrincipalIdentifier) -> Result<Principal, ApiError> {
         MEMBERS_IDENTIFIER_REF.with(|data| {
             if data.borrow().contains_key(&key) {
                 return Err(ApiError::duplicate()
@@ -77,7 +77,7 @@ impl IdentifierRefMethods<PrincipalIdentifier> for MemberStore {
     /// * `key` - The identifier to remove
     /// # Returns
     /// * `bool` - True if the identifier was removed, otherwise false
-    fn remove_identifier_ref(&mut self, key: &PrincipalIdentifier) -> bool {
+    fn remove_identifier_ref(key: &PrincipalIdentifier) -> bool {
         MEMBERS_IDENTIFIER_REF.with(|data| data.borrow_mut().remove(key).is_some())
     }
 }
@@ -88,7 +88,7 @@ impl StorageMethods<Principal, Member> for MemberStore {
     /// * `key` - The key of the member to get
     /// # Returns
     /// * `Result<Member, ApiError>` - The member if found, otherwise an error
-    fn get(&self, key: Principal) -> Result<(Principal, Member), ApiError> {
+    fn get(key: Principal) -> Result<(Principal, Member), ApiError> {
         MEMBERS.with(|data| {
             data.borrow()
                 .get(&key)
@@ -102,7 +102,7 @@ impl StorageMethods<Principal, Member> for MemberStore {
     /// * `ids` - The keys of the members to get
     /// # Returns
     /// * `Vec<Group>` - The groups if found, otherwise an empty vector
-    fn get_many(&self, keys: Vec<Principal>) -> Vec<(Principal, Member)> {
+    fn get_many(keys: Vec<Principal>) -> Vec<(Principal, Member)> {
         MEMBERS.with(|data| {
             let mut members = Vec::new();
             for key in keys {
@@ -119,7 +119,7 @@ impl StorageMethods<Principal, Member> for MemberStore {
     /// * `filter` - The filter to apply
     /// # Returns
     /// * `Option<(Principal, Member)>` - The member if found, otherwise None
-    fn find<F>(&self, filter: F) -> Option<(Principal, Member)>
+    fn find<F>(filter: F) -> Option<(Principal, Member)>
     where
         F: Fn(&Principal, &Member) -> bool,
     {
@@ -136,7 +136,7 @@ impl StorageMethods<Principal, Member> for MemberStore {
     /// * `filter` - The filter to apply
     /// # Returns
     /// * `Vec<(Principal, Member)>` - The members if found, otherwise an empty vector
-    fn filter<F>(&self, filter: F) -> Vec<(Principal, Member)>
+    fn filter<F>(filter: F) -> Vec<(Principal, Member)>
     where
         F: Fn(&Principal, &Member) -> bool,
     {
@@ -153,7 +153,7 @@ impl StorageMethods<Principal, Member> for MemberStore {
     /// # Note
     /// This method is not supported for this storage because the key is a `Principal`
     /// use `insert_by_key` instead
-    fn insert(&mut self, _value: Member) -> Result<(Principal, Member), ApiError> {
+    fn insert(_value: Member) -> Result<(Principal, Member), ApiError> {
         Err(ApiError::unsupported()
             .add_method_name("insert") // value should be `insert` as a string value
             .add_info(NAME)
@@ -168,11 +168,7 @@ impl StorageMethods<Principal, Member> for MemberStore {
     /// * `Result<Member, ApiError>` - The inserted member if successful, otherwise an error
     /// # Note
     /// Does check if a member with the same key already exists, if so returns an error
-    fn insert_by_key(
-        &mut self,
-        key: Principal,
-        value: Member,
-    ) -> Result<(Principal, Member), ApiError> {
+    fn insert_by_key(key: Principal, value: Member) -> Result<(Principal, Member), ApiError> {
         MEMBERS.with(|data| {
             if data.borrow().contains_key(&key) {
                 return Err(ApiError::duplicate()
@@ -194,7 +190,7 @@ impl StorageMethods<Principal, Member> for MemberStore {
     /// * `Result<Member, ApiError>` - The updated member if successful, otherwise an error
     /// # Note
     /// Does check if a member with the same key already exists, if not returns an error
-    fn update(&mut self, key: Principal, value: Member) -> Result<(Principal, Member), ApiError> {
+    fn update(key: Principal, value: Member) -> Result<(Principal, Member), ApiError> {
         MEMBERS.with(|data| {
             if !data.borrow().contains_key(&key) {
                 return Err(ApiError::not_found()
@@ -214,7 +210,7 @@ impl StorageMethods<Principal, Member> for MemberStore {
     /// # Returns
     /// * `bool` - True if the member was removed, otherwise false
     /// # Note
-    fn remove(&mut self, key: Principal) -> bool {
+    fn remove(key: Principal) -> bool {
         MEMBERS.with(|data| data.borrow_mut().remove(&key).is_some())
     }
 }

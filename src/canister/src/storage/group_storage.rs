@@ -1,4 +1,6 @@
-use super::storage_api::{IdentifierRefMethods, PrincipalIdentifier, StorageMethods, GROUPS, GROUPS_IDENTIFIER_REF};
+use super::storage_api::{
+    IdentifierRefMethods, PrincipalIdentifier, StorageMethods, GROUPS, GROUPS_IDENTIFIER_REF,
+};
 use canister_types::models::{
     api_error::ApiError,
     group::Group,
@@ -13,7 +15,7 @@ impl IdentifierRefMethods<u64> for GroupStore {
     /// get a new identifier
     /// # Returns
     /// * `PrincipalIdentifier` - The new identifier
-    fn new_identifier(&self) -> PrincipalIdentifier {
+    fn new_identifier() -> PrincipalIdentifier {
         let id = GROUPS_IDENTIFIER_REF.with(|data| {
             data.borrow()
                 .last_key_value()
@@ -31,7 +33,7 @@ impl IdentifierRefMethods<u64> for GroupStore {
     /// * `key` - The identifier to get the key for
     /// # Returns
     /// * `Option<u64>` - The key if found, otherwise None
-    fn get_id_by_identifier(&self, key: &PrincipalIdentifier) -> Option<u64> {
+    fn get_id_by_identifier(key: &PrincipalIdentifier) -> Option<u64> {
         GROUPS_IDENTIFIER_REF.with(|data| data.borrow().get(key))
     }
 
@@ -40,7 +42,7 @@ impl IdentifierRefMethods<u64> for GroupStore {
     /// * `value` - The value to get the identifier for
     /// # Returns
     /// * `Option<PrincipalIdentifier>` - The identifier if found, otherwise None
-    fn get_identifier_by_id(&self, value: &u64) -> Option<PrincipalIdentifier> {
+    fn get_identifier_by_id(value: &u64) -> Option<PrincipalIdentifier> {
         GROUPS_IDENTIFIER_REF.with(|data| {
             data.borrow()
                 .iter()
@@ -54,7 +56,7 @@ impl IdentifierRefMethods<u64> for GroupStore {
     /// * `value` - The increment value to insert
     /// # Returns
     /// * `Result<u64, ApiError>` - The inserted u64 if successful, otherwise an error
-    fn insert_identifier_ref(&mut self, value: u64) -> Result<u64, ApiError> {
+    fn insert_identifier_ref(value: u64) -> Result<u64, ApiError> {
         let identifier_principal = Identifier::generate(IdentifierKind::Group(value))
             .to_principal()
             .unwrap();
@@ -76,9 +78,8 @@ impl IdentifierRefMethods<u64> for GroupStore {
     /// * `key` - The identifier to remove
     /// # Returns
     /// * `bool` - True if the identifier was removed, otherwise false
-    fn remove_identifier_ref(&mut self, key: &PrincipalIdentifier) -> bool {
-        GROUPS_IDENTIFIER_REF
-            .with(|data| data.borrow_mut().remove(key).is_some())
+    fn remove_identifier_ref(key: &PrincipalIdentifier) -> bool {
+        GROUPS_IDENTIFIER_REF.with(|data| data.borrow_mut().remove(key).is_some())
     }
 }
 
@@ -88,7 +89,7 @@ impl StorageMethods<u64, Group> for GroupStore {
     /// * `key` - The key of the group to get
     /// # Returns
     /// * `Result<Group, ApiError>` - The group if found, otherwise an error
-    fn get(&self, key: u64) -> Result<(u64, Group), ApiError> {
+    fn get(key: u64) -> Result<(u64, Group), ApiError> {
         GROUPS.with(|data| {
             data.borrow()
                 .get(&key)
@@ -102,7 +103,7 @@ impl StorageMethods<u64, Group> for GroupStore {
     /// * `ids` - The keys of the groups to get
     /// # Returns
     /// * `Vec<Group>` - The groups if found, otherwise an empty vector
-    fn get_many(&self, keys: Vec<u64>) -> Vec<(u64, Group)> {
+    fn get_many(keys: Vec<u64>) -> Vec<(u64, Group)> {
         GROUPS.with(|data| {
             let mut groups = Vec::new();
             for key in keys {
@@ -119,12 +120,11 @@ impl StorageMethods<u64, Group> for GroupStore {
     /// * `filter` - The filter to apply
     /// # Returns
     /// * `Option<(u64, Group)>` - The group if found, otherwise None
-    fn find<F>(&self, filter: F) -> Option<(u64, Group)>
+    fn find<F>(filter: F) -> Option<(u64, Group)>
     where
         F: Fn(&u64, &Group) -> bool,
     {
-        GROUPS
-            .with(|data| data.borrow().iter().find(|(id, value)| filter(id, value)))
+        GROUPS.with(|data| data.borrow().iter().find(|(id, value)| filter(id, value)))
     }
 
     /// Find all groups by filter
@@ -132,7 +132,7 @@ impl StorageMethods<u64, Group> for GroupStore {
     /// * `filter` - The filter to apply
     /// # Returns
     /// * `Vec<(u64, Group)>` - The groups if found, otherwise an empty vector
-    fn filter<F>(&self, filter: F) -> Vec<(u64, Group)>
+    fn filter<F>(filter: F) -> Vec<(u64, Group)>
     where
         F: Fn(&u64, &Group) -> bool,
     {
@@ -151,7 +151,7 @@ impl StorageMethods<u64, Group> for GroupStore {
     /// * `Result<Group, ApiError>` - The inserted group if successful, otherwise an error
     /// # Note
     /// Does check if a group with the same key already exists, if so returns an error
-    fn insert(&mut self, value: Group) -> Result<(u64, Group), ApiError> {
+    fn insert(value: Group) -> Result<(u64, Group), ApiError> {
         GROUPS.with(|data| {
             let key = data
                 .borrow()
@@ -175,7 +175,7 @@ impl StorageMethods<u64, Group> for GroupStore {
     /// # Note
     /// This method is not supported for this storage because the key is supplied by the canister
     /// use `insert` instead
-    fn insert_by_key(&mut self, _key: u64, _value: Group) -> Result<(u64, Group), ApiError> {
+    fn insert_by_key(_key: u64, _value: Group) -> Result<(u64, Group), ApiError> {
         Err(ApiError::unsupported()
             .add_method_name("insert_by_key") // value should be `insert` as a string value
             .add_info(NAME)
@@ -190,7 +190,7 @@ impl StorageMethods<u64, Group> for GroupStore {
     /// * `Result<Group, ApiError>` - The updated group if successful, otherwise an error
     /// # Note
     /// Does check if a group with the same key already exists, if not returns an error
-    fn update(&mut self, key: u64, value: Group) -> Result<(u64, Group), ApiError> {
+    fn update(key: u64, value: Group) -> Result<(u64, Group), ApiError> {
         GROUPS.with(|data| {
             if !data.borrow().contains_key(&key) {
                 return Err(ApiError::not_found()
@@ -210,8 +210,7 @@ impl StorageMethods<u64, Group> for GroupStore {
     /// # Returns
     /// * `bool` - True if the group was removed, otherwise false
     /// # Note
-    fn remove(&mut self, key: u64) -> bool {
-        GROUPS
-            .with(|data| data.borrow_mut().remove(&key).is_some())
+    fn remove(key: u64) -> bool {
+        GROUPS.with(|data| data.borrow_mut().remove(&key).is_some())
     }
 }

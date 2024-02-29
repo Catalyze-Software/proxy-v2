@@ -17,7 +17,7 @@ impl IdentifierRefMethods<PrincipalIdentifier> for ProfileStore {
     /// get a new identifier
     /// # Returns
     /// * `PrincipalIdentifier` - The new identifier
-    fn new_identifier(&self) -> PrincipalIdentifier {
+    fn new_identifier() -> PrincipalIdentifier {
         let id = PROFILES_IDENTIFIER_REF.with(|data| {
             data.borrow()
                 .last_key_value()
@@ -35,7 +35,7 @@ impl IdentifierRefMethods<PrincipalIdentifier> for ProfileStore {
     /// * `key` - The identifier to get the key for
     /// # Returns
     /// * `Option<Principal>` - The key if found, otherwise None
-    fn get_id_by_identifier(&self, key: &PrincipalIdentifier) -> Option<Principal> {
+    fn get_id_by_identifier(key: &PrincipalIdentifier) -> Option<Principal> {
         PROFILES_IDENTIFIER_REF.with(|data| data.borrow().get(key))
     }
 
@@ -44,7 +44,7 @@ impl IdentifierRefMethods<PrincipalIdentifier> for ProfileStore {
     /// * `value` - The value to get the identifier for
     /// # Returns
     /// * `Option<PrincipalIdentifier>` - The identifier if found, otherwise None
-    fn get_identifier_by_id(&self, value: &Principal) -> Option<PrincipalIdentifier> {
+    fn get_identifier_by_id(value: &Principal) -> Option<PrincipalIdentifier> {
         PROFILES_IDENTIFIER_REF.with(|data| {
             data.borrow()
                 .iter()
@@ -58,7 +58,7 @@ impl IdentifierRefMethods<PrincipalIdentifier> for ProfileStore {
     /// * `key` - The increment value to insert
     /// # Returns
     /// * `Result<Principal, ApiError>` - The inserted principal if successful, otherwise an error
-    fn insert_identifier_ref(&mut self, key: PrincipalIdentifier) -> Result<Principal, ApiError> {
+    fn insert_identifier_ref(key: PrincipalIdentifier) -> Result<Principal, ApiError> {
         PROFILES_IDENTIFIER_REF.with(|data| {
             if data.borrow().contains_key(&key) {
                 return Err(ApiError::duplicate()
@@ -77,7 +77,7 @@ impl IdentifierRefMethods<PrincipalIdentifier> for ProfileStore {
     /// * `key` - The identifier to remove
     /// # Returns
     /// * `bool` - True if the identifier was removed, otherwise false
-    fn remove_identifier_ref(&mut self, key: &PrincipalIdentifier) -> bool {
+    fn remove_identifier_ref(key: &PrincipalIdentifier) -> bool {
         PROFILES_IDENTIFIER_REF.with(|data| data.borrow_mut().remove(key).is_some())
     }
 }
@@ -88,7 +88,7 @@ impl StorageMethods<Principal, Profile> for ProfileStore {
     /// * `key` - The key of the profile to get
     /// # Returns
     /// * `Result<Profile, ApiError>` - The profile if found, otherwise an error
-    fn get(&self, key: Principal) -> Result<(Principal, Profile), ApiError> {
+    fn get(key: Principal) -> Result<(Principal, Profile), ApiError> {
         PROFILES.with(|data| {
             data.borrow()
                 .get(&key)
@@ -102,7 +102,7 @@ impl StorageMethods<Principal, Profile> for ProfileStore {
     /// * `ids` - The keys of the profiles to get
     /// # Returns
     /// * `Vec<Profile>` - The reports if found, otherwise an empty vector
-    fn get_many(&self, keys: Vec<Principal>) -> Vec<(Principal, Profile)> {
+    fn get_many(keys: Vec<Principal>) -> Vec<(Principal, Profile)> {
         PROFILES.with(|data| {
             let mut profiles = Vec::new();
             for key in keys {
@@ -119,7 +119,7 @@ impl StorageMethods<Principal, Profile> for ProfileStore {
     /// * `filter` - The filter to apply
     /// # Returns
     /// * `Option<(Principal, Profile)>` - The profile if found, otherwise None
-    fn find<F>(&self, filter: F) -> Option<(Principal, Profile)>
+    fn find<F>(filter: F) -> Option<(Principal, Profile)>
     where
         F: Fn(&Principal, &Profile) -> bool,
     {
@@ -136,7 +136,7 @@ impl StorageMethods<Principal, Profile> for ProfileStore {
     /// * `filter` - The filter to apply
     /// # Returns
     /// * `Vec<(Principal, Profile)>` - The profiles if found, otherwise an empty vector
-    fn filter<F>(&self, filter: F) -> Vec<(Principal, Profile)>
+    fn filter<F>(filter: F) -> Vec<(Principal, Profile)>
     where
         F: Fn(&Principal, &Profile) -> bool,
     {
@@ -153,7 +153,7 @@ impl StorageMethods<Principal, Profile> for ProfileStore {
     /// # Note
     /// This method is not supported for this storage because the key is a `Principal`
     /// use `insert_by_key` instead
-    fn insert(&mut self, _value: Profile) -> Result<(Principal, Profile), ApiError> {
+    fn insert(_value: Profile) -> Result<(Principal, Profile), ApiError> {
         Err(ApiError::unsupported()
             .add_method_name("insert") // value should be `insert` as a string value
             .add_info(NAME)
@@ -168,11 +168,7 @@ impl StorageMethods<Principal, Profile> for ProfileStore {
     /// * `Result<Profile, ApiError>` - The inserted profile if successful, otherwise an error
     /// # Note
     /// Does check if a profile with the same key already exists, if so returns an error
-    fn insert_by_key(
-        &mut self,
-        key: Principal,
-        value: Profile,
-    ) -> Result<(Principal, Profile), ApiError> {
+    fn insert_by_key(key: Principal, value: Profile) -> Result<(Principal, Profile), ApiError> {
         PROFILES.with(|data| {
             if data.borrow().contains_key(&key) {
                 return Err(ApiError::duplicate()
@@ -194,7 +190,7 @@ impl StorageMethods<Principal, Profile> for ProfileStore {
     /// * `Result<Profile, ApiError>` - The updated profile if successful, otherwise an error
     /// # Note
     /// Does check if a profile with the same key already exists, if not returns an error
-    fn update(&mut self, key: Principal, value: Profile) -> Result<(Principal, Profile), ApiError> {
+    fn update(key: Principal, value: Profile) -> Result<(Principal, Profile), ApiError> {
         PROFILES.with(|data| {
             if !data.borrow().contains_key(&key) {
                 return Err(ApiError::not_found()
@@ -214,7 +210,7 @@ impl StorageMethods<Principal, Profile> for ProfileStore {
     /// # Returns
     /// * `bool` - True if the profile was removed, otherwise false
     /// # Note
-    fn remove(&mut self, key: Principal) -> bool {
+    fn remove(key: Principal) -> bool {
         PROFILES.with(|data| data.borrow_mut().remove(&key).is_some())
     }
 }
