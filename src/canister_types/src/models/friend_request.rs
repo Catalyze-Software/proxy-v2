@@ -1,12 +1,12 @@
 use candid::{CandidType, Decode, Encode, Principal};
 use ic_cdk::api::time;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use crate::impl_storable_for;
 
 impl_storable_for!(FriendRequest);
 
-#[derive(CandidType, Deserialize, Clone, Debug)]
+#[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
 pub struct FriendRequest {
     pub requested_by: Principal,
     pub message: String,
@@ -25,7 +25,7 @@ impl FriendRequest {
     }
 }
 
-#[derive(CandidType, Deserialize, Clone, Debug)]
+#[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
 pub struct FriendRequestResponse {
     pub id: u64,
     pub requested_by: Principal,
