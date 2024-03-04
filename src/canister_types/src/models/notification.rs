@@ -12,16 +12,14 @@ use super::{
 };
 
 impl_storable_for!(Notification);
-
 #[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
 pub struct Notification {
-    pub receiver: Principal,
+    pub receivers: Vec<Principal>,
     pub notification_type: NotificationType,
     // used on the frontend to determine if the notification is actionable
     // this value changes based on the action the user takes
     pub is_actionable: bool,
     pub is_accepted: Option<bool>,
-    pub is_read: bool,
     // additional data for the notification that the frontend can utilize
     pub metadata: Option<String>,
     pub created_by: Principal,
@@ -31,26 +29,20 @@ pub struct Notification {
 
 impl Notification {
     pub fn new(
-        receiver: Principal,
+        receivers: Vec<Principal>,
         notification_type: NotificationType,
         is_actionable: bool,
     ) -> Self {
         Self {
-            receiver,
+            receivers,
             notification_type,
             is_actionable,
             is_accepted: None,
-            is_read: false,
             metadata: None,
             created_by: caller(),
             created_at: time(),
             updated_at: time(),
         }
-    }
-
-    pub fn mark_as_read(&mut self) {
-        self.is_read = true;
-        self.updated_at = time();
     }
 
     pub fn mark_as_accepted(&mut self, is_accepted: bool) {

@@ -1,3 +1,5 @@
+#![allow(unused)]
+
 use crate::{ENV, SENDER};
 use candid::Principal;
 use canister_types::models::boosted::Boost;

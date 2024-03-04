@@ -87,7 +87,7 @@ impl StorageMethods<Principal, Profile> for ProfileStore {
     /// # Arguments
     /// * `key` - The key of the profile to get
     /// # Returns
-    /// * `Result<Profile, ApiError>` - The profile if found, otherwise an error
+    /// * `Result<(Principal, Profile), ApiError>` - The profile if found, otherwise an error
     fn get(key: Principal) -> Result<(Principal, Profile), ApiError> {
         PROFILES.with(|data| {
             data.borrow()
@@ -101,7 +101,7 @@ impl StorageMethods<Principal, Profile> for ProfileStore {
     /// # Arguments
     /// * `ids` - The keys of the profiles to get
     /// # Returns
-    /// * `Vec<Profile>` - The reports if found, otherwise an empty vector
+    /// * `Vec<(Principal, Profile)>` - The reports if found, otherwise an empty vector
     fn get_many(keys: Vec<Principal>) -> Vec<(Principal, Profile)> {
         PROFILES.with(|data| {
             let mut profiles = Vec::new();
@@ -165,7 +165,7 @@ impl StorageMethods<Principal, Profile> for ProfileStore {
     /// * `key` - The user principal as key of the profile to insert
     /// * `value` - The profile to insert
     /// # Returns
-    /// * `Result<Profile, ApiError>` - The inserted profile if successful, otherwise an error
+    /// * `Result<(Principal, Profile), ApiError>` - The inserted profile if successful, otherwise an error
     /// # Note
     /// Does check if a profile with the same key already exists, if so returns an error
     fn insert_by_key(key: Principal, value: Profile) -> Result<(Principal, Profile), ApiError> {
@@ -187,7 +187,7 @@ impl StorageMethods<Principal, Profile> for ProfileStore {
     /// * `key` - The user principal key of the profile to update
     /// * `value` - The profile to update
     /// # Returns
-    /// * `Result<Profile, ApiError>` - The updated profile if successful, otherwise an error
+    /// * `Result<(Principal, Profile), ApiError>` - The updated profile if successful, otherwise an error
     /// # Note
     /// Does check if a profile with the same key already exists, if not returns an error
     fn update(key: Principal, value: Profile) -> Result<(Principal, Profile), ApiError> {
