@@ -135,3 +135,18 @@ impl StorageMethods<u64, Notification> for NotificationStore {
         NOTIFICATIONS.with(|data| data.borrow_mut().remove(&key).is_some())
     }
 }
+
+impl NotificationStore {
+    /// Remove a single notification by key
+    /// # Arguments
+    /// * `key` - The key of the notification to remove
+    /// # Returns
+    /// * `bool` - True if the notification was removed, otherwise false
+    pub fn remove_many(keys: Vec<u64>) -> () {
+        NOTIFICATIONS.with(|data| {
+            for key in keys {
+                data.borrow_mut().remove(&key);
+            }
+        })
+    }
+}

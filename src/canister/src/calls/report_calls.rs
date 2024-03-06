@@ -51,9 +51,10 @@ pub fn get_report(
     identifier: Principal,
     group_identifier: Principal,
 ) -> Result<ReportResponse, ApiError> {
+    let report_id = Identifier::from(identifier).id();
     let group_id = Identifier::from(group_identifier).id();
     can_write(group_id, PermissionType::Group(None))?;
-    ReportCalls::get_report(group_id)
+    ReportCalls::get_report(report_id)
 }
 
 /// Get reports

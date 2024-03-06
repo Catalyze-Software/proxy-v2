@@ -8,7 +8,7 @@ mod notification_storage;
 mod profile_storage;
 mod report_storage;
 mod storage_api;
-mod unread_notification_storage;
+mod user_notification_storage;
 
 // Re-export stores
 pub use attendee_storage::AttendeeStore;
@@ -20,7 +20,7 @@ pub use member_storage::MemberStore;
 pub use notification_storage::NotificationStore;
 pub use profile_storage::ProfileStore;
 pub use report_storage::ReportStore;
-pub use unread_notification_storage::UnreadNotificationStore;
+pub use user_notification_storage::UsernotificationStore;
 
 pub use storage_api::IdentifierRefMethods;
 pub use storage_api::StorageMethods;

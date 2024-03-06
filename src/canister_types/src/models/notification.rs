@@ -14,7 +14,6 @@ use super::{
 impl_storable_for!(Notification);
 #[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
 pub struct Notification {
-    pub receivers: Vec<Principal>,
     pub notification_type: NotificationType,
     // used on the frontend to determine if the notification is actionable
     // this value changes based on the action the user takes
@@ -28,13 +27,8 @@ pub struct Notification {
 }
 
 impl Notification {
-    pub fn new(
-        receivers: Vec<Principal>,
-        notification_type: NotificationType,
-        is_actionable: bool,
-    ) -> Self {
+    pub fn new(notification_type: NotificationType, is_actionable: bool) -> Self {
         Self {
-            receivers,
             notification_type,
             is_actionable,
             is_accepted: None,

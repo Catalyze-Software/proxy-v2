@@ -31,5 +31,5 @@ pub mod report;
 
 pub mod neuron;
 pub mod subject;
-pub mod unread_count;
+pub mod user_notifications;
 pub mod websocket_message;

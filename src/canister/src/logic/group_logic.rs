@@ -474,7 +474,7 @@ impl GroupCalls {
             return Err(ApiError::bad_request().add_message("Member is not in the group"));
         }
 
-        let (id, group) = GroupStore::get(group_id)?;
+        let (_, group) = GroupStore::get(group_id)?;
 
         if group.owner == caller() {
             return Err(ApiError::bad_request().add_message("Owner cannot leave the group"));
@@ -544,7 +544,7 @@ impl GroupCalls {
 
         let mut result: Vec<InviteMemberResponse> = vec![];
 
-        for (member_id, member) in members {
+        for (_, member) in members {
             result.push(InviteMemberResponse::new(member, group_id));
         }
 
@@ -838,7 +838,7 @@ impl GroupValidation {
         account_identifier: &Option<String>,
     ) -> Result<Member, ApiError> {
         let (group_id, group) = GroupStore::get(group_id)?;
-        let (member_principal, mut member) = MemberStore::get(caller)?;
+        let (_, mut member) = MemberStore::get(caller)?;
 
         // Check if the member is already in the group
         if member.is_group_joined(&group_id) {

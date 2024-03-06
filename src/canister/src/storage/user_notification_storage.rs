@@ -1,19 +1,19 @@
-use super::storage_api::{StorageMethods, UNREAD_NOTIFICATIONS};
+use super::storage_api::{StorageMethods, USER_NOTIFICATIONS};
 use candid::Principal;
-use canister_types::models::{api_error::ApiError, unread_count::UnreadNotifications};
+use canister_types::models::{api_error::ApiError, user_notifications::UserNotifications};
 
-pub struct UnreadNotificationStore;
+pub struct UsernotificationStore;
 
-pub const NAME: &str = "unread_notifications";
+pub const NAME: &str = "user_notifications";
 
-impl StorageMethods<Principal, UnreadNotifications> for UnreadNotificationStore {
+impl StorageMethods<Principal, UserNotifications> for UsernotificationStore {
     /// Get a single unread_notifications by key
     /// # Arguments
     /// * `key` - The key of the unread_notifications to get
     /// # Returns
     /// * `Result<(Principal, UnreadNotifications), ApiError>` - The unread_notifications if found, otherwise an error
-    fn get(key: Principal) -> Result<(Principal, UnreadNotifications), ApiError> {
-        UNREAD_NOTIFICATIONS.with(|data| {
+    fn get(key: Principal) -> Result<(Principal, UserNotifications), ApiError> {
+        USER_NOTIFICATIONS.with(|data| {
             data.borrow()
                 .get(&key)
                 .ok_or(ApiError::not_found().add_method_name("get").add_info(NAME))
@@ -26,8 +26,8 @@ impl StorageMethods<Principal, UnreadNotifications> for UnreadNotificationStore 
     /// * `ids` - The keys of the multi_unread_notifications to get
     /// # Returns
     /// * `Vec<Group>` - The groups if found, otherwise an empty vector
-    fn get_many(keys: Vec<Principal>) -> Vec<(Principal, UnreadNotifications)> {
-        UNREAD_NOTIFICATIONS.with(|data| {
+    fn get_many(keys: Vec<Principal>) -> Vec<(Principal, UserNotifications)> {
+        USER_NOTIFICATIONS.with(|data| {
             let mut multi_unread_notifications = Vec::new();
             for key in keys {
                 if let Some(unread_notifications) = data.borrow().get(&key) {
@@ -43,11 +43,11 @@ impl StorageMethods<Principal, UnreadNotifications> for UnreadNotificationStore 
     /// * `filter` - The filter to apply
     /// # Returns
     /// * `Option<(Principal, UnreadNotifications)>` - The unread_notifications if found, otherwise None
-    fn find<F>(filter: F) -> Option<(Principal, UnreadNotifications)>
+    fn find<F>(filter: F) -> Option<(Principal, UserNotifications)>
     where
-        F: Fn(&Principal, &UnreadNotifications) -> bool,
+        F: Fn(&Principal, &UserNotifications) -> bool,
     {
-        UNREAD_NOTIFICATIONS.with(|data| {
+        USER_NOTIFICATIONS.with(|data| {
             data.borrow()
                 .iter()
                 .find(|(id, value)| filter(id, value))
@@ -60,11 +60,11 @@ impl StorageMethods<Principal, UnreadNotifications> for UnreadNotificationStore 
     /// * `filter` - The filter to apply
     /// # Returns
     /// * `Vec<(Principal, UnreadNotifications)>` - The multi_unread_notifications if found, otherwise an empty vector
-    fn filter<F>(filter: F) -> Vec<(Principal, UnreadNotifications)>
+    fn filter<F>(filter: F) -> Vec<(Principal, UserNotifications)>
     where
-        F: Fn(&Principal, &UnreadNotifications) -> bool,
+        F: Fn(&Principal, &UserNotifications) -> bool,
     {
-        UNREAD_NOTIFICATIONS.with(|data| {
+        USER_NOTIFICATIONS.with(|data| {
             data.borrow()
                 .iter()
                 .filter(|(id, value)| filter(id, value))
@@ -77,7 +77,7 @@ impl StorageMethods<Principal, UnreadNotifications> for UnreadNotificationStore 
     /// # Note
     /// This method is not supported for this storage because the key is a `Principal`
     /// use `insert_by_key` instead
-    fn insert(_value: UnreadNotifications) -> Result<(Principal, UnreadNotifications), ApiError> {
+    fn insert(_value: UserNotifications) -> Result<(Principal, UserNotifications), ApiError> {
         Err(ApiError::unsupported()
             .add_method_name("insert") // value should be `insert` as a string value
             .add_info(NAME)
@@ -94,9 +94,9 @@ impl StorageMethods<Principal, UnreadNotifications> for UnreadNotificationStore 
     /// Does check if a unread_notifications with the same key already exists, if so returns an error
     fn insert_by_key(
         key: Principal,
-        value: UnreadNotifications,
-    ) -> Result<(Principal, UnreadNotifications), ApiError> {
-        UNREAD_NOTIFICATIONS.with(|data| {
+        value: UserNotifications,
+    ) -> Result<(Principal, UserNotifications), ApiError> {
+        USER_NOTIFICATIONS.with(|data| {
             if data.borrow().contains_key(&key) {
                 return Err(ApiError::duplicate()
                     .add_method_name("insert_by_key")
@@ -119,9 +119,9 @@ impl StorageMethods<Principal, UnreadNotifications> for UnreadNotificationStore 
     /// Does check if a unread_notifications with the same key already exists, if not returns an error
     fn update(
         key: Principal,
-        value: UnreadNotifications,
-    ) -> Result<(Principal, UnreadNotifications), ApiError> {
-        UNREAD_NOTIFICATIONS.with(|data| {
+        value: UserNotifications,
+    ) -> Result<(Principal, UserNotifications), ApiError> {
+        USER_NOTIFICATIONS.with(|data| {
             if !data.borrow().contains_key(&key) {
                 return Err(ApiError::not_found()
                     .add_method_name("update")
@@ -141,6 +141,6 @@ impl StorageMethods<Principal, UnreadNotifications> for UnreadNotificationStore 
     /// * `bool` - True if the unread_notifications was removed, otherwise false
     /// # Note
     fn remove(key: Principal) -> bool {
-        UNREAD_NOTIFICATIONS.with(|data| data.borrow_mut().remove(&key).is_some())
+        USER_NOTIFICATIONS.with(|data| data.borrow_mut().remove(&key).is_some())
     }
 }

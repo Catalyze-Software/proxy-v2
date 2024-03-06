@@ -1,6 +1,5 @@
 // should all be removed after implementation
 #![allow(deprecated)]
-#![allow(unused_variables)]
 
 use candid::Principal;
 use ic_cdk::query;
@@ -33,8 +32,7 @@ pub fn __export_did_tmp_() -> String {
     use canister_types::models::report::*;
     use canister_types::models::role::*;
     use canister_types::models::wallet::*;
-    use canister_types::models::websocket_message::*;
-    use ic_websocket_cdk::*;
+    use ic_websocket_cdk::types::*;
     export_service!();
     __export_service()
 }

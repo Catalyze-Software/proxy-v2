@@ -1,16 +1,14 @@
 use std::{cell::RefCell, collections::HashMap};
 
 use candid::Principal;
-use canister_types::models::{
-    unread_count::UnreadNotifications, websocket_message::WebsocketMessage,
-};
+use canister_types::models::{user_notifications::UserNotifications, websocket_message::WSMessage};
 use ic_cdk::api::time;
 use ic_websocket_cdk::{
     ws_send, OnCloseCallbackArgs, OnMessageCallbackArgs, OnOpenCallbackArgs, WsHandlers,
     WsInitParams,
 };
 
-use crate::storage::{StorageMethods, UnreadNotificationStore};
+use crate::storage::{StorageMethods, UsernotificationStore};
 
 // type TimeInNanos = u64;
 
@@ -36,12 +34,12 @@ impl Websocket {
     pub fn on_open(args: OnOpenCallbackArgs) {
         Self::add_connected_to_clients(args.client_principal);
 
-        let (_, notification_ids) = UnreadNotificationStore::get(args.client_principal)
-            .unwrap_or((args.client_principal, UnreadNotifications::new()));
+        let (_, notification_ids) = UsernotificationStore::get(args.client_principal)
+            .unwrap_or((args.client_principal, UserNotifications::new()));
         // ::get_unread_notifications(&args.client_principal).len() as u64;
-        Self::send_app_message(
+        Self::send_message(
             args.client_principal,
-            WebsocketMessage::UnreadCount(notification_ids.len() as u64),
+            WSMessage::UnreadCount(notification_ids.len() as u64),
         );
     }
 
@@ -50,22 +48,22 @@ impl Websocket {
     }
 
     pub fn on_message(args: OnMessageCallbackArgs) {
-        match WebsocketMessage::deserialize(&args.message) {
-            WebsocketMessage::Notification(value) => {
-                for receiver in value.receivers.clone() {
-                    if Self::is_connected(&receiver) {
-                        Self::send_app_message(
-                            receiver,
-                            WebsocketMessage::Notification(value.clone()),
-                        );
-                    }
+        match WSMessage::deserialize(&args.message) {
+            WSMessage::SendNotification((receiver, value)) => {
+                if Self::is_connected(&receiver) {
+                    Self::send_message(receiver, WSMessage::Notification(value.clone()));
+                }
+            }
+            WSMessage::SendSilentNotification((receiver, value)) => {
+                if Self::is_connected(&receiver) {
+                    Self::send_message(receiver, WSMessage::SilentNotification(value.clone()));
                 }
             }
             _ => Self::log_error("Unknown message type".to_string()),
         };
     }
 
-    pub fn send_app_message(principal: Principal, msg: WebsocketMessage) {
+    pub fn send_message(principal: Principal, msg: WSMessage) {
         match ws_send(principal, msg.serialize()) {
             Ok(_) => {}
             Err(e) => {

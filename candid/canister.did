@@ -278,7 +278,6 @@ type Notification = record {
   created_at : nat64;
   created_by : principal;
   notification_type : NotificationType;
-  receivers : vec principal;
 };
 type NotificationType = variant {
   Event : EventNotificationType;
@@ -444,7 +443,7 @@ type Result_22 = variant {
   Err : ApiError;
 };
 type Result_23 = variant { Ok : InviteAttendeeResponse; Err : ApiError };
-type Result_24 = variant { Ok : vec nat64; Err : ApiError };
+type Result_24 = variant { Ok : vec record { nat64; bool }; Err : ApiError };
 type Result_25 = variant { Ok; Err : text };
 type Result_26 = variant { Ok : CanisterOutputCertifiedMessages; Err : text };
 type Result_3 = variant { Ok : JoinedAttendeeResponse; Err : ApiError };
@@ -542,7 +541,9 @@ type WebsocketMessage = record {
 type WebsocketMessage_1 = variant {
   Error : ApiError;
   Notification : Notification;
+  SendNotification : record { vec principal; Notification };
   UnreadCount : nat64;
+  SendSilentNotification : record { vec principal; Notification };
   SilentNotification : Notification;
 };
 service : () -> {
@@ -623,7 +624,7 @@ service : () -> {
   join_group : (principal, opt text) -> (Result_16);
   leave_event : (principal) -> (Result_11);
   leave_group : (principal) -> (Result_11);
-  read_notifications : (vec nat64) -> (Result_24);
+  mark_notifications_as_read : (vec nat64, bool) -> (Result_24);
   remove_attendee_from_event : (principal, principal, principal) -> (Result_11);
   remove_attendee_invite_from_event : (principal, principal, principal) -> (
       Result_11,
@@ -636,6 +637,7 @@ service : () -> {
   remove_member_from_group : (principal, principal) -> (Result_11);
   remove_member_invite_from_group : (principal, principal) -> (Result_11);
   remove_member_role : (text, principal, principal) -> (Result_2);
+  remove_notifications : (vec nat64) -> (vec record { nat64; bool });
   remove_starred : (principal) -> (Result_7);
   remove_wallet_from_group : (principal, principal) -> (Result_6);
   remove_wallet_from_profile : (principal) -> (Result_7);
