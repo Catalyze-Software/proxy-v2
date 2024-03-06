@@ -13,7 +13,7 @@ use canister_types::models::{
     },
     filter_type::FilterType,
     identifier::{Identifier, IdentifierKind},
-    invite::InviteType,
+    invite_type::InviteType,
     paged_response::PagedResponse,
     privacy::Privacy,
     subject::Subject,

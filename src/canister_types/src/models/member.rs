@@ -6,7 +6,7 @@ use serde::Serialize;
 
 use crate::impl_storable_for;
 
-use super::invite::InviteType;
+use super::invite_type::InviteType;
 
 pub type GroupIdentifier = Principal;
 
@@ -17,7 +17,7 @@ pub struct Member {
     principal: Principal,
     profile_identifier: Principal,
     joined: HashMap<u64, Join>,
-    invites: HashMap<u64, Invite>,
+    invites: HashMap<u64, MemberInvite>,
 }
 
 impl Member {
@@ -77,7 +77,7 @@ impl Member {
     pub fn add_invite(&mut self, group_id: u64, invite_type: InviteType) {
         self.invites.insert(
             group_id,
-            Invite {
+            MemberInvite {
                 invite_type,
                 updated_at: time(),
                 created_at: time(),
@@ -85,7 +85,7 @@ impl Member {
         );
     }
 
-    pub fn get_invite(&self, group_id: &u64) -> Option<Invite> {
+    pub fn get_invite(&self, group_id: &u64) -> Option<MemberInvite> {
         self.invites.get(group_id).cloned()
     }
 
@@ -161,7 +161,7 @@ pub struct Join {
 }
 
 #[derive(Clone, Debug, CandidType, Deserialize, Serialize)]
-pub struct Invite {
+pub struct MemberInvite {
     pub invite_type: InviteType,
     pub updated_at: u64,
     pub created_at: u64,
@@ -188,7 +188,7 @@ impl JoinedMemberResponse {
 pub struct InviteMemberResponse {
     pub group_id: u64,
     pub principal: Principal,
-    pub invite: Option<Invite>,
+    pub invite: Option<MemberInvite>,
 }
 
 impl InviteMemberResponse {

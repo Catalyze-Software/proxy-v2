@@ -20,7 +20,7 @@ use canister_types::{
             Group, GroupCallerData, GroupFilter, GroupResponse, GroupSort, PostGroup, UpdateGroup,
         },
         identifier::{Identifier, IdentifierKind},
-        invite::InviteType,
+        invite_type::InviteType,
         member::{InviteMemberResponse, JoinedMemberResponse, Member},
         neuron::{DissolveState, ListNeurons, ListNeuronsResponse},
         paged_response::PagedResponse,

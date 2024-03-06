@@ -45,18 +45,42 @@ impl NotificationCalls {
         Ok((new_notification_id, new_notification))
     }
 
-    pub fn get_unread_notifications(
+    pub fn get_user_unread_notifications(
         principal: Principal,
     ) -> Result<Vec<(u64, Notification)>, ApiError> {
         let (_, unread_notification_ids) = UsernotificationStore::get(principal)?;
         Ok(NotificationStore::get_many(unread_notification_ids.ids()))
     }
 
-    pub fn get_all_notifications(principal: Principal) -> Vec<(u64, Notification)> {
+    pub fn get_user_notifaction_ids(principal: Principal) -> Vec<u64> {
         let (_, notification_ids) =
             UsernotificationStore::get(principal).unwrap_or((principal, UserNotifications::new()));
+        notification_ids.ids()
+    }
 
-        NotificationStore::get_many(notification_ids.ids())
+    pub fn get_user_notifications(principal: Principal) -> Vec<(u64, Notification)> {
+        NotificationStore::get_many(Self::get_user_notifaction_ids(principal))
+    }
+
+    pub fn set_notification_as_accepted(
+        principal: Principal,
+        notification_id: u64,
+        is_accepted: bool,
+    ) -> Result<Notification, ApiError> {
+        if let Some((_, mut notification)) = Self::get_user_notifications(principal)
+            .into_iter()
+            .find(|(id, _)| id == &notification_id)
+        {
+            if !notification.is_actionable {
+                return Err(ApiError::bad_request().add_message("Notification is not actionable"));
+            }
+
+            notification.mark_as_accepted(is_accepted);
+            let _ = NotificationStore::update(notification_id, notification.clone());
+            Ok(notification)
+        } else {
+            Err(ApiError::not_found())
+        }
     }
 
     pub fn mark_notifications_as_read(
