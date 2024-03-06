@@ -13,6 +13,7 @@ type ApiError = record {
   info : opt vec text;
   method_name : opt text;
   message : opt text;
+  timestamp : nat64;
   error_type : ApiErrorType;
 };
 type ApiErrorType = variant {
@@ -41,8 +42,19 @@ type ApplicationRole = variant {
 type Asset = variant { Url : text; None; CanisterStorage : CanisterStorage };
 type Attendee = record {
   "principal" : principal;
-  invites : vec record { nat64; Invite };
-  joined : vec record { nat64; Join };
+  invites : vec record { nat64; AttendeeInvite };
+  joined : vec record { nat64; AttendeeJoin };
+};
+type AttendeeInvite = record {
+  updated_at : nat64;
+  invite_type : InviteType;
+  created_at : nat64;
+  group_id : nat64;
+};
+type AttendeeJoin = record {
+  updated_at : nat64;
+  created_at : nat64;
+  group_id : nat64;
 };
 type Boost = record {
   updated_at : nat64;
@@ -52,12 +64,31 @@ type Boost = record {
   created_at : nat64;
   blockheight : nat64;
 };
+type CanisterOutputCertifiedMessages = record {
+  messages : vec CanisterOutputMessage;
+  cert : vec nat8;
+  tree : vec nat8;
+  is_end_of_queue : bool;
+};
+type CanisterOutputMessage = record {
+  key : text;
+  content : vec nat8;
+  client_key : ClientKey;
+};
 type CanisterStorage = variant { None; Manifest : Manifest; Chunk : ChunkData };
+type CanisterWsCloseArguments = record { client_key : ClientKey };
+type CanisterWsGetMessagesArguments = record { nonce : nat64 };
+type CanisterWsMessageArguments = record { msg : WebsocketMessage };
+type CanisterWsOpenArguments = record {
+  gateway_principal : principal;
+  client_nonce : nat64;
+};
 type ChunkData = record {
   chunk_id : nat64;
   canister : principal;
   index : nat64;
 };
+type ClientKey = record { client_principal : principal; client_nonce : nat64 };
 type DateRange = record { end_date : nat64; start_date : nat64 };
 type DocumentDetails = record {
   approved_date : nat64;
@@ -80,6 +111,15 @@ type EventFilter = variant {
   Owner : principal;
   CreatedOn : DateRange;
   EndDate : DateRange;
+};
+type EventNotificationType = variant {
+  JoinEventOwnerRequestDecline : nat64;
+  JoinEventUserRequestAccept : nat64;
+  JoinEventOwnerRequestAccept : nat64;
+  JoinEventOwnerRequest : InviteAttendeeResponse;
+  JoinEventUserRequest : InviteAttendeeResponse;
+  JoinEventUserRequestDecline : nat64;
+  UserLeaveEvent : principal;
 };
 type EventResponse = record {
   updated_on : nat64;
@@ -137,6 +177,15 @@ type GroupFilter = variant {
   Owner : principal;
   CreatedOn : DateRange;
 };
+type GroupNotificationType = variant {
+  UserLeaveGroup : principal;
+  JoinGroupUserRequest : InviteMemberResponse;
+  JoinGroupUserRequestDecline : nat64;
+  JoinGroupOwnerRequest : InviteMemberResponse;
+  JoinGroupOwnerRequestDecline : nat64;
+  JoinGroupUserRequestAccept : nat64;
+  JoinGroupOwnerRequestAccept : nat64;
+};
 type GroupResponse = record {
   updated_on : nat64;
   banner_image : Asset;
@@ -166,12 +215,6 @@ type GroupSort = variant {
   Name : SortDirection;
   CreatedOn : SortDirection;
 };
-type Invite = record {
-  updated_at : nat64;
-  invite_type : InviteType;
-  created_at : nat64;
-  group_id : nat64;
-};
 type InviteAttendeeResponse = record {
   "principal" : principal;
   invite_type : InviteType;
@@ -181,20 +224,10 @@ type InviteAttendeeResponse = record {
 type InviteMemberResponse = record {
   "principal" : principal;
   group_id : nat64;
-  invite : opt Invite_1;
+  invite : opt MemberInvite;
 };
 type InviteType = variant { OwnerRequest; UserRequest };
-type Invite_1 = record {
-  updated_at : nat64;
-  invite_type : InviteType;
-  created_at : nat64;
-};
-type Join = record { updated_at : nat64; created_at : nat64; group_id : nat64 };
-type Join_1 = record {
-  updated_at : nat64;
-  created_at : nat64;
-  roles : vec text;
-};
+type Join = record { updated_at : nat64; created_at : nat64; roles : vec text };
 type JoinedAttendeeResponse = record {
   "principal" : principal;
   group_id : nat64;
@@ -214,9 +247,14 @@ type Location = variant {
 type Manifest = record { entries : vec ChunkData };
 type Member = record {
   "principal" : principal;
-  invites : vec record { nat64; Invite_1 };
-  joined : vec record { nat64; Join_1 };
+  invites : vec record { nat64; MemberInvite };
+  joined : vec record { nat64; Join };
   profile_identifier : principal;
+};
+type MemberInvite = record {
+  updated_at : nat64;
+  invite_type : InviteType;
+  created_at : nat64;
 };
 type MultiLocation = record { physical : PhysicalLocation; digital : text };
 type NeuronGated = record {
@@ -231,6 +269,21 @@ type NeuronGatedRules = variant {
   MinStake : nat64;
   MinAge : nat64;
   MinDissolveDelay : nat64;
+};
+type Notification = record {
+  updated_at : nat64;
+  metadata : opt text;
+  is_accepted : opt bool;
+  is_actionable : bool;
+  created_at : nat64;
+  created_by : principal;
+  notification_type : NotificationType;
+};
+type NotificationType = variant {
+  Event : EventNotificationType;
+  Relation : RelationNotificationType;
+  Group : GroupNotificationType;
+  Transaction : TransactionNotificationType;
 };
 type PagedResponse = record {
   total : nat64;
@@ -341,6 +394,13 @@ type ProfileResponse = record {
   skills : vec nat32;
   application_role : ApplicationRole;
 };
+type RelationNotificationType = variant {
+  FriendRequest : FriendRequestResponse;
+  FriendRequestDecline : nat64;
+  FriendRemove : principal;
+  BlockUser : principal;
+  FriendRequestAccept : nat64;
+};
 type RelationType = variant { Blocked; Friend };
 type ReportFilter = variant {
   SubjectType : SubjectType;
@@ -378,7 +438,14 @@ type Result_19 = variant { Ok : PagedResponse_1; Err : ApiError };
 type Result_2 = variant { Ok : Member; Err : ApiError };
 type Result_20 = variant { Ok : vec text; Err : ApiError };
 type Result_21 = variant { Ok : PagedResponse_2; Err : ApiError };
-type Result_22 = variant { Ok : InviteAttendeeResponse; Err : ApiError };
+type Result_22 = variant {
+  Ok : vec record { nat64; Notification };
+  Err : ApiError;
+};
+type Result_23 = variant { Ok : InviteAttendeeResponse; Err : ApiError };
+type Result_24 = variant { Ok : vec record { nat64; bool }; Err : ApiError };
+type Result_25 = variant { Ok; Err : text };
+type Result_26 = variant { Ok : CanisterOutputCertifiedMessages; Err : text };
 type Result_3 = variant { Ok : JoinedAttendeeResponse; Err : ApiError };
 type Result_4 = variant { Ok : EventResponse; Err : ApiError };
 type Result_5 = variant { Ok : FriendRequestResponse; Err : ApiError };
@@ -409,6 +476,11 @@ type TokenGated = record {
   description : text;
   amount : nat64;
   standard : text;
+};
+type TransactionNotificationType = variant {
+  SingleTransaction : nat64;
+  MultipleTransaction : vec nat64;
+  Airdrop : record {};
 };
 type UpdateEvent = record {
   banner_image : Asset;
@@ -459,7 +531,14 @@ type WalletResponse = record {
   provider : text;
   is_primary : bool;
 };
-service : {
+type WebsocketMessage = record {
+  sequence_num : nat64;
+  content : vec nat8;
+  client_key : ClientKey;
+  timestamp : nat64;
+  is_service_message : bool;
+};
+service : () -> {
   __get_candid_interface_tmp_hack : () -> (text) query;
   accept_friend_request : (nat64) -> (Result);
   accept_owner_request_event_invite : (principal) -> (Result_1);
@@ -510,6 +589,7 @@ service : {
   get_groups_for_members : (vec principal) -> (vec JoinedMemberResponse) query;
   get_incoming_friend_requests : () -> (vec FriendRequestResponse) query;
   get_member_roles : (principal, principal) -> (Result_20) query;
+  get_notifications : () -> (vec record { nat64; Notification }) query;
   get_outgoing_friend_requests : () -> (vec FriendRequestResponse) query;
   get_profile_by_identifier : (principal) -> (Result_7) query;
   get_profile_by_user_principal : (principal) -> (Result_7) query;
@@ -518,7 +598,7 @@ service : {
       vec ProfileResponse,
     ) query;
   get_relations : (RelationType) -> (vec principal) query;
-  get_relations_count : (principal, RelationType) -> (nat64) query;
+  get_relations_count : (RelationType) -> (nat64) query;
   get_remaining_boost_time_in_seconds : (principal) -> (Result_10) query;
   get_report : (principal, principal) -> (Result_8) query;
   get_reports : (nat64, nat64, ReportSort, vec FilterType_2, principal) -> (
@@ -529,12 +609,14 @@ service : {
   get_starred_events : () -> (vec principal) query;
   get_starred_groups : () -> (vec principal) query;
   get_starred_tasks : () -> (vec principal) query;
-  invite_to_event : (principal, principal, principal) -> (Result_22);
+  get_unread_notifications : () -> (Result_22) query;
+  invite_to_event : (principal, principal, principal) -> (Result_23);
   invite_to_group : (principal, principal) -> (Result_2);
   join_event : (principal, principal) -> (Result_3);
   join_group : (principal, opt text) -> (Result_16);
   leave_event : (principal) -> (Result_11);
   leave_group : (principal) -> (Result_11);
+  mark_notifications_as_read : (vec nat64, bool) -> (Result_24);
   remove_attendee_from_event : (principal, principal, principal) -> (Result_11);
   remove_attendee_invite_from_event : (principal, principal, principal) -> (
       Result_11,
@@ -547,9 +629,16 @@ service : {
   remove_member_from_group : (principal, principal) -> (Result_11);
   remove_member_invite_from_group : (principal, principal) -> (Result_11);
   remove_member_role : (text, principal, principal) -> (Result_2);
+  remove_notifications : (vec nat64) -> (vec record { nat64; bool });
   remove_starred : (principal) -> (Result_7);
   remove_wallet_from_group : (principal, principal) -> (Result_6);
   remove_wallet_from_profile : (principal) -> (Result_7);
   set_wallet_as_primary : (principal) -> (Result_7);
   unblock_user : (principal) -> (Result_7);
+  ws_close : (CanisterWsCloseArguments) -> (Result_25);
+  ws_get_messages : (CanisterWsGetMessagesArguments) -> (Result_26) query;
+  ws_message : (CanisterWsMessageArguments, opt WebsocketMessage) -> (
+      Result_25,
+    );
+  ws_open : (CanisterWsOpenArguments) -> (Result_25);
 }

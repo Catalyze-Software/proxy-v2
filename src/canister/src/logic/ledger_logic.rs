@@ -51,7 +51,7 @@ impl Ledger {
                 }
             }
             // No block
-            Err(err) => return Err(ApiError::bad_request().add_message("No block found")),
+            Err(_) => return Err(ApiError::bad_request().add_message("No block found")),
         }
     }
 

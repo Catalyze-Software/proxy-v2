@@ -87,7 +87,7 @@ impl StorageMethods<Principal, Member> for MemberStore {
     /// # Arguments
     /// * `key` - The key of the member to get
     /// # Returns
-    /// * `Result<Member, ApiError>` - The member if found, otherwise an error
+    /// * `Result<(Principal, Member), ApiError>` - The member if found, otherwise an error
     fn get(key: Principal) -> Result<(Principal, Member), ApiError> {
         MEMBERS.with(|data| {
             data.borrow()
@@ -165,7 +165,7 @@ impl StorageMethods<Principal, Member> for MemberStore {
     /// * `key` - The user principal as key of the member to insert
     /// * `value` - The member to insert
     /// # Returns
-    /// * `Result<Member, ApiError>` - The inserted member if successful, otherwise an error
+    /// * `Result<(Principal, Member), ApiError>` - The inserted member if successful, otherwise an error
     /// # Note
     /// Does check if a member with the same key already exists, if so returns an error
     fn insert_by_key(key: Principal, value: Member) -> Result<(Principal, Member), ApiError> {
@@ -187,7 +187,7 @@ impl StorageMethods<Principal, Member> for MemberStore {
     /// * `key` - The user principal key of the member to update
     /// * `value` - The member to update
     /// # Returns
-    /// * `Result<Member, ApiError>` - The updated member if successful, otherwise an error
+    /// * `Result<(Principal, Member), ApiError>` - The updated member if successful, otherwise an error
     /// # Note
     /// Does check if a member with the same key already exists, if not returns an error
     fn update(key: Principal, value: Member) -> Result<(Principal, Member), ApiError> {

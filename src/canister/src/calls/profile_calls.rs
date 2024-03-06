@@ -369,7 +369,7 @@ pub fn get_relations(relation_type: RelationType) -> Vec<Principal> {
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 #[query(guard = "has_access")]
-pub fn get_relations_count(principal: Principal, relation_type: RelationType) -> u64 {
+pub fn get_relations_count(relation_type: RelationType) -> u64 {
     ProfileCalls::get_relations(relation_type).len() as u64
 }
 
