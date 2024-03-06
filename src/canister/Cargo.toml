@@ -21,4 +21,6 @@ ic-ledger-types = "0.9.0"
 
 email_address = "0.2.4"
 
-canister_types = {path = "../canister_types"}
+canister_types = { path = "../canister_types" }
+# ic_scalable_misc = "1.0.2"
+# ic_scalable_canister = "0.3.1"

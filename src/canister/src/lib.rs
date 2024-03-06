@@ -11,6 +11,7 @@ pub static E8S_PER_DAY_BOOST_COST: u64 = 3500000;
 pub mod calls;
 pub mod helpers;
 pub mod logic;
+mod migration;
 pub mod storage;
 
 // Hacky way to expose the candid interface to the outside world
