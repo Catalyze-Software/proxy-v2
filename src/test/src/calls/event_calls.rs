@@ -1,3 +1,4 @@
+#![allow(unused)]
 use crate::{ENV, SENDER};
 use candid::Principal;
 use canister_types::models::{
@@ -266,9 +267,7 @@ pub fn accept_owner_request_event_invite(event_identifier: Principal) -> (Princi
 // deprecated
 // pub fn get_event_invites_count(event_identifiers: Vec<Principal>) -> Vec<(Principal, usize)>
 
-pub fn get_event_attendees(
-    event_identifier: Principal,
-) -> Vec<JoinedAttendeeResponse> {
+pub fn get_event_attendees(event_identifier: Principal) -> Vec<JoinedAttendeeResponse> {
     query_candid_as::<(Principal,), (Result<Vec<JoinedAttendeeResponse>, ApiError>,)>(
         &ENV.pic,
         ENV.canister_id,
@@ -294,9 +293,7 @@ pub fn get_self_events() -> (Principal, Attendee) {
     .expect("Failed to call get_self_events")
 }
 
-pub fn get_attending_from_principal(
-    principal: Principal,
-) -> Vec<JoinedAttendeeResponse> {
+pub fn get_attending_from_principal(principal: Principal) -> Vec<JoinedAttendeeResponse> {
     query_candid_as::<(Principal,), (Result<Vec<JoinedAttendeeResponse>, ApiError>,)>(
         &ENV.pic,
         ENV.canister_id,
@@ -341,15 +338,17 @@ pub fn remove_attendee_from_event(
     group_identifier: Principal,
     member_identifier: Principal,
 ) -> () {
-    update_candid_as::<
-        (Principal, Principal, Principal, Principal),
-        (Result<(), ApiError>,),
-    >(
+    update_candid_as::<(Principal, Principal, Principal, Principal), (Result<(), ApiError>,)>(
         &ENV.pic,
         ENV.canister_id,
         SENDER.with(|s| s.borrow().unwrap()),
         "remove_attendee_from_event",
-        (attendee_principal, event_identifier, group_identifier, member_identifier),
+        (
+            attendee_principal,
+            event_identifier,
+            group_identifier,
+            member_identifier,
+        ),
     )
     .expect("Failed to call remove_attendee_from_event from pocket ic")
     .0
@@ -362,15 +361,17 @@ pub fn remove_attendee_invite_from_event(
     group_identifier: Principal,
     member_identifier: Principal,
 ) -> () {
-    update_candid_as::<
-        (Principal, Principal, Principal, Principal),
-        (Result<(), ApiError>,),
-    >(
+    update_candid_as::<(Principal, Principal, Principal, Principal), (Result<(), ApiError>,)>(
         &ENV.pic,
         ENV.canister_id,
         SENDER.with(|s| s.borrow().unwrap()),
         "remove_attendee_invite_from_event",
-        (attendee_principal, event_identifier, group_identifier, member_identifier),
+        (
+            attendee_principal,
+            event_identifier,
+            group_identifier,
+            member_identifier,
+        ),
     )
     .expect("Failed to call remove_attendee_invite_from_event from pocket ic")
     .0

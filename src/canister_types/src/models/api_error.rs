@@ -1,6 +1,7 @@
 use std::fmt;
 
 use candid::CandidType;
+use ic_cdk::api::time;
 use serde::{Deserialize, Serialize};
 
 use super::validation::ValidationResponse;
@@ -12,6 +13,7 @@ pub struct ApiError {
     method_name: Option<String>,
     error_type: ApiErrorType,
     info: Option<Vec<String>>,
+    timestamp: u64,
 }
 
 impl ApiError {
@@ -22,6 +24,7 @@ impl ApiError {
             method_name: None,
             error_type,
             info: None,
+            timestamp: time(),
         }
     }
 

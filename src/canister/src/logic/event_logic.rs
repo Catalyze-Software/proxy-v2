@@ -13,7 +13,7 @@ use canister_types::models::{
     },
     filter_type::FilterType,
     identifier::{Identifier, IdentifierKind},
-    invite::InviteType,
+    invite_type::InviteType,
     paged_response::PagedResponse,
     privacy::Privacy,
     subject::Subject,
@@ -56,7 +56,7 @@ impl EventCalls {
     }
 
     pub fn get_events_count(group_ids: Vec<u64>) -> Vec<(Principal, u64)> {
-        let events = EventStore::filter(|event_id, event| group_ids.contains(&event.group_id));
+        let events = EventStore::filter(|_, event| group_ids.contains(&event.group_id));
         let mut event_count: HashMap<Principal, u64> = HashMap::new();
         for (_, event) in events {
             let count = event_count
@@ -207,7 +207,6 @@ impl EventCalls {
         attendee_principal: Principal,
         group_id: u64,
     ) -> Result<InviteAttendeeResponse, ApiError> {
-        let (caller_principal, _) = AttendeeStore::get(caller())?;
         let (_, event) = EventStore::get(event_id)?;
 
         if !event.is_from_group(group_id) {
@@ -255,7 +254,6 @@ impl EventCalls {
 
     pub fn accept_owner_request_event_invite(event_id: u64) -> Result<Attendee, ApiError> {
         let (_, mut attendee) = AttendeeStore::get(caller())?;
-        let (_, event) = EventStore::get(event_id)?;
 
         if !attendee.has_pending_invite(event_id) {
             return Err(ApiError::not_found());
@@ -267,8 +265,7 @@ impl EventCalls {
     }
 
     pub fn get_event_attendees(event_id: u64) -> Result<Vec<JoinedAttendeeResponse>, ApiError> {
-        let attendees =
-            AttendeeStore::filter(|principal, attendee| attendee.is_event_joined(&event_id));
+        let attendees = AttendeeStore::filter(|_, attendee| attendee.is_event_joined(&event_id));
 
         let response = attendees
             .into_iter()
@@ -345,7 +342,6 @@ impl EventCalls {
     pub fn remove_attendee_invite_from_event(
         attendee_principal: Principal,
         event_id: u64,
-        group_id: u64,
     ) -> Result<(), ApiError> {
         let (_, mut attendee) = AttendeeStore::get(attendee_principal)?;
         if !attendee.has_pending_invite(event_id) || !attendee.has_pending_join_request(event_id) {
@@ -361,7 +357,7 @@ impl EventCalls {
         event_id: u64,
         group_id: u64,
     ) -> Result<Vec<InviteAttendeeResponse>, ApiError> {
-        let invites = AttendeeStore::filter(|principal, attendee| {
+        let invites = AttendeeStore::filter(|_, attendee| {
             attendee.is_event_invited(&event_id)
                 && attendee.invites.get(&event_id).unwrap().group_id == group_id
         });

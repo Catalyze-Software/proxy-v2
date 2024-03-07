@@ -371,7 +371,7 @@ pub fn remove_attendee_invite_from_event(
     let event_id = Identifier::from(event_identifier).id();
     let group_id = Identifier::from(group_identifier).id();
     can_edit(group_id, PermissionType::Event(None))?;
-    EventCalls::remove_attendee_invite_from_event(attendee_principal, event_id, group_id)
+    EventCalls::remove_attendee_invite_from_event(attendee_principal, event_id)
 }
 
 /// Get the invites for an event - [`[query]`](query)

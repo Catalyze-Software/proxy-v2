@@ -6,15 +6,15 @@ use serde::Serialize;
 
 use crate::impl_storable_for;
 
-use super::invite::InviteType;
+use super::invite_type::InviteType;
 
 impl_storable_for!(Attendee);
 
 #[derive(Clone, Debug, CandidType, Deserialize, Serialize)]
 pub struct Attendee {
     pub principal: Principal,
-    pub joined: HashMap<u64, Join>,
-    pub invites: HashMap<u64, Invite>,
+    pub joined: HashMap<u64, AttendeeJoin>,
+    pub invites: HashMap<u64, AttendeeInvite>,
 }
 
 impl Attendee {
@@ -37,7 +37,7 @@ impl Attendee {
     pub fn add_joined(&mut self, event_id: u64, group_id: u64) {
         self.joined.insert(
             event_id,
-            Join {
+            AttendeeJoin {
                 group_id,
                 updated_at: time(),
                 created_at: time(),
@@ -45,7 +45,7 @@ impl Attendee {
         );
     }
 
-    pub fn get_joined(&self) -> Vec<(u64, Join)> {
+    pub fn get_joined(&self) -> Vec<(u64, AttendeeJoin)> {
         self.joined.iter().map(|(k, v)| (*k, v.clone())).collect()
     }
 
@@ -56,7 +56,7 @@ impl Attendee {
     pub fn add_invite(&mut self, event_id: u64, group_id: u64, invite_type: InviteType) {
         self.invites.insert(
             event_id,
-            Invite {
+            AttendeeInvite {
                 group_id,
                 invite_type,
                 updated_at: time(),
@@ -65,7 +65,7 @@ impl Attendee {
         );
     }
 
-    pub fn get_invite(&self, event_id: u64) -> Option<Invite> {
+    pub fn get_invite(&self, event_id: u64) -> Option<AttendeeInvite> {
         self.invites.get(&event_id).cloned()
     }
 
@@ -97,14 +97,14 @@ impl Attendee {
 }
 
 #[derive(Clone, Debug, CandidType, Deserialize, Serialize)]
-pub struct Join {
+pub struct AttendeeJoin {
     pub group_id: u64,
     pub updated_at: u64,
     pub created_at: u64,
 }
 
 #[derive(Clone, Debug, CandidType, Deserialize, Serialize)]
-pub struct Invite {
+pub struct AttendeeInvite {
     pub group_id: u64,
     pub invite_type: InviteType,
     pub updated_at: u64,

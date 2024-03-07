@@ -228,7 +228,7 @@ impl ProfileCalls {
 
         friend_profile.relations.remove(&caller());
 
-        let updated_friend_profile = ProfileStore::update(principal, friend_profile);
+        let _ = ProfileStore::update(principal, friend_profile);
 
         ProfileResponse::from_result(updated_caller_profile)
     }

@@ -55,7 +55,7 @@ impl BoostCalls {
     ) -> Result<u64, ApiError> {
         let boost = Boost::new(subject, seconds, owner, blockheight);
 
-        let (new_boost_id, new_boost) = BoostedStore::insert(boost)?;
+        let (new_boost_id, _) = BoostedStore::insert(boost)?;
 
         let timer_id = set_timer(Duration::from_secs(seconds), move || {
             Self::remove_boost(new_boost_id)

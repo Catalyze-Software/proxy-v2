@@ -1,128 +1,108 @@
-use candid::{decode_one, encode_one, CandidType, Principal};
+use candid::{CandidType, Principal};
+use ic_cdk::{api::time, caller};
 use serde::{Deserialize, Serialize};
 
 use candid::{Decode, Encode};
 
 use crate::impl_storable_for;
 
-impl_storable_for!(Notification);
+use super::{
+    attendee::InviteAttendeeResponse, friend_request::FriendRequestResponse,
+    member::InviteMemberResponse,
+};
 
+impl_storable_for!(Notification);
 #[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
 pub struct Notification {
+    pub notification_type: NotificationType,
+    // used on the frontend to determine if the notification is actionable
+    // this value changes based on the action the user takes
+    pub is_actionable: bool,
+    pub is_accepted: Option<bool>,
+    // additional data for the notification that the frontend can utilize
+    pub metadata: Option<String>,
     pub created_by: Principal,
     pub created_at: u64,
-    pub notification_data: Option<NotificationType>,
-    pub metadata: String,
-    pub is_read: bool,
+    pub updated_at: u64,
 }
 
-#[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
-pub struct NotificationDataResponse {
-    pub id: u64,
-    pub created_by: Principal,
-    pub created_at: u64,
-    pub notification_data: Option<NotificationType>,
-    pub metadata: String,
-    pub is_read: bool,
-}
+impl Notification {
+    pub fn new(notification_type: NotificationType, is_actionable: bool) -> Self {
+        Self {
+            notification_type,
+            is_actionable,
+            is_accepted: None,
+            metadata: None,
+            created_by: caller(),
+            created_at: time(),
+            updated_at: time(),
+        }
+    }
 
-#[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
-pub struct EventNotificationData {
-    pub group_identifier: Principal,
-    pub event_identifier: Principal,
-}
+    pub fn mark_as_accepted(&mut self, is_accepted: bool) {
+        self.is_accepted = Some(is_accepted);
+        self.is_actionable = false;
+        self.updated_at = time();
+    }
 
-#[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
-pub struct InviteNotificationData {
-    pub invite_type: InviteType,
-    pub accepted: Option<bool>,
-}
+    pub fn set_metadata(&mut self, metadata: String) {
+        self.metadata = Some(metadata);
+        self.updated_at = time();
+    }
 
-#[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
-pub enum InviteType {
-    Group(InviteTypeRequest),
-    Event(InviteTypeRequest),
-    Task(InviteTypeRequest),
-}
-
-#[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
-pub enum InviteTypeRequest {
-    OwnerRequest(Principal),
-    UserRequest(Principal),
-}
-
-#[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
-pub struct FriendRequestNotificationData {
-    pub friend_request_id: u64,
-    pub from: Principal,
-    pub to: Principal,
-    pub accepted: Option<bool>,
-}
-
-#[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
-pub struct TransactionNotificationData {
-    pub from: Principal,
-    pub to: Principal,
-    pub canister_id: Principal,
-    pub amount: u64,
-    pub token: String,
-    pub transaction_id: String,
-}
-
-#[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
-pub struct MultisigNotificationData {
-    pub canister_id: Principal,
-    pub action: String,
+    pub fn set_is_actionable(&mut self, is_actionable: bool) {
+        self.is_actionable = is_actionable;
+        self.updated_at = time();
+    }
 }
 
 #[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
 pub enum NotificationType {
-    None,
-    // Event
-    EventInvite(),
-    Event(EventNotificationData),
-    Invite(InviteNotificationData),
-    FriendRequest(FriendRequestNotificationData),
-    FriendRemove(Principal),
-    Transaction(TransactionNotificationData),
-    Multisig(MultisigNotificationData),
+    Relation(RelationNotificationType),
+    Group(GroupNotificationType),
+    Event(EventNotificationType),
+    Transaction(TransactionNotificationType),
 }
 
-#[derive(CandidType, Clone, Debug, Deserialize, Serialize)]
-pub struct SendNotificationData {
-    pub data: NotificationType,
-    pub receivers: Vec<Principal>,
+#[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
+pub enum RelationNotificationType {
+    FriendRequest(FriendRequestResponse),
+    FriendRequestAccept(u64),  // friend_request_id
+    FriendRequestDecline(u64), // friend_request_id
+    FriendRemove(Principal),   // user principal
+    BlockUser(Principal),      // user principal
 }
 
-#[derive(CandidType, Clone, Debug, Deserialize, Serialize)]
-pub enum MessageType {
-    UnreadCount(u64),
-    Notification(NotificationDataResponse),
-    // SilentNotification(SilentNotificationDataResponse),
-    SendNotification(SendNotificationData),
-    Error(String),
+#[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
+pub enum GroupNotificationType {
+    // user wants to join the group
+    JoinGroupUserRequest(InviteMemberResponse),
+    JoinGroupUserRequestAccept(u64),
+    JoinGroupUserRequestDecline(u64),
+    // group wants a user to join
+    JoinGroupOwnerRequest(InviteMemberResponse),
+    JoinGroupOwnerRequestAccept(u64),
+    JoinGroupOwnerRequestDecline(u64),
+    UserLeaveGroup(Principal),
 }
 
-impl MessageType {
-    pub fn serialize(&self) -> Vec<u8> {
-        match encode_one(&self) {
-            Ok(value) => value,
-            Err(_) => {
-                vec![]
-            }
-        }
-    }
+#[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
+pub enum EventNotificationType {
+    // user wants to join the event
+    JoinEventUserRequest(InviteAttendeeResponse),
+    JoinEventUserRequestAccept(u64),
+    JoinEventUserRequestDecline(u64),
 
-    pub fn deserialize(data: &Vec<u8>) -> Self {
-        match decode_one(&data) {
-            Ok(value) => value,
-            Err(_) => MessageType::Error("Deserialization error".to_string()),
-        }
-    }
+    // Event wants a user to join
+    JoinEventOwnerRequest(InviteAttendeeResponse),
+    JoinEventOwnerRequestAccept(u64),
+    JoinEventOwnerRequestDecline(u64),
+    UserLeaveEvent(Principal),
 }
 
-#[derive(CandidType, Clone, Debug, Deserialize, Serialize, Eq, PartialEq)]
-pub struct AppMessageReceive {
-    pub text: String,
-    pub timestamp: u64,
+#[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
+pub enum TransactionNotificationType {
+    SingleTransaction(u64),
+    MultipleTransaction(Vec<u64>),
+    Airdrop(),
 }

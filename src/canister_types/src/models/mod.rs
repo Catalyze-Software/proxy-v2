@@ -24,10 +24,12 @@ pub mod attendee;
 pub mod event;
 pub mod friend_request;
 pub mod group;
-pub mod invite;
+pub mod invite_type;
 pub mod member;
 pub mod profile;
 pub mod report;
 
 pub mod neuron;
 pub mod subject;
+pub mod user_notifications;
+pub mod websocket_message;
