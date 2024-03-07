@@ -6,8 +6,7 @@
       "candid": "candid/canister.did",
       "wasm": "wasm/canister.wasm.gz",
       "build": [
-        "cargo test candid -p canister",
-        "cargo build --target wasm32-unknown-unknown --release -p canister"
+        "bash scripts/build.sh"
       ]
     }
   },
