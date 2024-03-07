@@ -363,6 +363,37 @@ type PostReport = record {
 };
 type PostWallet = record { "principal" : principal; provider : text };
 type Privacy = variant { Gated : GatedType; Private; Public; InviteOnly };
+type Profile = record {
+  updated_on : nat64;
+  profile_image : Asset;
+  "principal" : principal;
+  banner_image : Asset;
+  about : text;
+  country : text;
+  username : text;
+  starred : vec record { principal; text };
+  interests : vec nat32;
+  city : text;
+  created_on : nat64;
+  email : text;
+  website : text;
+  terms_of_service : opt DocumentDetails;
+  display_name : text;
+  extra : text;
+  privacy_policy : opt DocumentDetails;
+  privacy : ProfilePrivacy;
+  wallets : vec record { principal; Wallet };
+  state_or_province : text;
+  first_name : text;
+  last_name : text;
+  member_identifier : principal;
+  causes : vec nat32;
+  code_of_conduct : DocumentDetails;
+  date_of_birth : nat64;
+  skills : vec nat32;
+  relations : vec record { principal; text };
+  application_role : ApplicationRole;
+};
 type ProfilePrivacy = variant { Private; Public };
 type ProfileResponse = record {
   updated_on : nat64;
@@ -526,6 +557,7 @@ type UpdateProfile = record {
   skills : vec nat32;
 };
 type ValidationResponse = record { field : text; message : text };
+type Wallet = record { provider : text; is_primary : bool };
 type WalletResponse = record {
   "principal" : principal;
   provider : text;
@@ -617,6 +649,7 @@ service : () -> {
   leave_event : (principal) -> (Result_11);
   leave_group : (principal) -> (Result_11);
   mark_notifications_as_read : (vec nat64, bool) -> (Result_24);
+  read_profiles_entries : (text) -> (vec record { text; Profile });
   remove_attendee_from_event : (principal, principal, principal) -> (Result_11);
   remove_attendee_invite_from_event : (principal, principal, principal) -> (
       Result_11,

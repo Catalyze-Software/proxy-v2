@@ -34,6 +34,9 @@ pub fn __export_did_tmp_() -> String {
     use canister_types::models::role::*;
     use canister_types::models::wallet::*;
     use ic_websocket_cdk::types::*;
+
+    use crate::migration::old_models::profile_models::Profile as OldProfile;
+
     export_service!();
     __export_service()
 }

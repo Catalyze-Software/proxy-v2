@@ -1,10 +1,14 @@
 {
   "canisters": {
     "canister": {
-      "type": "rust",
+      "type": "custom",
       "package": "canister",
       "candid": "candid/canister.did",
-      "wasm": "wasm/canister.wasm.gz"
+      "wasm": "wasm/canister.wasm.gz",
+      "build": [
+        "cargo test candid -p canister",
+        "cargo build --target wasm32-unknown-unknown --release -p canister"
+      ]
     }
   },
   "networks": {

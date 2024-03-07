@@ -1,9 +1,7 @@
-use candid::{CandidType, Principal};
-use serde::Deserialize;
-use std::borrow::Cow;
-
+use candid::{CandidType, Deserialize, Principal};
 use candid::{Decode, Encode};
 use ic_stable_structures::{storable::Bound, Storable};
+use std::borrow::Cow;
 
 #[derive(CandidType, Deserialize, Clone, Debug)]
 pub struct Boosted {
