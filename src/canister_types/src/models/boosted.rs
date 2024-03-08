@@ -16,6 +16,7 @@ pub struct Boost {
     pub seconds: u64,
     pub owner: Principal,
     pub blockheight: u64,
+    pub notification_id: Option<u64>,
     pub created_at: u64,
     pub updated_at: u64,
 }
@@ -28,6 +29,7 @@ impl Boost {
             created_at: time(),
             updated_at: time(),
             owner,
+            notification_id: None,
             blockheight,
         }
     }
@@ -35,5 +37,13 @@ impl Boost {
     pub fn update(&mut self, seconds: u64) {
         self.seconds = seconds;
         self.updated_at = time();
+    }
+
+    pub fn set_notification_id(&mut self, notification_id: u64) {
+        self.notification_id = Some(notification_id);
+    }
+
+    pub fn remove_notification_id(&mut self) {
+        self.notification_id = None;
     }
 }

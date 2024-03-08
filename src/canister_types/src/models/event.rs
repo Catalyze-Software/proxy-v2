@@ -38,6 +38,7 @@ pub struct Event {
     is_canceled: (bool, String),
     is_deleted: bool,
     attendee_count: u64,
+    notification_id: Option<u64>,
     metadata: Option<String>,
     updated_on: u64,
     created_on: u64,
@@ -66,6 +67,7 @@ impl From<PostEvent> for Event {
             tags: post_event.tags,
             is_canceled: (false, "".to_string()),
             is_deleted: false,
+            notification_id: None,
             attendee_count: Default::default(),
             metadata: post_event.metadata,
             updated_on: time(),
@@ -111,6 +113,14 @@ impl Event {
     pub fn is_from_group(&self, group_id: u64) -> bool {
         self.group_id == group_id
     }
+
+    pub fn set_notification_id(&mut self, notification_id: u64) {
+        self.notification_id = Some(notification_id);
+    }
+
+    pub fn remove_notification_id(&mut self) {
+        self.notification_id = None;
+    }
 }
 
 impl Default for Event {
@@ -132,6 +142,7 @@ impl Default for Event {
             is_deleted: Default::default(),
             attendee_count: Default::default(),
             updated_on: Default::default(),
+            notification_id: Default::default(),
             created_on: Default::default(),
             metadata: Default::default(),
         }

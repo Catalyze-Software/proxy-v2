@@ -13,6 +13,7 @@ impl_storable_for!(Attendee);
 #[derive(Clone, Debug, CandidType, Deserialize, Serialize)]
 pub struct Attendee {
     pub principal: Principal,
+    pub notification_id: Option<u64>,
     pub joined: HashMap<u64, AttendeeJoin>,
     pub invites: HashMap<u64, AttendeeInvite>,
 }
@@ -23,12 +24,14 @@ impl Attendee {
             principal: Principal::anonymous(),
             joined: Default::default(),
             invites: Default::default(),
+            notification_id: None,
         }
     }
 
     pub fn new(principal: Principal, profile_identifier: Principal) -> Self {
         Self {
             principal,
+            notification_id: None,
             joined: Default::default(),
             invites: Default::default(),
         }
@@ -93,6 +96,14 @@ impl Attendee {
             return invite.invite_type == InviteType::OwnerRequest;
         }
         false
+    }
+
+    pub fn set_notification_id(&mut self, notification_id: u64) {
+        self.notification_id = Some(notification_id);
+    }
+
+    pub fn remove_notification_id(&mut self) {
+        self.notification_id = None;
     }
 }
 

@@ -39,6 +39,7 @@ pub struct Group {
     pub privacy_gated_type_amount: Option<u64>,
     pub roles: Vec<Role>,
     pub is_deleted: bool,
+    pub notification_id: Option<u64>,
     // Shouldn't be used, use the member store data instead
     pub member_count: HashMap<Principal, usize>,
     pub wallets: HashMap<Principal, String>,
@@ -64,6 +65,7 @@ impl Group {
             wallets: Default::default(),
             roles: Vec::default(),
             is_deleted: Default::default(),
+            notification_id: Default::default(),
             updated_on: Default::default(),
             created_on: Default::default(),
             privacy_gated_type_amount: Default::default(),
@@ -87,6 +89,7 @@ impl Group {
             wallets: Default::default(),
             roles: Vec::default(),
             is_deleted: false,
+            notification_id: None,
             updated_on: time(),
             created_on: time(),
             privacy_gated_type_amount: group.privacy_gated_type_amount,
@@ -134,6 +137,14 @@ impl Group {
             return role.permissions.clone();
         }
         vec![]
+    }
+
+    pub fn set_notification_id(&mut self, notification_id: u64) {
+        self.notification_id = Some(notification_id);
+    }
+
+    pub fn remove_notification_id(&mut self) {
+        self.notification_id = None;
     }
 }
 

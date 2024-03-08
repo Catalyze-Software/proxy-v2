@@ -16,6 +16,8 @@ impl_storable_for!(Member);
 pub struct Member {
     principal: Principal,
     profile_identifier: Principal,
+    notification_id: Option<u64>,
+
     joined: HashMap<u64, Join>,
     invites: HashMap<u64, MemberInvite>,
 }
@@ -25,6 +27,7 @@ impl Member {
         Self {
             principal: Principal::anonymous(),
             profile_identifier: Principal::anonymous(),
+            notification_id: None,
             joined: Default::default(),
             invites: Default::default(),
         }
@@ -34,6 +37,7 @@ impl Member {
         Self {
             principal,
             profile_identifier,
+            notification_id: None,
             joined: Default::default(),
             invites: Default::default(),
         }
@@ -150,6 +154,14 @@ impl Member {
             return group.roles.clone();
         }
         vec![]
+    }
+
+    pub fn set_notification_id(&mut self, notification_id: u64) {
+        self.notification_id = Some(notification_id);
+    }
+
+    pub fn remove_notification_id(&mut self) {
+        self.notification_id = None;
     }
 }
 

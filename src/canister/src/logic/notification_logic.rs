@@ -1,12 +1,16 @@
 use candid::Principal;
 use canister_types::models::{
     api_error::ApiError,
-    notification::{Notification, NotificationType},
+    friend_request::FriendRequest,
+    notification::{Notification, NotificationType, RelationNotificationType},
     user_notifications::UserNotifications,
     websocket_message::WSMessage,
 };
+use ic_cdk::caller;
 
-use crate::storage::{NotificationStore, StorageMethods, UsernotificationStore};
+use crate::storage::{
+    FriendRequestStore, NotificationStore, StorageMethods, UsernotificationStore,
+};
 
 use super::websocket_logic::Websocket;
 
@@ -45,6 +49,134 @@ impl NotificationCalls {
         Ok((new_notification_id, new_notification))
     }
 
+    pub fn notification_add_friend_request(friend_request: FriendRequest) -> Result<u64, ApiError> {
+        let (notification_id, _) = Self::add_notification(
+            vec![friend_request.to],
+            NotificationType::Relation(RelationNotificationType::FriendRequest(friend_request)),
+            true,
+            false,
+        )?;
+
+        Ok(notification_id)
+    }
+
+    // Friend request notifications
+    pub fn notification_accept_friend_request(friend_request_id: u64) -> Result<(), ApiError> {
+        // get the associated friend request
+        let (_, friend_request) = FriendRequestStore::get(friend_request_id)?;
+
+        // check if the notification exists
+        if let Some(notification_id) = friend_request.notification_id {
+            let (_, mut notification) = NotificationStore::get(notification_id)?;
+
+            // check if the notification is a friend request
+            if let NotificationType::Relation(RelationNotificationType::FriendRequest(
+                friend_request_response,
+            )) = &notification.notification_type
+            {
+                // check if the notification is for the caller
+                if friend_request_response.to != caller() {
+                    return Err(ApiError::unauthorized());
+                }
+
+                // mark the notification as accepted, this also marks it as not actionable
+                notification.mark_as_accepted(true);
+                let _ = NotificationStore::update(notification_id, notification.clone());
+
+                // add the notification to the user's notifications and send a websocket message
+                let _ = Self::add_notification(
+                    vec![friend_request.requested_by],
+                    NotificationType::Relation(RelationNotificationType::FriendRequestAccept(
+                        friend_request_id,
+                    )),
+                    false,
+                    false,
+                );
+
+                Ok(())
+            } else {
+                Err(ApiError::bad_request().add_message("Notification is not a friend request"))
+            }
+        } else {
+            Err(ApiError::not_found())
+        }
+    }
+
+    pub fn notification_decline_friend_request(friend_request_id: u64) -> Result<(), ApiError> {
+        // get the associated friend request
+        let (_, friend_request) = FriendRequestStore::get(friend_request_id)?;
+
+        // check if the notification exists
+        if let Some(notification_id) = friend_request.notification_id {
+            let (_, mut notification) = NotificationStore::get(notification_id)?;
+
+            // check if the notification is a friend request
+            if let NotificationType::Relation(RelationNotificationType::FriendRequest(
+                friend_request_response,
+            )) = &notification.notification_type
+            {
+                // check if the notification is for the caller
+                if friend_request_response.to != caller() {
+                    return Err(ApiError::unauthorized());
+                }
+
+                // mark the notification as accepted, this also marks it as not actionable
+                notification.mark_as_accepted(false);
+                let _ = NotificationStore::update(notification_id, notification.clone());
+
+                // add the notification to the user's notifications and send a websocket message
+                let _ = Self::add_notification(
+                    vec![friend_request.requested_by],
+                    NotificationType::Relation(RelationNotificationType::FriendRequestDecline(
+                        friend_request_id,
+                    )),
+                    false,
+                    true,
+                );
+
+                Ok(())
+            } else {
+                Err(ApiError::bad_request().add_message("Notification is not a friend request"))
+            }
+        } else {
+            Err(ApiError::not_found())
+        }
+    }
+
+    pub fn notification_remove_friend_request(friend_request_id: u64) -> Result<(), ApiError> {
+        // get the associated friend request
+        let (_, friend_request) = FriendRequestStore::get(friend_request_id)?;
+
+        // check if the notification exists
+        if let Some(notification_id) = friend_request.notification_id {
+            // get the associated notification and check if it is a friend request
+            let (_, notification) = NotificationStore::get(notification_id)?;
+            if let NotificationType::Relation(RelationNotificationType::FriendRequest(
+                friend_request,
+            )) = &notification.notification_type
+            {
+                // check if the notification is for the caller
+                if friend_request.requested_by != caller() {
+                    return Err(ApiError::unauthorized());
+                }
+
+                let _ = Self::add_notification(
+                    vec![friend_request.requested_by, friend_request.to],
+                    NotificationType::Relation(RelationNotificationType::FriendRequestRemove(
+                        friend_request_id,
+                    )),
+                    false,
+                    true,
+                );
+                Ok(())
+            } else {
+                Err(ApiError::bad_request().add_message("Notification is not a friend request"))
+            }
+        } else {
+            Err(ApiError::not_found())
+        }
+    }
+
     pub fn get_user_unread_notifications(
         principal: Principal,
     ) -> Result<Vec<(u64, Notification)>, ApiError> {
@@ -52,14 +184,14 @@ impl NotificationCalls {
         Ok(NotificationStore::get_many(unread_notification_ids.ids()))
     }
 
-    pub fn get_user_notifaction_ids(principal: Principal) -> Vec<u64> {
+    pub fn get_user_notification_ids(principal: Principal) -> Vec<u64> {
         let (_, notification_ids) =
             UsernotificationStore::get(principal).unwrap_or((principal, UserNotifications::new()));
         notification_ids.ids()
     }
 
     pub fn get_user_notifications(principal: Principal) -> Vec<(u64, Notification)> {
-        NotificationStore::get_many(Self::get_user_notifaction_ids(principal))
+        NotificationStore::get_many(Self::get_user_notification_ids(principal))
     }
 
     pub fn set_notification_as_accepted(

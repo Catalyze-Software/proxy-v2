@@ -19,16 +19,6 @@ use super::{
     wallet::{Wallet, WalletResponse},
 };
 
-pub trait ProfileMethods {
-    // Instead of using the `Default` trait we added the method here so we have it all in one place
-    fn default() -> Self;
-    // Instead of using the `From` trait we added the method here so we have it all in one place
-    fn update(self, group: UpdateProfile) -> Self;
-    // How are we going to handle this? Are we going to fetch the combined data from the different stores?
-    // Or are we going to fetch the data before calling this method?
-    // fn to_response()
-}
-
 impl_storable_for!(Profile);
 
 #[derive(Clone, Debug, CandidType, Deserialize, Serialize)]
@@ -60,12 +50,13 @@ pub struct Profile {
     pub starred: HashMap<Principal, String>,
     pub relations: HashMap<Principal, String>,
     pub extra: String,
+    pub notification_id: Option<u64>,
     pub updated_on: u64,
     pub created_on: u64,
 }
 
-impl ProfileMethods for Profile {
-    fn default() -> Self {
+impl Profile {
+    pub fn default() -> Self {
         Self {
             principal: Principal::anonymous(),
             member_identifier: Principal::anonymous(),
@@ -94,12 +85,13 @@ impl ProfileMethods for Profile {
             extra: Default::default(),
             updated_on: Default::default(),
             created_on: Default::default(),
+            notification_id: Default::default(),
             privacy_policy: None,
             terms_of_service: None,
         }
     }
 
-    fn update(self, profile: UpdateProfile) -> Self {
+    pub fn update(self, profile: UpdateProfile) -> Self {
         Self {
             principal: self.principal,
             username: self.username,
@@ -126,11 +118,20 @@ impl ProfileMethods for Profile {
             code_of_conduct: self.code_of_conduct,
             extra: profile.extra,
             updated_on: time(),
+            notification_id: self.notification_id,
             created_on: self.created_on,
             member_identifier: self.member_identifier,
             privacy_policy: self.privacy_policy,
             terms_of_service: self.terms_of_service,
         }
+    }
+
+    pub fn set_notification_id(&mut self, notification_id: u64) {
+        self.notification_id = Some(notification_id);
+    }
+
+    pub fn remove_notification_id(&mut self) {
+        self.notification_id = None;
     }
 }
 
@@ -163,6 +164,7 @@ impl From<PostProfile> for Profile {
             extra: profile.extra,
             updated_on: time(),
             created_on: time(),
+            notification_id: None,
             member_identifier: Principal::anonymous(),
             privacy_policy: None,
             terms_of_service: None,

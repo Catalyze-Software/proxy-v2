@@ -7,8 +7,7 @@ use candid::{Decode, Encode};
 use crate::impl_storable_for;
 
 use super::{
-    attendee::InviteAttendeeResponse, friend_request::FriendRequestResponse,
-    member::InviteMemberResponse,
+    attendee::InviteAttendeeResponse, friend_request::FriendRequest, member::InviteMemberResponse,
 };
 
 impl_storable_for!(Notification);
@@ -66,9 +65,10 @@ pub enum NotificationType {
 
 #[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
 pub enum RelationNotificationType {
-    FriendRequest(FriendRequestResponse),
+    FriendRequest(FriendRequest),
     FriendRequestAccept(u64),  // friend_request_id
     FriendRequestDecline(u64), // friend_request_id
+    FriendRequestRemove(u64),  // friend_request_id
     FriendRemove(Principal),   // user principal
     BlockUser(Principal),      // user principal
 }

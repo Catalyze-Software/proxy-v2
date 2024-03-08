@@ -8,7 +8,7 @@ use canister_types::models::{
     api_error::ApiError,
     document_details::DocumentDetails,
     identifier::Identifier,
-    profile::{PostProfile, Profile, ProfileMethods, ProfileResponse, UpdateProfile},
+    profile::{PostProfile, Profile, ProfileResponse, UpdateProfile},
     relation_type::RelationType,
     validation::{ValidateField, ValidationType},
     wallet::{PostWallet, Wallet},
