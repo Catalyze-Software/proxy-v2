@@ -2,7 +2,10 @@ use candid::Principal;
 use canister_types::models::{
     api_error::ApiError,
     friend_request::FriendRequest,
-    notification::{Notification, NotificationType, RelationNotificationType},
+    member::MemberInvite,
+    notification::{
+        GroupNotificationType, Notification, NotificationType, RelationNotificationType,
+    },
     user_notifications::UserNotifications,
     websocket_message::WSMessage,
 };
@@ -49,6 +52,7 @@ impl NotificationCalls {
         Ok((new_notification_id, new_notification))
     }
 
+    // Friend request notifications
     pub fn notification_add_friend_request(friend_request: FriendRequest) -> Result<u64, ApiError> {
         let (notification_id, _) = Self::add_notification(
             vec![friend_request.to],
@@ -60,7 +64,6 @@ impl NotificationCalls {
         Ok(notification_id)
     }
 
-    // Friend request notifications
     pub fn notification_accept_friend_request(friend_request_id: u64) -> Result<(), ApiError> {
         // get the associated friend request
         let (_, friend_request) = FriendRequestStore::get(friend_request_id)?;
@@ -71,11 +74,11 @@ impl NotificationCalls {
 
             // check if the notification is a friend request
             if let NotificationType::Relation(RelationNotificationType::FriendRequest(
-                friend_request_response,
-            )) = &notification.notification_type
+                friend_request,
+            )) = &notification.notification_type.clone()
             {
                 // check if the notification is for the caller
-                if friend_request_response.to != caller() {
+                if friend_request.to != caller() {
                     return Err(ApiError::unauthorized());
                 }
 
@@ -175,6 +178,64 @@ impl NotificationCalls {
         } else {
             Err(ApiError::not_found())
         }
+    }
+
+    // TODO: "Implement notification_remove_friend"
+    pub fn notification_remove_friend(principal: Principal) -> Result<(), ApiError> {
+        Ok(())
+    }
+
+    pub fn notification_join_group(receiver: Principal, group_id: u64) -> Result<u64, ApiError> {
+        let (notification_id, _) = Self::add_notification(
+            vec![receiver],
+            NotificationType::Group(GroupNotificationType::UserJoinGroup(group_id)),
+            false,
+            true,
+        )?;
+
+        Ok(notification_id)
+    }
+
+    pub fn notification_invite_to_group(
+        receiver: Principal,
+        group_id: u64,
+    ) -> Result<u64, ApiError> {
+        let (notification_id, _) = Self::add_notification(
+            vec![receiver],
+            NotificationType::Group(GroupNotificationType::JoinGroupOwnerRequest(group_id)),
+            true,
+            false,
+        )?;
+
+        Ok(notification_id)
+    }
+
+    pub fn notification_invite_to_group_accept(
+        receiver: Principal,
+        group_id: u64,
+    ) -> Result<u64, ApiError> {
+        let (notification_id, _) = Self::add_notification(
+            vec![receiver],
+            NotificationType::Group(GroupNotificationType::JoinGroupOwnerRequestAccept(group_id)),
+            true,
+            false,
+        )?;
+
+        Ok(notification_id)
+    }
+
+    pub fn notification_join_request_to_group(
+        receivers: Vec<Principal>,
+        group_id: u64,
+    ) -> Result<u64, ApiError> {
+        let (notification_id, _) = Self::add_notification(
+            receivers,
+            NotificationType::Group(GroupNotificationType::JoinGroupUserRequest(group_id)),
+            true,
+            false,
+        )?;
+
+        Ok(notification_id)
     }
 
     pub fn get_user_unread_notifications(

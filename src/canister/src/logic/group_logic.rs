@@ -1,4 +1,4 @@
-use super::boost_logic::BoostCalls;
+use super::{boost_logic::BoostCalls, notification_logic::NotificationCalls};
 use crate::{
     helpers::{
         token_balance::{
@@ -326,9 +326,11 @@ impl GroupCalls {
         }
 
         // Add the group to the member
+        let notification_id =
+            NotificationCalls::notification_invite_to_group(invitee_principal, group_id)?;
+        invitee_member.set_notification_id(notification_id);
         invitee_member.add_invite(group_id, InviteType::OwnerRequest);
-
-        MemberStore::update(invitee_principal, invitee_member.clone())?;
+        MemberStore::insert_by_key(invitee_principal, invitee_member.clone())?;
 
         Ok(invitee_member)
     }
@@ -850,11 +852,18 @@ impl GroupValidation {
             // If the group is public, add the member to the group
             Public => {
                 member.add_joined(group_id, vec!["member".to_string()]);
+                NotificationCalls::notification_join_group(group.owner, group_id)?;
                 Ok(member)
             }
             // If the group is private, add the invite to the member
             Private => {
                 member.add_invite(group_id, InviteType::UserRequest);
+                let notification_id = NotificationCalls::notification_join_request_to_group(
+                    // TODO: add higher role members
+                    vec![group.owner],
+                    group_id,
+                )?;
+                member.set_notification_id(notification_id);
                 Ok(member)
             }
             // If the group is invite only, throw an error

@@ -7,7 +7,9 @@ use candid::{Decode, Encode};
 use crate::impl_storable_for;
 
 use super::{
-    attendee::InviteAttendeeResponse, friend_request::FriendRequest, member::InviteMemberResponse,
+    attendee::InviteAttendeeResponse,
+    friend_request::FriendRequest,
+    member::{InviteMemberResponse, MemberInvite},
 };
 
 impl_storable_for!(Notification);
@@ -76,14 +78,15 @@ pub enum RelationNotificationType {
 #[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
 pub enum GroupNotificationType {
     // user wants to join the group
-    JoinGroupUserRequest(InviteMemberResponse),
+    JoinGroupUserRequest(u64),
     JoinGroupUserRequestAccept(u64),
     JoinGroupUserRequestDecline(u64),
     // group wants a user to join
-    JoinGroupOwnerRequest(InviteMemberResponse),
+    JoinGroupOwnerRequest(u64),
     JoinGroupOwnerRequestAccept(u64),
     JoinGroupOwnerRequestDecline(u64),
-    UserLeaveGroup(Principal),
+    UserJoinGroup(u64),
+    UserLeaveGroup(u64),
 }
 
 #[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
