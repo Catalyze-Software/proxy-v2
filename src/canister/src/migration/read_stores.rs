@@ -18,7 +18,7 @@ pub struct OldData {
     pub old_profiles: Vec<(String, OldProfile)>,
     pub old_events: Vec<(String, OldEvent)>,
     pub old_event_attendees: Vec<(String, OldAttendee)>,
-    pub notifications: Vec<(u32, String)>,
+    pub old_notifications: Vec<(u32, String)>,
 }
 
 async fn read_old_data(env: String) -> OldData {
@@ -27,7 +27,7 @@ async fn read_old_data(env: String) -> OldData {
     let old_profiles = read_profile_entries(env.clone()).await;
     let old_events = read_events_entries(env.clone()).await;
     let old_event_attendees = read_attendees_entries(env.clone()).await;
-    let notifications = read_notifications_entries(env.clone()).await;
+    let old_notifications = read_notifications_entries(env.clone()).await;
 
     OldData {
         old_members,
@@ -35,6 +35,6 @@ async fn read_old_data(env: String) -> OldData {
         old_profiles,
         old_events,
         old_event_attendees,
-        notifications,
+        old_notifications,
     }
 }

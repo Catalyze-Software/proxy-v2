@@ -4,7 +4,8 @@ use std::{borrow::Cow, collections::HashMap};
 use candid::{CandidType, Decode, Deserialize, Encode, Principal};
 use canister_types::models::{
     application_role::ApplicationRole, asset::Asset, date_range::DateRange,
-    sort_direction::SortDirection,
+    document_details::DocumentDetails, profile_privacy::ProfilePrivacy,
+    sort_direction::SortDirection, wallet::Wallet,
 };
 use ic_stable_structures::{storable::Bound, Storable};
 use serde::Serialize;
@@ -153,11 +154,11 @@ pub struct ProfileResponse {
     pub created_on: u64,
 }
 
-#[derive(Clone, Debug, Default, Serialize, CandidType, Deserialize)]
-pub struct DocumentDetails {
-    pub approved_version: u64,
-    pub approved_date: u64,
-}
+// #[derive(Clone, Debug, Default, Serialize, CandidType, Deserialize)]
+// pub struct DocumentDetails {
+//     pub approved_version: u64,
+//     pub approved_date: u64,
+// }
 
 #[derive(Clone, Debug, Serialize, CandidType, Deserialize)]
 pub struct PostWallet {
@@ -165,11 +166,11 @@ pub struct PostWallet {
     pub principal: Principal,
 }
 
-#[derive(Clone, Debug, Serialize, CandidType, Deserialize)]
-pub struct Wallet {
-    pub provider: String,
-    pub is_primary: bool,
-}
+// #[derive(Clone, Debug, Serialize, CandidType, Deserialize)]
+// pub struct Wallet {
+//     pub provider: String,
+//     pub is_primary: bool,
+// }
 
 #[derive(Clone, Debug, Serialize, CandidType, Deserialize)]
 pub struct WalletResponse {
@@ -178,20 +179,20 @@ pub struct WalletResponse {
     pub is_primary: bool,
 }
 
-impl Default for Wallet {
-    fn default() -> Self {
-        Self {
-            provider: Default::default(),
-            is_primary: Default::default(),
-        }
-    }
-}
+// impl Default for Wallet {
+//     fn default() -> Self {
+//         Self {
+//             provider: Default::default(),
+//             is_primary: Default::default(),
+//         }
+//     }
+// }
 
-#[derive(CandidType, Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-pub enum ProfilePrivacy {
-    Public,
-    Private,
-}
+// #[derive(CandidType, Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+// pub enum ProfilePrivacy {
+//     Public,
+//     Private,
+// }
 
 #[derive(CandidType, Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum RelationType {
@@ -209,11 +210,11 @@ impl fmt::Display for RelationType {
     }
 }
 
-impl Default for ProfilePrivacy {
-    fn default() -> Self {
-        ProfilePrivacy::Private
-    }
-}
+// impl Default for ProfilePrivacy {
+//     fn default() -> Self {
+//         ProfilePrivacy::Private
+//     }
+// }
 
 #[derive(Clone, Debug, CandidType, Deserialize)]
 pub enum ProfileSort {
