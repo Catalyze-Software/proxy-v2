@@ -83,7 +83,7 @@ impl FriendRequestCalls {
             .relations
             .insert(friend_request.to, RelationType::Friend.to_string());
 
-        NotificationCalls::notification_accept_friend_request(friend_request_id)?;
+        NotificationCalls::notification_accept_or_decline_friend_request(friend_request_id, true)?;
         Ok(FriendRequestStore::remove(friend_request_id))
     }
 
@@ -123,7 +123,7 @@ impl FriendRequestCalls {
                 .add_message("You are not authorized to decline this friend request"));
         }
 
-        NotificationCalls::notification_decline_friend_request(friend_request_id)?;
+        NotificationCalls::notification_accept_or_decline_friend_request(friend_request_id, false)?;
         Ok(FriendRequestStore::remove(friend_request_id))
     }
 }
