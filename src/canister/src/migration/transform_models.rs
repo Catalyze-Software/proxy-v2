@@ -34,8 +34,8 @@ fn transform_models(old_data: OldData) -> NewData {
     let new_friend_requests = friend_requests_from_old(&old_data);
     let new_boosted = boosted_from_old(&old_data);
 
-    let new_notifications = notifications_from_old(&old_data);
-    let new_user_notifications = user_notifications_from_old(&old_data);
+    // let new_notifications = notifications_from_old(&old_data);
+    // let new_user_notifications = user_notifications_from_old(&old_data);
 
     NewData {
         new_profiles,
@@ -46,8 +46,8 @@ fn transform_models(old_data: OldData) -> NewData {
         new_reports,
         new_friend_requests,
         new_boosted,
-        new_notifications,
-        new_user_notifications,
+        // new_notifications,
+        // new_user_notifications,
     }
 }
 
@@ -101,29 +101,7 @@ fn profiles_from_old(old_data: &OldData) -> Vec<(Principal, Profile)> {
 }
 
 fn members_from_old(old_data: &OldData) -> Vec<(Principal, Member)> {
-    let mut new_members = Vec::new();
-
-    for (_, old_member) in old_data.old_members.iter() {
-        let principal: Principal = old_member.principal;
-
-        // let member = Member {
-        //     principal,
-        //     profile_identifier: todo!(),
-        //     joined: todo!(),
-        //     invites: todo!(),
-        // };
-
-        let member = Member {
-            principal: old_member.principal,
-            profile_identifier: old_member.profile_identifier,
-            joined: old_member.joined,
-            invites: old_member.invites,
-        };
-
-        new_members.push((principal, member));
-    }
-
-    new_members
+    todo!()
 }
 
 fn attendees_from_old(old_data: &OldData) -> Vec<(Principal, Attendee)> {
