@@ -18,9 +18,8 @@ pub struct NewData {
 
     pub new_friend_requests: Vec<(u64, FriendRequest)>,
     pub new_boosted: Vec<(u64, Boost)>,
-
-    pub new_notifications: Vec<(u64, Notification)>,
-    pub new_user_notifications: Vec<(Principal, UserNotifications)>,
+    // pub new_notifications: Vec<(u64, Notification)>,
+    // pub new_user_notifications: Vec<(Principal, UserNotifications)>,
 }
 
 fn transform_models(old_data: OldData) -> NewData {
