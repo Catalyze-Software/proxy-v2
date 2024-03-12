@@ -1,87 +1,9 @@
-use super::storage_api::{
-    IdentifierRefMethods, PrincipalIdentifier, StorageMethods, GROUPS, GROUPS_IDENTIFIER_REF,
-};
-use canister_types::models::{
-    api_error::ApiError,
-    group::Group,
-    identifier::{Identifier, IdentifierKind},
-};
+use super::storage_api::{StorageMethods, GROUPS};
+use canister_types::models::{api_error::ApiError, group::Group};
 
 pub struct GroupStore;
 
 pub const NAME: &str = "groups";
-
-impl IdentifierRefMethods<u64> for GroupStore {
-    /// get a new identifier
-    /// # Returns
-    /// * `PrincipalIdentifier` - The new identifier
-    fn new_identifier() -> PrincipalIdentifier {
-        let id = GROUPS_IDENTIFIER_REF.with(|data| {
-            data.borrow()
-                .last_key_value()
-                .map(|(k, _)| Identifier::from(k).id() + 1)
-                .unwrap_or(0)
-        });
-
-        Identifier::generate(IdentifierKind::Profile(id))
-            .to_principal()
-            .unwrap()
-    }
-
-    /// Get the key by identifier
-    /// # Arguments
-    /// * `key` - The identifier to get the key for
-    /// # Returns
-    /// * `Option<u64>` - The key if found, otherwise None
-    fn get_id_by_identifier(key: &PrincipalIdentifier) -> Option<u64> {
-        GROUPS_IDENTIFIER_REF.with(|data| data.borrow().get(key))
-    }
-
-    /// Get the identifier by key
-    /// # Arguments
-    /// * `value` - The value to get the identifier for
-    /// # Returns
-    /// * `Option<PrincipalIdentifier>` - The identifier if found, otherwise None
-    fn get_identifier_by_id(value: &u64) -> Option<PrincipalIdentifier> {
-        GROUPS_IDENTIFIER_REF.with(|data| {
-            data.borrow()
-                .iter()
-                .find(|(_, v)| v == value)
-                .map(|(k, _)| k.clone())
-        })
-    }
-
-    /// Insert an identifier reference
-    /// # Arguments
-    /// * `value` - The increment value to insert
-    /// # Returns
-    /// * `Result<u64, ApiError>` - The inserted u64 if successful, otherwise an error
-    fn insert_identifier_ref(value: u64) -> Result<u64, ApiError> {
-        let identifier_principal = Identifier::generate(IdentifierKind::Group(value))
-            .to_principal()
-            .unwrap();
-        GROUPS_IDENTIFIER_REF.with(|data| {
-            if data.borrow().contains_key(&identifier_principal) {
-                return Err(ApiError::duplicate()
-                    .add_method_name("insert_identifier_ref")
-                    .add_info(NAME)
-                    .add_message("Key already exists"));
-            }
-
-            data.borrow_mut().insert(identifier_principal, value);
-            Ok(value)
-        })
-    }
-
-    /// Remove an identifier reference
-    /// # Arguments
-    /// * `key` - The identifier to remove
-    /// # Returns
-    /// * `bool` - True if the identifier was removed, otherwise false
-    fn remove_identifier_ref(key: &PrincipalIdentifier) -> bool {
-        GROUPS_IDENTIFIER_REF.with(|data| data.borrow_mut().remove(key).is_some())
-    }
-}
 
 impl StorageMethods<u64, Group> for GroupStore {
     /// Get a single group by key

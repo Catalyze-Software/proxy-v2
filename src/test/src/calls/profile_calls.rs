@@ -26,7 +26,7 @@ pub fn add_profile(post_profile: PostProfile, member_canister: Principal) -> Pro
     profile_response
 }
 
-pub fn get_profile_by_user_principal(principal: Principal) -> ProfileResponse {
+pub fn get_profile(principal: Principal) -> ProfileResponse {
     let profile_response: ProfileResponse =
         query_candid_as::<(Principal,), (Result<ProfileResponse, ApiError>,)>(
             &ENV.pic,
@@ -42,10 +42,7 @@ pub fn get_profile_by_user_principal(principal: Principal) -> ProfileResponse {
     profile_response
 }
 
-// #[deprecated = "should be removed in favor of get_profile_by_user_principal"]
-// pub fn get_profile_by_identifier(id: Principal) -> Result<ProfileResponse, ApiError>
-
-pub fn get_profiles_by_user_principal(principals: Vec<Principal>) -> Vec<ProfileResponse> {
+pub fn get_profiles(principals: Vec<Principal>) -> Vec<ProfileResponse> {
     let profiles: Vec<ProfileResponse> =
         query_candid_as::<(Vec<Principal>,), (Result<Vec<ProfileResponse>, ApiError>,)>(
             &ENV.pic,
@@ -60,9 +57,6 @@ pub fn get_profiles_by_user_principal(principals: Vec<Principal>) -> Vec<Profile
 
     profiles
 }
-
-// #[deprecated = "should be removed in favor of get_profiles_by_user_principal"]
-// pub fn get_profiles_by_identifier(identifiers: Vec<Principal>) -> Vec<ProfileResponse>
 
 pub fn edit_profile(update_profile: UpdateProfile) -> ProfileResponse {
     let profile_response: ProfileResponse =
