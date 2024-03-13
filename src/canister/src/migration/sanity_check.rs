@@ -1,11 +1,12 @@
 use candid::Principal;
+use canister_types::models::identifier::Identifier;
 
 use super::{read_stores::OldData, transform_models::NewData};
 
 pub fn check_data_integrity(old_data: &OldData, new_data: &NewData) {
     check_store_sizes(old_data, new_data);
-    check_unique_principals(new_data);
-    check_unique_ids(new_data);
+    check_unique_principals(old_data);
+    check_unique_ids(old_data);
 }
 
 fn check_store_sizes(old_data: &OldData, new_data: &NewData) {
@@ -19,85 +20,81 @@ fn check_store_sizes(old_data: &OldData, new_data: &NewData) {
     );
 }
 
-fn check_unique_principals(new_data: &NewData) {
-    let new_profiles_principals: Vec<Principal> =
-        new_data.new_profiles.iter().map(|(id, _)| *id).collect();
-    let new_members_principals: Vec<Principal> =
-        new_data.new_members.iter().map(|(id, _)| *id).collect();
-    let new_attendees_principals: Vec<Principal> =
-        new_data.new_attendees.iter().map(|(id, _)| *id).collect();
+fn check_unique_principals(old_data: &OldData) {
+    let old_profiles_principals: Vec<Principal> = old_data
+        .old_profiles
+        .iter()
+        .map(|(_, profile)| profile.principal)
+        .collect();
+    let old_members_principals: Vec<Principal> = old_data
+        .old_members
+        .iter()
+        .map(|(_, member)| member.principal)
+        .collect();
+    let old_attendees_principals: Vec<Principal> = old_data
+        .old_event_attendees
+        .iter()
+        .map(|(_, attendee)| attendee.principal)
+        .collect();
 
     assert_eq!(
-        new_profiles_principals.len(),
-        new_profiles_principals
+        old_profiles_principals.len(),
+        old_profiles_principals
             .iter()
             .collect::<std::collections::HashSet<_>>()
             .len()
     );
 
     assert_eq!(
-        new_members_principals.len(),
-        new_members_principals
+        old_members_principals.len(),
+        old_members_principals
             .iter()
             .collect::<std::collections::HashSet<_>>()
             .len()
     );
 
     assert_eq!(
-        new_attendees_principals.len(),
-        new_attendees_principals
+        old_attendees_principals.len(),
+        old_attendees_principals
             .iter()
             .collect::<std::collections::HashSet<_>>()
             .len()
     );
 }
 
-fn check_unique_ids(new_data: &NewData) {
-    let new_group_ids: Vec<u64> = new_data.new_groups.iter().map(|(id, _)| *id).collect();
-    let new_event_ids: Vec<u64> = new_data.new_events.iter().map(|(id, _)| *id).collect();
-    let new_report_ids: Vec<u64> = new_data.new_reports.iter().map(|(id, _)| *id).collect();
-    let new_friend_request_ids: Vec<u64> = new_data
-        .new_friend_requests
+fn check_unique_ids(old_data: &OldData) {
+    let old_group_identifiers: Vec<String> =
+        old_data.old_groups.iter().map(|(id, _)| *id).collect();
+    let old_event_identifiers: Vec<String> =
+        old_data.old_events.iter().map(|(id, _)| *id).collect();
+
+    let old_group_ids = old_group_identifiers
         .iter()
-        .map(|(id, _)| *id)
-        .collect();
-    let new_boosted_ids: Vec<u64> = new_data.new_boosted.iter().map(|(id, _)| *id).collect();
+        .map(|identifier| {
+            let principal = Principal::from_text(identifier).unwrap();
+            Identifier::from(principal).id()
+        })
+        .collect::<Vec<u64>>();
+
+    let old_event_ids = old_event_identifiers
+        .iter()
+        .map(|identifier| {
+            let principal = Principal::from_text(identifier).unwrap();
+            Identifier::from(principal).id()
+        })
+        .collect::<Vec<u64>>();
 
     assert_eq!(
-        new_group_ids.len(),
-        new_group_ids
+        old_group_ids.len(),
+        old_group_ids
             .iter()
             .collect::<std::collections::HashSet<_>>()
             .len()
     );
 
     assert_eq!(
-        new_event_ids.len(),
-        new_event_ids
-            .iter()
-            .collect::<std::collections::HashSet<_>>()
-            .len()
-    );
-
-    assert_eq!(
-        new_report_ids.len(),
-        new_report_ids
-            .iter()
-            .collect::<std::collections::HashSet<_>>()
-            .len()
-    );
-
-    assert_eq!(
-        new_friend_request_ids.len(),
-        new_friend_request_ids
-            .iter()
-            .collect::<std::collections::HashSet<_>>()
-            .len()
-    );
-
-    assert_eq!(
-        new_boosted_ids.len(),
-        new_boosted_ids
+        old_event_ids.len(),
+        old_event_ids
             .iter()
             .collect::<std::collections::HashSet<_>>()
             .len()

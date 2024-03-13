@@ -1,11 +1,24 @@
+use std::collections::HashMap;
+
 use super::read_stores::OldData;
 use candid::Principal;
 
 use canister_types::models::{
-    attendee::Attendee, boosted::Boost, event::Event, friend_request::FriendRequest, group::Group,
-    member::Member, notification::Notification, profile::Profile, report::Report,
+    attendee::Attendee,
+    boosted::Boost,
+    event::Event,
+    friend_request::FriendRequest,
+    group::Group,
+    identifier::Identifier,
+    invite_type::InviteType,
+    member::{Join, Member, MemberInvite},
+    notification::Notification,
+    profile::Profile,
+    report::Report,
     user_notifications::UserNotifications,
 };
+
+use super::old_models::member_model::{Invite as OldInvite, InviteType as OldInviteType};
 
 pub struct NewData {
     pub new_profiles: Vec<(Principal, Profile)>,
@@ -58,9 +71,6 @@ fn profiles_from_old(old_data: &OldData) -> Vec<(Principal, Profile)> {
         let principal: Principal = old_profile.principal;
 
         let profile = Profile {
-            principal: old_profile.principal,
-            member_identifier: old_profile.member_identifier,
-
             username: old_profile.username.clone(),
             display_name: old_profile.display_name.clone(),
             application_role: old_profile.application_role.clone(),
@@ -82,7 +92,7 @@ fn profiles_from_old(old_data: &OldData) -> Vec<(Principal, Profile)> {
             causes: old_profile.causes.clone(),
             website: old_profile.website.clone(),
 
-            code_of_conduct: old_profile.code_of_conduct.clone(),
+            code_of_conduct: Some(old_profile.code_of_conduct.clone()),
             privacy_policy: old_profile.privacy_policy.clone(),
             terms_of_service: old_profile.terms_of_service.clone(),
             wallets: old_profile.wallets.clone(),
@@ -101,11 +111,93 @@ fn profiles_from_old(old_data: &OldData) -> Vec<(Principal, Profile)> {
 }
 
 fn members_from_old(old_data: &OldData) -> Vec<(Principal, Member)> {
-    todo!()
+    let mut new_members = Vec::new();
+
+    for (_, old_member) in old_data.old_members.iter() {
+        let principal: Principal = old_member.principal;
+
+        let joined: HashMap<u64, Join> = old_member
+            .joined
+            .iter()
+            .map(|(identifier, join)| {
+                let id = Identifier::from(*identifier).id();
+                let join = Join {
+                    roles: join.roles.clone(),
+                    updated_at: join.updated_at,
+                    created_at: join.created_at,
+                };
+                (id, join)
+            })
+            .collect();
+
+        let invites: HashMap<u64, MemberInvite> = old_member
+            .invites
+            .iter()
+            .map(|(identifier, invite)| {
+                let id = Identifier::from(*identifier).id();
+                let invite = MemberInvite::from(invite.clone());
+                (id, invite)
+            })
+            .collect();
+
+        let member = Member { joined, invites };
+
+        new_members.push((principal, member));
+    }
+
+    new_members
+}
+
+impl From<OldInvite> for MemberInvite {
+    fn from(old_invite: OldInvite) -> Self {
+        let invite_type = match old_invite.invite_type {
+            OldInviteType::OwnerRequest => InviteType::OwnerRequest,
+            OldInviteType::UserRequest => InviteType::UserRequest,
+        };
+        MemberInvite {
+            invite_type,
+            updated_at: old_invite.updated_at,
+            created_at: old_invite.created_at,
+        }
+    }
 }
 
 fn attendees_from_old(old_data: &OldData) -> Vec<(Principal, Attendee)> {
-    todo!()
+    let mut new_attendees = Vec::new();
+
+    for (_, old_attendee) in old_data.old_event_attendees.iter() {
+        let principal: Principal = old_attendee.principal;
+
+        let joined: HashMap<u64, Join> = old_attendee
+            .joined
+            .iter()
+            .map(|(identifier, join)| {
+                let id = Identifier::from(*identifier).id();
+                let join = Join {
+                    roles: join.roles.clone(),
+                    updated_at: join.updated_at,
+                    created_at: join.created_at,
+                };
+                (id, join)
+            })
+            .collect();
+
+        let invites: HashMap<u64, MemberInvite> = old_attendee
+            .invites
+            .iter()
+            .map(|(identifier, invite)| {
+                let id = Identifier::from(*identifier).id();
+                let invite = MemberInvite::from(invite.clone());
+                (id, invite)
+            })
+            .collect();
+
+        let attendee = Attendee { joined, invites };
+
+        new_attendees.push((principal, attendee));
+    }
+
+    new_attendees
 }
 
 fn groups_from_old(old_data: &OldData) -> Vec<(u64, Group)> {
