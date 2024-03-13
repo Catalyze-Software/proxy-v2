@@ -48,7 +48,7 @@ impl ProfileCalls {
         //////////////////////////////////////////////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////////////////////
 
-        let _ = MemberCalls::create_empty_member(caller(), profile_identifier);
+        let _ = MemberCalls::create_empty_member(caller());
         ProfileResponse::from_result(stored_profile)
     }
 
@@ -290,7 +290,7 @@ impl ProfileCalls {
     pub fn approve_code_of_conduct(version: u64) -> Result<bool, ApiError> {
         let (_, mut profile) = ProfileStore::get(caller())?;
 
-        profile.code_of_conduct = DocumentDetails::new(version, time());
+        profile.code_of_conduct = Some(DocumentDetails::new(version, time()));
         let updated_profile = ProfileStore::update(caller(), profile);
 
         Ok(updated_profile.is_ok())
