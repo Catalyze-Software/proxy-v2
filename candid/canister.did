@@ -127,7 +127,6 @@ type EventResponse = record {
   owner : principal;
   metadata : opt text;
   date : DateRange;
-  attendee_count : nat64;
   name : text;
   tags : vec nat32;
   description : text;
@@ -145,7 +144,6 @@ type EventResponse = record {
 };
 type EventSort = variant {
   UpdatedOn : SortDirection;
-  AttendeeCount : SortDirection;
   StartDate : SortDirection;
   CreatedOn : SortDirection;
   EndDate : SortDirection;
@@ -605,6 +603,7 @@ service : () -> {
   leave_event : (principal) -> (Result_11);
   leave_group : (principal) -> (Result_11);
   mark_notifications_as_read : (vec nat64, bool) -> (Result_24);
+  migrate : () -> (vec vec text);
   remove_attendee_from_event : (principal, principal, principal) -> (Result_11);
   remove_attendee_invite_from_event : (principal, principal, principal) -> (
       Result_11,

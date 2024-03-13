@@ -21,7 +21,7 @@ pub struct OldData {
     pub old_notifications: Vec<(u32, String)>,
 }
 
-async fn read_old_data(env: String) -> OldData {
+pub async fn read_old_data(env: String) -> OldData {
     let old_members = read_members_entries(env.clone()).await;
     let old_groups = read_groups_entries(env.clone()).await;
     let old_profiles = read_profile_entries(env.clone()).await;

@@ -35,13 +35,13 @@ pub struct NewData {
     // pub new_user_notifications: Vec<(Principal, UserNotifications)>,
 }
 
-fn transform_models(old_data: OldData) -> NewData {
-    let new_profiles = profiles_from_old(&old_data);
-    let new_members = members_from_old(&old_data);
-    let new_attendees = attendees_from_old(&old_data);
+pub fn transform_models(old_data: &OldData) -> NewData {
+    let new_profiles = profiles_from_old(old_data);
+    let new_members = members_from_old(old_data);
+    let new_attendees = attendees_from_old(old_data);
 
-    let new_groups = groups_from_old(&old_data);
-    let new_events = events_from_old(&old_data);
+    let new_groups = groups_from_old(old_data);
+    let new_events = events_from_old(old_data);
     // let new_reports = reports_from_old(&old_data);
 
     // let new_friend_requests = friend_requests_from_old(&old_data);
@@ -249,6 +249,9 @@ fn groups_from_old(old_data: &OldData) -> Vec<(u64, Group)> {
         new_groups.push((id, group));
     }
 
+    // sort by ascending u64 in Vec<(u64, Group)>
+    new_groups.sort_by(|a, b| a.0.cmp(&b.0));
+
     new_groups
 }
 
@@ -296,6 +299,9 @@ fn events_from_old(old_data: &OldData) -> Vec<(u64, Event)> {
 
         new_events.push((id, event));
     }
+
+    // sort by ascending u64 in Vec<(u64, Event)>
+    new_events.sort_by(|a, b| a.0.cmp(&b.0));
 
     new_events
 }
