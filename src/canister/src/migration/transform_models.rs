@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 
-use super::read_stores::OldData;
+use super::{old_models::group_model::GroupRole, read_stores::OldData};
 use candid::Principal;
 
 use canister_types::models::{
-    attendee::Attendee,
+    attendee::{Attendee, AttendeeInvite, AttendeeJoin},
     boosted::Boost,
     event::Event,
     friend_request::FriendRequest,
@@ -13,11 +13,16 @@ use canister_types::models::{
     invite_type::InviteType,
     member::{Join, Member, MemberInvite},
     notification::Notification,
+    permission::Permission,
     profile::Profile,
     report::Report,
+    role::Role,
     user_notifications::UserNotifications,
 };
 
+use super::old_models::attendee_model::{
+    Invite as OldAttendeeInvite, InviteType as OldAttendeeInviteType,
+};
 use super::old_models::member_model::{Invite as OldInvite, InviteType as OldInviteType};
 
 pub struct NewData {
@@ -27,10 +32,10 @@ pub struct NewData {
 
     pub new_groups: Vec<(u64, Group)>,
     pub new_events: Vec<(u64, Event)>,
-    pub new_reports: Vec<(u64, Report)>,
+    // pub new_reports: Vec<(u64, Report)>,
 
-    pub new_friend_requests: Vec<(u64, FriendRequest)>,
-    pub new_boosted: Vec<(u64, Boost)>,
+    // pub new_friend_requests: Vec<(u64, FriendRequest)>,
+    // pub new_boosted: Vec<(u64, Boost)>,
     // pub new_notifications: Vec<(u64, Notification)>,
     // pub new_user_notifications: Vec<(Principal, UserNotifications)>,
 }
@@ -42,10 +47,10 @@ fn transform_models(old_data: OldData) -> NewData {
 
     let new_groups = groups_from_old(&old_data);
     let new_events = events_from_old(&old_data);
-    let new_reports = reports_from_old(&old_data);
+    // let new_reports = reports_from_old(&old_data);
 
-    let new_friend_requests = friend_requests_from_old(&old_data);
-    let new_boosted = boosted_from_old(&old_data);
+    // let new_friend_requests = friend_requests_from_old(&old_data);
+    // let new_boosted = boosted_from_old(&old_data);
 
     // let new_notifications = notifications_from_old(&old_data);
     // let new_user_notifications = user_notifications_from_old(&old_data);
@@ -56,9 +61,9 @@ fn transform_models(old_data: OldData) -> NewData {
         new_attendees,
         new_groups,
         new_events,
-        new_reports,
-        new_friend_requests,
-        new_boosted,
+        // new_reports,
+        // new_friend_requests,
+        // new_boosted,
         // new_notifications,
         // new_user_notifications,
     }
@@ -168,13 +173,13 @@ fn attendees_from_old(old_data: &OldData) -> Vec<(Principal, Attendee)> {
     for (_, old_attendee) in old_data.old_event_attendees.iter() {
         let principal: Principal = old_attendee.principal;
 
-        let joined: HashMap<u64, Join> = old_attendee
+        let joined: HashMap<u64, AttendeeJoin> = old_attendee
             .joined
             .iter()
             .map(|(identifier, join)| {
                 let id = Identifier::from(*identifier).id();
-                let join = Join {
-                    roles: join.roles.clone(),
+                let join = AttendeeJoin {
+                    group_id: Identifier::from(join.group_identifier).id(),
                     updated_at: join.updated_at,
                     created_at: join.created_at,
                 };
@@ -182,12 +187,12 @@ fn attendees_from_old(old_data: &OldData) -> Vec<(Principal, Attendee)> {
             })
             .collect();
 
-        let invites: HashMap<u64, MemberInvite> = old_attendee
+        let invites: HashMap<u64, AttendeeInvite> = old_attendee
             .invites
             .iter()
             .map(|(identifier, invite)| {
                 let id = Identifier::from(*identifier).id();
-                let invite = MemberInvite::from(invite.clone());
+                let invite = AttendeeInvite::from(invite.clone());
                 (id, invite)
             })
             .collect();
@@ -200,30 +205,126 @@ fn attendees_from_old(old_data: &OldData) -> Vec<(Principal, Attendee)> {
     new_attendees
 }
 
+impl From<OldAttendeeInvite> for AttendeeInvite {
+    fn from(old_invite: OldAttendeeInvite) -> Self {
+        let invite_type: InviteType = match old_invite.invite_type {
+            OldAttendeeInviteType::OwnerRequest => InviteType::OwnerRequest,
+            OldAttendeeInviteType::UserRequest => InviteType::UserRequest,
+            OldAttendeeInviteType::None => panic!("OldAttendeeInviteType::None is not allowed"),
+        };
+        AttendeeInvite {
+            group_id: Identifier::from(old_invite.group_identifier).id(),
+            invite_type,
+            updated_at: old_invite.updated_at,
+            created_at: old_invite.created_at,
+        }
+    }
+}
+
 fn groups_from_old(old_data: &OldData) -> Vec<(u64, Group)> {
-    todo!()
+    let mut new_groups = Vec::new();
+
+    for (identifier, old_group) in old_data.old_groups.iter() {
+        let id = Identifier::from(Principal::from_text(identifier).unwrap()).id();
+
+        let group = Group {
+            name: old_group.name.clone(),
+            description: old_group.description.clone(),
+            privacy: old_group.privacy.clone(),
+            tags: old_group.tags.clone(),
+            location: old_group.location.clone(),
+            banner_image: old_group.banner_image.clone(),
+            updated_on: old_group.updated_on,
+            created_on: old_group.created_on,
+            website: old_group.website.clone(),
+            owner: old_group.owner.clone(),
+            created_by: old_group.created_by.clone(),
+            matrix_space_id: old_group.matrix_space_id.clone(),
+            image: old_group.image.clone(),
+            privacy_gated_type_amount: old_group.privacy_gated_type_amount.clone(),
+            roles: old_group
+                .roles
+                .iter()
+                .map(|role| Role::from(role.clone()))
+                .collect(),
+            is_deleted: old_group.is_deleted,
+            wallets: old_group.wallets.clone(),
+        };
+
+        new_groups.push((id, group));
+    }
+
+    new_groups
+}
+
+impl From<GroupRole> for Role {
+    fn from(group_role: GroupRole) -> Self {
+        Self {
+            name: group_role.name,
+            protected: group_role.protected,
+            permissions: group_role
+                .permissions
+                .into_iter()
+                .map(|permission| Permission::from(permission))
+                .collect(),
+            color: group_role.color,
+            index: group_role.index,
+        }
+    }
 }
 
 fn events_from_old(old_data: &OldData) -> Vec<(u64, Event)> {
-    todo!()
+    let mut new_events = Vec::new();
+
+    for (identifier, old_event) in old_data.old_events.iter() {
+        let id = Identifier::from(Principal::from_text(identifier).unwrap()).id();
+
+        let event = Event {
+            name: old_event.name.clone(),
+            description: old_event.description.clone(),
+            privacy: old_event.privacy.clone(),
+            tags: old_event.tags.clone(),
+            location: old_event.location.clone(),
+            banner_image: old_event.banner_image.clone(),
+            updated_on: old_event.updated_on,
+            created_on: old_event.created_on,
+            website: old_event.website.clone(),
+            owner: old_event.owner.clone(),
+            created_by: old_event.created_by.clone(),
+            matrix_space_id: old_event.matrix_space_id.clone(),
+            image: old_event.image.clone(),
+            privacy_gated_type_amount: old_event.privacy_gated_type_amount.clone(),
+            roles: old_event
+                .roles
+                .iter()
+                .map(|role| Role::from(role.clone()))
+                .collect(),
+            is_deleted: old_event.is_deleted,
+            wallets: old_event.wallets.clone(),
+        };
+
+        new_events.push((id, event));
+    }
+
+    new_events
 }
 
-fn reports_from_old(old_data: &OldData) -> Vec<(u64, Report)> {
-    todo!()
-}
+// fn reports_from_old(old_data: &OldData) -> Vec<(u64, Report)> {
+//     todo!()
+// }
 
-fn friend_requests_from_old(old_data: &OldData) -> Vec<(u64, FriendRequest)> {
-    todo!()
-}
+// fn friend_requests_from_old(old_data: &OldData) -> Vec<(u64, FriendRequest)> {
+//     todo!()
+// }
 
-fn boosted_from_old(old_data: &OldData) -> Vec<(u64, Boost)> {
-    todo!()
-}
+// fn boosted_from_old(old_data: &OldData) -> Vec<(u64, Boost)> {
+//     todo!()
+// }
 
-fn notifications_from_old(old_data: &OldData) -> Vec<(u64, Notification)> {
-    todo!()
-}
+// fn notifications_from_old(old_data: &OldData) -> Vec<(u64, Notification)> {
+//     todo!()
+// }
 
-fn user_notifications_from_old(old_data: &OldData) -> Vec<(Principal, UserNotifications)> {
-    todo!()
-}
+// fn user_notifications_from_old(old_data: &OldData) -> Vec<(Principal, UserNotifications)> {
+//     todo!()
+// }
