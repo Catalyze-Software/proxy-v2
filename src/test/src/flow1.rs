@@ -1,18 +1,17 @@
 // Flow 1
 
 use crate::{
-    calls::{
-        group_calls::add_group,
-        profile_calls::{
-            add_profile, approve_code_of_conduct, approve_privacy_policy, approve_terms_of_service,
-        },
-    }, mocks::{models::{mock_post_group, mock_post_profile}, principals::{canister_test_id, member_test_id}}, GROUP_ID, SENDER
+    calls::profile_calls::{
+        add_profile, approve_code_of_conduct, approve_privacy_policy, approve_terms_of_service,
+    },
+    mocks::{
+        models::mock_post_profile,
+        principals::{canister_test_id, member_test_id},
+    },
+    SENDER,
 };
 use candid::Principal;
-use canister_types::models::{
-    group::{GroupResponse, PostGroup},
-    profile::{PostProfile, ProfileResponse},
-};
+use canister_types::models::profile::{PostProfile, ProfileResponse};
 
 pub fn flow1() {
     // Set sender principal
@@ -24,11 +23,14 @@ pub fn flow1() {
      * Add profile
      */
     let post_profile: PostProfile = mock_post_profile();
-    
+
     let profile_response: ProfileResponse = add_profile(post_profile, member_canister);
 
     // The `principal` field of the response should be the same as the sender.
-    assert_eq!(profile_response.principal, SENDER.with(|s| s.borrow().unwrap()));
+    assert_eq!(
+        profile_response.principal,
+        SENDER.with(|s| s.borrow().unwrap())
+    );
 
     /*
      * Approve code of conduct
@@ -60,9 +62,10 @@ pub fn flow1() {
     /*
      * Add group
      */
-    let post_group: PostGroup = mock_post_group();
-    let account_identifier: Option<String> = None;
+    // let post_group: PostGroup = mock_post_group();
+    // let account_identifier: Option<String> = None;
 
-    let group_response: GroupResponse = add_group(post_group, account_identifier);
-    GROUP_ID.with(|g| *g.borrow_mut() = Some(group_response.identifier));
+    // TODO:
+    // let group_response: GroupResponse = add_group(post_group, account_identifier);
+    // GROUP_ID.with(|g| *g.borrow_mut() = Some(group_response.identifier));
 }

@@ -41,7 +41,6 @@ type ApplicationRole = variant {
 };
 type Asset = variant { Url : text; None; CanisterStorage : CanisterStorage };
 type Attendee = record {
-  "principal" : principal;
   invites : vec record { nat64; AttendeeInvite };
   joined : vec record { nat64; AttendeeJoin };
 };
@@ -122,6 +121,7 @@ type EventNotificationType = variant {
   UserLeaveEvent : principal;
 };
 type EventResponse = record {
+  id : nat64;
   updated_on : nat64;
   banner_image : Asset;
   owner : principal;
@@ -140,7 +140,6 @@ type EventResponse = record {
   is_canceled : record { bool; text };
   image : Asset;
   caller_data : opt EventCallerData;
-  identifier : principal;
   location : Location;
   is_deleted : bool;
 };
@@ -171,7 +170,6 @@ type GroupFilter = variant {
   Ids : vec nat64;
   Tag : nat32;
   UpdatedOn : DateRange;
-  MemberCount : record { nat64; nat64 };
   Name : text;
   None;
   Owner : principal;
@@ -187,6 +185,7 @@ type GroupNotificationType = variant {
   JoinGroupOwnerRequestAccept : nat64;
 };
 type GroupResponse = record {
+  id : nat64;
   updated_on : nat64;
   banner_image : Asset;
   owner : principal;
@@ -202,8 +201,6 @@ type GroupResponse = record {
   wallets : vec record { principal; text };
   image : Asset;
   caller_data : opt GroupCallerData;
-  identifier : principal;
-  member_count : nat64;
   privacy_gated_type_amount : opt nat64;
   location : Location;
   roles : vec Role;
@@ -211,7 +208,6 @@ type GroupResponse = record {
 };
 type GroupSort = variant {
   UpdatedOn : SortDirection;
-  MemberCount : SortDirection;
   Name : SortDirection;
   CreatedOn : SortDirection;
 };
@@ -246,10 +242,8 @@ type Location = variant {
 };
 type Manifest = record { entries : vec ChunkData };
 type Member = record {
-  "principal" : principal;
   invites : vec record { nat64; MemberInvite };
   joined : vec record { nat64; Join };
-  profile_identifier : principal;
 };
 type MemberInvite = record {
   updated_at : nat64;
@@ -386,11 +380,9 @@ type ProfileResponse = record {
   state_or_province : text;
   first_name : text;
   last_name : text;
-  member_identifier : principal;
   causes : vec nat32;
-  code_of_conduct : DocumentDetails;
+  code_of_conduct : opt DocumentDetails;
   date_of_birth : nat64;
-  identifier : principal;
   skills : vec nat32;
   application_role : ApplicationRole;
 };
@@ -591,12 +583,8 @@ service : () -> {
   get_member_roles : (principal, principal) -> (Result_20) query;
   get_notifications : () -> (vec record { nat64; Notification }) query;
   get_outgoing_friend_requests : () -> (vec FriendRequestResponse) query;
-  get_profile_by_identifier : (principal) -> (Result_7) query;
-  get_profile_by_user_principal : (principal) -> (Result_7) query;
-  get_profiles_by_identifier : (vec principal) -> (vec ProfileResponse) query;
-  get_profiles_by_user_principal : (vec principal) -> (
-      vec ProfileResponse,
-    ) query;
+  get_profile : (principal) -> (Result_7) query;
+  get_profiles : (vec principal) -> (vec ProfileResponse) query;
   get_relations : (RelationType) -> (vec principal) query;
   get_relations_count : (RelationType) -> (nat64) query;
   get_remaining_boost_time_in_seconds : (principal) -> (Result_10) query;

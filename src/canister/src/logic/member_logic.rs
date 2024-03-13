@@ -10,23 +10,21 @@ pub struct MemberCalls;
 pub struct MemberMapper;
 
 impl MemberCalls {
-    pub fn create_empty_member(
-        principal: Principal,
-        profile_identifier: Principal,
-    ) -> Result<(Principal, Member), ApiError> {
+    pub fn create_empty_member(principal: Principal) -> Result<(Principal, Member), ApiError> {
         if let Ok(_) = MemberStore::get(principal) {
             return Err(ApiError::duplicate()
                 .add_method_name("create_empty_member")
                 .add_message("Member already exists"));
         }
 
-        let new_member = Member::new(principal, profile_identifier);
+        let new_member = Member::new();
         MemberStore::insert_by_key(principal, new_member)
     }
 }
 
 impl MemberMapper {
     pub fn to_joined_member_response(
+        principal: Principal,
         member: Member,
         group_id: u64,
     ) -> Result<JoinedMemberResponse, ApiError> {
@@ -35,6 +33,6 @@ impl MemberMapper {
                 .add_method_name("to_joined_member_response")
                 .add_message("Member not joined the group"));
         };
-        Ok(JoinedMemberResponse::new(member, group_id))
+        Ok(JoinedMemberResponse::new(principal, member, group_id))
     }
 }

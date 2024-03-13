@@ -16,7 +16,6 @@ use crate::{
 use super::{
     api_error::ApiError,
     boosted::Boost,
-    identifier::{Identifier, IdentifierKind, MEMBER_CANISTER_ID},
     member::{InviteMemberResponse, JoinedMemberResponse},
     permission::Permission,
 };
@@ -39,8 +38,6 @@ pub struct Group {
     pub privacy_gated_type_amount: Option<u64>,
     pub roles: Vec<Role>,
     pub is_deleted: bool,
-    // Shouldn't be used, use the member store data instead
-    pub member_count: HashMap<Principal, usize>,
     pub wallets: HashMap<Principal, String>,
     pub updated_on: u64,
     pub created_on: u64,
@@ -60,7 +57,6 @@ impl Group {
             image: Default::default(),
             banner_image: Default::default(),
             tags: Default::default(),
-            member_count: Default::default(),
             wallets: Default::default(),
             roles: Vec::default(),
             is_deleted: Default::default(),
@@ -83,7 +79,6 @@ impl Group {
             image: group.image,
             banner_image: group.banner_image,
             tags: group.tags,
-            member_count: Default::default(),
             wallets: Default::default(),
             roles: Vec::default(),
             is_deleted: false,
@@ -187,7 +182,7 @@ impl GroupCallerData {
 
 #[derive(Clone, CandidType, Serialize, Deserialize, Debug)]
 pub struct GroupResponse {
-    pub identifier: Principal,
+    pub id: u64,
     pub name: String,
     pub description: String,
     pub website: String,
@@ -200,7 +195,6 @@ pub struct GroupResponse {
     pub banner_image: Asset,
     pub tags: Vec<u32>,
     pub roles: Vec<Role>,
-    pub member_count: usize,
     pub wallets: Vec<(Principal, String)>,
     pub is_deleted: bool,
     pub privacy_gated_type_amount: Option<u64>,
@@ -217,11 +211,8 @@ impl GroupResponse {
         boosted: Option<Boost>,
         caller_data: Option<GroupCallerData>,
     ) -> Self {
-        let identifier = Identifier::generate(IdentifierKind::Group(id));
-        let member_count: usize = group.member_count.into_iter().map(|(_, value)| value).sum();
-
         Self {
-            identifier: identifier.to_principal().unwrap(),
+            id,
             name: group.name,
             description: group.description,
             website: group.website,
@@ -234,7 +225,6 @@ impl GroupResponse {
             banner_image: group.banner_image,
             tags: group.tags,
             roles: group.roles,
-            member_count: member_count.clone(),
             wallets: group.wallets.into_iter().collect(),
             is_deleted: group.is_deleted,
             caller_data,
@@ -260,7 +250,6 @@ impl GroupResponse {
 #[derive(Clone, Debug, CandidType, Deserialize)]
 pub enum GroupSort {
     Name(SortDirection),
-    MemberCount(SortDirection),
     CreatedOn(SortDirection),
     UpdatedOn(SortDirection),
 }
@@ -272,7 +261,6 @@ impl GroupSort {
 
     pub fn sort(&self, groups: HashMap<u64, Group>) -> Vec<(u64, Group)> {
         let mut groups: Vec<(u64, Group)> = groups.into_iter().collect();
-        let member_canister_id = Principal::from_text(MEMBER_CANISTER_ID).unwrap();
         use GroupSort::*;
         use SortDirection::*;
         match self {
@@ -282,18 +270,6 @@ impl GroupSort {
             Name(Desc) => {
                 groups.sort_by(|(_, a), (_, b)| b.name.to_lowercase().cmp(&a.name.to_lowercase()))
             }
-            MemberCount(Asc) => groups.sort_by(|(_, a), (_, b)| {
-                a.member_count
-                    .get(&member_canister_id)
-                    .unwrap()
-                    .cmp(b.member_count.get(&member_canister_id).unwrap())
-            }),
-            MemberCount(Desc) => groups.sort_by(|(_, a), (_, b)| {
-                b.member_count
-                    .get(&member_canister_id)
-                    .unwrap()
-                    .cmp(a.member_count.get(&member_canister_id).unwrap())
-            }),
             CreatedOn(Asc) => groups.sort_by(|(_, a), (_, b)| a.created_on.cmp(&b.created_on)),
             CreatedOn(Desc) => groups.sort_by(|(_, a), (_, b)| b.created_on.cmp(&a.created_on)),
             UpdatedOn(Asc) => groups.sort_by(|(_, a), (_, b)| a.updated_on.cmp(&b.updated_on)),
@@ -308,7 +284,6 @@ pub enum GroupFilter {
     None,
     Name(String),
     Owner(Principal),
-    MemberCount((usize, usize)),
     Ids(Vec<u64>),
     Tag(u32),
     UpdatedOn(DateRange),
@@ -327,14 +302,6 @@ impl GroupFilter {
             GroupFilter::None => true,
             GroupFilter::Name(name) => group.name.to_lowercase().contains(&name.to_lowercase()),
             GroupFilter::Owner(owner) => group.owner == *owner,
-            GroupFilter::MemberCount((min, max)) => {
-                // This gets the first value of the hashmap (should always be only one value)
-                let count = group
-                    .member_count
-                    .get(&Principal::from_text(MEMBER_CANISTER_ID).unwrap())
-                    .map_or(0, |f| *f);
-                count >= *min && count <= *max
-            }
             GroupFilter::Ids(ids) => ids.contains(&id),
             GroupFilter::Tag(tag) => group.tags.contains(tag),
             GroupFilter::UpdatedOn(range) => {

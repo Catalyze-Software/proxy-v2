@@ -16,7 +16,6 @@ use super::{
     api_error::ApiError,
     attendee::{InviteAttendeeResponse, JoinedAttendeeResponse},
     boosted::Boost,
-    identifier::Identifier,
 };
 
 impl_storable_for!(Event);
@@ -278,7 +277,7 @@ impl Default for EventFilter {
 
 #[derive(Clone, Debug, CandidType, Deserialize, Serialize)]
 pub struct EventResponse {
-    pub identifier: Principal,
+    pub id: u64,
     pub name: String,
     pub description: String,
     pub date: DateRange,
@@ -308,10 +307,8 @@ impl EventResponse {
         boosted: Option<Boost>,
         caller_data: Option<EventCallerData>,
     ) -> Self {
-        let identifier = Identifier::generate(super::identifier::IdentifierKind::Event(id));
-
         Self {
-            identifier: identifier.to_principal().unwrap(),
+            id,
             name: event.name,
             description: event.description,
             date: event.date,

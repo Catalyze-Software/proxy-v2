@@ -1,6 +1,4 @@
-use crate::storage::{
-    AttendeeStore, EventStore, IdentifierRefMethods, ProfileStore, StorageMethods,
-};
+use crate::storage::{AttendeeStore, EventStore, ProfileStore, StorageMethods};
 
 use super::boost_logic::BoostCalls;
 use candid::Principal;
@@ -27,7 +25,6 @@ impl EventCalls {
     pub fn add_event(post_event: PostEvent) -> Result<EventResponse, ApiError> {
         let (new_event_id, new_event) = EventStore::insert(Event::from(post_event))?;
 
-        EventStore::insert_identifier_ref(new_event_id)?;
         let (_, mut attendee) = AttendeeStore::get(caller())?;
 
         attendee.add_joined(new_event_id, new_event.group_id);
