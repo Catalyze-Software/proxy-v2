@@ -36,7 +36,6 @@ pub struct Event {
     pub tags: Vec<u32>,
     pub is_canceled: (bool, String),
     pub is_deleted: bool,
-    pub attendee_count: u64,
     pub metadata: Option<String>,
     pub updated_on: u64,
     pub created_on: u64,
