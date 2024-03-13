@@ -7,6 +7,12 @@ pub fn check_data_integrity(old_data: &OldData, new_data: &NewData) {
     check_store_sizes(old_data, new_data);
     check_unique_principals(old_data);
     check_unique_ids(old_data);
+
+    check_unique_member_joined_ids(old_data);
+    chech_unique_member_invite_ids(old_data);
+
+    check_unique_attendee_joined_ids(old_data);
+    chech_unique_attendee_invite_ids(old_data);
 }
 
 fn check_store_sizes(old_data: &OldData, new_data: &NewData) {
@@ -63,10 +69,16 @@ fn check_unique_principals(old_data: &OldData) {
 }
 
 fn check_unique_ids(old_data: &OldData) {
-    let old_group_identifiers: Vec<String> =
-        old_data.old_groups.iter().map(|(id, _)| *id).collect();
-    let old_event_identifiers: Vec<String> =
-        old_data.old_events.iter().map(|(id, _)| *id).collect();
+    let old_group_identifiers: Vec<String> = old_data
+        .old_groups
+        .iter()
+        .map(|(id, _)| id.clone())
+        .collect();
+    let old_event_identifiers: Vec<String> = old_data
+        .old_events
+        .iter()
+        .map(|(id, _)| id.clone())
+        .collect();
 
     let old_group_ids = old_group_identifiers
         .iter()
@@ -99,4 +111,68 @@ fn check_unique_ids(old_data: &OldData) {
             .collect::<std::collections::HashSet<_>>()
             .len()
     );
+}
+
+fn check_unique_member_joined_ids(old_data: &OldData) {
+    let _ = old_data.old_members.iter().map(|(_, member)| {
+        let mut ids = vec![];
+
+        for key in member.joined.keys() {
+            let id = Identifier::from(*key).id();
+            ids.push(id);
+        }
+
+        assert_eq!(
+            ids.len(),
+            ids.iter().collect::<std::collections::HashSet<_>>().len()
+        );
+    });
+}
+
+fn chech_unique_member_invite_ids(old_data: &OldData) {
+    let _ = old_data.old_members.iter().map(|(_, member)| {
+        let mut ids = vec![];
+
+        for key in member.invites.keys() {
+            let id = Identifier::from(*key).id();
+            ids.push(id);
+        }
+
+        assert_eq!(
+            ids.len(),
+            ids.iter().collect::<std::collections::HashSet<_>>().len()
+        );
+    });
+}
+
+fn check_unique_attendee_joined_ids(old_data: &OldData) {
+    let _ = old_data.old_event_attendees.iter().map(|(_, attendee)| {
+        let mut ids = vec![];
+
+        for key in attendee.joined.keys() {
+            let id = Identifier::from(*key).id();
+            ids.push(id);
+        }
+
+        assert_eq!(
+            ids.len(),
+            ids.iter().collect::<std::collections::HashSet<_>>().len()
+        );
+    });
+}
+
+fn chech_unique_attendee_invite_ids(old_data: &OldData) {
+    let _ = old_data.old_event_attendees.iter().map(|(_, attendee)| {
+        let mut ids = vec![];
+
+        for key in attendee.invites.keys() {
+            let id = Identifier::from(*key).id();
+            ids.push(id);
+        }
+
+        assert_eq!(
+            ids.len(),
+            ids.iter().collect::<std::collections::HashSet<_>>().len()
+        );
+    });
 }
