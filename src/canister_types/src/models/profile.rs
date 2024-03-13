@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use candid::{CandidType, Deserialize, Principal};
-use ic_cdk::{api::time, caller};
+use ic_cdk::api::time;
 use serde::Serialize;
 
 use crate::{
@@ -23,8 +23,6 @@ impl_storable_for!(Profile);
 
 #[derive(Clone, Debug, CandidType, Deserialize, Serialize)]
 pub struct Profile {
-    pub principal: Principal,
-    pub member_identifier: Principal,
     pub username: String,
     pub display_name: String,
     pub application_role: ApplicationRole,
@@ -43,7 +41,7 @@ pub struct Profile {
     pub interests: Vec<u32>,
     pub causes: Vec<u32>,
     pub website: String,
-    pub code_of_conduct: DocumentDetails,
+    pub code_of_conduct: Option<DocumentDetails>,
     pub privacy_policy: Option<DocumentDetails>,
     pub terms_of_service: Option<DocumentDetails>,
     pub wallets: HashMap<Principal, Wallet>,
@@ -58,8 +56,6 @@ pub struct Profile {
 impl Profile {
     pub fn default() -> Self {
         Self {
-            principal: Principal::anonymous(),
-            member_identifier: Principal::anonymous(),
             username: Default::default(),
             display_name: Default::default(),
             application_role: Default::default(),
@@ -93,7 +89,6 @@ impl Profile {
 
     pub fn update(self, profile: UpdateProfile) -> Self {
         Self {
-            principal: self.principal,
             username: self.username,
             display_name: profile.display_name,
             application_role: self.application_role,
@@ -120,7 +115,6 @@ impl Profile {
             updated_on: time(),
             notification_id: self.notification_id,
             created_on: self.created_on,
-            member_identifier: self.member_identifier,
             privacy_policy: self.privacy_policy,
             terms_of_service: self.terms_of_service,
         }
@@ -138,7 +132,6 @@ impl Profile {
 impl From<PostProfile> for Profile {
     fn from(profile: PostProfile) -> Self {
         Self {
-            principal: caller(),
             username: profile.username,
             display_name: profile.display_name,
             application_role: ApplicationRole::default(),
@@ -160,12 +153,11 @@ impl From<PostProfile> for Profile {
             wallets: HashMap::new(),
             starred: HashMap::new(),
             relations: HashMap::new(),
-            code_of_conduct: DocumentDetails::new(0, 0),
+            code_of_conduct: None,
             extra: profile.extra,
             updated_on: time(),
             created_on: time(),
             notification_id: None,
-            member_identifier: Principal::anonymous(),
             privacy_policy: None,
             terms_of_service: None,
         }
@@ -205,9 +197,7 @@ pub struct UpdateProfile {
 
 #[derive(Clone, Debug, CandidType, Deserialize, Serialize)]
 pub struct ProfileResponse {
-    pub identifier: Principal,
     pub principal: Principal,
-    pub member_identifier: Principal,
     pub username: String,
     pub display_name: String,
     pub application_role: ApplicationRole,
@@ -226,7 +216,7 @@ pub struct ProfileResponse {
     pub interests: Vec<u32>,
     pub causes: Vec<u32>,
     pub website: String,
-    pub code_of_conduct: DocumentDetails,
+    pub code_of_conduct: Option<DocumentDetails>,
     pub privacy_policy: Option<DocumentDetails>,
     pub terms_of_service: Option<DocumentDetails>,
     pub wallets: Vec<WalletResponse>,
@@ -236,7 +226,7 @@ pub struct ProfileResponse {
 }
 
 impl ProfileResponse {
-    pub fn new(id: Principal, profile: Profile) -> Self {
+    pub fn new(principal: Principal, profile: Profile) -> Self {
         let wallets = profile
             .wallets
             .into_iter()
@@ -248,6 +238,7 @@ impl ProfileResponse {
             .collect();
 
         Self {
+            principal,
             username: profile.username,
             display_name: profile.display_name,
             about: profile.about,
@@ -258,9 +249,6 @@ impl ProfileResponse {
             interests: profile.interests,
             causes: profile.causes,
             email: profile.email,
-            identifier: profile.principal,
-            principal: profile.principal,
-            member_identifier: profile.member_identifier,
             application_role: profile.application_role,
             first_name: profile.first_name,
             last_name: profile.last_name,
@@ -284,7 +272,7 @@ impl ProfileResponse {
     ) -> Result<Self, ApiError> {
         match profile_result {
             Err(err) => Err(err),
-            Ok((_, profile)) => {
+            Ok((principal, profile)) => {
                 let wallets = profile
                     .wallets
                     .into_iter()
@@ -296,6 +284,7 @@ impl ProfileResponse {
                     .collect();
 
                 let result = Self {
+                    principal,
                     username: profile.username,
                     display_name: profile.display_name,
                     about: profile.about,
@@ -306,9 +295,6 @@ impl ProfileResponse {
                     interests: profile.interests,
                     causes: profile.causes,
                     email: profile.email,
-                    identifier: profile.principal,
-                    principal: profile.principal,
-                    member_identifier: profile.member_identifier,
                     application_role: profile.application_role,
                     first_name: profile.first_name,
                     last_name: profile.last_name,

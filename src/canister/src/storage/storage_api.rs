@@ -44,11 +44,8 @@ pub type PrincipalIdentifier = Principal;
 // should be removed once the old data is migrated to the new data model
 
 static PROFILES_IDENTIFIER_REF_MEMORY_ID: MemoryId = MemoryId::new(109);
-static GROUPS_IDENTIFIER_REF_MEMORY_ID: MemoryId = MemoryId::new(110);
 static MEMBERS_IDENTIFIER_REF_MEMORY_ID: MemoryId = MemoryId::new(111);
-static EVENTS_IDENTIFIER_REF_MEMORY_ID: MemoryId = MemoryId::new(112);
 static ATTENDEES_IDENTIFIER_REF_MEMORY_ID: MemoryId = MemoryId::new(113);
-static REPORTS_IDENTIFIER_REF_MEMORY_ID: MemoryId = MemoryId::new(114);
 
 /// A reference to a `StableBTreeMap` that is wrapped in a `RefCell`.
 ///# Generics
@@ -137,24 +134,12 @@ thread_local! {
         StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.borrow().get(PROFILES_IDENTIFIER_REF_MEMORY_ID)))
     );
 
-    pub static GROUPS_IDENTIFIER_REF: StorageRef<PrincipalIdentifier, u64> = RefCell::new(
-        StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.borrow().get(GROUPS_IDENTIFIER_REF_MEMORY_ID)))
-    );
-
     pub static MEMBERS_IDENTIFIER_REF: StorageRef<PrincipalIdentifier, Principal> = RefCell::new(
         StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.borrow().get(MEMBERS_IDENTIFIER_REF_MEMORY_ID)))
     );
 
-    pub static EVENTS_IDENTIFIER_REF: StorageRef<PrincipalIdentifier, u64> = RefCell::new(
-        StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.borrow().get(EVENTS_IDENTIFIER_REF_MEMORY_ID)))
-    );
-
     pub static ATTENDEES_IDENTIFIER_REF: StorageRef<PrincipalIdentifier, Principal> = RefCell::new(
         StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.borrow().get(ATTENDEES_IDENTIFIER_REF_MEMORY_ID)))
-    );
-
-    pub static REPORTS_IDENTIFIER_REF: StorageRef<PrincipalIdentifier, u64> = RefCell::new(
-        StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.borrow().get(REPORTS_IDENTIFIER_REF_MEMORY_ID)))
     );
 
 }

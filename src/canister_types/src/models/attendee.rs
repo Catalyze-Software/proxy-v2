@@ -12,7 +12,6 @@ impl_storable_for!(Attendee);
 
 #[derive(Clone, Debug, CandidType, Deserialize, Serialize)]
 pub struct Attendee {
-    pub principal: Principal,
     pub notification_id: Option<u64>,
     pub joined: HashMap<u64, AttendeeJoin>,
     pub invites: HashMap<u64, AttendeeInvite>,
@@ -21,16 +20,14 @@ pub struct Attendee {
 impl Attendee {
     pub fn default() -> Self {
         Self {
-            principal: Principal::anonymous(),
             joined: Default::default(),
             invites: Default::default(),
             notification_id: None,
         }
     }
 
-    pub fn new(principal: Principal, profile_identifier: Principal) -> Self {
+    pub fn new() -> Self {
         Self {
-            principal,
             notification_id: None,
             joined: Default::default(),
             invites: Default::default(),

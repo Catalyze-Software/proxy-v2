@@ -14,8 +14,6 @@ impl_storable_for!(Member);
 
 #[derive(Clone, Debug, CandidType, Deserialize, Serialize)]
 pub struct Member {
-    principal: Principal,
-    profile_identifier: Principal,
     joined: HashMap<u64, Join>,
     invites: HashMap<u64, MemberInvite>,
 }
@@ -23,17 +21,13 @@ pub struct Member {
 impl Member {
     pub fn default() -> Self {
         Self {
-            principal: Principal::anonymous(),
-            profile_identifier: Principal::anonymous(),
             joined: Default::default(),
             invites: Default::default(),
         }
     }
 
-    pub fn new(principal: Principal, profile_identifier: Principal) -> Self {
+    pub fn new() -> Self {
         Self {
-            principal,
-            profile_identifier,
             joined: Default::default(),
             invites: Default::default(),
         }
@@ -192,10 +186,10 @@ pub struct JoinedMemberResponse {
 }
 
 impl JoinedMemberResponse {
-    pub fn new(member: Member, group_id: u64) -> Self {
+    pub fn new(principal: Principal, member: Member, group_id: u64) -> Self {
         Self {
             group_id,
-            principal: member.principal,
+            principal,
             roles: member.get_roles(group_id),
         }
     }
@@ -209,10 +203,10 @@ pub struct InviteMemberResponse {
 }
 
 impl InviteMemberResponse {
-    pub fn new(member: Member, group_id: u64) -> Self {
+    pub fn new(principal: Principal, member: Member, group_id: u64) -> Self {
         Self {
             group_id,
-            principal: member.principal,
+            principal,
             invite: member.get_invite(&group_id),
         }
     }

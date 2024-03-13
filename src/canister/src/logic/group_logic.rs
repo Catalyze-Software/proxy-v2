@@ -8,11 +8,7 @@ use crate::{
         },
         validator::Validator,
     },
-    logic::member_logic::MemberCalls,
-    storage::{
-        GroupStore, IdentifierRefMethods, MemberStore, NotificationStore, ProfileStore,
-        StorageMethods,
-    },
+    storage::{GroupStore, MemberStore, ProfileStore, StorageMethods},
 };
 use candid::Principal;
 use canister_types::{
@@ -65,21 +61,18 @@ impl GroupCalls {
         let (_, mut member) = MemberStore::get(caller())?;
 
         // Create and store the group
-        let new_group = GroupStore::insert(Group::from(post_group))?;
-
-        //////////////////////////////////////////////////////////////////////////////////////////
-        // TODO: REMOVE THIS SECTION
-        // ADDED FOR BACKWARD COMPATIBILITY
-        // SHOULD BE REMOVED IN THE FUTURE
-        let group_id = GroupStore::insert_identifier_ref(new_group.0)?;
-        //////////////////////////////////////////////////////////////////////////////////////////
+        let (new_group_id, new_group) = GroupStore::insert(Group::from(post_group))?;
 
         // generate and store an group identifier
-        member.add_joined(group_id, vec!["owner".to_string()]);
+        member.add_joined(new_group_id, vec!["owner".to_string()]);
 
         MemberStore::update(caller(), member)?;
 
-        GroupResponse::from_result(Ok(new_group), None, Self::get_group_caller_data(group_id))
+        GroupResponse::from_result(
+            Ok((new_group_id, new_group)),
+            None,
+            Self::get_group_caller_data(new_group_id),
+        )
     }
 
     pub fn get_group(id: u64) -> Result<GroupResponse, ApiError> {
@@ -213,6 +206,7 @@ impl GroupCalls {
     ) -> Result<GroupResponse, ApiError> {
         let (id, mut group) = GroupStore::get(group_id)?;
         group.wallets.remove(&wallet_canister);
+
         GroupResponse::from_result(
             GroupStore::update(id, group),
             Self::get_boosted_group(id),
@@ -303,7 +297,7 @@ impl GroupCalls {
 
         MemberStore::update(caller(), member.clone())?;
 
-        Ok(JoinedMemberResponse::new(member, group_id))
+        Ok(JoinedMemberResponse::new(caller(), member, group_id))
     }
 
     // Invite a member to the group
@@ -451,7 +445,7 @@ impl GroupCalls {
             return Err(ApiError::bad_request().add_message("Member is not in the group"));
         }
 
-        Ok(JoinedMemberResponse::new(member, group_id))
+        Ok(JoinedMemberResponse::new(principal, member, group_id))
     }
 
     pub fn get_groups_for_members(principals: Vec<Principal>) -> Vec<JoinedMemberResponse> {
@@ -459,9 +453,13 @@ impl GroupCalls {
 
         let mut result: Vec<JoinedMemberResponse> = vec![];
 
-        for (_, member) in members {
+        for (principal, member) in members {
             for (group_id, _) in member.get_multiple_joined() {
-                result.push(JoinedMemberResponse::new(member.clone(), group_id));
+                result.push(JoinedMemberResponse::new(
+                    principal,
+                    member.clone(),
+                    group_id,
+                ));
             }
         }
 
@@ -473,8 +471,8 @@ impl GroupCalls {
 
         let mut result: Vec<JoinedMemberResponse> = vec![];
 
-        for (_, member) in members {
-            result.push(JoinedMemberResponse::new(member, group_id));
+        for (principal, member) in members {
+            result.push(JoinedMemberResponse::new(principal, member, group_id));
         }
 
         Ok(result)
@@ -587,8 +585,8 @@ impl GroupCalls {
 
         let mut result: Vec<InviteMemberResponse> = vec![];
 
-        for (_, member) in members {
-            result.push(InviteMemberResponse::new(member, group_id));
+        for (principal, member) in members {
+            result.push(InviteMemberResponse::new(principal, member, group_id));
         }
 
         Ok(result)
@@ -610,9 +608,9 @@ impl GroupCalls {
             .is_ok_and(|(_, profile)| profile.starred.get(&group_identifier).is_some());
 
         let (joined, invite) = match MemberStore::get(caller()) {
-            Ok((_, member)) => {
-                let joined = JoinedMemberResponse::new(member.clone(), group_id);
-                let invite = InviteMemberResponse::new(member, group_id);
+            Ok((principal, member)) => {
+                let joined = JoinedMemberResponse::new(principal, member.clone(), group_id);
+                let invite = InviteMemberResponse::new(principal, member, group_id);
                 (Some(joined), Some(invite))
             }
             Err(_) => (None, None),
@@ -903,13 +901,12 @@ impl GroupValidation {
             }
             // If the group is private, add the invite to the member
             Private => {
-                member.add_invite(group_id, InviteType::UserRequest);
                 let notification_id = NotificationCalls::notification_join_request_to_group(
                     // TODO: add higher role members
                     vec![group.owner],
                     group_id,
                 )?;
-                member.set_notification_id(notification_id);
+                member.add_invite(group_id, InviteType::UserRequest, Some(notification_id));
                 Ok(member)
             }
             // If the group is invite only, throw an error

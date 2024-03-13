@@ -1,7 +1,6 @@
 use crate::{
     helpers::guards::{has_access, is_not_anonymous},
     logic::{friend_request_logic::FriendRequestCalls, profile_logic::ProfileCalls},
-    storage::{IdentifierRefMethods, ProfileStore},
 };
 /// # Profile methods
 /// # TODO:
@@ -45,32 +44,8 @@ pub fn add_profile(post_profile: PostProfile) -> Result<ProfileResponse, ApiErro
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 #[query(guard = "has_access")]
-pub fn get_profile_by_user_principal(principal: Principal) -> Result<ProfileResponse, ApiError> {
+pub fn get_profile(principal: Principal) -> Result<ProfileResponse, ApiError> {
     ProfileCalls::get_profile(principal)
-}
-
-/// Gets a profile by the given user identifier - [`[query]`](query)
-/// # Arguments
-/// * `user_identifier` - The user identifier to get the profile by
-/// # Returns
-/// * `ProfileResponse` - The profile that was found
-/// # Errors
-/// * `ApiError` - If something went wrong while getting the profile
-/// # Note
-/// This function is guarded by the [`has_access`](has_access) function.
-/// # Deprecated
-/// This function is deprecated and should be removed in favor of `get_profile_by_user_principal`
-#[query(guard = "has_access")]
-#[deprecated = "should be removed in favor of get_profile_by_user_principal"]
-pub fn get_profile_by_identifier(user_identifier: Principal) -> Result<ProfileResponse, ApiError> {
-    match ProfileStore::get_id_by_identifier(&user_identifier)
-        .map(|id| get_profile_by_user_principal(id))
-    {
-        Some(profile) => profile,
-        None => Err(ApiError::not_found()
-            .add_method_name("get_profile_by_identifier")
-            .add_message("Profile not found")),
-    }
 }
 
 /// Gets profiles by the given user principals - [`[query]`](query)
@@ -81,27 +56,8 @@ pub fn get_profile_by_identifier(user_identifier: Principal) -> Result<ProfileRe
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 #[query(guard = "has_access")]
-pub fn get_profiles_by_user_principal(principals: Vec<Principal>) -> Vec<ProfileResponse> {
+pub fn get_profiles(principals: Vec<Principal>) -> Vec<ProfileResponse> {
     ProfileCalls::get_profiles(principals)
-}
-
-/// Gets profiles by the given user identifiers - [`[query]`](query)
-/// # Arguments
-/// * `identifiers` - The user identifiers to get the profiles by
-/// # Returns
-/// * `Vec<ProfileResponse>` - The profiles that were found
-/// # Note
-/// This function is guarded by the [`has_access`](has_access) function.
-#[query(guard = "has_access")]
-#[deprecated = "should be removed in favor of get_profiles_by_user_principal"]
-pub fn get_profiles_by_identifier(identifiers: Vec<Principal>) -> Vec<ProfileResponse> {
-    identifiers
-        .iter()
-        .map(|id| ProfileStore::get_id_by_identifier(id))
-        .filter_map(|id| id)
-        .map(|id| get_profile_by_user_principal(id).ok())
-        .filter_map(|profile| profile)
-        .collect()
 }
 
 /// Edit the caller his a profile - [`[update]`](update)
