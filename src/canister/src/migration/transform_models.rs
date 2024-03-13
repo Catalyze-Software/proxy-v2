@@ -291,16 +291,13 @@ fn events_from_old(old_data: &OldData) -> Vec<(u64, Event)> {
             website: old_event.website.clone(),
             owner: old_event.owner.clone(),
             created_by: old_event.created_by.clone(),
-            matrix_space_id: old_event.matrix_space_id.clone(),
+            group_id: Identifier::from(old_event.group_identifier).id(),
+            is_canceled: old_event.is_canceled,
+            attendee_count: old_event.attendee_count,
+            metadata: old_event.metadata.clone(),
+            date: old_event.date,
             image: old_event.image.clone(),
-            privacy_gated_type_amount: old_event.privacy_gated_type_amount.clone(),
-            roles: old_event
-                .roles
-                .iter()
-                .map(|role| Role::from(role.clone()))
-                .collect(),
             is_deleted: old_event.is_deleted,
-            wallets: old_event.wallets.clone(),
         };
 
         new_events.push((id, event));
