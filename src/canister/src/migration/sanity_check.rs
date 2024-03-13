@@ -12,6 +12,8 @@ pub fn check_data_integrity(old_data: &OldData, new_data: &NewData) -> Vec<Vec<S
         chech_unique_member_invite_ids(old_data),
         check_unique_attendee_joined_ids(old_data),
         chech_unique_attendee_invite_ids(old_data),
+        check_member_joined_and_invites_len(old_data),
+        check_attendee_joined_and_invites_len(old_data),
     ]
 }
 
@@ -178,11 +180,7 @@ fn check_unique_member_joined_ids(old_data: &OldData) -> Vec<String> {
             ids.iter().collect::<std::collections::HashSet<_>>().len()
         );
 
-        results.push(format!(
-            "Member {} joined ids unique and ascending {}",
-            member.principal,
-            ids.len()
-        ));
+        results.push(format!("Member joined ids unique {}", ids.len()));
     });
 
     results
@@ -204,11 +202,7 @@ fn chech_unique_member_invite_ids(old_data: &OldData) -> Vec<String> {
             ids.iter().collect::<std::collections::HashSet<_>>().len()
         );
 
-        results.push(format!(
-            "Member {} invite ids unique and ascending {}",
-            member.principal,
-            ids.len()
-        ));
+        results.push(format!("Member invite ids unique {}", ids.len()));
     });
 
     results
@@ -230,11 +224,7 @@ fn check_unique_attendee_joined_ids(old_data: &OldData) -> Vec<String> {
             ids.iter().collect::<std::collections::HashSet<_>>().len()
         );
 
-        results.push(format!(
-            "Attendee {} joined ids unique and ascending {}",
-            attendee.principal,
-            ids.len()
-        ));
+        results.push(format!("Attendee joined ids unique {}", ids.len()));
     });
 
     results
@@ -256,11 +246,35 @@ fn chech_unique_attendee_invite_ids(old_data: &OldData) -> Vec<String> {
             ids.iter().collect::<std::collections::HashSet<_>>().len()
         );
 
-        results.push(format!(
-            "Attendee {} invite ids unique and ascending {}",
-            attendee.principal,
-            ids.len()
-        ));
+        results.push(format!("Attendee invite ids unique {}", ids.len()));
+    });
+
+    results
+}
+
+fn check_member_joined_and_invites_len(old_data: &OldData) -> Vec<String> {
+    let mut results = vec![];
+
+    let _ = old_data.old_members.iter().map(|(_, member)| {
+        let joined_len = member.joined.len();
+        let invites_len = member.invites.len();
+
+        results.push(format!("Member joined {}", joined_len));
+        results.push(format!("Member invites {}", invites_len));
+    });
+
+    results
+}
+
+fn check_attendee_joined_and_invites_len(old_data: &OldData) -> Vec<String> {
+    let mut results = vec![];
+
+    let _ = old_data.old_event_attendees.iter().map(|(_, attendee)| {
+        let joined_len = attendee.joined.len();
+        let invites_len = attendee.invites.len();
+
+        results.push(format!("Attendee joined {}", joined_len));
+        results.push(format!("Attendee invites {}", invites_len));
     });
 
     results
