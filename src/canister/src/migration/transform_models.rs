@@ -5,19 +5,14 @@ use candid::Principal;
 
 use canister_types::models::{
     attendee::{Attendee, AttendeeInvite, AttendeeJoin},
-    boosted::Boost,
     event::Event,
-    friend_request::FriendRequest,
     group::Group,
     identifier::Identifier,
     invite_type::InviteType,
     member::{Join, Member, MemberInvite},
-    notification::Notification,
     permission::Permission,
     profile::Profile,
-    report::Report,
     role::Role,
-    user_notifications::UserNotifications,
 };
 
 use super::old_models::attendee_model::{
@@ -292,10 +287,9 @@ fn events_from_old(old_data: &OldData) -> Vec<(u64, Event)> {
             owner: old_event.owner.clone(),
             created_by: old_event.created_by.clone(),
             group_id: Identifier::from(old_event.group_identifier).id(),
-            is_canceled: old_event.is_canceled,
-            attendee_count: old_event.attendee_count,
+            is_canceled: old_event.is_canceled.clone(),
             metadata: old_event.metadata.clone(),
-            date: old_event.date,
+            date: old_event.date.clone(),
             image: old_event.image.clone(),
             is_deleted: old_event.is_deleted,
         };
