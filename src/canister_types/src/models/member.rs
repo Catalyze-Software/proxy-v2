@@ -14,8 +14,8 @@ impl_storable_for!(Member);
 
 #[derive(Clone, Debug, CandidType, Deserialize, Serialize)]
 pub struct Member {
-    joined: HashMap<u64, Join>,
-    invites: HashMap<u64, MemberInvite>,
+    pub joined: HashMap<u64, Join>,
+    pub invites: HashMap<u64, MemberInvite>,
 }
 
 impl Member {
