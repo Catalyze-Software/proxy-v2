@@ -22,25 +22,23 @@ impl_storable_for!(Event);
 
 #[derive(Clone, CandidType, Serialize, Deserialize, Debug)]
 pub struct Event {
-    name: String,
-    description: String,
-    date: DateRange,
-    privacy: Privacy,
+    pub name: String,
+    pub description: String,
+    pub date: DateRange,
+    pub privacy: Privacy,
     pub group_id: u64,
-    created_by: Principal,
+    pub created_by: Principal,
     pub owner: Principal,
-    website: String,
-    location: Location,
-    image: Asset,
-    banner_image: Asset,
-    tags: Vec<u32>,
-    is_canceled: (bool, String),
-    is_deleted: bool,
-    attendee_count: u64,
-    notification_id: Option<u64>,
-    metadata: Option<String>,
-    updated_on: u64,
-    created_on: u64,
+    pub website: String,
+    pub location: Location,
+    pub image: Asset,
+    pub banner_image: Asset,
+    pub tags: Vec<u32>,
+    pub is_canceled: (bool, String),
+    pub is_deleted: bool,
+    pub metadata: Option<String>,
+    pub updated_on: u64,
+    pub created_on: u64,
 }
 
 impl Event {
@@ -66,8 +64,6 @@ impl From<PostEvent> for Event {
             tags: post_event.tags,
             is_canceled: (false, "".to_string()),
             is_deleted: false,
-            notification_id: None,
-            attendee_count: Default::default(),
             metadata: post_event.metadata,
             updated_on: time(),
             created_on: time(),
@@ -139,7 +135,6 @@ impl Default for Event {
             tags: Default::default(),
             is_canceled: Default::default(),
             is_deleted: Default::default(),
-            attendee_count: Default::default(),
             updated_on: Default::default(),
             notification_id: Default::default(),
             created_on: Default::default(),
@@ -205,7 +200,6 @@ pub enum EventSort {
     UpdatedOn(SortDirection),
     StartDate(SortDirection),
     EndDate(SortDirection),
-    AttendeeCount(SortDirection),
 }
 
 impl EventSort {
@@ -235,12 +229,6 @@ impl EventSort {
             }
             EventSort::EndDate(SortDirection::Desc) => {
                 events.sort_by(|a, b| b.1.date.end_date().cmp(&a.1.date.end_date()))
-            }
-            EventSort::AttendeeCount(SortDirection::Asc) => {
-                events.sort_by(|a, b| a.1.attendee_count.cmp(&b.1.attendee_count))
-            }
-            EventSort::AttendeeCount(SortDirection::Desc) => {
-                events.sort_by(|a, b| b.1.attendee_count.cmp(&a.1.attendee_count))
             }
         }
         events
@@ -299,7 +287,6 @@ pub struct EventResponse {
     pub location: Location,
     pub image: Asset,
     pub banner_image: Asset,
-    pub attendee_count: u64,
     pub is_canceled: (bool, String),
     pub is_deleted: bool,
     pub tags: Vec<u32>,
@@ -330,7 +317,6 @@ impl EventResponse {
             location: event.location,
             image: event.image,
             banner_image: event.banner_image,
-            attendee_count: event.attendee_count,
             is_canceled: event.is_canceled,
             is_deleted: event.is_deleted,
             tags: event.tags,
