@@ -217,7 +217,6 @@ impl ProfileCalls {
 
         caller_profile.relations.remove(&principal);
         let updated_caller_profile = ProfileStore::update(caller(), caller_profile);
-        NotificationCalls::notification_remove_friend(caller(), principal)?;
 
         let (_, mut friend_profile) = ProfileStore::get(principal)?;
 
@@ -229,8 +228,8 @@ impl ProfileCalls {
         friend_profile.relations.remove(&caller());
 
         let _ = ProfileStore::update(principal, friend_profile);
-        NotificationCalls::notification_remove_friend(principal, caller())?;
 
+        NotificationCalls::notification_remove_friend(principal, caller());
         ProfileResponse::from_result(updated_caller_profile)
     }
 

@@ -318,7 +318,7 @@ pub fn accept_user_request_group_invite(
 ) -> Result<Member, ApiError> {
     let group_id = Identifier::from(group_identifier).id();
     can_edit(group_id, PermissionType::Invite(None))?;
-    GroupCalls::accept_or_decline_user_request_group_invite(member_principal, group_id)
+    GroupCalls::accept_or_decline_user_request_group_invite(member_principal, group_id, true)
 }
 
 /// Decline an invite to a group as a admin - [`[update]`](update)
@@ -338,7 +338,8 @@ pub fn decline_user_request_group_invite(
 ) -> Result<Member, ApiError> {
     let group_id = Identifier::from(group_identifier).id();
     can_edit(group_id, PermissionType::Invite(None))?;
-    GroupCalls::accept_or_decline_user_request_group_invite(member_principal, group_id)
+    Err(ApiError::not_implemented())
+    // GroupCalls::accept_or_decline_user_request_group_invite(member_principal, group_id)
 }
 
 /// Accept an invite from a group as a user - [`[update]`](update)

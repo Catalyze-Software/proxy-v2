@@ -1,11 +1,14 @@
+use std::clone;
+
 use candid::Principal;
 use canister_types::models::{
     api_error::ApiError,
-    friend_request::FriendRequest,
+    friend_request::{self, FriendRequest},
+    member::{Member, MemberInvite},
     notification::{
-        GroupNotificationType, Notification, NotificationType, RelationNotificationType,
+        self, GroupNotificationType, Notification, NotificationType, RelationNotificationType,
     },
-    user_notifications::UserNotifications,
+    user_notifications::{UserNotificationData, UserNotifications},
     websocket_message::WSMessage,
 };
 use ic_cdk::caller;
@@ -23,29 +26,88 @@ impl NotificationCalls {
         receivers: Vec<Principal>,
         notification_type: NotificationType,
         is_actionable: bool,
-        is_silent: bool,
     ) -> Result<(u64, Notification), ApiError> {
+        // Create the new notification
         let notification = Notification::new(notification_type, is_actionable);
+
+        // store the new notification in the notification store
         let (new_notification_id, new_notification) = NotificationStore::insert(notification)?;
 
+        // add the notification reference to the user's notifications
+        if let Ok((_, mut caller_notifications)) = UsernotificationStore::get(caller()) {
+            caller_notifications.add(new_notification_id.clone(), false, true);
+            let _ = UsernotificationStore::update(caller(), caller_notifications);
+        } else {
+            let mut caller_notifications = UserNotifications::new();
+            caller_notifications.add(new_notification_id.clone(), false, true);
+            let _ = UsernotificationStore::insert_by_key(caller(), caller_notifications);
+        }
+
+        // send the notification to the receivers
         for receiver in receivers {
-            let (_, mut user_notifications) = UsernotificationStore::get(receiver)
-                .unwrap_or((receiver, UserNotifications::new()));
-
-            user_notifications.add(new_notification_id.clone(), false);
-            let _ = UsernotificationStore::update(receiver, user_notifications);
-
-            if !is_silent {
-                Websocket::send_message(
-                    receiver,
-                    WSMessage::Notification(new_notification.clone()),
-                );
+            if let Ok((_, mut notifications)) = UsernotificationStore::get(caller()) {
+                notifications.add(new_notification_id.clone(), false, true);
+                let _ = UsernotificationStore::update(receiver, notifications);
             } else {
-                Websocket::send_message(
-                    receiver,
-                    WSMessage::SilentNotification(new_notification.clone()),
-                );
+                let mut notifications = UserNotifications::new();
+                notifications.add(new_notification_id.clone(), false, true);
+                let _ = UsernotificationStore::insert_by_key(receiver, notifications);
             }
+        }
+
+        Ok((new_notification_id, new_notification))
+    }
+
+    pub fn send_notification(
+        notification: Notification,
+        receiver: Principal,
+        is_silent: bool,
+    ) -> () {
+        if !is_silent {
+            Websocket::send_message(receiver, WSMessage::Notification(notification.clone()));
+        } else {
+            Websocket::send_message(
+                receiver,
+                WSMessage::SilentNotification(notification.clone()),
+            );
+        }
+    }
+
+    pub fn add_and_send_notification(
+        receivers: Vec<Principal>,
+        notification_type: NotificationType,
+        is_actionable: bool,
+        is_silent: bool,
+    ) -> Result<(u64, Notification), ApiError> {
+        // Create the new notification
+        let notification = Notification::new(notification_type, is_actionable);
+
+        // store the new notification in the notification store
+        let (new_notification_id, new_notification) = NotificationStore::insert(notification)?;
+
+        // add the notification reference to the user's notifications
+        if let Ok((_, mut caller_notifications)) = UsernotificationStore::get(caller()) {
+            caller_notifications.add(new_notification_id.clone(), false, true);
+            let _ = UsernotificationStore::update(caller(), caller_notifications);
+        } else {
+            let mut caller_notifications = UserNotifications::new();
+            caller_notifications.add(new_notification_id.clone(), false, true);
+            let _ = UsernotificationStore::insert_by_key(caller(), caller_notifications);
+        }
+
+        // send the notification to the receivers
+        for receiver in receivers {
+            if let Ok((_, mut notifications)) = UsernotificationStore::get(caller()) {
+                notifications.add(new_notification_id.clone(), false, true);
+                let _ = UsernotificationStore::update(receiver, notifications);
+            } else {
+                let mut notifications = UserNotifications::new();
+                notifications.add(new_notification_id.clone(), false, true);
+                let _ = UsernotificationStore::insert_by_key(receiver, notifications);
+            }
+
+            // send the notification to the receiver
+            Self::send_notification(new_notification.clone(), receiver, is_silent);
         }
 
         Ok((new_notification_id, new_notification))
@@ -53,29 +115,25 @@ impl NotificationCalls {
 
     // Friend request notifications
 
-    /// Send a friend request notification to the receiver
-    ///
-    /// This is a actionable notification to accept or decline the friend request
+    /// stores + sends notification
     pub fn notification_add_friend_request(friend_request: FriendRequest) -> Result<u64, ApiError> {
-        let (notification_id, _) = Self::add_notification(
+        let (notification_id, notification) = Self::add_notification(
             vec![friend_request.to],
             NotificationType::Relation(RelationNotificationType::FriendRequest(friend_request)),
             true,
-            false,
         )?;
 
+        Self::send_notification(notification, friend_request.to, false);
         Ok(notification_id)
     }
 
-    /// Notification that gets send when a friend request is accepted or declined
-    ///
-    /// Based on the `is_accepted` parameter, the notification is either a friend request accept or silent decline
+    /// stores + sends notification
     pub fn notification_accept_or_decline_friend_request(
-        friend_request_id: u64,
+        friend_request_data: (u64, FriendRequest),
         is_accepted: bool,
     ) -> Result<(), ApiError> {
         // get the associated friend request
-        let (_, friend_request) = FriendRequestStore::get(friend_request_id)?;
+        let (friend_request_id, friend_request) = friend_request_data;
 
         // check if the notification exists
         if let Some(notification_id) = friend_request.notification_id {
@@ -84,7 +142,7 @@ impl NotificationCalls {
             // check if the notification is a friend request
             if let NotificationType::Relation(RelationNotificationType::FriendRequest(
                 friend_request,
-            )) = &notification.notification_type.clone()
+            )) = &notification.notification_type
             {
                 // mark the notification as accepted, this also marks it as not actionable
                 notification.mark_as_accepted(is_accepted);
@@ -95,14 +153,8 @@ impl NotificationCalls {
                     false => RelationNotificationType::FriendRequestDecline(friend_request_id),
                 };
 
-                // add the notification to the user's notifications and send a websocket message
-                let _ = Self::add_notification(
-                    vec![friend_request.requested_by],
-                    NotificationType::Relation(notification_type),
-                    false,
-                    // If the friend request is accepted, the notification is not silent
-                    !is_accepted,
-                );
+                Self::send_notification(notification, friend_request.requested_by, false);
+                Self::send_notification(notification, friend_request.to, true);
 
                 Ok(())
             } else {
@@ -113,83 +165,114 @@ impl NotificationCalls {
         }
     }
 
-    /// Silent notification that gets send when a friend request is removed
-    ///
-    /// This is a silent notification to remove the friend request from the user's notifications
-    pub fn notification_remove_friend_request(friend_request_id: u64) -> Result<(), ApiError> {
-        // get the associated friend request
-        let (_, friend_request) = FriendRequestStore::get(friend_request_id)?;
-
-        // check if the notification exists
-        if let Some(notification_id) = friend_request.notification_id {
-            // get the associated notification and check if it is a friend request
-            let (_, notification) = NotificationStore::get(notification_id)?;
-            if let NotificationType::Relation(RelationNotificationType::FriendRequest(
-                friend_request,
-            )) = &notification.notification_type
-            {
-                // check if the notification is for the caller
-                if friend_request.requested_by != caller() {
-                    return Err(ApiError::unauthorized());
-                }
-
-                let _ = Self::add_notification(
-                    vec![friend_request.requested_by, friend_request.to],
-                    NotificationType::Relation(RelationNotificationType::FriendRequestRemove(
-                        friend_request_id,
-                    )),
-                    false,
-                    true,
-                );
-                Ok(())
-            } else {
-                Err(ApiError::bad_request().add_message("Notification is not a friend request"))
-            }
-        } else {
-            Err(ApiError::not_found())
-        }
-    }
-
-    pub fn notification_remove_friend(
+    // sends notification
+    pub fn notification_remove_friend_request(
         receiver: Principal,
-        friend_principal: Principal,
+        friend_request_id: u64,
     ) -> Result<(), ApiError> {
-        Self::add_notification(
-            vec![receiver],
-            NotificationType::Relation(RelationNotificationType::FriendRemove(friend_principal)),
-            false,
+        Self::send_notification(
+            Notification::new(
+                NotificationType::Relation(RelationNotificationType::FriendRequestRemove(
+                    friend_request_id,
+                )),
+                false,
+            ),
+            receiver,
             true,
-        )?;
-
+        );
         Ok(())
     }
 
+    // sends notification
+    pub fn notification_remove_friend(receiver: Principal, friend_principal: Principal) -> () {
+        Self::send_notification(
+            Notification::new(
+                NotificationType::Relation(RelationNotificationType::FriendRemove(
+                    friend_principal,
+                )),
+                false,
+            ),
+            receiver,
+            true,
+        );
+    }
+
     // Group notifications
-    /// This notification is send when a user joins a group
-    ///
-    /// This is a silent update to update the members in real-time for the group members (receivers)
-    pub fn notification_join_group(
+
+    // sends notification
+    pub fn notification_join_public_group(receivers: Vec<Principal>, group_id: u64) -> () {
+        for receiver in receivers {
+            Self::send_notification(
+                Notification::new(
+                    NotificationType::Group(GroupNotificationType::UserJoinGroup(group_id)),
+                    false,
+                ),
+                receiver,
+                true,
+            );
+        }
+    }
+
+    // stores + sends notification
+    pub fn notification_user_join_request_group(
         receivers: Vec<Principal>,
         group_id: u64,
     ) -> Result<u64, ApiError> {
-        let (notification_id, _) = Self::add_notification(
+        let (notification_id, _) = Self::add_and_send_notification(
             receivers,
-            NotificationType::Group(GroupNotificationType::UserJoinGroup(group_id)),
-            false,
+            NotificationType::Group(GroupNotificationType::JoinGroupUserRequest(group_id)),
             true,
+            false,
         )?;
 
         Ok(notification_id)
     }
 
-    /// This notification is send when a user gets invites to the groups
-    ///
-    /// This is a actionable notification to accept or decline the invite to the group
-    pub fn notification_invite_to_group(
+    // sends notifications
+    pub fn notification_user_join_request_group_accept_or_decline(
+        receivers: Vec<Principal>,
+        invite: MemberInvite,
+        is_accepted: bool,
+    ) -> Result<(), ApiError> {
+        if let Some(notification_id) = invite.notification_id {
+            let (_, mut notification) = NotificationStore::get(notification_id)?;
+
+            if let NotificationType::Group(GroupNotificationType::JoinGroupUserRequest(group_id)) =
+                notification.notification_type.clone()
+            {
+                notification.mark_as_accepted(is_accepted);
+                let _ = NotificationStore::update(notification_id, notification.clone());
+
+                let notification_type = match is_accepted {
+                    true => GroupNotificationType::JoinGroupUserRequestAccept(group_id),
+                    false => GroupNotificationType::JoinGroupUserRequestDecline(group_id),
+                };
+
+                // send notification to the person who requested to join
+                let _ = Self::send_notification(
+                    notification,
+                    notification.sender, // the person who request to join
+                    false,
+                );
+
+                // send notification to the users who could have accepted the request
+                for r in receivers {
+                    let _ = Self::send_notification(notification.clone(), r, true);
+                }
+            }
+            Ok(())
+        } else {
+            Err(ApiError::bad_request()
+                .add_message("Notification is not a user join group request"))
+        }
+    }
+
+    // stores + sends notification
+    pub fn notification_owner_join_request_group(
         invitee_principal: Principal,
         group_id: u64,
     ) -> Result<u64, ApiError> {
-        let (notification_id, _) = Self::add_notification(
+        let (notification_id, _) = Self::add_and_send_notification(
             vec![invitee_principal],
             NotificationType::Group(GroupNotificationType::JoinGroupOwnerRequest(group_id)),
             true,
@@ -199,68 +282,40 @@ impl NotificationCalls {
         Ok(notification_id)
     }
 
-    /// Notification that gets send when a friend request is accepted or declined
-    ///
-    /// Based on the `is_accepted` parameter, the notification is either a friend request accept or silent decline
-    pub fn notification_invite_to_group_accept_or_decline(
-        member_principal: Principal,
-        group_id: u64,
+    pub fn notification_owner_join_request_group_accept_or_decline(
+        invitee_principal: Principal,
+        invite: MemberInvite,
         is_accepted: bool,
     ) -> Result<(), ApiError> {
-        // get the associated friend request
-        let (_, member) = MemberStore::get(member_principal)?;
-        let invite = member.get_invite(&group_id);
+        if let Some(notification_id) = invite.notification_id {
+            let (_, mut notification) = NotificationStore::get(notification_id)?;
 
-        // check if the invite exists
-        if let Some(_invite) = invite {
-            // check if the notification exists
-            if let Some(notification_id) = _invite.notification_id {
-                let (_, mut notification) = NotificationStore::get(notification_id)?;
+            if let NotificationType::Group(GroupNotificationType::JoinGroupOwnerRequest(group_id)) =
+                notification.notification_type.clone()
+            {
+                notification.mark_as_accepted(is_accepted);
+                let _ = NotificationStore::update(notification_id, notification.clone());
 
-                // check if the notification is a friend request
-                if let NotificationType::Group(GroupNotificationType::JoinGroupOwnerRequest(
-                    group_id,
-                )) = &notification.notification_type.clone()
-                {
-                    // mark the notification as accepted, this also marks it as not actionable
-                    notification.mark_as_accepted(is_accepted);
-                    let _ = NotificationStore::update(notification_id, notification.clone());
+                let notification_type = match is_accepted {
+                    true => GroupNotificationType::JoinGroupOwnerRequestAccept(group_id),
+                    false => GroupNotificationType::JoinGroupOwnerRequestDecline(group_id),
+                };
 
-                    let notification_type = match is_accepted {
-                        true => GroupNotificationType::JoinGroupOwnerRequestAccept(*group_id),
-                        false => GroupNotificationType::JoinGroupOwnerRequestDecline(*group_id),
-                    };
+                // send notification to the person who requested to join
+                let _ = Self::send_notification(
+                    notification,
+                    notification.sender, // the person who requested the user to join
+                    false,
+                );
 
-                    // add the notification to the user's notifications and send a websocket message
-                    let _ = Self::add_notification(
-                        vec![member_principal],
-                        NotificationType::Group(notification_type),
-                        false,
-                        false,
-                    );
-                }
-                Ok(())
-            } else {
-                Err(ApiError::bad_request()
-                    .add_message("Notification is not a group invite request"))
+                // send notification to the users who could have accepted the request
+                Self::send_notification(notification.clone(), invitee_principal, true);
             }
+            Ok(())
         } else {
-            Err(ApiError::not_found())
+            Err(ApiError::bad_request()
+                .add_message("Notification is not a user join group request"))
         }
-    }
-
-    pub fn notification_join_request_to_group(
-        receivers: Vec<Principal>,
-        group_id: u64,
-    ) -> Result<u64, ApiError> {
-        let (notification_id, _) = Self::add_notification(
-            receivers,
-            NotificationType::Group(GroupNotificationType::JoinGroupUserRequest(group_id)),
-            true,
-            false,
-        )?;
-
-        Ok(notification_id)
     }
 
     pub fn get_user_unread_notifications(
@@ -305,13 +360,16 @@ impl NotificationCalls {
         principal: Principal,
         ids: Vec<u64>,
         is_read: bool,
-    ) -> Result<Vec<(u64, bool)>, ApiError> {
+    ) -> Result<Vec<(u64, UserNotificationData)>, ApiError> {
         let (_, mut user_notifications) = UsernotificationStore::get(principal)?;
         user_notifications.mark_as_read_many(ids, is_read);
         Ok(user_notifications.to_vec())
     }
 
-    pub fn remove_notifications(principal: Principal, ids: Vec<u64>) -> Vec<(u64, bool)> {
+    pub fn remove_notifications(
+        principal: Principal,
+        ids: Vec<u64>,
+    ) -> Vec<(u64, UserNotificationData)> {
         let (_, mut user_notifications) =
             UsernotificationStore::get(principal).unwrap_or((principal, UserNotifications::new()));
         user_notifications.remove_many(ids);

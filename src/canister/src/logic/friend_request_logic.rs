@@ -83,7 +83,26 @@ impl FriendRequestCalls {
             .relations
             .insert(friend_request.to, RelationType::Friend.to_string());
 
-        NotificationCalls::notification_accept_or_decline_friend_request(friend_request_id, true)?;
+        NotificationCalls::notification_accept_or_decline_friend_request(
+            (friend_request_id, friend_request),
+            true,
+        )?;
+        Ok(FriendRequestStore::remove(friend_request_id))
+    }
+
+    pub fn decline_friend_request(friend_request_id: u64) -> Result<bool, ApiError> {
+        let (_, friend_request) = FriendRequestStore::get(friend_request_id)?;
+
+        if friend_request.to != caller() {
+            return Err(ApiError::unauthorized()
+                .add_method_name("decline_friend_request")
+                .add_message("You are not authorized to decline this friend request"));
+        }
+
+        NotificationCalls::notification_accept_or_decline_friend_request(
+            (friend_request_id, friend_request),
+            false,
+        )?;
         Ok(FriendRequestStore::remove(friend_request_id))
     }
 
@@ -96,7 +115,7 @@ impl FriendRequestCalls {
                 .add_message("You are not authorized to remove this friend request"));
         }
 
-        NotificationCalls::notification_remove_friend_request(friend_request_id)?;
+        NotificationCalls::notification_remove_friend_request(friend_request.to, friend_request_id);
         Ok(FriendRequestStore::remove(friend_request_id))
     }
 
@@ -112,19 +131,6 @@ impl FriendRequestCalls {
             .into_iter()
             .map(|data| FriendRequestMapper::to_response(data))
             .collect()
-    }
-
-    pub fn decline_friend_request(friend_request_id: u64) -> Result<bool, ApiError> {
-        let (_, friend_request) = FriendRequestStore::get(friend_request_id)?;
-
-        if friend_request.to != caller() {
-            return Err(ApiError::unauthorized()
-                .add_method_name("decline_friend_request")
-                .add_message("You are not authorized to decline this friend request"));
-        }
-
-        NotificationCalls::notification_accept_or_decline_friend_request(friend_request_id, false)?;
-        Ok(FriendRequestStore::remove(friend_request_id))
     }
 }
 

@@ -6,11 +6,7 @@ use candid::{Decode, Encode};
 
 use crate::impl_storable_for;
 
-use super::{
-    attendee::InviteAttendeeResponse,
-    friend_request::FriendRequest,
-    member::{InviteMemberResponse, MemberInvite},
-};
+use super::{attendee::InviteAttendeeResponse, friend_request::FriendRequest};
 
 impl_storable_for!(Notification);
 #[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
@@ -22,7 +18,7 @@ pub struct Notification {
     pub is_accepted: Option<bool>,
     // additional data for the notification that the frontend can utilize
     pub metadata: Option<String>,
-    pub created_by: Principal,
+    pub sender: Principal,
     pub created_at: u64,
     pub updated_at: u64,
 }
@@ -34,7 +30,7 @@ impl Notification {
             is_actionable,
             is_accepted: None,
             metadata: None,
-            created_by: caller(),
+            sender: caller(),
             created_at: time(),
             updated_at: time(),
         }

@@ -89,6 +89,11 @@ impl Member {
         self.invites.get(group_id).cloned()
     }
 
+    pub fn turn_invite_into_joined(&mut self, group_id: u64) {
+        self.invites.remove(&group_id);
+        self.add_joined(group_id, vec!["member".to_string()]);
+    }
+
     pub fn remove_invite(&mut self, group_id: u64) {
         self.invites.remove(&group_id);
     }

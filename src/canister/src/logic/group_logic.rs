@@ -327,10 +327,10 @@ impl GroupCalls {
 
         // Add the group to the member
         let notification_id =
-            NotificationCalls::notification_invite_to_group(invitee_principal, group_id)?;
+            NotificationCalls::notification_owner_join_request_group(invitee_principal, group_id)?;
 
         invitee_member.add_invite(group_id, InviteType::OwnerRequest, Some(notification_id));
-        MemberStore::insert_by_key(invitee_principal, invitee_member.clone())?;
+        MemberStore::update(invitee_principal, invitee_member.clone())?;
 
         Ok(invitee_member)
     }
@@ -341,20 +341,40 @@ impl GroupCalls {
         accept: bool,
     ) -> Result<Member, ApiError> {
         let (_, mut member) = MemberStore::get(principal)?;
+        let invite = member.get_invite(&group_id);
 
-        // Check if the member has a pending join request for the group
         if !member.has_pending_join_request(group_id) {
             return Err(
                 ApiError::bad_request().add_message("Member does not have a pending join request")
             );
         }
 
-        member.remove_invite(group_id);
-        if accept {
-            member.add_joined(group_id, vec!["member".to_string()]);
+        if let Some(invite) = invite {
+            let higher_role_members: Vec<Principal> = GroupCalls::get_group_members_by_permission(
+                group_id,
+                PermissionType::Invite(None),
+                PermissionActionType::Write,
+            )
+            .unwrap_or(vec![])
+            .iter()
+            .map(|m| m.principal)
+            .collect();
+
+            NotificationCalls::notification_user_join_request_group_accept_or_decline(
+                higher_role_members,
+                invite,
+                accept,
+            )?;
+
+            if accept {
+                member.turn_invite_into_joined(group_id);
+            } else {
+                member.remove_invite(group_id);
+            }
+
+            // Add the group to the member and set the role
+            MemberStore::update(principal, member.clone())?;
         }
-        // Add the group to the member and set the role
-        MemberStore::update(principal, member.clone())?;
 
         Ok(member)
     }
@@ -372,20 +392,22 @@ impl GroupCalls {
                 ApiError::bad_request().add_message("Member does not have a pending invite")
             );
         }
+        if let Some(invite) = member.get_invite(&group_id) {
+            // Add the group to the member and set the role
+            if accept {
+                member.turn_invite_into_joined(group_id);
+            } else {
+                member.remove_invite(group_id);
+            }
 
-        member.remove_invite(group_id);
-        // Add the group to the member and set the role
-        if accept {
-            member.add_joined(group_id, vec!["member".to_string()]);
+            NotificationCalls::notification_owner_join_request_group_accept_or_decline(
+                caller(),
+                invite,
+                accept,
+            )?;
+
+            MemberStore::update(caller(), member.clone())?;
         }
-
-        NotificationCalls::notification_invite_to_group_accept_or_decline(
-            caller(),
-            group_id,
-            accept,
-        )?;
-
-        MemberStore::update(caller(), member.clone())?;
 
         Ok(member)
     }
@@ -896,16 +918,30 @@ impl GroupValidation {
                     .map(|member| member.principal)
                     .collect();
 
-                NotificationCalls::notification_join_group(group_member_principals, group_id)?;
+                NotificationCalls::notification_join_public_group(
+                    group_member_principals,
+                    group_id,
+                );
                 Ok(member)
             }
             // If the group is private, add the invite to the member
             Private => {
-                let notification_id = NotificationCalls::notification_join_request_to_group(
-                    // TODO: add higher role members
-                    vec![group.owner],
+                let higher_role_members: Vec<Principal> =
+                    GroupCalls::get_group_members_by_permission(
+                        group_id,
+                        PermissionType::Invite(None),
+                        PermissionActionType::Write,
+                    )
+                    .unwrap_or(vec![])
+                    .iter()
+                    .map(|m| m.principal)
+                    .collect();
+
+                let notification_id = NotificationCalls::notification_user_join_request_group(
+                    higher_role_members,
                     group_id,
                 )?;
+
                 member.add_invite(group_id, InviteType::UserRequest, Some(notification_id));
                 Ok(member)
             }
