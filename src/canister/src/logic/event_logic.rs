@@ -1,6 +1,6 @@
 use crate::storage::{AttendeeStore, EventStore, ProfileStore, StorageMethods};
 
-use super::boost_logic::BoostCalls;
+use super::{boost_logic::BoostCalls, notification_logic::NotificationCalls};
 use candid::Principal;
 use canister_types::models::{
     api_error::ApiError,
@@ -12,6 +12,7 @@ use canister_types::models::{
     filter_type::FilterType,
     identifier::{Identifier, IdentifierKind},
     invite_type::InviteType,
+    notification::{self, Notification},
     paged_response::PagedResponse,
     privacy::Privacy,
     subject::Subject,
@@ -190,6 +191,12 @@ impl EventCalls {
         }
 
         attendee.add_joined(event_id, group_id);
+        let event_attendees_principals: Vec<Principal> = EventCalls::get_event_attendees(event_id)?
+            .iter()
+            .map(|member| member.principal)
+            .collect();
+
+        NotificationCalls::notification_join_public_event(event_attendees_principals, event_id);
         AttendeeStore::update(attendee_principal, attendee)?;
 
         Ok(JoinedAttendeeResponse::new(
@@ -212,7 +219,14 @@ impl EventCalls {
 
         let (attendee_principal, mut attendee) = AttendeeStore::get(attendee_principal)?;
 
-        attendee.add_invite(event_id, group_id, InviteType::OwnerRequest);
+        let notification_id =
+            NotificationCalls::notification_owner_join_request_event(attendee_principal, event_id)?;
+        attendee.add_invite(
+            event_id,
+            group_id,
+            InviteType::OwnerRequest,
+            Some(notification_id),
+        );
         AttendeeStore::update(attendee_principal, attendee)?;
 
         Ok(InviteAttendeeResponse::new(
@@ -240,8 +254,17 @@ impl EventCalls {
             return Err(ApiError::not_found());
         }
 
-        attendee.add_joined(event_id, group_id);
-        AttendeeStore::update(attendee_principal, attendee)?;
+        if let Some(invite) = attendee.get_invite(event_id) {
+            attendee.turn_invite_into_joined(event_id);
+            let _ = NotificationCalls::notification_user_join_request_event_accept_or_decline(
+                attendee_principal,
+                invite,
+                true,
+            );
+
+            AttendeeStore::update(attendee_principal, attendee)?;
+        }
+
         Ok(JoinedAttendeeResponse::new(
             event_id,
             group_id,
@@ -256,7 +279,9 @@ impl EventCalls {
             return Err(ApiError::not_found());
         }
 
-        attendee.add_joined(event_id, event_id);
+        attendee.turn_invite_into_joined(event_id);
+        TODO:
+        // NotificationCalls
         AttendeeStore::update(caller(), attendee.clone())?;
         Ok(attendee)
     }

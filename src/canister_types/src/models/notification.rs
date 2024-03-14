@@ -6,7 +6,7 @@ use candid::{Decode, Encode};
 
 use crate::impl_storable_for;
 
-use super::{attendee::InviteAttendeeResponse, friend_request::FriendRequest};
+use super::friend_request::FriendRequest;
 
 impl_storable_for!(Notification);
 #[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
@@ -36,10 +36,11 @@ impl Notification {
         }
     }
 
-    pub fn mark_as_accepted(&mut self, is_accepted: bool) {
+    pub fn mark_as_accepted(&mut self, is_accepted: bool, notification_type: NotificationType) {
         self.is_accepted = Some(is_accepted);
         self.is_actionable = false;
         self.updated_at = time();
+        self.notification_type = notification_type;
     }
 
     pub fn set_metadata(&mut self, metadata: String) {
@@ -88,15 +89,16 @@ pub enum GroupNotificationType {
 #[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
 pub enum EventNotificationType {
     // user wants to join the event
-    JoinEventUserRequest(InviteAttendeeResponse),
+    JoinEventUserRequest(u64),
     JoinEventUserRequestAccept(u64),
     JoinEventUserRequestDecline(u64),
 
     // Event wants a user to join
-    JoinEventOwnerRequest(InviteAttendeeResponse),
+    JoinEventOwnerRequest(u64),
     JoinEventOwnerRequestAccept(u64),
     JoinEventOwnerRequestDecline(u64),
-    UserLeaveEvent(Principal),
+    UserJoinEvent(u64),
+    UserLeaveEvent(u64),
 }
 
 #[derive(CandidType, Deserialize, Serialize, Clone, Debug)]

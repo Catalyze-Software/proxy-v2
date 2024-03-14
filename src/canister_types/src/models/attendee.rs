@@ -6,13 +6,12 @@ use serde::Serialize;
 
 use crate::impl_storable_for;
 
-use super::invite_type::InviteType;
+use super::{invite_type::InviteType, notification};
 
 impl_storable_for!(Attendee);
 
 #[derive(Clone, Debug, CandidType, Deserialize, Serialize)]
 pub struct Attendee {
-    pub notification_id: Option<u64>,
     pub joined: HashMap<u64, AttendeeJoin>,
     pub invites: HashMap<u64, AttendeeInvite>,
 }
@@ -22,13 +21,11 @@ impl Attendee {
         Self {
             joined: Default::default(),
             invites: Default::default(),
-            notification_id: None,
         }
     }
 
     pub fn new() -> Self {
         Self {
-            notification_id: None,
             joined: Default::default(),
             invites: Default::default(),
         }
@@ -53,7 +50,20 @@ impl Attendee {
         self.joined.remove(&group_id);
     }
 
-    pub fn add_invite(&mut self, event_id: u64, group_id: u64, invite_type: InviteType) {
+    pub fn turn_invite_into_joined(&mut self, event_id: u64) {
+        self.invites.remove(&event_id);
+        if let Some(invite) = self.invites.get(&event_id) {
+            self.add_joined(event_id, invite.group_id);
+        }
+    }
+
+    pub fn add_invite(
+        &mut self,
+        event_id: u64,
+        group_id: u64,
+        invite_type: InviteType,
+        notification_id: Option<u64>,
+    ) {
         self.invites.insert(
             event_id,
             AttendeeInvite {
@@ -61,6 +71,7 @@ impl Attendee {
                 invite_type,
                 updated_at: time(),
                 created_at: time(),
+                notification_id,
             },
         );
     }
@@ -94,14 +105,6 @@ impl Attendee {
         }
         false
     }
-
-    pub fn set_notification_id(&mut self, notification_id: u64) {
-        self.notification_id = Some(notification_id);
-    }
-
-    pub fn remove_notification_id(&mut self) {
-        self.notification_id = None;
-    }
 }
 
 #[derive(Clone, Debug, CandidType, Deserialize, Serialize)]
@@ -115,8 +118,19 @@ pub struct AttendeeJoin {
 pub struct AttendeeInvite {
     pub group_id: u64,
     pub invite_type: InviteType,
+    pub notification_id: Option<u64>,
     pub updated_at: u64,
     pub created_at: u64,
+}
+
+impl AttendeeInvite {
+    pub fn set_notification_id(&mut self, notification_id: u64) {
+        self.notification_id = Some(notification_id);
+    }
+
+    pub fn remove_notification_id(&mut self) {
+        self.notification_id = None;
+    }
 }
 
 #[derive(Clone, Debug, CandidType, Deserialize, Serialize)]
