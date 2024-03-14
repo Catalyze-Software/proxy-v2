@@ -295,6 +295,44 @@ impl NotificationCalls {
         }
     }
 
+    // sends notification
+    pub fn notification_owner_join_request_event_accept_or_decline(
+        invitee_principal: Principal,
+        invite: AttendeeInvite,
+        is_accepted: bool,
+    ) -> Result<(), ApiError> {
+        if let Some(notification_id) = invite.notification_id {
+            let (_, mut notification) = NotificationStore::get(notification_id)?;
+
+            if let NotificationType::Group(GroupNotificationType::JoinGroupOwnerRequest(event_id)) =
+                notification.notification_type.clone()
+            {
+                let notification_type = match is_accepted {
+                    true => EventNotificationType::JoinEventOwnerRequestAccept(event_id),
+                    false => EventNotificationType::JoinEventOwnerRequestDecline(event_id),
+                };
+
+                notification
+                    .mark_as_accepted(is_accepted, NotificationType::Event(notification_type));
+                let _ = NotificationStore::update(notification_id, notification.clone());
+
+                // send notification to the person who requested to join
+                let _ = Self::send_notification(
+                    notification.clone(),
+                    notification.sender, // the person who requested the user to join
+                    false,
+                );
+
+                // send notification to the users who could have accepted the request
+                Self::send_notification(notification.clone(), invitee_principal, true);
+            }
+            Ok(())
+        } else {
+            Err(ApiError::bad_request()
+                .add_message("Notification is not a user join group request"))
+        }
+    }
+
     // stores + sends notification
     pub fn notification_owner_join_request_event(
         invitee_principal: Principal,

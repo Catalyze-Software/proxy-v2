@@ -279,10 +279,15 @@ impl EventCalls {
             return Err(ApiError::not_found());
         }
 
-        attendee.turn_invite_into_joined(event_id);
-        TODO:
-        // NotificationCalls
-        AttendeeStore::update(caller(), attendee.clone())?;
+        if let Some(invite) = attendee.get_invite(event_id) {
+            attendee.turn_invite_into_joined(event_id);
+            let _ = NotificationCalls::notification_owner_join_request_event_accept_or_decline(
+                caller(),
+                invite,
+                true,
+            );
+            AttendeeStore::update(caller(), attendee.clone())?;
+        }
         Ok(attendee)
     }
 
