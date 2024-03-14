@@ -8,12 +8,7 @@ pub fn check_data_integrity(old_data: &OldData, new_data: &NewData) -> Vec<Vec<S
         check_store_sizes(old_data, new_data),
         check_unique_principals(old_data),
         check_unique_and_ascending_ids(old_data),
-        check_unique_member_joined_ids(old_data),
-        chech_unique_member_invite_ids(old_data),
-        check_unique_attendee_joined_ids(old_data),
-        chech_unique_attendee_invite_ids(old_data),
-        check_member_joined_and_invites_len(old_data),
-        check_attendee_joined_and_invites_len(old_data),
+        check_joined_and_invites(old_data, new_data),
     ]
 }
 
@@ -164,118 +159,61 @@ fn check_unique_and_ascending_ids(old_data: &OldData) -> Vec<String> {
     ]
 }
 
-fn check_unique_member_joined_ids(old_data: &OldData) -> Vec<String> {
-    let mut results = vec![];
+fn check_joined_and_invites(old_data: &OldData, new_data: &NewData) -> Vec<String> {
+    let mut member_joined_counts = Vec::new();
+    let mut member_invite_counts = Vec::new();
 
-    let _ = old_data.old_members.iter().map(|(_, member)| {
-        let mut ids = vec![];
+    let mut attendee_joined_counts = Vec::new();
+    let mut attendee_invite_counts = Vec::new();
 
-        for key in member.joined.keys() {
-            let id = Identifier::from(*key).id();
-            ids.push(id);
-        }
+    for (_, member) in old_data.old_members.iter() {
+        member_joined_counts.push(member.joined.len());
+        member_invite_counts.push(member.invites.len());
+    }
 
-        assert_eq!(
-            ids.len(),
-            ids.iter().collect::<std::collections::HashSet<_>>().len()
-        );
+    for (_, attendee) in old_data.old_event_attendees.iter() {
+        attendee_joined_counts.push(attendee.joined.len());
+        attendee_invite_counts.push(attendee.invites.len());
+    }
 
-        results.push(format!("Member joined ids unique {}", ids.len()));
-    });
+    let mut new_member_joined_counts = Vec::new();
+    let mut new_member_invite_counts = Vec::new();
 
-    results
-}
+    let mut new_attendee_joined_counts = Vec::new();
+    let mut new_attendee_invite_counts = Vec::new();
 
-fn chech_unique_member_invite_ids(old_data: &OldData) -> Vec<String> {
-    let mut results = vec![];
+    for (_, member) in new_data.new_members.iter() {
+        new_member_joined_counts.push(member.joined.len());
+        new_member_invite_counts.push(member.invites.len());
+    }
 
-    let _ = old_data.old_members.iter().map(|(_, member)| {
-        let mut ids = vec![];
+    for (_, attendee) in new_data.new_attendees.iter() {
+        new_attendee_joined_counts.push(attendee.joined.len());
+        new_attendee_invite_counts.push(attendee.invites.len());
+    }
 
-        for key in member.invites.keys() {
-            let id = Identifier::from(*key).id();
-            ids.push(id);
-        }
+    assert_eq!(member_joined_counts.len(), new_member_joined_counts.len());
+    assert_eq!(member_invite_counts.len(), new_member_invite_counts.len());
+    assert_eq!(
+        attendee_joined_counts.len(),
+        new_attendee_joined_counts.len()
+    );
+    assert_eq!(
+        attendee_invite_counts.len(),
+        new_attendee_invite_counts.len()
+    );
 
-        assert_eq!(
-            ids.len(),
-            ids.iter().collect::<std::collections::HashSet<_>>().len()
-        );
-
-        results.push(format!("Member invite ids unique {}", ids.len()));
-    });
-
-    results
-}
-
-fn check_unique_attendee_joined_ids(old_data: &OldData) -> Vec<String> {
-    let mut results = vec![];
-
-    let _ = old_data.old_event_attendees.iter().map(|(_, attendee)| {
-        let mut ids = vec![];
-
-        for key in attendee.joined.keys() {
-            let id = Identifier::from(*key).id();
-            ids.push(id);
-        }
-
-        assert_eq!(
-            ids.len(),
-            ids.iter().collect::<std::collections::HashSet<_>>().len()
-        );
-
-        results.push(format!("Attendee joined ids unique {}", ids.len()));
-    });
-
-    results
-}
-
-fn chech_unique_attendee_invite_ids(old_data: &OldData) -> Vec<String> {
-    let mut results = vec![];
-
-    let _ = old_data.old_event_attendees.iter().map(|(_, attendee)| {
-        let mut ids = vec![];
-
-        for key in attendee.invites.keys() {
-            let id = Identifier::from(*key).id();
-            ids.push(id);
-        }
-
-        assert_eq!(
-            ids.len(),
-            ids.iter().collect::<std::collections::HashSet<_>>().len()
-        );
-
-        results.push(format!("Attendee invite ids unique {}", ids.len()));
-    });
-
-    results
-}
-
-fn check_member_joined_and_invites_len(old_data: &OldData) -> Vec<String> {
-    let mut results = vec![];
-
-    let _ = old_data.old_members.iter().map(|(_, member)| {
-        let joined_len = member.joined.len();
-        let invites_len = member.invites.len();
-
-        results.push(format!("Member joined {}", joined_len));
-        results.push(format!("Member invites {}", invites_len));
-    });
-
-    results
-}
-
-fn check_attendee_joined_and_invites_len(old_data: &OldData) -> Vec<String> {
-    let mut results = vec![];
-
-    let _ = old_data.old_event_attendees.iter().map(|(_, attendee)| {
-        let joined_len = attendee.joined.len();
-        let invites_len = attendee.invites.len();
-
-        results.push(format!("Attendee joined {}", joined_len));
-        results.push(format!("Attendee invites {}", invites_len));
-    });
-
-    results
+    vec![
+        format!("Old member joined {:?}", member_joined_counts.len()),
+        format!("New member joined {:?}", new_member_joined_counts.len()),
+        format!("Old member invites {:?}", member_invite_counts.len()),
+        format!("New member invites {:?}", new_member_invite_counts.len()),
+        format!("Old attendee joined {:?}", attendee_joined_counts.len()),
+        format!("New attendee joined {:?}", new_attendee_joined_counts.len()),
+        format!("Old attendee invites {:?}", attendee_invite_counts.len()),
+        format!(
+            "New attendee invites {:?}",
+            new_attendee_invite_counts.len()
+        ),
+    ]
 }

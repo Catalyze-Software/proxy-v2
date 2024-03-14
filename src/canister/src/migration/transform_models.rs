@@ -128,7 +128,7 @@ fn members_from_old(old_data: &OldData) -> Vec<(Principal, Member)> {
                 };
                 (id, join)
             })
-            .collect();
+            .collect::<HashMap<u64, Join>>();
 
         let invites: HashMap<u64, MemberInvite> = old_member
             .invites
@@ -138,7 +138,7 @@ fn members_from_old(old_data: &OldData) -> Vec<(Principal, Member)> {
                 let invite = MemberInvite::from(invite.clone());
                 (id, invite)
             })
-            .collect();
+            .collect::<HashMap<u64, MemberInvite>>();
 
         let member = Member { joined, invites };
 
@@ -180,7 +180,7 @@ fn attendees_from_old(old_data: &OldData) -> Vec<(Principal, Attendee)> {
                 };
                 (id, join)
             })
-            .collect();
+            .collect::<HashMap<u64, AttendeeJoin>>();
 
         let invites: HashMap<u64, AttendeeInvite> = old_attendee
             .invites
@@ -190,7 +190,7 @@ fn attendees_from_old(old_data: &OldData) -> Vec<(Principal, Attendee)> {
                 let invite = AttendeeInvite::from(invite.clone());
                 (id, invite)
             })
-            .collect();
+            .collect::<HashMap<u64, AttendeeInvite>>();
 
         let attendee = Attendee { joined, invites };
 
