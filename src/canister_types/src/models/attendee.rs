@@ -6,7 +6,7 @@ use serde::Serialize;
 
 use crate::impl_storable_for;
 
-use super::{invite_type::InviteType, notification};
+use super::invite_type::InviteType;
 
 impl_storable_for!(Attendee);
 

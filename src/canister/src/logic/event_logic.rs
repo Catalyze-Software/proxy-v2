@@ -12,7 +12,6 @@ use canister_types::models::{
     filter_type::FilterType,
     identifier::{Identifier, IdentifierKind},
     invite_type::InviteType,
-    notification::{self, Notification},
     paged_response::PagedResponse,
     privacy::Privacy,
     subject::Subject,
