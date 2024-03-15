@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-## [0.0.1] - 2024-03-15
+## [0.1.0] - 2024-03-15
 
 ### Added
 
@@ -28,5 +28,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Missing `notification_id` on migration models
 
-[Unreleased]: https://github.com/Catalyze-Software/proxy/compare/0.0.1...main
-[0.0.1]: https://github.com/Catalyze-Software/proxy/tags/0.0.1
+[Unreleased]: https://github.com/Catalyze-Software/proxy/compare/0.1.0...main
+[0.1.0]: https://github.com/Catalyze-Software/proxy/tags/0.1.0
