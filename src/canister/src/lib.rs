@@ -1,39 +1,55 @@
-// The different stores with subject specific business logic and storage
-pub mod stores {
-    pub mod event_store;
-    pub mod group_store;
-    pub mod main_store;
-    pub mod profile_store;
-    pub mod report_store;
+// should all be removed after implementation
+#![allow(deprecated)]
+
+use candid::Principal;
+use ic_cdk::query;
+
+pub static CATALYZE_MULTI_SIG: &str = "fcygz-gqaaa-aaaap-abpaa-cai";
+pub static E8S_PER_DAY_BOOST_COST: u64 = 3500000;
+
+pub mod calls;
+pub mod helpers;
+pub mod logic;
+mod migration;
+pub mod storage;
+
+// Hacky way to expose the candid interface to the outside world
+#[query(name = "__get_candid_interface_tmp_hack")]
+pub fn __export_did_tmp_() -> String {
+    use candid::export_service;
+    use canister_types::models::api_error::*;
+    use canister_types::models::attendee::*;
+    use canister_types::models::boosted::*;
+    use canister_types::models::event::*;
+    use canister_types::models::filter_type::*;
+    use canister_types::models::friend_request::*;
+    use canister_types::models::group::*;
+    use canister_types::models::member::*;
+    use canister_types::models::notification::*;
+    use canister_types::models::paged_response::*;
+    use canister_types::models::permission::*;
+    use canister_types::models::profile::*;
+    use canister_types::models::relation_type::*;
+    use canister_types::models::report::*;
+    use canister_types::models::role::*;
+    use canister_types::models::user_notifications::*;
+    use canister_types::models::wallet::*;
+    use ic_websocket_cdk::types::*;
+
+    use crate::migration::read_stores::OldData;
+
+    export_service!();
+    __export_service()
 }
 
-// The different exposed methods that can be called on the canister
-pub mod methods {
-    pub mod event_methods;
-    pub mod group_methods;
-    pub mod profile_methods;
-    pub mod report_methods;
-}
+// Method used to save the candid interface to a file
+#[test]
+pub fn candid() {
+    use std::env;
+    use std::fs::write;
+    use std::path::PathBuf;
 
-// The base entities that are used for storage
-pub mod entities {
-    pub mod attendee;
-    pub mod event;
-    pub mod group;
-    pub mod invite;
-    pub mod member;
-    pub mod profile;
-    pub mod report;
-}
-
-// Shared structs that are used by different entities and models
-pub mod models {
-    pub mod application_role;
-    pub mod asset;
-    pub mod date_range;
-    pub mod location;
-    pub mod privacy;
-    pub mod role;
-    pub mod sort_direction;
-    pub mod storage;
+    let dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
+    let dir = dir.parent().unwrap().parent().unwrap().join("candid");
+    write(dir.join(format!("canister.did")), __export_did_tmp_()).expect("Write failed.");
 }
