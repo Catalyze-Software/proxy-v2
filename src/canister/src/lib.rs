@@ -10,6 +10,7 @@ pub static E8S_PER_DAY_BOOST_COST: u64 = 3500000;
 pub mod calls;
 pub mod helpers;
 pub mod logic;
+mod migration;
 pub mod storage;
 
 // Hacky way to expose the candid interface to the outside world
@@ -34,6 +35,9 @@ pub fn __export_did_tmp_() -> String {
     use canister_types::models::user_notifications::*;
     use canister_types::models::wallet::*;
     use ic_websocket_cdk::types::*;
+
+    use crate::migration::read_stores::OldData;
+
     export_service!();
     __export_service()
 }

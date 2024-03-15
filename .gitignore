@@ -18,6 +18,3 @@ src/declarations/
 # frontend code
 node_modules/
 dist/
-
-wasm/parent.wasm
-wasm/child.wasm
