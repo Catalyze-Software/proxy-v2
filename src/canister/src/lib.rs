@@ -24,6 +24,7 @@ pub fn __export_did_tmp_() -> String {
     use canister_types::models::filter_type::*;
     use canister_types::models::friend_request::*;
     use canister_types::models::group::*;
+    use canister_types::models::http_types::HttpRequest;
     use canister_types::models::member::*;
     use canister_types::models::notification::*;
     use canister_types::models::paged_response::*;
@@ -34,9 +35,8 @@ pub fn __export_did_tmp_() -> String {
     use canister_types::models::role::*;
     use canister_types::models::user_notifications::*;
     use canister_types::models::wallet::*;
+    use ic_cdk::api::management_canister::http_request::HttpResponse;
     use ic_websocket_cdk::types::*;
-
-    use crate::migration::read_stores::OldData;
 
     export_service!();
     __export_service()
