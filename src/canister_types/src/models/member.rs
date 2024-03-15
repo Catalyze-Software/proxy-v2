@@ -68,11 +68,17 @@ impl Member {
         }
     }
 
-    pub fn add_invite(&mut self, group_id: u64, invite_type: InviteType) {
+    pub fn add_invite(
+        &mut self,
+        group_id: u64,
+        invite_type: InviteType,
+        notification_id: Option<u64>,
+    ) {
         self.invites.insert(
             group_id,
             MemberInvite {
                 invite_type,
+                notification_id,
                 updated_at: time(),
                 created_at: time(),
             },
@@ -81,6 +87,11 @@ impl Member {
 
     pub fn get_invite(&self, group_id: &u64) -> Option<MemberInvite> {
         self.invites.get(group_id).cloned()
+    }
+
+    pub fn turn_invite_into_joined(&mut self, group_id: u64) {
+        self.invites.remove(&group_id);
+        self.add_joined(group_id, vec!["member".to_string()]);
     }
 
     pub fn remove_invite(&mut self, group_id: u64) {
@@ -156,16 +167,27 @@ pub struct Join {
 
 #[derive(Clone, Debug, CandidType, Deserialize, Serialize)]
 pub struct MemberInvite {
+    pub notification_id: Option<u64>,
     pub invite_type: InviteType,
     pub updated_at: u64,
     pub created_at: u64,
 }
 
+impl MemberInvite {
+    pub fn set_notification_id(&mut self, notification_id: u64) {
+        self.notification_id = Some(notification_id);
+    }
+
+    pub fn remove_notification_id(&mut self) {
+        self.notification_id = None;
+    }
+}
+
 #[derive(Clone, Debug, CandidType, Deserialize, Serialize)]
 pub struct JoinedMemberResponse {
-    group_id: u64,
-    principal: Principal,
-    roles: Vec<String>,
+    pub group_id: u64,
+    pub principal: Principal,
+    pub roles: Vec<String>,
 }
 
 impl JoinedMemberResponse {

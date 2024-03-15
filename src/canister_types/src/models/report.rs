@@ -23,6 +23,7 @@ pub struct Report {
     pub subject: Subject,
     pub message: String,
     pub group_id: Option<u64>,
+    pub notification_id: Option<u64>,
     pub created_on: u64,
 }
 
@@ -33,6 +34,7 @@ impl Default for Report {
             subject: Subject::default(),
             message: Default::default(),
             group_id: Default::default(),
+            notification_id: Default::default(),
             created_on: Default::default(),
         }
     }
@@ -44,9 +46,18 @@ impl Report {
             reported_by: caller(),
             subject: value.subject,
             message: value.message,
+            notification_id: None,
             group_id: Some(value.group_id),
             created_on: time(),
         }
+    }
+
+    pub fn set_notification_id(&mut self, notification_id: u64) {
+        self.notification_id = Some(notification_id);
+    }
+
+    pub fn remove_notification_id(&mut self) {
+        self.notification_id = None;
     }
 }
 

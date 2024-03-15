@@ -11,6 +11,7 @@ pub struct FriendRequest {
     pub requested_by: Principal,
     pub message: String,
     pub to: Principal,
+    pub notification_id: Option<u64>,
     pub created_at: u64,
 }
 
@@ -20,8 +21,17 @@ impl FriendRequest {
             requested_by,
             message,
             to,
+            notification_id: None,
             created_at: time(),
         }
+    }
+
+    pub fn set_notification_id(&mut self, notification_id: u64) {
+        self.notification_id = Some(notification_id);
+    }
+
+    pub fn remove_notification_id(&mut self) {
+        self.notification_id = None;
     }
 }
 

@@ -108,6 +108,14 @@ impl Event {
     pub fn is_from_group(&self, group_id: u64) -> bool {
         self.group_id == group_id
     }
+
+    pub fn set_notification_id(&mut self, notification_id: u64) {
+        self.notification_id = Some(notification_id);
+    }
+
+    pub fn remove_notification_id(&mut self) {
+        self.notification_id = None;
+    }
 }
 
 impl Default for Event {
@@ -128,6 +136,7 @@ impl Default for Event {
             is_canceled: Default::default(),
             is_deleted: Default::default(),
             updated_on: Default::default(),
+            notification_id: Default::default(),
             created_on: Default::default(),
             metadata: Default::default(),
         }

@@ -8,6 +8,8 @@ use ic_cdk::caller;
 
 use crate::storage::{FriendRequestStore, ProfileStore, StorageMethods};
 
+use super::notification_logic::NotificationCalls;
+
 pub struct FriendRequestCalls;
 pub struct FriendRequestMapper;
 pub struct FriendRequestValidation;
@@ -17,7 +19,7 @@ impl FriendRequestCalls {
         to: Principal,
         message: String,
     ) -> Result<FriendRequestResponse, ApiError> {
-        let friend_request = FriendRequest::new(caller(), to, message);
+        let mut friend_request = FriendRequest::new(caller(), to, message);
         let (_, caller_profile) = ProfileStore::get(caller())?;
 
         if caller_profile.relations.contains_key(&to) {
@@ -48,13 +50,20 @@ impl FriendRequestCalls {
                 .add_message("Friend request already exists"));
         }
 
-        // insert the friend request
+        // make a notification for the friend request
+        let notification_id =
+            NotificationCalls::notification_add_friend_request(friend_request.clone())?;
+
+        // add the notification id to the friend request as reference
+        friend_request.set_notification_id(notification_id);
+
+        // insert the friend request into the store
         let friend_request_result = FriendRequestStore::insert(friend_request);
         FriendRequestMapper::to_result_response(friend_request_result)
     }
 
-    pub fn accept_friend_request(id: u64) -> Result<bool, ApiError> {
-        let (_, friend_request) = FriendRequestStore::get(id)?;
+    pub fn accept_friend_request(friend_request_id: u64) -> Result<bool, ApiError> {
+        let (_, friend_request) = FriendRequestStore::get(friend_request_id)?;
 
         if friend_request.to != caller() {
             return Err(ApiError::unauthorized()
@@ -74,11 +83,31 @@ impl FriendRequestCalls {
             .relations
             .insert(friend_request.to, RelationType::Friend.to_string());
 
-        Ok(FriendRequestStore::remove(id))
+        NotificationCalls::notification_accept_or_decline_friend_request(
+            (friend_request_id, friend_request),
+            true,
+        )?;
+        Ok(FriendRequestStore::remove(friend_request_id))
     }
 
-    pub fn remove_friend_request(id: u64) -> Result<bool, ApiError> {
-        let (_, friend_request) = FriendRequestStore::get(id)?;
+    pub fn decline_friend_request(friend_request_id: u64) -> Result<bool, ApiError> {
+        let (_, friend_request) = FriendRequestStore::get(friend_request_id)?;
+
+        if friend_request.to != caller() {
+            return Err(ApiError::unauthorized()
+                .add_method_name("decline_friend_request")
+                .add_message("You are not authorized to decline this friend request"));
+        }
+
+        NotificationCalls::notification_accept_or_decline_friend_request(
+            (friend_request_id, friend_request),
+            false,
+        )?;
+        Ok(FriendRequestStore::remove(friend_request_id))
+    }
+
+    pub fn remove_friend_request(friend_request_id: u64) -> Result<bool, ApiError> {
+        let (_, friend_request) = FriendRequestStore::get(friend_request_id)?;
 
         if friend_request.requested_by != caller() {
             return Err(ApiError::unauthorized()
@@ -86,7 +115,8 @@ impl FriendRequestCalls {
                 .add_message("You are not authorized to remove this friend request"));
         }
 
-        Ok(FriendRequestStore::remove(id))
+        NotificationCalls::notification_remove_friend_request(friend_request.to, friend_request_id);
+        Ok(FriendRequestStore::remove(friend_request_id))
     }
 
     pub fn get_incoming_friend_requests() -> Vec<FriendRequestResponse> {
@@ -101,18 +131,6 @@ impl FriendRequestCalls {
             .into_iter()
             .map(|data| FriendRequestMapper::to_response(data))
             .collect()
-    }
-
-    pub fn decline_friend_request(id: u64) -> Result<bool, ApiError> {
-        let (_, friend_request) = FriendRequestStore::get(id)?;
-
-        if friend_request.to != caller() {
-            return Err(ApiError::unauthorized()
-                .add_method_name("decline_friend_request")
-                .add_message("You are not authorized to decline this friend request"));
-        }
-
-        Ok(FriendRequestStore::remove(id))
     }
 }
 

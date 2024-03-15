@@ -318,7 +318,27 @@ pub fn accept_user_request_group_invite(
 ) -> Result<Member, ApiError> {
     let group_id = Identifier::from(group_identifier).id();
     can_edit(group_id, PermissionType::Invite(None))?;
-    GroupCalls::accept_user_request_group_invite(member_principal, group_id)
+    GroupCalls::accept_or_decline_user_request_group_invite(member_principal, group_id, true)
+}
+
+/// Decline an invite to a group as a admin - [`[update]`](update)
+/// # Arguments
+/// * `member_principal` - The principal of the user to accept the invite for
+/// * `group_identifier` - The identifier of the group to accept the invite for
+/// # Returns
+/// * `Member` - The updated member entry
+/// # Errors
+/// * `ApiError` - If something went wrong while declining the invite
+/// # Note
+/// This function is guarded by the [`has_access`](has_access) function.
+#[update(guard = "has_access")]
+pub fn decline_user_request_group_invite(
+    member_principal: Principal,
+    group_identifier: Principal,
+) -> Result<Member, ApiError> {
+    let group_id = Identifier::from(group_identifier).id();
+    can_edit(group_id, PermissionType::Invite(None))?;
+    GroupCalls::accept_or_decline_user_request_group_invite(member_principal, group_id, false)
 }
 
 /// Accept an invite from a group as a user - [`[update]`](update)
@@ -331,7 +351,20 @@ pub fn accept_user_request_group_invite(
 #[update(guard = "has_access")]
 pub fn accept_owner_request_group_invite(group_identifier: Principal) -> Result<Member, ApiError> {
     let group_id = Identifier::from(group_identifier).id();
-    GroupCalls::accept_owner_request_group_invite(group_id)
+    GroupCalls::accept_or_decline_owner_request_group_invite(group_id, true)
+}
+
+/// Decline an invite from a group as a user - [`[update]`](update)
+/// # Arguments
+/// * `group_identifier` - The identifier of the group to accept the invite for
+/// # Returns
+/// * `Member` - The updated member entry
+/// # Errors
+/// * `ApiError` - If something went wrong while declining the invite
+#[update(guard = "has_access")]
+pub fn decline_owner_request_group_invite(group_identifier: Principal) -> Result<Member, ApiError> {
+    let group_id = Identifier::from(group_identifier).id();
+    GroupCalls::accept_or_decline_owner_request_group_invite(group_id, false)
 }
 
 /// Assign a role to a specific group member - [`[update]`](update)

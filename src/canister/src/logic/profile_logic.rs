@@ -1,4 +1,4 @@
-use super::member_logic::MemberCalls;
+use super::{member_logic::MemberCalls, notification_logic::NotificationCalls};
 use crate::{
     helpers::validator::Validator,
     storage::{AttendeeStore, IdentifierRefMethods, MemberStore, ProfileStore, StorageMethods},
@@ -8,7 +8,7 @@ use canister_types::models::{
     api_error::ApiError,
     document_details::DocumentDetails,
     identifier::Identifier,
-    profile::{PostProfile, Profile, ProfileMethods, ProfileResponse, UpdateProfile},
+    profile::{PostProfile, Profile, ProfileResponse, UpdateProfile},
     relation_type::RelationType,
     validation::{ValidateField, ValidationType},
     wallet::{PostWallet, Wallet},
@@ -216,7 +216,6 @@ impl ProfileCalls {
         }
 
         caller_profile.relations.remove(&principal);
-
         let updated_caller_profile = ProfileStore::update(caller(), caller_profile);
 
         let (_, mut friend_profile) = ProfileStore::get(principal)?;
@@ -230,6 +229,7 @@ impl ProfileCalls {
 
         let _ = ProfileStore::update(principal, friend_profile);
 
+        NotificationCalls::notification_remove_friend(principal, caller());
         ProfileResponse::from_result(updated_caller_profile)
     }
 
