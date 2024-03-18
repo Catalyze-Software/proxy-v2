@@ -102,6 +102,7 @@ fn profiles_from_old(old_data: &OldData) -> Vec<(Principal, Profile)> {
             extra: old_profile.extra.clone(),
             updated_on: old_profile.updated_on,
             created_on: old_profile.created_on,
+            notification_id: None,
         };
 
         new_profiles.push((principal, profile));
@@ -158,6 +159,7 @@ impl From<OldInvite> for MemberInvite {
             invite_type,
             updated_at: old_invite.updated_at,
             created_at: old_invite.created_at,
+            notification_id: None,
         }
     }
 }
@@ -212,6 +214,7 @@ impl From<OldAttendeeInvite> for AttendeeInvite {
             invite_type,
             updated_at: old_invite.updated_at,
             created_at: old_invite.created_at,
+            notification_id: None,
         }
     }
 }
@@ -244,6 +247,7 @@ fn groups_from_old(old_data: &OldData) -> Vec<(u64, Group)> {
                 .collect(),
             is_deleted: old_group.is_deleted,
             wallets: old_group.wallets.clone(),
+            notification_id: None,
         };
 
         new_groups.push((id, group));
