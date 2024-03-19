@@ -16,6 +16,7 @@ use super::{
     api_error::ApiError,
     document_details::DocumentDetails,
     profile_privacy::ProfilePrivacy,
+    subject::Subject,
     wallet::{Wallet, WalletResponse},
 };
 
@@ -45,7 +46,7 @@ pub struct Profile {
     pub privacy_policy: Option<DocumentDetails>,
     pub terms_of_service: Option<DocumentDetails>,
     pub wallets: HashMap<Principal, Wallet>,
-    pub starred: HashMap<Principal, String>,
+    pub starred: Vec<Subject>,
     pub relations: HashMap<Principal, String>,
     pub extra: String,
     pub notification_id: Option<u64>,
@@ -127,6 +128,10 @@ impl Profile {
     pub fn remove_notification_id(&mut self) {
         self.notification_id = None;
     }
+
+    pub fn is_starred(&self, subject: &Subject) -> bool {
+        self.starred.contains(subject)
+    }
 }
 
 impl From<PostProfile> for Profile {
@@ -151,7 +156,7 @@ impl From<PostProfile> for Profile {
             causes: vec![],
             website: "".to_string(),
             wallets: HashMap::new(),
-            starred: HashMap::new(),
+            starred: Vec::new(),
             relations: HashMap::new(),
             code_of_conduct: None,
             extra: profile.extra,

@@ -7,9 +7,9 @@ use candid::Principal;
 use canister_types::models::{
     api_error::ApiError,
     document_details::DocumentDetails,
-    identifier::Identifier,
     profile::{PostProfile, Profile, ProfileResponse, UpdateProfile},
     relation_type::RelationType,
+    subject::{Subject, SubjectType},
     validation::{ValidateField, ValidationType},
     wallet::{PostWallet, Wallet},
 };
@@ -144,64 +144,41 @@ impl ProfileCalls {
             .collect()
     }
 
-    pub fn add_starred(identifier_principal: Principal) -> Result<ProfileResponse, ApiError> {
-        let identifier = Identifier::from(identifier_principal);
-
-        if !identifier.is_valid() {
-            return Err(ApiError::bad_request().add_message("Invalid identifier"));
-        }
-
+    pub fn add_starred(subject: Subject) -> Result<ProfileResponse, ApiError> {
         let (_, mut existing_profile) = ProfileStore::get(caller())?;
 
-        if existing_profile.starred.contains_key(&identifier_principal) {
-            return Err(ApiError::duplicate()
-                .add_message(format!("{} already starred", identifier.kind()).as_str()));
+        if existing_profile.starred.contains(&subject) {
+            return Err(ApiError::duplicate().add_message("already starred"));
         }
 
-        existing_profile
-            .starred
-            .insert(identifier_principal, identifier.kind());
+        existing_profile.starred.push(subject);
 
         let updated_profile = ProfileStore::update(caller(), existing_profile);
 
         ProfileResponse::from_result(updated_profile)
     }
 
-    pub fn remove_starred(identifier_principal: Principal) -> Result<ProfileResponse, ApiError> {
-        let identifier = Identifier::from(identifier_principal);
-
-        if !identifier.is_valid() {
-            return Err(ApiError::bad_request().add_message("Invalid identifier"));
-        }
-
+    pub fn remove_starred(subject: Subject) -> Result<ProfileResponse, ApiError> {
         let (_, mut existing_profile) = ProfileStore::get(caller())?;
 
-        if !existing_profile.starred.contains_key(&identifier_principal) {
-            return Err(ApiError::not_found()
-                .add_message(format!("{} not starred", identifier.kind()).as_str()));
+        if !existing_profile.starred.contains(&subject) {
+            return Err(ApiError::not_found().add_message("not starred"));
         }
 
-        existing_profile.starred.remove(&identifier_principal);
+        existing_profile.starred.retain(|s| s != &subject);
 
         let updated_profile = ProfileStore::update(caller(), existing_profile);
 
         ProfileResponse::from_result(updated_profile)
     }
 
-    pub fn get_starred_by_kind(kind: &str) -> Vec<Principal> {
+    pub fn get_starred_by_subject(subject: SubjectType) -> Vec<Subject> {
         if let Ok((_, profile)) = ProfileStore::get(caller()) {
             return profile
                 .starred
                 .iter()
-                .filter_map(
-                    |(principal, k)| {
-                        if k == &kind {
-                            Some(*principal)
-                        } else {
-                            None
-                        }
-                    },
-                )
+                .filter(|s| s.get_type() == subject)
+                .cloned()
                 .collect();
         }
         vec![]

@@ -406,12 +406,8 @@ impl EventCalls {
     }
 
     fn get_event_caller_data(event_id: u64, group_id: u64) -> Option<EventCallerData> {
-        let event_identifier = Identifier::generate(IdentifierKind::Event(event_id))
-            .to_principal()
-            .unwrap();
-
         let is_starred = ProfileStore::get(caller())
-            .is_ok_and(|(_, profile)| profile.starred.get(&event_identifier).is_some());
+            .is_ok_and(|(_, profile)| profile.is_starred(&Subject::Event(event_id)));
 
         let (joined, invite) = match AttendeeStore::get(caller()) {
             Ok((principal, member)) => {

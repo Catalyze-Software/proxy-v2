@@ -13,6 +13,7 @@ use canister_types::models::{
     permission::Permission,
     profile::Profile,
     role::Role,
+    subject::Subject,
 };
 
 use super::old_models::attendee_model::{
@@ -70,6 +71,21 @@ fn profiles_from_old(old_data: &OldData) -> Vec<(Principal, Profile)> {
     for (_, old_profile) in old_data.old_profiles.iter() {
         let principal: Principal = old_profile.principal;
 
+        let new_starred: Vec<Subject> = old_profile
+            .starred
+            .clone()
+            .into_iter()
+            .map(|(identifier, _)| {
+                let x = Identifier::from(identifier);
+                match x.kind().as_str() {
+                    "group" => Subject::Group(x.id()),
+                    "event" => Subject::Event(x.id()),
+                    // should not have any other kind
+                    _ => panic!("Invalid identifier kind"),
+                }
+            })
+            .collect();
+
         let profile = Profile {
             username: old_profile.username.clone(),
             display_name: old_profile.display_name.clone(),
@@ -97,7 +113,7 @@ fn profiles_from_old(old_data: &OldData) -> Vec<(Principal, Profile)> {
             terms_of_service: old_profile.terms_of_service.clone(),
             wallets: old_profile.wallets.clone(),
 
-            starred: old_profile.starred.clone(),
+            starred: new_starred,
             relations: old_profile.relations.clone(),
             extra: old_profile.extra.clone(),
             updated_on: old_profile.updated_on,

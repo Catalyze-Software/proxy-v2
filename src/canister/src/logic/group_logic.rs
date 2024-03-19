@@ -20,7 +20,6 @@ use canister_types::{
         group::{
             Group, GroupCallerData, GroupFilter, GroupResponse, GroupSort, PostGroup, UpdateGroup,
         },
-        identifier::{Identifier, IdentifierKind},
         invite_type::InviteType,
         member::{InviteMemberResponse, JoinedMemberResponse, Member},
         neuron::{DissolveState, ListNeurons, ListNeuronsResponse},
@@ -622,12 +621,8 @@ impl GroupCalls {
     }
 
     fn get_group_caller_data(group_id: u64) -> Option<GroupCallerData> {
-        let group_identifier = Identifier::generate(IdentifierKind::Group(group_id))
-            .to_principal()
-            .unwrap();
-
         let is_starred = ProfileStore::get(caller())
-            .is_ok_and(|(_, profile)| profile.starred.get(&group_identifier).is_some());
+            .is_ok_and(|(_, profile)| profile.is_starred(&Subject::Group(group_id)));
 
         let (joined, invite) = match MemberStore::get(caller()) {
             Ok((principal, member)) => {

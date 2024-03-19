@@ -16,6 +16,7 @@ use canister_types::models::{
     friend_request::FriendRequestResponse,
     profile::{PostProfile, ProfileResponse, UpdateProfile},
     relation_type::RelationType,
+    subject::{Subject, SubjectType},
     wallet::PostWallet,
 };
 use ic_cdk::{query, update};
@@ -132,8 +133,8 @@ pub fn remove_wallet_from_profile(
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "has_access")]
-pub fn add_starred(identifier: Principal) -> Result<ProfileResponse, ApiError> {
-    ProfileCalls::add_starred(identifier)
+pub fn add_starred(subject: Subject) -> Result<ProfileResponse, ApiError> {
+    ProfileCalls::add_starred(subject)
 }
 
 /// Removes a group, event or task reference from the caller his profile - [`[update]`](update)
@@ -146,8 +147,8 @@ pub fn add_starred(identifier: Principal) -> Result<ProfileResponse, ApiError> {
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "has_access")]
-pub fn remove_starred(identifier: Principal) -> Result<ProfileResponse, ApiError> {
-    ProfileCalls::remove_starred(identifier)
+pub fn remove_starred(subject: Subject) -> Result<ProfileResponse, ApiError> {
+    ProfileCalls::remove_starred(subject)
 }
 
 /// Gets the starred events from the caller his profile - [`[query]`](query)
@@ -156,18 +157,8 @@ pub fn remove_starred(identifier: Principal) -> Result<ProfileResponse, ApiError
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 #[query(guard = "has_access")]
-pub fn get_starred_events() -> Vec<Principal> {
-    ProfileCalls::get_starred_by_kind("evt")
-}
-
-/// Gets the starred tasks from the caller his profile - [`[query]`](query)
-/// # Returns
-/// * `Vec<Principal>` - The task identifiers that were found
-/// # Note
-/// This function is guarded by the [`has_access`](has_access) function.
-#[query(guard = "has_access")]
-pub fn get_starred_tasks() -> Vec<Principal> {
-    ProfileCalls::get_starred_by_kind("tsk")
+pub fn get_starred_events() -> Vec<Subject> {
+    ProfileCalls::get_starred_by_subject(SubjectType::Event)
 }
 
 /// Gets the starred groups from the caller his profile - [`[query]`](query)
@@ -176,8 +167,8 @@ pub fn get_starred_tasks() -> Vec<Principal> {
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 #[query(guard = "has_access")]
-pub fn get_starred_groups() -> Vec<Principal> {
-    ProfileCalls::get_starred_by_kind("grp")
+pub fn get_starred_groups() -> Vec<Subject> {
+    ProfileCalls::get_starred_by_subject(SubjectType::Group)
 }
 
 /// Create a friend request on behalf of the caller - [`[update]`](update)

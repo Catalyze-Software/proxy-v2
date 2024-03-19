@@ -5,7 +5,6 @@
 /// # Questions
 /// Check the public / private access of these calls? (anon / registered / group role)
 ///
-use candid::Principal;
 use ic_cdk::{query, update};
 
 use crate::{
@@ -15,7 +14,6 @@ use crate::{
 use canister_types::models::{
     api_error::ApiError,
     filter_type::FilterType,
-    identifier::Identifier,
     paged_response::PagedResponse,
     permission::PermissionType,
     report::{PostReport, ReportFilter, ReportResponse, ReportSort},
@@ -37,9 +35,8 @@ pub fn add_report(post_report: PostReport) -> Result<ReportResponse, ApiError> {
 
 /// Get a report
 /// # Arguments
-/// * `identifier` - The identifier of the report
-/// * `group_identifier` - Used to check if the user has access to the group
-/// * `member_identifier` - Used to check if the user has the correct group roles
+/// * `report_id` - The identifier of the report
+/// * `group_id` - Used to check if the user has access to the group
 /// # Returns
 /// * `ReportResponse` - The report
 /// # Errors
@@ -47,12 +44,7 @@ pub fn add_report(post_report: PostReport) -> Result<ReportResponse, ApiError> {
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 #[query(guard = "has_access")]
-pub fn get_report(
-    identifier: Principal,
-    group_identifier: Principal,
-) -> Result<ReportResponse, ApiError> {
-    let report_id = Identifier::from(identifier).id();
-    let group_id = Identifier::from(group_identifier).id();
+pub fn get_report(report_id: u64, group_id: u64) -> Result<ReportResponse, ApiError> {
     can_write(group_id, PermissionType::Group(None))?;
     ReportCalls::get_report(report_id)
 }
@@ -78,9 +70,8 @@ pub fn get_reports(
     page: usize,
     sort: ReportSort,
     filters: Vec<FilterType<ReportFilter>>,
-    group_identifier: Principal,
+    group_id: u64,
 ) -> Result<PagedResponse<ReportResponse>, ApiError> {
-    let group_id = Identifier::from(group_identifier).id();
     can_write(group_id, PermissionType::Group(None))?;
     ReportCalls::get_reports(limit, page, sort, filters, group_id)
 }
