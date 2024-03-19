@@ -11,6 +11,19 @@ pub enum Subject {
     Attendee(Principal),
 }
 
+impl Subject {
+    pub fn get_type(&self) -> SubjectType {
+        match self {
+            Subject::None => SubjectType::None,
+            Subject::Group(_) => SubjectType::Group,
+            Subject::Event(_) => SubjectType::Event,
+            Subject::Profile(_) => SubjectType::Profile,
+            Subject::Member(_) => SubjectType::Member,
+            Subject::Attendee(_) => SubjectType::Attendee,
+        }
+    }
+}
+
 #[derive(CandidType, Deserialize, Serialize, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum SubjectType {
     None,

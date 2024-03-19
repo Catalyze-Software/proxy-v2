@@ -15,6 +15,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+## [0.1.1]
+
+### Added
+
+- add `get_type` implementation for `Subject` struct
+
+### Changed
+
+- Change method argument order on `*_calls.rs` files
+- Replace `identifier` method argument with `u64` on `event_calls.ts`
+- Replace `identifier` method argument with `u64` on `group_calls.ts`
+- Replace `identifier` method argument with `u64` on `report_calls.tsx`
+- Deprecate `identifiers` for `Boost` and replace it with `Subject`
+- Change `starred: HashMap<Identifier, String>` to `Vec<Subject>`
+- change `get_starred_by_kind` to `get_starred_by_subject`
+
 ## [0.1.0] - 2024-03-15
 
 ### Added

@@ -20,7 +20,6 @@ use canister_types::models::{
     attendee::{Attendee, InviteAttendeeResponse, JoinedAttendeeResponse},
     event::{EventFilter, EventResponse, EventSort, PostEvent, UpdateEvent},
     filter_type::FilterType,
-    identifier::Identifier,
     paged_response::PagedResponse,
     permission::PermissionType,
 };
@@ -43,8 +42,8 @@ pub fn add_event(post_event: PostEvent) -> Result<EventResponse, ApiError> {
 
 /// Get an event - [`[query]`](query)
 /// # Arguments
-/// * `event_identifier` - The identifier of the event
-/// * `group_identifier` - Used to check if the user has access to the group
+/// * `event_id` - The identifier of the event
+/// * `group_id` - Used to check if the user has access to the group
 /// # Returns
 /// * `EventResponse` - The event
 /// # Errors
@@ -52,12 +51,7 @@ pub fn add_event(post_event: PostEvent) -> Result<EventResponse, ApiError> {
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 #[query]
-pub fn get_event(
-    event_identifier: Principal,
-    group_identifier: Principal,
-) -> Result<EventResponse, ApiError> {
-    let event_id = Identifier::from(event_identifier).id();
-    let group_id = Identifier::from(group_identifier).id();
+pub fn get_event(event_id: u64, group_id: u64) -> Result<EventResponse, ApiError> {
     EventCalls::get_event(event_id, group_id)
 }
 
@@ -83,23 +77,19 @@ fn get_events(
 
 /// Get the number of events per group - [`[query]`](query)
 /// # Arguments
-/// * `group_identifiers` - The group identifiers to get the events count from
+/// * `group_ids` - The group identifiers to get the events count from
 /// # Returns
 /// * `Vec<(Principal, usize)>` - The events count per group
 #[query]
-pub fn get_events_count(group_identifiers: Vec<Principal>) -> Vec<(Principal, u64)> {
-    let _group_identifiers = group_identifiers
-        .into_iter()
-        .map(|identifier| Identifier::from(identifier).id())
-        .collect();
-    EventCalls::get_events_count(_group_identifiers)
+pub fn get_events_count(group_ids: Vec<u64>) -> Vec<(Principal, u64)> {
+    EventCalls::get_events_count(group_ids)
 }
 
 /// edit an event - [`[update]`](update)
 /// # Arguments
-/// * `event_identifier` - The identifier of the event
+/// * `event_id` - The identifier of the event
+/// * `group_id` - Used to check if the user has access to the group
 /// * `update_event` - The event to update
-/// * `group_identifier` - Used to check if the user has access to the group
 /// # Returns
 /// * `EventResponse` - The updated event
 /// # Errors
@@ -108,20 +98,18 @@ pub fn get_events_count(group_identifiers: Vec<Principal>) -> Vec<(Principal, u6
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "has_access")]
 pub fn edit_event(
-    event_identifier: Principal,
+    event_id: u64,
+    group_id: u64,
     update_event: UpdateEvent,
-    group_identifier: Principal,
 ) -> Result<EventResponse, ApiError> {
-    let event_id = Identifier::from(event_identifier).id();
-    let group_id = Identifier::from(group_identifier).id();
     can_edit(group_id, PermissionType::Event(None))?;
     EventCalls::edit_event(event_id, update_event, group_id)
 }
 
 /// Delete an event - [`[update]`](update)
 /// # Arguments
-/// * `event_identifier` - The identifier of the event
-/// * `group_identifier` - Used to check if the user has access to the group the event belongs to
+/// * `event_id` - The identifier of the event
+/// * `group_id` - Used to check if the user has access to the group the event belongs to
 /// # Returns
 /// * `()` - If the event was deleted
 /// # Errors
@@ -129,21 +117,16 @@ pub fn edit_event(
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "has_access")]
-pub fn delete_event(
-    event_identifier: Principal,
-    group_identifier: Principal,
-) -> Result<(), ApiError> {
-    let event_id = Identifier::from(event_identifier).id();
-    let group_id = Identifier::from(group_identifier).id();
+pub fn delete_event(event_id: u64, group_id: u64) -> Result<(), ApiError> {
     can_delete(group_id, PermissionType::Event(None))?;
     EventCalls::delete_event(event_id, group_id)
 }
 
 /// Cancel an event - [`[update]`](update)
 /// # Arguments
-/// * `event_identifier` - The identifier of the event
+/// * `event_id` - The identifier of the event
+/// * `group_id` - Used to check if the user has access to the group the event belongs to
 /// * `reason` - The reason why the event was cancelled
-/// * `group_identifier` - Used to check if the user has access to the group the event belongs to
 /// # Returns
 /// * `()` - If the event was cancelled
 /// # Errors
@@ -151,13 +134,7 @@ pub fn delete_event(
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "has_access")]
-pub fn cancel_event(
-    event_identifier: Principal,
-    reason: String,
-    group_identifier: Principal,
-) -> Result<(), ApiError> {
-    let event_id = Identifier::from(event_identifier).id();
-    let group_id = Identifier::from(group_identifier).id();
+pub fn cancel_event(event_id: u64, group_id: u64, reason: String) -> Result<(), ApiError> {
     can_edit(group_id, PermissionType::Event(None))?;
     EventCalls::cancel_event(event_id, reason, group_id)
 }
@@ -166,8 +143,8 @@ pub fn cancel_event(
 
 /// Join an event - [`[update]`](update)
 /// # Arguments
-/// * `event_identifier` - The identifier of the event
-/// * `group_identifier` - Used to check if the user has access to the group the event belongs to
+/// * `event_id` - The identifier of the event
+/// * `group_id` - Used to check if the user has access to the group the event belongs to
 /// # Returns
 /// * `JoinedAttendeeResponse` - the event join details
 /// # Errors
@@ -175,20 +152,15 @@ pub fn cancel_event(
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "has_access")]
-pub fn join_event(
-    event_identifier: Principal,
-    group_identifier: Principal,
-) -> Result<JoinedAttendeeResponse, ApiError> {
-    let event_id = Identifier::from(event_identifier).id();
-    let group_id = Identifier::from(group_identifier).id();
+pub fn join_event(event_id: u64, group_id: u64) -> Result<JoinedAttendeeResponse, ApiError> {
     EventCalls::join_event(event_id, group_id)
 }
 
 /// Invite a user to an event - [`[update]`](update)
 /// # Arguments
-/// * `event_identifier` - The identifier of the event
+/// * `event_id` - The identifier of the event
+/// * `group_id` - Used to check if the user has access to the group the event belongs to
 /// * `attendee_principal` - The principal of the user to invite
-/// * `group_identifier` - Used to check if the user has access to the group the event belongs to
 /// # Returns
 /// * `InviteAttendeeResponse` - The event invite details
 /// # Errors
@@ -198,21 +170,19 @@ pub fn join_event(
 /// TODO: This action is guarded by group role based authorization
 #[update(guard = "has_access")]
 pub fn invite_to_event(
-    event_identifier: Principal,
+    event_id: u64,
+    group_id: u64,
     attendee_principal: Principal,
-    group_identifier: Principal,
 ) -> Result<InviteAttendeeResponse, ApiError> {
-    let event_id = Identifier::from(event_identifier).id();
-    let group_id = Identifier::from(group_identifier).id();
     can_edit(group_id, PermissionType::Event(None))?;
     EventCalls::invite_to_event(event_id, attendee_principal, group_id)
 }
 
 /// Accept an user invite to an event as a admin - [`[update]`](update)
 /// # Arguments
+/// * `event_id` - The identifier of the event
+/// * `group_id` - Used to check if the user has access to the group the event belongs to
 /// * `attendee_principal` - The principal of the user to accept
-/// * `event_identifier` - The identifier of the event
-/// * `group_identifier` - Used to check if the user has access to the group the event belongs to
 /// # Returns
 /// * `JoinedAttendeeResponse` - the event join details
 /// # Errors
@@ -222,19 +192,17 @@ pub fn invite_to_event(
 /// TODO: This action is guarded by group role based authorization
 #[update(guard = "has_access")]
 pub fn accept_user_request_event_invite(
+    event_id: u64,
+    group_id: u64,
     attendee_principal: Principal,
-    event_identifier: Principal,
-    group_identifier: Principal,
 ) -> Result<JoinedAttendeeResponse, ApiError> {
-    let event_id = Identifier::from(event_identifier).id();
-    let group_id = Identifier::from(group_identifier).id();
     can_edit(group_id, PermissionType::Event(None))?;
     EventCalls::accept_user_request_event_invite(event_id, attendee_principal, group_id)
 }
 
 /// Accept an owner invite to an event as a user - [`[update]`](update)
 /// # Arguments
-/// * `event_identifier` - The identifier of the event
+/// * `event_id` - The identifier of the event
 /// # Returns
 /// * `Attendee` - The attendee
 /// # Errors
@@ -242,16 +210,13 @@ pub fn accept_user_request_event_invite(
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "has_access")]
-pub fn accept_owner_request_event_invite(
-    event_identifier: Principal,
-) -> Result<Attendee, ApiError> {
-    let event_id = Identifier::from(event_identifier).id();
+pub fn accept_owner_request_event_invite(event_id: u64) -> Result<Attendee, ApiError> {
     EventCalls::accept_owner_request_event_invite(event_id)
 }
 
 /// Get the attendees for an event - [`[query]`](query)
 /// # Arguments
-/// * `event_identifier` - The event identifier to get the attendees from
+/// * `event_id` - The event identifier to get the attendees from
 /// # Returns
 /// * `Vec<JoinedAttendeeResponse>` - The attendees for the event
 /// # Errors
@@ -259,10 +224,7 @@ pub fn accept_owner_request_event_invite(
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 #[query(guard = "has_access")]
-pub fn get_event_attendees(
-    event_identifier: Principal,
-) -> Result<Vec<JoinedAttendeeResponse>, ApiError> {
-    let event_id = Identifier::from(event_identifier).id();
+pub fn get_event_attendees(event_id: u64) -> Result<Vec<JoinedAttendeeResponse>, ApiError> {
     EventCalls::get_event_attendees(event_id)
 }
 
@@ -298,7 +260,7 @@ pub fn get_attending_from_principal(
 
 /// Leave an event - [`[update]`](update)
 /// # Arguments
-/// * `event_identifier` - The identifier of the event
+/// * `event_id` - The identifier of the event
 /// # Returns
 /// * `()` - If the user left the event
 /// # Errors
@@ -306,8 +268,7 @@ pub fn get_attending_from_principal(
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "has_access")]
-pub fn leave_event(event_identifier: Principal) -> Result<(), ApiError> {
-    let event_id = Identifier::from(event_identifier).id();
+pub fn leave_event(event_id: u64) -> Result<(), ApiError> {
     EventCalls::leave_event(event_id)
 }
 
@@ -315,7 +276,7 @@ pub fn leave_event(event_identifier: Principal) -> Result<(), ApiError> {
 /// # Change
 /// * was `remove_event`
 /// # Arguments
-/// * `event_identifier` - The identifier of the event
+/// * `event_id` - The identifier of the event
 /// # Returns
 /// * `()` - If the user removed the event
 /// # Errors
@@ -323,16 +284,15 @@ pub fn leave_event(event_identifier: Principal) -> Result<(), ApiError> {
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "has_access")]
-pub fn remove_event_invite(event_identifier: Principal) -> Result<(), ApiError> {
-    let event_id = Identifier::from(event_identifier).id();
+pub fn remove_event_invite(event_id: u64) -> Result<(), ApiError> {
     EventCalls::remove_event_invite(event_id)
 }
 
 /// Remove an event attendee as a admin - [`[update]`](update)
 /// # Arguments
+/// * `event_id` - The identifier of the event
+/// * `group_id` - Used to check if the user has access to the group the event belongs to
 /// * `attendee_principal` - The principal of the user to remove
-/// * `event_identifier` - The identifier of the event
-/// * `group_identifier` - Used to check if the user has access to the group the event belongs to
 /// # Returns
 /// * `()` - If the user removed the event
 /// # Errors
@@ -341,21 +301,19 @@ pub fn remove_event_invite(event_identifier: Principal) -> Result<(), ApiError> 
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "has_access")]
 pub fn remove_attendee_from_event(
+    event_id: u64,
+    group_id: u64,
     attendee_principal: Principal,
-    event_identifier: Principal,
-    group_identifier: Principal,
 ) -> Result<(), ApiError> {
-    let event_id = Identifier::from(event_identifier).id();
-    let group_id = Identifier::from(group_identifier).id();
     can_edit(group_id, PermissionType::Event(None))?;
     EventCalls::remove_attendee_from_event(attendee_principal, event_id, group_id)
 }
 
 /// Remove an event invite as a admin - [`[update]`](update)
 /// # Arguments
+/// * `event_id` - The identifier of the event
+/// * `group_id` - Used to check if the user has access to the group the event belongs to
 /// * `attendee_principal` - The principal of the user to remove
-/// * `event_identifier` - The identifier of the event
-/// * `group_identifier` - Used to check if the user has access to the group the event belongs to
 /// # Returns
 /// * `()` - If the user removed the event
 /// # Errors
@@ -364,21 +322,18 @@ pub fn remove_attendee_from_event(
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "has_access")]
 pub fn remove_attendee_invite_from_event(
+    event_id: u64,
+    group_id: u64,
     attendee_principal: Principal,
-    event_identifier: Principal,
-    group_identifier: Principal,
 ) -> Result<(), ApiError> {
-    let event_id = Identifier::from(event_identifier).id();
-    let group_id = Identifier::from(group_identifier).id();
     can_edit(group_id, PermissionType::Event(None))?;
     EventCalls::remove_attendee_invite_from_event(attendee_principal, event_id)
 }
 
 /// Get the invites for an event - [`[query]`](query)
 /// # Arguments
-/// * `event_identifier` - The event identifier to get the invites from
-/// * `group_identifier` - Used to check if the user has access to the group the event belongs to
-/// * `member_identifier` - Used to check if the user has the correct group roles
+/// * `event_id` - The event identifier to get the invites from
+/// * `group_id` - Used to check if the user has access to the group the event belongs to
 /// # Returns
 /// * `Vec<InviteAttendeeResponse>` - The invites for the event
 /// # Errors
@@ -388,10 +343,8 @@ pub fn remove_attendee_invite_from_event(
 /// TODO: This action is guarded by group role based authorization
 #[query(guard = "has_access")]
 pub fn get_event_invites(
-    event_identifier: Principal,
-    group_identifier: Principal,
+    event_id: u64,
+    group_id: u64,
 ) -> Result<Vec<InviteAttendeeResponse>, ApiError> {
-    let event_id = Identifier::from(event_identifier).id();
-    let group_id = Identifier::from(group_identifier).id();
     EventCalls::get_event_invites(event_id, group_id)
 }
