@@ -46,6 +46,10 @@ impl Attendee {
         self.joined.iter().map(|(k, v)| (*k, v.clone())).collect()
     }
 
+    pub fn get_multiple_joined(&self) -> Vec<(u64, AttendeeJoin)> {
+        self.joined.iter().map(|(k, v)| (*k, v.clone())).collect()
+    }
+
     pub fn remove_joined(&mut self, group_id: u64) {
         self.joined.remove(&group_id);
     }

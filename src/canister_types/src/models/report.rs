@@ -163,6 +163,7 @@ impl ReportFilter {
                 let _subject_type = match report.subject {
                     Subject::Group(_) => SubjectType::Group,
                     Subject::Event(_) => SubjectType::Event,
+                    Subject::Task(_) => SubjectType::Task,
                     Subject::Profile(_) => SubjectType::Profile,
                     Subject::Member(_) => SubjectType::Member,
                     Subject::Attendee(_) => SubjectType::Attendee,

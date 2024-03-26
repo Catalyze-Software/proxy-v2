@@ -105,5 +105,5 @@ pub enum EventNotificationType {
 pub enum TransactionNotificationType {
     SingleTransaction(u64),
     MultipleTransaction(Vec<u64>),
-    Airdrop(),
+    Airdrop,
 }

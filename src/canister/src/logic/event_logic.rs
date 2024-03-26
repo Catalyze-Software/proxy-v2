@@ -1,22 +1,28 @@
-use crate::storage::{AttendeeStore, EventStore, ProfileStore, StorageMethods};
+use crate::{
+    helpers::time_helper::hours_to_nanoseconds,
+    storage::{AttendeeStore, EventStore, ProfileStore, StorageMethods},
+};
 
-use super::{boost_logic::BoostCalls, notification_logic::NotificationCalls};
+use super::{
+    boost_logic::BoostCalls, notification_logic::NotificationCalls, profile_logic::ProfileCalls,
+};
 use candid::Principal;
 use canister_types::models::{
     api_error::ApiError,
     attendee::{Attendee, InviteAttendeeResponse, JoinedAttendeeResponse},
     boosted::Boost,
+    date_range::DateRange,
     event::{
-        Event, EventCallerData, EventFilter, EventResponse, EventSort, PostEvent, UpdateEvent,
+        Event, EventCallerData, EventFilter, EventResponse, EventSort, EventsCount, PostEvent,
+        UpdateEvent,
     },
     filter_type::FilterType,
-    identifier::{Identifier, IdentifierKind},
     invite_type::InviteType,
     paged_response::PagedResponse,
     privacy::Privacy,
-    subject::Subject,
+    subject::{Subject, SubjectType},
 };
-use ic_cdk::caller;
+use ic_cdk::{api::time, caller};
 use std::collections::HashMap;
 
 pub struct EventCalls;
@@ -38,34 +44,30 @@ impl EventCalls {
         ))
     }
 
-    pub fn get_event(event_id: u64, group_id: u64) -> Result<EventResponse, ApiError> {
+    pub fn get_event(event_id: u64) -> Result<EventResponse, ApiError> {
         let (_, event) = EventStore::get(event_id)?;
 
-        if !event.is_from_group(group_id) {
-            return Err(ApiError::unauthorized());
-        }
-        Ok(EventResponse::new(
-            event_id,
-            event.clone(),
-            Self::get_boosted_event(event_id),
-            Self::get_event_caller_data(event_id, event.group_id),
-        ))
-    }
+        if event.match_privacy(Privacy::InviteOnly) {
+            let (_, caller_attendee) = AttendeeStore::get(caller())?;
 
-    pub fn get_events_count(group_ids: Vec<u64>) -> Vec<(Principal, u64)> {
-        let events = EventStore::filter(|_, event| group_ids.contains(&event.group_id));
-        let mut event_count: HashMap<Principal, u64> = HashMap::new();
-        for (_, event) in events {
-            let count = event_count
-                .entry(
-                    Identifier::generate(IdentifierKind::Group(event.group_id))
-                        .to_principal()
-                        .unwrap(),
-                )
-                .or_insert(0);
-            *count += 1;
+            if caller_attendee.is_event_joined(&event_id) {
+                return Ok(EventResponse::new(
+                    event_id,
+                    event.clone(),
+                    Self::get_boosted_event(event_id),
+                    Self::get_event_caller_data(event_id, event.group_id),
+                ));
+            } else {
+                return Err(ApiError::unauthorized());
+            }
+        } else {
+            return Ok(EventResponse::new(
+                event_id,
+                event.clone(),
+                Self::get_boosted_event(event_id),
+                Self::get_event_caller_data(event_id, event.group_id),
+            ));
         }
-        event_count.into_iter().collect()
     }
 
     pub fn get_events(
@@ -155,6 +157,50 @@ impl EventCalls {
         ))
     }
 
+    pub fn get_events_count(group_ids: Option<Vec<u64>>) -> EventsCount {
+        let events = match group_ids {
+            Some(ids) => EventStore::filter(|_, event| ids.contains(&event.group_id)),
+            None => EventStore::filter(|_, _| true),
+        };
+
+        let (attending, invited) = match AttendeeStore::get(caller()) {
+            Ok((_, attendee)) => (attendee.joined.len() as u64, attendee.invites.len() as u64),
+            Err(_) => (0, 0),
+        };
+
+        let new = events
+            .iter()
+            .filter(|(_, event)| {
+                DateRange::new(time() - hours_to_nanoseconds(24), time())
+                    .is_within(event.created_on)
+            })
+            .count() as u64;
+
+        let future = events
+            .iter()
+            .filter(|(_, event)| event.date.is_after(time()))
+            .count() as u64;
+
+        let past = events
+            .iter()
+            .filter(|(_, event)| event.date.is_before(time()))
+            .count() as u64;
+
+        let starred = ProfileCalls::get_starred_by_subject(SubjectType::Event).len() as u64;
+
+        let result = EventsCount {
+            total: events.len() as u64,
+            attending,
+            invited,
+            starred,
+            new,
+            future,
+            past,
+        };
+
+        return result;
+    }
+
     pub fn delete_event(event_id: u64, group_id: u64) -> Result<(), ApiError> {
         let (_, event) = EventStore::get(event_id)?;
 
@@ -181,15 +227,11 @@ impl EventCalls {
 
     // Attendee methods
     // TODO: add logic for event privacy
-    pub fn join_event(event_id: u64, group_id: u64) -> Result<JoinedAttendeeResponse, ApiError> {
+    pub fn join_event(event_id: u64) -> Result<JoinedAttendeeResponse, ApiError> {
         let (attendee_principal, mut attendee) = AttendeeStore::get(caller())?;
         let (_, event) = EventStore::get(event_id)?;
 
-        if !event.is_from_group(group_id) {
-            return Err(ApiError::unauthorized());
-        }
-
-        attendee.add_joined(event_id, group_id);
+        attendee.add_joined(event_id, event.group_id);
         let event_attendees_principals: Vec<Principal> = EventCalls::get_event_attendees(event_id)?
             .iter()
             .map(|member| member.principal)
@@ -200,7 +242,7 @@ impl EventCalls {
 
         Ok(JoinedAttendeeResponse::new(
             event_id,
-            group_id,
+            event.group_id,
             attendee_principal,
         ))
     }
@@ -306,9 +348,35 @@ impl EventCalls {
         Ok(response)
     }
 
-    pub fn get_self_events() -> Result<Attendee, ApiError> {
+    pub fn get_self_attendee() -> Result<Attendee, ApiError> {
         let (_, attendee) = AttendeeStore::get(caller())?;
         Ok(attendee)
+    }
+
+    pub fn get_self_events() -> Vec<EventResponse> {
+        match AttendeeStore::get(caller()) {
+            Ok((_, attendee)) => {
+                let events = Self::get_events_by_id(
+                    attendee.get_multiple_joined().iter().map(|g| g.0).collect(),
+                );
+                events
+            }
+            Err(_) => vec![],
+        }
+    }
+
+    pub fn get_events_by_id(event_ids: Vec<u64>) -> Vec<EventResponse> {
+        EventStore::get_many(event_ids)
+            .into_iter()
+            .map(|data| {
+                EventResponse::new(
+                    data.0,
+                    data.1.clone(),
+                    Self::get_boosted_event(data.0),
+                    Self::get_event_caller_data(data.0, data.1.group_id),
+                )
+            })
+            .collect()
     }
 
     pub fn get_attending_from_principal(

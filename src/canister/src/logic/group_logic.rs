@@ -1,14 +1,17 @@
-use super::{boost_logic::BoostCalls, notification_logic::NotificationCalls};
+use super::{
+    boost_logic::BoostCalls, notification_logic::NotificationCalls, profile_logic::ProfileCalls,
+};
 use crate::{
     helpers::{
         group_permission::has_permission,
+        time_helper::hours_to_nanoseconds,
         token_balance::{
             dip20_balance_of, dip721_balance_of, ext_balance_of, icrc_balance_of,
             legacy_dip721_balance_of,
         },
         validator::Validator,
     },
-    storage::{GroupStore, MemberStore, ProfileStore, StorageMethods},
+    storage::{EventStore, GroupStore, MemberStore, ProfileStore, StorageMethods},
 };
 use candid::Principal;
 use canister_types::{
@@ -16,9 +19,11 @@ use canister_types::{
     models::{
         api_error::ApiError,
         boosted::Boost,
+        date_range::DateRange,
         filter_type::FilterType,
         group::{
-            Group, GroupCallerData, GroupFilter, GroupResponse, GroupSort, PostGroup, UpdateGroup,
+            Group, GroupCallerData, GroupFilter, GroupResponse, GroupSort, GroupsCount, PostGroup,
+            UpdateGroup,
         },
         invite_type::InviteType,
         member::{InviteMemberResponse, JoinedMemberResponse, Member},
@@ -27,11 +32,14 @@ use canister_types::{
         permission::{Permission, PermissionActionType, PermissionType, PostPermission},
         privacy::{GatedType, NeuronGatedRules, Privacy, TokenGated},
         role::Role,
-        subject::Subject,
+        subject::{Subject, SubjectType},
         validation::{ValidateField, ValidationType},
     },
 };
-use ic_cdk::{api::call, caller};
+use ic_cdk::{
+    api::{call, time},
+    caller,
+};
 use std::collections::HashMap;
 
 pub struct GroupCalls;
@@ -67,17 +75,25 @@ impl GroupCalls {
 
         MemberStore::update(caller(), member)?;
 
+        let (members_count, events_count) = GroupCalls::get_group_count_data(new_group_id);
+
         GroupResponse::from_result(
             Ok((new_group_id, new_group)),
             None,
+            events_count,
+            members_count,
             Self::get_group_caller_data(new_group_id),
         )
     }
 
     pub fn get_group(id: u64) -> Result<GroupResponse, ApiError> {
+        let (members_count, events_count) = GroupCalls::get_group_count_data(id);
+
         GroupResponse::from_result(
             GroupStore::get(id),
             Self::get_boosted_group(id),
+            events_count,
+            members_count,
             Self::get_group_caller_data(id),
         )
     }
@@ -135,12 +151,16 @@ impl GroupCalls {
         let sorted_groups = sort.sort(and_filtered_groups);
         let result: Vec<GroupResponse> = sorted_groups
             .into_iter()
-            .map(|data| {
+            .map(|(group_id, group)| {
+                let (members_count, events_count) = GroupCalls::get_group_count_data(group_id);
+
                 GroupResponse::new(
-                    data.0,
-                    data.1,
-                    Self::get_boosted_group(data.0),
-                    Self::get_group_caller_data(data.0),
+                    group_id,
+                    group,
+                    Self::get_boosted_group(group_id),
+                    events_count,
+                    members_count,
+                    Self::get_group_caller_data(group_id),
                 )
             })
             .collect();
@@ -148,12 +168,46 @@ impl GroupCalls {
         Ok(PagedResponse::new(page, limit, result))
     }
 
+    pub fn get_groups_count() -> GroupsCount {
+        let groups = GroupStore::filter(|_, _| true);
+
+        let (joined, invited) = match MemberStore::get(caller()) {
+            Ok((_, member)) => (member.joined.len() as u64, member.invites.len() as u64),
+            Err(_) => (0, 0),
+        };
+
+        let new = groups
+            .iter()
+            .filter(|(_, group)| {
+                DateRange::new(time() - hours_to_nanoseconds(24), time())
+                    .is_within(group.created_on)
+            })
+            .count() as u64;
+
+        let starred = ProfileCalls::get_starred_by_subject(SubjectType::Group).len() as u64;
+
+        let result = GroupsCount {
+            total: groups.len() as u64,
+            joined,
+            invited,
+            starred,
+            new,
+        };
+
+        return result;
+    }
+
     pub fn edit_group(id: u64, update_group: UpdateGroup) -> Result<GroupResponse, ApiError> {
         let (id, mut group) = GroupStore::get(id)?;
         group.update(update_group);
+
+        let (members_count, events_count) = GroupCalls::get_group_count_data(id);
+
         GroupResponse::from_result(
             GroupStore::update(id, group),
             Self::get_boosted_group(id),
+            events_count,
+            members_count,
             Self::get_group_caller_data(id),
         )
     }
@@ -166,12 +220,17 @@ impl GroupCalls {
     pub fn get_groups_by_id(group_ids: Vec<u64>) -> Vec<GroupResponse> {
         GroupStore::get_many(group_ids)
             .into_iter()
-            .map(|data| {
+            .map(|(group_id, group)| {
+                // TODO: IMPROVE PERFORMANCE
+                let (members_count, events_count) = GroupCalls::get_group_count_data(group_id);
+
                 GroupResponse::new(
-                    data.0,
-                    data.1,
-                    Self::get_boosted_group(data.0),
-                    Self::get_group_caller_data(data.0),
+                    group_id,
+                    group,
+                    Self::get_boosted_group(group_id),
+                    events_count,
+                    members_count,
+                    Self::get_group_caller_data(group_id),
                 )
             })
             .collect()
@@ -182,7 +241,16 @@ impl GroupCalls {
     pub fn delete_group(group_id: u64) -> Result<GroupResponse, ApiError> {
         let (id, mut group) = GroupStore::get(group_id)?;
         group.is_deleted = true;
-        GroupResponse::from_result(GroupStore::update(id, group), None, None)
+
+        let (members_count, events_count) = GroupCalls::get_group_count_data(group_id);
+
+        GroupResponse::from_result(
+            GroupStore::update(id, group),
+            Self::get_boosted_group(id),
+            events_count,
+            members_count,
+            Self::get_group_caller_data(id),
+        )
     }
 
     pub fn add_wallet_to_group(
@@ -192,9 +260,14 @@ impl GroupCalls {
     ) -> Result<GroupResponse, ApiError> {
         let (id, mut group) = GroupStore::get(group_id)?;
         group.wallets.insert(wallet_canister, description);
+
+        let (members_count, events_count) = GroupCalls::get_group_count_data(group_id);
+
         GroupResponse::from_result(
             GroupStore::update(id, group),
             Self::get_boosted_group(id),
+            events_count,
+            members_count,
             Self::get_group_caller_data(id),
         )
     }
@@ -206,9 +279,13 @@ impl GroupCalls {
         let (id, mut group) = GroupStore::get(group_id)?;
         group.wallets.remove(&wallet_canister);
 
+        let (members_count, events_count) = GroupCalls::get_group_count_data(group_id);
+
         GroupResponse::from_result(
             GroupStore::update(id, group),
             Self::get_boosted_group(id),
+            events_count,
+            members_count,
             Self::get_group_caller_data(id),
         )
     }
@@ -518,9 +595,21 @@ impl GroupCalls {
             .collect())
     }
 
-    pub fn get_self_group() -> Result<Member, ApiError> {
+    pub fn get_self_member() -> Result<Member, ApiError> {
         let (_, member) = MemberStore::get(caller())?;
         Ok(member)
+    }
+
+    pub fn get_self_groups() -> Vec<GroupResponse> {
+        match MemberStore::get(caller()) {
+            Ok((_, member)) => {
+                let groups = Self::get_groups_by_id(
+                    member.get_multiple_joined().iter().map(|g| g.0).collect(),
+                );
+                groups
+            }
+            Err(_) => vec![],
+        }
     }
 
     pub fn get_member_roles(principal: Principal, group_id: u64) -> Result<Vec<String>, ApiError> {
@@ -624,6 +713,9 @@ impl GroupCalls {
         let is_starred = ProfileStore::get(caller())
             .is_ok_and(|(_, profile)| profile.is_starred(&Subject::Group(group_id)));
 
+        let is_pinned = ProfileStore::get(caller())
+            .is_ok_and(|(_, profile)| profile.is_pinned(&Subject::Group(group_id)));
+
         let (joined, invite) = match MemberStore::get(caller()) {
             Ok((principal, member)) => {
                 let joined = JoinedMemberResponse::new(principal, member.clone(), group_id);
@@ -633,7 +725,18 @@ impl GroupCalls {
             Err(_) => (None, None),
         };
 
-        Some(GroupCallerData::new(joined, invite, is_starred))
+        Some(GroupCallerData::new(joined, invite, is_starred, is_pinned))
+    }
+
+    pub fn get_group_count_data(group_id: u64) -> (u64, u64) {
+        let member_count =
+            MemberStore::filter(|_, member| member.is_group_joined(&group_id)).len() as u64;
+        let event_count = EventStore::filter(|_, event| {
+            event.group_id == group_id && event.date.is_after(time())
+        })
+        .len() as u64;
+
+        (member_count, event_count)
     }
 }
 

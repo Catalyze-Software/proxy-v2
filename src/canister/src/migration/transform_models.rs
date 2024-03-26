@@ -119,6 +119,7 @@ fn profiles_from_old(old_data: &OldData) -> Vec<(Principal, Profile)> {
             updated_on: old_profile.updated_on,
             created_on: old_profile.created_on,
             notification_id: None,
+            pinned: vec![],
         };
 
         new_profiles.push((principal, profile));

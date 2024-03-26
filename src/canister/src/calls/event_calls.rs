@@ -18,7 +18,7 @@ use candid::Principal;
 use canister_types::models::{
     api_error::ApiError,
     attendee::{Attendee, InviteAttendeeResponse, JoinedAttendeeResponse},
-    event::{EventFilter, EventResponse, EventSort, PostEvent, UpdateEvent},
+    event::{EventFilter, EventResponse, EventSort, EventsCount, PostEvent, UpdateEvent},
     filter_type::FilterType,
     paged_response::PagedResponse,
     permission::PermissionType,
@@ -51,8 +51,8 @@ pub fn add_event(post_event: PostEvent) -> Result<EventResponse, ApiError> {
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 #[query]
-pub fn get_event(event_id: u64, group_id: u64) -> Result<EventResponse, ApiError> {
-    EventCalls::get_event(event_id, group_id)
+pub fn get_event(event_id: u64) -> Result<EventResponse, ApiError> {
+    EventCalls::get_event(event_id)
 }
 
 /// Get paged events - [`[query]`](query)
@@ -75,13 +75,13 @@ fn get_events(
     EventCalls::get_events(limit, page, sort, filters)
 }
 
-/// Get the number of events per group - [`[query]`](query)
+/// Get events count - [`[query]`](query)
 /// # Arguments
-/// * `group_ids` - The group identifiers to get the events count from
+/// * `group_ids` - Optional group ids to filter the events count
 /// # Returns
-/// * `Vec<(Principal, usize)>` - The events count per group
-#[query]
-pub fn get_events_count(group_ids: Vec<u64>) -> Vec<(Principal, u64)> {
+/// * `EventsCount` - The events in a paged response
+#[query(guard = "has_access")]
+fn get_event_count(group_ids: Option<Vec<u64>>) -> EventsCount {
     EventCalls::get_events_count(group_ids)
 }
 
@@ -152,8 +152,8 @@ pub fn cancel_event(event_id: u64, group_id: u64, reason: String) -> Result<(), 
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "has_access")]
-pub fn join_event(event_id: u64, group_id: u64) -> Result<JoinedAttendeeResponse, ApiError> {
-    EventCalls::join_event(event_id, group_id)
+pub fn join_event(event_id: u64) -> Result<JoinedAttendeeResponse, ApiError> {
+    EventCalls::join_event(event_id)
 }
 
 /// Invite a user to an event - [`[update]`](update)
@@ -238,7 +238,16 @@ pub fn get_event_attendees(event_id: u64) -> Result<Vec<JoinedAttendeeResponse>,
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 #[query(guard = "has_access")]
-pub fn get_self_events() -> Result<Attendee, ApiError> {
+pub fn get_self_attendee() -> Result<Attendee, ApiError> {
+    EventCalls::get_self_attendee()
+}
+/// Get the caller joined groups - [`[query]`](query)
+/// # Returns
+/// * `Vec<GroupResponse>` - All groups the user is part of
+/// # Note
+/// This function is guarded by the [`has_access`](has_access) function.
+#[query(guard = "has_access")]
+pub fn get_self_events() -> Vec<EventResponse> {
     EventCalls::get_self_events()
 }
 

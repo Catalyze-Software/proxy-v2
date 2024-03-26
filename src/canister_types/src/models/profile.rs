@@ -47,6 +47,7 @@ pub struct Profile {
     pub terms_of_service: Option<DocumentDetails>,
     pub wallets: HashMap<Principal, Wallet>,
     pub starred: Vec<Subject>,
+    pub pinned: Vec<Subject>,
     pub relations: HashMap<Principal, String>,
     pub extra: String,
     pub notification_id: Option<u64>,
@@ -78,6 +79,7 @@ impl Profile {
             code_of_conduct: Default::default(),
             wallets: Default::default(),
             starred: Default::default(),
+            pinned: Default::default(),
             relations: Default::default(),
             extra: Default::default(),
             updated_on: Default::default(),
@@ -110,6 +112,7 @@ impl Profile {
             website: profile.website,
             wallets: self.wallets,
             starred: self.starred,
+            pinned: self.pinned,
             relations: self.relations,
             code_of_conduct: self.code_of_conduct,
             extra: profile.extra,
@@ -130,6 +133,10 @@ impl Profile {
     }
 
     pub fn is_starred(&self, subject: &Subject) -> bool {
+        self.starred.contains(subject)
+    }
+
+    pub fn is_pinned(&self, subject: &Subject) -> bool {
         self.starred.contains(subject)
     }
 }
@@ -157,6 +164,7 @@ impl From<PostProfile> for Profile {
             website: "".to_string(),
             wallets: HashMap::new(),
             starred: Vec::new(),
+            pinned: Vec::new(),
             relations: HashMap::new(),
             code_of_conduct: None,
             extra: profile.extra,
