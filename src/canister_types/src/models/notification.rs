@@ -6,7 +6,7 @@ use candid::{Decode, Encode};
 
 use crate::impl_storable_for;
 
-use super::friend_request::FriendRequest;
+use super::{friend_request::FriendRequest, user_notifications::UserNotificationData};
 
 impl_storable_for!(Notification);
 #[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
@@ -65,11 +65,12 @@ pub enum NotificationType {
 #[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
 pub enum RelationNotificationType {
     FriendRequest(FriendRequest),
-    FriendRequestAccept(u64),  // friend_request_id
-    FriendRequestDecline(u64), // friend_request_id
-    FriendRequestRemove(u64),  // friend_request_id
-    FriendRemove(Principal),   // user principal
-    BlockUser(Principal),      // user principal
+    FriendRequestAccept(u64),   // friend_request_id
+    FriendRequestDecline(u64),  // friend_request_id
+    FriendRequestRemove(u64),   // friend_request_id
+    FriendRemove(Principal),    // user principal
+    BlockUser(Principal),       // user principal
+    FriendRequestReminder(u64), // friend_request_id
 }
 
 #[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
@@ -84,6 +85,7 @@ pub enum GroupNotificationType {
     JoinGroupOwnerRequestDecline(u64),
     UserJoinGroup(u64),
     UserLeaveGroup(u64),
+    GroupReminder(u64),
 }
 
 #[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
@@ -99,6 +101,7 @@ pub enum EventNotificationType {
     JoinEventOwnerRequestDecline(u64),
     UserJoinEvent(u64),
     UserLeaveEvent(u64),
+    EventReminder(u64),
 }
 
 #[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
@@ -106,4 +109,12 @@ pub enum TransactionNotificationType {
     SingleTransaction(u64),
     MultipleTransaction(Vec<u64>),
     Airdrop,
+    MultisigTransaction(u64),
+}
+
+#[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
+pub struct NotificationResponse {
+    pub id: u64,
+    pub notification: Notification,
+    pub user_data: Option<UserNotificationData>,
 }

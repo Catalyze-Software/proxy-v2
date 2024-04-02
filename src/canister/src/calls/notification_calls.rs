@@ -11,6 +11,11 @@ fn get_notifications() -> Vec<(u64, Notification)> {
 }
 
 #[query]
+fn get_user_notifications() -> Result<Vec<(u64, Notification)>, ApiError> {
+    NotificationCalls::get_user_unread_notifications(caller())
+}
+
+#[query]
 fn get_unread_notifications() -> Result<Vec<(u64, Notification)>, ApiError> {
     NotificationCalls::get_user_unread_notifications(caller())
 }

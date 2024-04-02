@@ -116,6 +116,7 @@ type EventFilter = variant {
 type EventNotificationType = variant {
   UserJoinEvent : nat64;
   JoinEventOwnerRequestDecline : nat64;
+  EventReminder : nat64;
   JoinEventUserRequestAccept : nat64;
   JoinEventOwnerRequestAccept : nat64;
   JoinEventOwnerRequest : nat64;
@@ -199,6 +200,7 @@ type GroupNotificationType = variant {
   JoinGroupUserRequest : nat64;
   JoinGroupUserRequestDecline : nat64;
   JoinGroupOwnerRequest : nat64;
+  GroupReminder : nat64;
   JoinGroupOwnerRequestDecline : nat64;
   JoinGroupUserRequestAccept : nat64;
   JoinGroupOwnerRequestAccept : nat64;
@@ -431,6 +433,7 @@ type RelationNotificationType = variant {
   FriendRequest : FriendRequest;
   FriendRequestDecline : nat64;
   FriendRemove : principal;
+  FriendRequestReminder : nat64;
   BlockUser : principal;
   FriendRequestRemove : nat64;
   FriendRequestAccept : nat64;
@@ -525,6 +528,7 @@ type TokenGated = record {
 };
 type TransactionNotificationType = variant {
   SingleTransaction : nat64;
+  MultisigTransaction : nat64;
   MultipleTransaction : vec nat64;
   Airdrop;
 };
@@ -656,6 +660,7 @@ service : () -> {
   get_self_member : () -> (Result_2) query;
   get_starred_by_subject_type : (SubjectType) -> (vec nat64) query;
   get_unread_notifications : () -> (Result_22) query;
+  get_user_notifications : () -> (Result_22) query;
   http_request : (HttpRequest) -> (HttpResponse) query;
   invite_to_event : (nat64, nat64, principal) -> (Result_23);
   invite_to_group : (nat64, principal) -> (Result_2);
