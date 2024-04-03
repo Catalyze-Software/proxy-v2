@@ -252,7 +252,7 @@ dependencies = [
 
 [[package]]
 name = "canister"
-version = "0.1.1-unreleased"
+version = "0.1.2"
 dependencies = [
  "candid",
  "canister_types",

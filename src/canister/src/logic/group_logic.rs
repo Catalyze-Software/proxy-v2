@@ -40,7 +40,7 @@ use ic_cdk::{
     api::{call, time},
     caller,
 };
-use std::collections::HashMap;
+use std::{collections::HashMap, iter::FromIterator};
 
 pub struct GroupCalls;
 pub struct GroupValidation;
@@ -140,10 +140,14 @@ impl GroupCalls {
 
         // filter the `or_filtered` groups based on the `AND` filters
         let mut and_filtered_groups: HashMap<u64, Group> = HashMap::new();
-        for filter in and_filters {
-            for (id, group) in &or_filtered_groups {
-                if filter.is_match(&id, &group) {
-                    and_filtered_groups.insert(id.clone(), group.clone());
+        if or_filtered_groups.is_empty() {
+            and_filtered_groups = HashMap::from_iter(groups);
+        } else {
+            for filter in and_filters {
+                for (id, group) in &or_filtered_groups {
+                    if filter.is_match(&id, &group) {
+                        and_filtered_groups.insert(id.clone(), group.clone());
+                    }
                 }
             }
         }
