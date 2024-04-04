@@ -418,6 +418,7 @@ type ProfileResponse = record {
   display_name : text;
   extra : text;
   privacy_policy : opt DocumentDetails;
+  pinned : vec Subject;
   privacy : ProfilePrivacy;
   wallets : vec WalletResponse;
   state_or_province : text;

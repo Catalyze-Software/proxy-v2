@@ -55,7 +55,7 @@ pub async fn add_group(
 /// * `ApiError` - If something went wrong while getting the group
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[query(guard = "has_access")]
+#[query]
 pub fn get_group(group_id: u64) -> Result<GroupResponse, ApiError> {
     GroupCalls::get_group(group_id)
 }
@@ -476,12 +476,12 @@ pub fn get_self_groups() -> Vec<GroupResponse> {
 /// * `ApiError` - If something went wrong while getting the roles
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[query(guard = "has_access")]
+#[query]
 pub fn get_member_roles(
     group_id: u64,
     member_principal: Principal,
 ) -> Result<Vec<String>, ApiError> {
-    can_read(group_id, PermissionType::Group(None))?;
+    // can_read(group_id, PermissionType::Group(None))?;
     GroupCalls::get_member_roles(member_principal, group_id)
 }
 
