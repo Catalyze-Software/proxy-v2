@@ -15,6 +15,7 @@ use canister_types::models::{
     role::Role,
     subject::Subject,
 };
+use ic_cdk::trap;
 
 use super::old_models::attendee_model::{
     Invite as OldAttendeeInvite, InviteType as OldAttendeeInviteType,
@@ -78,10 +79,10 @@ fn profiles_from_old(old_data: &OldData) -> Vec<(Principal, Profile)> {
             .map(|(identifier, _)| {
                 let x = Identifier::from(identifier);
                 match x.kind().as_str() {
-                    "group" => Subject::Group(x.id()),
-                    "event" => Subject::Event(x.id()),
+                    "grp" => Subject::Group(x.id()),
+                    "evt" => Subject::Event(x.id()),
                     // should not have any other kind
-                    _ => panic!("Invalid identifier kind"),
+                    _ => trap(format!("Unknown identifier kind: {}", x.kind()).as_str()),
                 }
             })
             .collect();
