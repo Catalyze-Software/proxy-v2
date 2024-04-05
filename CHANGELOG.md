@@ -39,6 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Changed query call `get_self_group` to `get_self_member` because this call returns member specific data
 - Changed query call `get_self_event` to `get_self_attendee` because this call returns attendee specific data
 - Changed `get_event_count` to give back all different filtering counts
+- Changed `member_count` and `event_count` to always return `0` for the `get_groups` call because of the message execution limit
 
 ### Removed
 

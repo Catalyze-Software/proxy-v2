@@ -156,14 +156,12 @@ impl GroupCalls {
         let result: Vec<GroupResponse> = sorted_groups
             .into_iter()
             .map(|(group_id, group)| {
-                let (members_count, events_count) = GroupCalls::get_group_count_data(group_id);
-
                 GroupResponse::new(
                     group_id,
                     group,
                     Self::get_boosted_group(group_id),
-                    events_count,
-                    members_count,
+                    0,
+                    0,
                     Self::get_group_caller_data(group_id),
                 )
             })
@@ -741,6 +739,22 @@ impl GroupCalls {
         .len() as u64;
 
         (member_count, event_count)
+    }
+
+    pub fn get_groups_count_data(group_ids: Vec<&u64>) -> HashMap<u64, (u64, u64)> {
+        let mut result: HashMap<u64, (u64, u64)> = HashMap::new();
+
+        for group_id in group_ids {
+            let member_count =
+                MemberStore::filter(|_, member| member.is_group_joined(&group_id)).len() as u64;
+            let event_count = EventStore::filter(|_, event| {
+                &event.group_id == group_id && event.date.is_after(time())
+            })
+            .len() as u64;
+
+            result.insert(group_id.clone(), (member_count, event_count));
+        }
+        result
     }
 }
 
