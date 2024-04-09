@@ -23,7 +23,7 @@ use canister_types::models::{
     subject::{Subject, SubjectType},
 };
 use ic_cdk::{api::time, caller};
-use std::collections::HashMap;
+use std::{collections::HashMap, iter::FromIterator};
 
 pub struct EventCalls;
 
@@ -110,16 +110,20 @@ impl EventCalls {
         }
 
         // filter the `or_filtered` groups based on the `AND` filters
-        let mut and_filtered_groups: HashMap<u64, Event> = HashMap::new();
-        for filter in and_filters {
-            for (id, group) in &or_filtered_events {
-                if filter.is_match(&id, &group) {
-                    and_filtered_groups.insert(id.clone(), group.clone());
+        let mut and_filtered_events: HashMap<u64, Event> = HashMap::new();
+        if or_filtered_events.is_empty() {
+            and_filtered_events = HashMap::from_iter(events);
+        } else {
+            for filter in and_filters {
+                for (id, group) in &or_filtered_events {
+                    if filter.is_match(&id, &group) {
+                        and_filtered_events.insert(id.clone(), group.clone());
+                    }
                 }
             }
         }
 
-        let sorted_groups = sort.sort(and_filtered_groups);
+        let sorted_groups = sort.sort(and_filtered_events);
         let result: Vec<EventResponse> = sorted_groups
             .into_iter()
             .map(|data| {

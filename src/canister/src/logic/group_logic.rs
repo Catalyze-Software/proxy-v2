@@ -718,14 +718,21 @@ impl GroupCalls {
         let is_pinned = ProfileStore::get(caller())
             .is_ok_and(|(_, profile)| profile.is_pinned(&Subject::Group(group_id)));
 
-        let (joined, invite) = match MemberStore::get(caller()) {
-            Ok((principal, member)) => {
-                let joined = JoinedMemberResponse::new(principal, member.clone(), group_id);
-                let invite = InviteMemberResponse::new(principal, member, group_id);
-                (Some(joined), Some(invite))
+        let mut joined: Option<JoinedMemberResponse> = None;
+        let mut invite: Option<InviteMemberResponse> = None;
+        if let Ok((_, member)) = MemberStore::get(caller()) {
+            if member.is_group_joined(&group_id) {
+                joined = Some(JoinedMemberResponse::new(
+                    caller(),
+                    member.clone(),
+                    group_id,
+                ));
+            };
+
+            if member.is_group_invited(&group_id) {
+                invite = Some(InviteMemberResponse::new(caller(), member, group_id));
             }
-            Err(_) => (None, None),
-        };
+        }
 
         Some(GroupCallerData::new(joined, invite, is_starred, is_pinned))
     }

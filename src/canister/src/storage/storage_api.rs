@@ -40,6 +40,9 @@ static BOOSTED_MEMORY_ID: MemoryId = MemoryId::new(9);
 /// Should be removed once the old data is migrated to the new data model
 pub type PrincipalIdentifier = Principal;
 
+// impl_storable_for!(PrincipalSet);
+// pub type PrincipalSet = Vec<Principal>;
+
 // Temporary memory IDs for the maps which are needed for backward compatibility
 // should be removed once the old data is migrated to the new data model
 

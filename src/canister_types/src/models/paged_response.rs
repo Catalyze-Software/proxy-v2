@@ -1,5 +1,3 @@
-use std::iter::FromIterator;
-
 use candid::{CandidType, Deserialize};
 use serde::Serialize;
 
@@ -47,7 +45,7 @@ impl<T: Clone> PagedResponse<T> {
             limit,
             total,
             number_of_pages,
-            data: Vec::from_iter(data[start_limit..end_limit].iter().cloned()),
+            data: data[start_limit..end_limit].to_vec(),
         }
     }
 }

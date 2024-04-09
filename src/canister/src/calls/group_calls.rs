@@ -407,12 +407,12 @@ pub fn remove_member_role(
 /// * `JoinedMemberResponse` - The member entry
 /// # Errors
 /// * `ApiError` - If something went wrong while getting the member entry
-#[query(guard = "has_access")]
+#[query]
 pub fn get_group_member(
     group_id: u64,
     member_principal: Principal,
 ) -> Result<JoinedMemberResponse, ApiError> {
-    can_read(group_id, PermissionType::Group(None))?;
+    // can_read(group_id, PermissionType::Group(None))?;
     GroupCalls::get_group_member(member_principal, group_id)
 }
 
@@ -439,7 +439,7 @@ pub fn get_groups_for_members(member_principals: Vec<Principal>) -> Vec<JoinedMe
 /// This function is guarded by the [`has_access`](has_access) function.
 #[query(guard = "has_access")]
 pub fn get_group_members(group_id: u64) -> Result<Vec<JoinedMemberResponse>, ApiError> {
-    can_read(group_id, PermissionType::Group(None))?;
+    // can_read(group_id, PermissionType::Group(None))?;
     GroupCalls::get_group_members(group_id)
 }
 

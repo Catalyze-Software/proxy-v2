@@ -476,17 +476,13 @@ type Result_19 = variant { Ok : PagedResponse_1; Err : ApiError };
 type Result_2 = variant { Ok : Member; Err : ApiError };
 type Result_20 = variant { Ok : vec text; Err : ApiError };
 type Result_21 = variant { Ok : PagedResponse_2; Err : ApiError };
-type Result_22 = variant {
-  Ok : vec record { nat64; Notification };
-  Err : ApiError;
-};
-type Result_23 = variant { Ok : InviteAttendeeResponse; Err : ApiError };
-type Result_24 = variant {
+type Result_22 = variant { Ok : InviteAttendeeResponse; Err : ApiError };
+type Result_23 = variant {
   Ok : vec record { nat64; UserNotificationData };
   Err : ApiError;
 };
-type Result_25 = variant { Ok; Err : text };
-type Result_26 = variant { Ok : CanisterOutputCertifiedMessages; Err : text };
+type Result_24 = variant { Ok; Err : text };
+type Result_25 = variant { Ok : CanisterOutputCertifiedMessages; Err : text };
 type Result_3 = variant { Ok : JoinedAttendeeResponse; Err : ApiError };
 type Result_4 = variant { Ok : EventResponse; Err : ApiError };
 type Result_5 = variant { Ok : FriendRequestResponse; Err : ApiError };
@@ -660,16 +656,16 @@ service : () -> {
   get_self_groups : () -> (vec GroupResponse) query;
   get_self_member : () -> (Result_2) query;
   get_starred_by_subject_type : (SubjectType) -> (vec nat64) query;
-  get_unread_notifications : () -> (Result_22) query;
-  get_user_notifications : () -> (Result_22) query;
+  get_unread_notifications : () -> (vec record { nat64; Notification }) query;
+  get_user_notifications : () -> (vec record { nat64; Notification }) query;
   http_request : (HttpRequest) -> (HttpResponse) query;
-  invite_to_event : (nat64, nat64, principal) -> (Result_23);
+  invite_to_event : (nat64, nat64, principal) -> (Result_22);
   invite_to_group : (nat64, principal) -> (Result_2);
   join_event : (nat64) -> (Result_3);
   join_group : (nat64, opt text) -> (Result_16);
   leave_event : (nat64) -> (Result_11);
   leave_group : (nat64) -> (Result_11);
-  mark_notifications_as_read : (vec nat64, bool) -> (Result_24);
+  mark_notifications_as_read : (vec nat64, bool) -> (Result_23);
   migrate : () -> (vec vec text);
   remove_attendee_from_event : (nat64, nat64, principal) -> (Result_11);
   remove_attendee_invite_from_event : (nat64, nat64, principal) -> (Result_11);
@@ -690,10 +686,10 @@ service : () -> {
   remove_wallet_from_profile : (principal) -> (Result_7);
   set_wallet_as_primary : (principal) -> (Result_7);
   unblock_user : (principal) -> (Result_7);
-  ws_close : (CanisterWsCloseArguments) -> (Result_25);
-  ws_get_messages : (CanisterWsGetMessagesArguments) -> (Result_26) query;
+  ws_close : (CanisterWsCloseArguments) -> (Result_24);
+  ws_get_messages : (CanisterWsGetMessagesArguments) -> (Result_25) query;
   ws_message : (CanisterWsMessageArguments, opt WebsocketMessage) -> (
-      Result_25,
+      Result_24,
     );
-  ws_open : (CanisterWsOpenArguments) -> (Result_25);
+  ws_open : (CanisterWsOpenArguments) -> (Result_24);
 }
