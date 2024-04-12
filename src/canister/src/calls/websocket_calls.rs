@@ -1,8 +1,9 @@
+use canister_types::models::websocket_message::WSMessage;
 use ic_cdk::{query, update};
 use ic_websocket_cdk::{
-    types::WebsocketMessage, CanisterWsCloseArguments, CanisterWsCloseResult,
-    CanisterWsGetMessagesArguments, CanisterWsGetMessagesResult, CanisterWsMessageArguments,
-    CanisterWsMessageResult, CanisterWsOpenArguments, CanisterWsOpenResult,
+    CanisterWsCloseArguments, CanisterWsCloseResult, CanisterWsGetMessagesArguments,
+    CanisterWsGetMessagesResult, CanisterWsMessageArguments, CanisterWsMessageResult,
+    CanisterWsOpenArguments, CanisterWsOpenResult,
 };
 
 #[update]
@@ -18,7 +19,7 @@ fn ws_close(args: CanisterWsCloseArguments) -> CanisterWsCloseResult {
 #[update]
 fn ws_message(
     args: CanisterWsMessageArguments,
-    msg_type: Option<WebsocketMessage>,
+    msg_type: Option<WSMessage>,
 ) -> CanisterWsMessageResult {
     ic_websocket_cdk::ws_message(args, msg_type)
 }
@@ -26,4 +27,9 @@ fn ws_message(
 #[query]
 fn ws_get_messages(args: CanisterWsGetMessagesArguments) -> CanisterWsGetMessagesResult {
     ic_websocket_cdk::ws_get_messages(args)
+}
+
+#[query]
+fn _expose() -> Option<WSMessage> {
+    None
 }

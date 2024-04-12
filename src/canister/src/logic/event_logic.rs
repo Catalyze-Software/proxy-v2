@@ -16,14 +16,13 @@ use canister_types::models::{
         Event, EventCallerData, EventFilter, EventResponse, EventSort, EventsCount, PostEvent,
         UpdateEvent,
     },
-    filter_type::FilterType,
     invite_type::InviteType,
     paged_response::PagedResponse,
     privacy::Privacy,
     subject::{Subject, SubjectType},
 };
 use ic_cdk::{api::time, caller};
-use std::{collections::HashMap, iter::FromIterator};
+use std::collections::HashMap;
 
 pub struct EventCalls;
 
@@ -74,11 +73,11 @@ impl EventCalls {
         limit: usize,
         page: usize,
         sort: EventSort,
-        filters: Vec<FilterType<EventFilter>>,
+        filters: Vec<EventFilter>,
     ) -> Result<PagedResponse<EventResponse>, ApiError> {
         // get all the events and filter them based on the privacy
         // exclude all InviteOnly events that the caller is not a attendee of
-        let events = EventStore::filter(|event_id, event| {
+        let mut events = EventStore::filter(|event_id, event| {
             if event.match_privacy(Privacy::InviteOnly) {
                 if let Ok((_, caller_attendee)) = AttendeeStore::get(caller()) {
                     return caller_attendee.is_event_joined(event_id);
@@ -86,45 +85,20 @@ impl EventCalls {
                 return false;
             }
             return true;
-        });
+        })
+        .into_iter()
+        .collect::<HashMap<u64, Event>>();
 
-        // split the filters into or and and filters
-        let mut or_filters: Vec<EventFilter> = vec![];
-        let mut and_filters: Vec<EventFilter> = vec![];
-        for filter_type in filters {
-            use FilterType::*;
-            match filter_type {
-                And(filter_value) => and_filters.push(filter_value),
-                Or(filter_value) => or_filters.push(filter_value),
-            }
-        }
-
-        // filter the events based on the `OR` filters
-        let mut or_filtered_events: HashMap<u64, Event> = HashMap::new();
-        for filter in or_filters {
-            for (id, event) in &events {
-                if filter.is_match(&id, &event) {
-                    or_filtered_events.insert(id.clone(), event.clone());
+        for filter in filters {
+            for (id, event) in &events.clone() {
+                if !filter.is_match(id, event) {
+                    events.remove(id);
                 }
             }
         }
 
-        // filter the `or_filtered` groups based on the `AND` filters
-        let mut and_filtered_events: HashMap<u64, Event> = HashMap::new();
-        if or_filtered_events.is_empty() {
-            and_filtered_events = HashMap::from_iter(events);
-        } else {
-            for filter in and_filters {
-                for (id, group) in &or_filtered_events {
-                    if filter.is_match(&id, &group) {
-                        and_filtered_events.insert(id.clone(), group.clone());
-                    }
-                }
-            }
-        }
-
-        let sorted_groups = sort.sort(and_filtered_events);
-        let result: Vec<EventResponse> = sorted_groups
+        let sorted_events = sort.sort(events);
+        let result: Vec<EventResponse> = sorted_events
             .into_iter()
             .map(|data| {
                 EventResponse::new(
@@ -161,9 +135,15 @@ impl EventCalls {
         ))
     }
 
-    pub fn get_events_count(group_ids: Option<Vec<u64>>) -> EventsCount {
+    pub fn get_events_count(group_ids: Option<Vec<u64>>, query: Option<String>) -> EventsCount {
         let events = match group_ids {
-            Some(ids) => EventStore::filter(|_, event| ids.contains(&event.group_id)),
+            Some(ids) => EventStore::filter(|_, event| {
+                ids.contains(&event.group_id)
+                    && match &query {
+                        Some(q) => event.name.to_lowercase().contains(&q.to_lowercase()),
+                        None => true,
+                    }
+            }),
             None => EventStore::filter(|_, _| true),
         };
 

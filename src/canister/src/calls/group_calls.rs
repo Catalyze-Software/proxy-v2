@@ -4,7 +4,6 @@ use crate::{
         guards::has_access,
     },
     logic::group_logic::GroupCalls,
-    storage::{IdentifierRefMethods, MemberStore},
 };
 
 /// # Group methods
@@ -19,7 +18,6 @@ use crate::{
 use candid::Principal;
 use canister_types::models::{
     api_error::ApiError,
-    filter_type::FilterType,
     group::{GroupFilter, GroupResponse, GroupSort, GroupsCount, PostGroup, UpdateGroup},
     member::{InviteMemberResponse, JoinedMemberResponse, Member},
     paged_response::PagedResponse,
@@ -74,7 +72,7 @@ pub fn get_group(group_id: u64) -> Result<GroupResponse, ApiError> {
 pub fn get_groups(
     limit: usize,
     page: usize,
-    filters: Vec<FilterType<GroupFilter>>,
+    filters: Vec<GroupFilter>,
     sort: GroupSort,
 ) -> Result<PagedResponse<GroupResponse>, ApiError> {
     GroupCalls::get_groups(limit, page, filters, sort)
@@ -84,8 +82,8 @@ pub fn get_groups(
 /// # Returns
 /// * `GroupsCount` - The groups count
 #[query]
-pub fn get_groups_count() -> GroupsCount {
-    GroupCalls::get_groups_count()
+pub fn get_groups_count(query: Option<String>) -> GroupsCount {
+    GroupCalls::get_groups_count(query)
 }
 
 /// Edit a group - [`[update]`](update)
@@ -126,9 +124,9 @@ pub fn get_groups_by_id(group_ids: Vec<u64>) -> Vec<GroupResponse> {
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "has_access")]
-pub fn delete_group(group_id: u64) -> Result<GroupResponse, ApiError> {
+pub fn delete_group(group_id: u64) -> Result<(bool, bool, bool), ApiError> {
     can_delete(group_id, PermissionType::Group(None))?;
-    GroupCalls::delete_group(group_id)
+    Ok(GroupCalls::delete_group(group_id))
 }
 
 /// Add a wallet reference to the group - [`[update]`](update)
@@ -388,15 +386,10 @@ pub fn assign_role(
 pub fn remove_member_role(
     group_id: u64,
     role: String,
-    member_identifier: Principal,
+    member_principal: Principal,
 ) -> Result<Member, ApiError> {
     can_edit(group_id, PermissionType::Group(None))?;
-    match MemberStore::get_id_by_identifier(&member_identifier) {
-        Some(member_principal) => {
-            GroupCalls::remove_group_role_from_member(role, member_principal, group_id)
-        }
-        None => Err(ApiError::not_found().add_message("Member not found in id - identifier map")),
-    }
+    GroupCalls::remove_group_role_from_member(role, member_principal, group_id)
 }
 
 /// Get the member entry of a specific group member - [`[query]`](query)

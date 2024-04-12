@@ -161,9 +161,7 @@ type EventsCount = record {
   future : nat64;
   attending : nat64;
 };
-type FilterType = variant { Or : EventFilter; And : EventFilter };
-type FilterType_1 = variant { Or : GroupFilter; And : GroupFilter };
-type FilterType_2 = variant { Or : ReportFilter; And : ReportFilter };
+type FilterType = variant { Or : ReportFilter; And : ReportFilter };
 type FriendRequest = record {
   to : principal;
   created_at : nat64;
@@ -409,6 +407,7 @@ type ProfileResponse = record {
   about : text;
   country : text;
   username : text;
+  starred : vec Subject;
   interests : vec nat32;
   city : text;
   created_on : nat64;
@@ -574,6 +573,14 @@ type UpdateProfile = record {
 };
 type UserNotificationData = record { is_read : bool; is_sender : bool };
 type ValidationResponse = record { field : text; message : text };
+type WSMessage = variant {
+  Error : ApiError;
+  Notification : Notification;
+  SendNotification : record { principal; Notification };
+  UnreadCount : nat64;
+  SendSilentNotification : record { principal; Notification };
+  SilentNotification : Notification;
+};
 type WalletResponse = record {
   "principal" : principal;
   provider : text;
@@ -588,6 +595,7 @@ type WebsocketMessage = record {
 };
 service : () -> {
   __get_candid_interface_tmp_hack : () -> (text) query;
+  _expose : () -> (opt WSMessage) query;
   accept_friend_request : (nat64) -> (Result);
   accept_owner_request_event_invite : (nat64) -> (Result_1);
   accept_owner_request_group_invite : (nat64) -> (Result_2);
@@ -625,17 +633,17 @@ service : () -> {
   get_e8s_per_day_boost_cost : () -> (nat64) query;
   get_event : (nat64) -> (Result_4) query;
   get_event_attendees : (nat64) -> (Result_12) query;
-  get_event_count : (opt vec nat64) -> (EventsCount) query;
+  get_event_count : (opt vec nat64, opt text) -> (EventsCount) query;
   get_event_invites : (nat64, nat64) -> (Result_13) query;
-  get_events : (nat64, nat64, EventSort, vec FilterType) -> (Result_14) query;
+  get_events : (nat64, nat64, EventSort, vec EventFilter) -> (Result_14) query;
   get_group : (nat64) -> (Result_6) query;
   get_group_invites : (nat64) -> (Result_15);
   get_group_member : (nat64, principal) -> (Result_16) query;
   get_group_members : (nat64) -> (Result_17) query;
   get_group_roles : (nat64) -> (Result_18);
-  get_groups : (nat64, nat64, vec FilterType_1, GroupSort) -> (Result_19) query;
+  get_groups : (nat64, nat64, vec GroupFilter, GroupSort) -> (Result_19) query;
   get_groups_by_id : (vec nat64) -> (vec GroupResponse) query;
-  get_groups_count : () -> (GroupsCount) query;
+  get_groups_count : (opt text) -> (GroupsCount) query;
   get_groups_for_members : (vec principal) -> (vec JoinedMemberResponse) query;
   get_incoming_friend_requests : () -> (vec FriendRequestResponse) query;
   get_member_roles : (nat64, principal) -> (Result_20) query;
@@ -648,7 +656,7 @@ service : () -> {
   get_relations_count : (RelationType) -> (nat64) query;
   get_remaining_boost_time_in_seconds : (Subject) -> (Result_10) query;
   get_report : (nat64, nat64) -> (Result_8) query;
-  get_reports : (nat64, nat64, ReportSort, vec FilterType_2, nat64) -> (
+  get_reports : (nat64, nat64, ReportSort, vec FilterType, nat64) -> (
       Result_21,
     ) query;
   get_self_attendee : () -> (Result_1) query;
@@ -688,8 +696,6 @@ service : () -> {
   unblock_user : (principal) -> (Result_7);
   ws_close : (CanisterWsCloseArguments) -> (Result_24);
   ws_get_messages : (CanisterWsGetMessagesArguments) -> (Result_25) query;
-  ws_message : (CanisterWsMessageArguments, opt WebsocketMessage) -> (
-      Result_24,
-    );
+  ws_message : (CanisterWsMessageArguments, opt WSMessage) -> (Result_24);
   ws_open : (CanisterWsOpenArguments) -> (Result_24);
 }

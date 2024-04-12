@@ -233,6 +233,7 @@ pub struct ProfileResponse {
     pub privacy_policy: Option<DocumentDetails>,
     pub terms_of_service: Option<DocumentDetails>,
     pub pinned: Vec<Subject>,
+    pub starred: Vec<Subject>,
     pub wallets: Vec<WalletResponse>,
     pub extra: String,
     pub updated_on: u64,
@@ -276,6 +277,7 @@ impl ProfileResponse {
             terms_of_service: profile.terms_of_service,
             wallets,
             pinned: profile.pinned,
+            starred: profile.starred,
             extra: profile.extra,
             updated_on: profile.updated_on,
             created_on: profile.created_on,
@@ -326,6 +328,7 @@ impl ProfileResponse {
                     updated_on: profile.updated_on,
                     created_on: profile.created_on,
                     pinned: profile.pinned,
+                    starred: profile.starred,
                 };
                 Ok(result)
             }

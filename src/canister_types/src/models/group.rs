@@ -229,6 +229,8 @@ impl GroupResponse {
         members_count: u64,
         caller_data: Option<GroupCallerData>,
     ) -> Self {
+        let mut roles = default_roles();
+        roles.append(&mut group.roles.clone());
         Self {
             id,
             name: group.name,
@@ -242,7 +244,7 @@ impl GroupResponse {
             image: group.image,
             banner_image: group.banner_image,
             tags: group.tags,
-            roles: group.roles,
+            roles,
             wallets: group.wallets.into_iter().collect(),
             is_deleted: group.is_deleted,
             caller_data,

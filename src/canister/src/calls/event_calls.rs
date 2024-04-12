@@ -19,7 +19,6 @@ use canister_types::models::{
     api_error::ApiError,
     attendee::{Attendee, InviteAttendeeResponse, JoinedAttendeeResponse},
     event::{EventFilter, EventResponse, EventSort, EventsCount, PostEvent, UpdateEvent},
-    filter_type::FilterType,
     paged_response::PagedResponse,
     permission::PermissionType,
 };
@@ -70,7 +69,7 @@ fn get_events(
     limit: usize,
     page: usize,
     sort: EventSort,
-    filters: Vec<FilterType<EventFilter>>,
+    filters: Vec<EventFilter>,
 ) -> Result<PagedResponse<EventResponse>, ApiError> {
     EventCalls::get_events(limit, page, sort, filters)
 }
@@ -81,8 +80,8 @@ fn get_events(
 /// # Returns
 /// * `EventsCount` - The events in a paged response
 #[query(guard = "has_access")]
-fn get_event_count(group_ids: Option<Vec<u64>>) -> EventsCount {
-    EventCalls::get_events_count(group_ids)
+fn get_event_count(group_ids: Option<Vec<u64>>, query: Option<String>) -> EventsCount {
+    EventCalls::get_events_count(group_ids, query)
 }
 
 /// edit an event - [`[update]`](update)
