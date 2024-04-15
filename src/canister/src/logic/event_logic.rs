@@ -1,6 +1,9 @@
 use crate::{
     helpers::time_helper::hours_to_nanoseconds,
-    storage::{AttendeeStore, EventStore, ProfileStore, StorageMethods},
+    storage::{
+        AttendeeStore, EventAttendeeStore, EventStore, GroupEventsStore, ProfileStore,
+        StorageMethods,
+    },
 };
 
 use super::{
@@ -16,7 +19,9 @@ use canister_types::models::{
         Event, EventCallerData, EventFilter, EventResponse, EventSort, EventsCount, PostEvent,
         UpdateEvent,
     },
+    event_collection::EventCollection,
     invite_type::InviteType,
+    member_collection::MemberCollection,
     paged_response::PagedResponse,
     privacy::Privacy,
     subject::{Subject, SubjectType},
@@ -28,12 +33,22 @@ pub struct EventCalls;
 
 impl EventCalls {
     pub fn add_event(post_event: PostEvent) -> Result<EventResponse, ApiError> {
-        let (new_event_id, new_event) = EventStore::insert(Event::from(post_event))?;
+        let (new_event_id, new_event) = EventStore::insert(Event::from(post_event.clone()))?;
 
         let (_, mut attendee) = AttendeeStore::get(caller())?;
 
         attendee.add_joined(new_event_id, new_event.group_id);
         AttendeeStore::update(caller(), attendee)?;
+
+        // initialize attendees with the caller
+        let mut attendees = MemberCollection::new();
+        attendees.add_member(caller());
+        EventAttendeeStore::insert_by_key(new_event_id, attendees)?;
+
+        // initialize group events with the new event
+        let mut group_events = EventCollection::new();
+        group_events.add_event(new_event_id);
+        GroupEventsStore::insert_by_key(post_event.group_id, group_events)?;
 
         Ok(EventResponse::new(
             new_event_id,
@@ -193,6 +208,14 @@ impl EventCalls {
         }
 
         let _ = EventStore::remove(event_id);
+
+        // remove attendees from the event
+        EventAttendeeStore::remove(event_id);
+
+        // remove event from group events
+        let mut group_events = EventCollection::new();
+        group_events.remove_event(&event_id);
+        GroupEventsStore::update(group_id, group_events)?;
         Ok(())
     }
 
@@ -224,6 +247,10 @@ impl EventCalls {
         NotificationCalls::notification_join_public_event(event_attendees_principals, event_id);
         AttendeeStore::update(attendee_principal, attendee)?;
 
+        let (_, mut attendees) = EventAttendeeStore::get(event_id)?;
+        attendees.add_member(caller());
+        EventAttendeeStore::update(event_id, attendees)?;
+
         Ok(JoinedAttendeeResponse::new(
             event_id,
             event.group_id,
@@ -253,6 +280,10 @@ impl EventCalls {
             Some(notification_id),
         );
         AttendeeStore::update(attendee_principal, attendee)?;
+
+        let (_, mut attendees) = EventAttendeeStore::get(event_id)?;
+        attendees.add_invite(attendee_principal);
+        EventAttendeeStore::update(event_id, attendees)?;
 
         Ok(InviteAttendeeResponse::new(
             event_id,
@@ -288,6 +319,10 @@ impl EventCalls {
             );
 
             AttendeeStore::update(attendee_principal, attendee)?;
+
+            let (_, mut attendees) = EventAttendeeStore::get(event_id)?;
+            attendees.create_member_from_invite(attendee_principal);
+            EventAttendeeStore::update(event_id, attendees)?;
         }
 
         Ok(JoinedAttendeeResponse::new(
@@ -312,12 +347,17 @@ impl EventCalls {
                 true,
             );
             AttendeeStore::update(caller(), attendee.clone())?;
+
+            let (_, mut attendees) = EventAttendeeStore::get(event_id)?;
+            attendees.create_member_from_invite(caller());
+            EventAttendeeStore::update(event_id, attendees)?;
         }
         Ok(attendee)
     }
 
     pub fn get_event_attendees(event_id: u64) -> Result<Vec<JoinedAttendeeResponse>, ApiError> {
-        let attendees = AttendeeStore::filter(|_, attendee| attendee.is_event_joined(&event_id));
+        let (_, event_attendees) = EventAttendeeStore::get(event_id)?;
+        let attendees = AttendeeStore::get_many(event_attendees.get_member_principals());
 
         let response = attendees
             .into_iter()
@@ -388,6 +428,11 @@ impl EventCalls {
 
         attendee.remove_joined(event_id);
         AttendeeStore::update(caller(), attendee)?;
+
+        let (_, mut attendees) = EventAttendeeStore::get(event_id)?;
+        attendees.remove_member(&caller());
+        EventAttendeeStore::update(event_id, attendees)?;
+
         Ok(())
     }
 
@@ -399,6 +444,11 @@ impl EventCalls {
 
         attendee.remove_invite(event_id);
         AttendeeStore::update(caller(), attendee)?;
+
+        let (_, mut attendees) = EventAttendeeStore::get(event_id)?;
+        attendees.remove_invite(&caller());
+        EventAttendeeStore::update(event_id, attendees)?;
+
         Ok(())
     }
 
@@ -414,6 +464,10 @@ impl EventCalls {
 
         attendee.remove_joined(group_id);
         AttendeeStore::update(attendee_principal, attendee)?;
+
+        let (_, mut attendees) = EventAttendeeStore::get(event_id)?;
+        attendees.remove_member(&attendee_principal);
+        EventAttendeeStore::update(event_id, attendees)?;
         Ok(())
     }
 
@@ -428,6 +482,11 @@ impl EventCalls {
 
         attendee.remove_invite(event_id);
         AttendeeStore::update(attendee_principal, attendee)?;
+
+        let (_, mut attendees) = EventAttendeeStore::get(event_id)?;
+        attendees.remove_invite(&attendee_principal);
+        EventAttendeeStore::update(event_id, attendees)?;
+
         Ok(())
     }
 
@@ -435,19 +494,17 @@ impl EventCalls {
         event_id: u64,
         group_id: u64,
     ) -> Result<Vec<InviteAttendeeResponse>, ApiError> {
-        let invites = AttendeeStore::filter(|_, attendee| {
-            attendee.is_event_invited(&event_id)
-                && attendee.invites.get(&event_id).unwrap().group_id == group_id
-        });
+        let (_, event_attendees) = EventAttendeeStore::get(event_id)?;
 
-        let response = invites
-            .into_iter()
+        let invites = AttendeeStore::get_many(event_attendees.get_invite_principals())
+            .iter()
             .map(|(principal, attendee)| {
                 let invite_type = attendee.invites.get(&event_id).unwrap().invite_type.clone();
-                InviteAttendeeResponse::new(event_id, group_id, principal, invite_type)
+                InviteAttendeeResponse::new(event_id, group_id, principal.clone(), invite_type)
             })
             .collect();
-        Ok(response)
+
+        Ok(invites)
     }
 
     fn get_boosted_event(id: u64) -> Option<Boost> {

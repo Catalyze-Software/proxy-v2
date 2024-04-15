@@ -51,6 +51,14 @@ impl MemberCollection {
         }
     }
 
+    pub fn is_member(&self, principal: &Principal) -> bool {
+        self.members.contains(principal)
+    }
+
+    pub fn is_invited(&self, principal: &Principal) -> bool {
+        self.invites.contains(principal)
+    }
+
     pub fn remove_invite(&mut self, principal: &Principal) {
         self.invites.retain(|p| p != principal);
     }

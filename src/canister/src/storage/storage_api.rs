@@ -108,20 +108,8 @@ thread_local! {
         StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.borrow().get(MEMBERS_MEMORY_ID)))
     );
 
-    pub static GROUP_MEMBERS: StorageRef<u64, MemberCollection> = RefCell::new(
-        StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.borrow().get(GROUP_MEMBERS_MEMORY_ID)))
-    );
-
-    pub static GROUP_EVENTS: StorageRef<u64, EventCollection> = RefCell::new(
-        StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.borrow().get(GROUP_EVENTS_MEMORY_ID)))
-    );
-
     pub static EVENTS: StorageRef<u64, Event> = RefCell::new(
         StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.borrow().get(EVENTS_MEMORY_ID)))
-    );
-
-    pub static EVENT_ATTENDEES: StorageRef<u64, MemberCollection> = RefCell::new(
-        StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.borrow().get(EVENT_ATTENDEES_MEMORY_ID)))
     );
 
     pub static ATTENDEES: StorageRef<Principal, Attendee> = RefCell::new(
@@ -143,6 +131,20 @@ thread_local! {
     pub static USER_NOTIFICATIONS: StorageRef<Principal, UserNotifications> = RefCell::new(
         StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.borrow().get(USER_NOTIFICATIONS_MEMORY_ID)))
     );
+
+    // Collections for more performant lookup
+    pub static GROUP_MEMBERS: StorageRef<u64, MemberCollection> = RefCell::new(
+        StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.borrow().get(GROUP_MEMBERS_MEMORY_ID)))
+    );
+
+    pub static GROUP_EVENTS: StorageRef<u64, EventCollection> = RefCell::new(
+        StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.borrow().get(GROUP_EVENTS_MEMORY_ID)))
+    );
+
+    pub static EVENT_ATTENDEES: StorageRef<u64, MemberCollection> = RefCell::new(
+        StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.borrow().get(EVENT_ATTENDEES_MEMORY_ID)))
+    );
+
 
     // TODO:
     // Temporary memories for the maps which are needed for backward compatibility

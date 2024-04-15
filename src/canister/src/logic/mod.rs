@@ -1,3 +1,4 @@
+pub mod attendee_logic;
 pub mod boost_logic;
 pub mod event_logic;
 pub mod friend_request_logic;

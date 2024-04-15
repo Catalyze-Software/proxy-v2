@@ -29,7 +29,7 @@ use canister_types::{
         },
         invite_type::InviteType,
         member::{InviteMemberResponse, JoinedMemberResponse, Member},
-        member_collection::{self, MemberCollection},
+        member_collection::MemberCollection,
         neuron::{DissolveState, ListNeurons, ListNeuronsResponse},
         paged_response::PagedResponse,
         permission::{Permission, PermissionActionType, PermissionType, PostPermission},

@@ -1,4 +1,4 @@
-use candid::{CandidType, Principal};
+use candid::CandidType;
 use serde::{Deserialize, Serialize};
 
 use crate::impl_storable_for;
@@ -13,6 +13,10 @@ pub struct EventCollection {
 impl EventCollection {
     pub fn new() -> Self {
         Self { events: Vec::new() }
+    }
+
+    pub fn get_event_ids(&self) -> Vec<u64> {
+        self.events.clone()
     }
 
     pub fn get_events_count(&self) -> u64 {

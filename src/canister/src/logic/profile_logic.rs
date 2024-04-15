@@ -1,4 +1,6 @@
-use super::{member_logic::MemberCalls, notification_logic::NotificationCalls};
+use super::{
+    attendee_logic::AttendeeCalls, member_logic::MemberCalls, notification_logic::NotificationCalls,
+};
 use crate::{
     helpers::validator::Validator,
     storage::{AttendeeStore, IdentifierRefMethods, MemberStore, ProfileStore, StorageMethods},
@@ -49,6 +51,8 @@ impl ProfileCalls {
         //////////////////////////////////////////////////////////////////////////////////////////
 
         let _ = MemberCalls::create_empty_member(caller());
+        let _ = AttendeeCalls::create_empty_attendee(caller());
+
         ProfileResponse::from_result(stored_profile)
     }
 

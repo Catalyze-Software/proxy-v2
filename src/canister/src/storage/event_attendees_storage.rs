@@ -6,9 +6,9 @@ pub struct EventAttendeeStore;
 pub const NAME: &str = "event_attendees";
 
 impl StorageMethods<u64, MemberCollection> for EventAttendeeStore {
-    /// Get event members by key
+    /// Get event attendees by key
     /// # Arguments
-    /// * `key` - The key of the event for the members to get
+    /// * `key` - The key of the event for the attendees to get
     /// # Returns
     /// * `Result<(u64, MemberCollection), ApiError>` - The event if found, otherwise an error
     fn get(key: u64) -> Result<(u64, MemberCollection), ApiError> {
@@ -20,9 +20,9 @@ impl StorageMethods<u64, MemberCollection> for EventAttendeeStore {
         })
     }
 
-    /// Get multiple event members by key
+    /// Get multiple event attendees by key
     /// # Arguments
-    /// * `ids` - The keys of the events to get the members for
+    /// * `ids` - The keys of the events to get the attendees for
     /// # Returns
     /// * `Vec<(u64, MemberCollection)>` - The events if found, otherwise an empty vector
     fn get_many(keys: Vec<u64>) -> Vec<(u64, MemberCollection)> {
@@ -37,7 +37,7 @@ impl StorageMethods<u64, MemberCollection> for EventAttendeeStore {
         })
     }
 
-    /// Find the members for a single event by filter
+    /// Find the attendees for a single event by filter
     /// # Arguments
     /// * `filter` - The filter to apply
     /// # Returns
@@ -49,7 +49,7 @@ impl StorageMethods<u64, MemberCollection> for EventAttendeeStore {
         EVENT_ATTENDEES.with(|data| data.borrow().iter().find(|(id, value)| filter(id, value)))
     }
 
-    /// Find all event members by filter
+    /// Find all event attendees by filter
     /// # Arguments
     /// * `filter` - The filter to apply
     /// # Returns
@@ -73,14 +73,24 @@ impl StorageMethods<u64, MemberCollection> for EventAttendeeStore {
     /// * `Result<(u64, MemberCollection), ApiError>` - The inserted event if successful, otherwise an error
     /// # Note
     /// Does check if a event with the same key already exists, if so returns an error
-    fn insert(value: MemberCollection) -> Result<(u64, MemberCollection), ApiError> {
-        EVENT_ATTENDEES.with(|data| {
-            let key = data
-                .borrow()
-                .last_key_value()
-                .map(|(k, _)| k + 1)
-                .unwrap_or(0);
+    fn insert(_value: MemberCollection) -> Result<(u64, MemberCollection), ApiError> {
+        Err(ApiError::unsupported()
+            .add_method_name("insert") // value should be `insert` as a string value
+            .add_info(NAME)
+            .add_message(
+                "This value does not require a key to be inserted, use `insert_by_key` instead",
+            ))
+    }
 
+    /// This method is not supported for this storage
+    /// # Note
+    /// This method is not supported for this storage because the key is supplied by the canister
+    /// use `insert` instead
+    fn insert_by_key(
+        key: u64,
+        value: MemberCollection,
+    ) -> Result<(u64, MemberCollection), ApiError> {
+        EVENT_ATTENDEES.with(|data| {
             if data.borrow().contains_key(&key) {
                 return Err(ApiError::duplicate()
                     .add_method_name("insert")
@@ -93,23 +103,9 @@ impl StorageMethods<u64, MemberCollection> for EventAttendeeStore {
         })
     }
 
-    /// This method is not supported for this storage
-    /// # Note
-    /// This method is not supported for this storage because the key is supplied by the canister
-    /// use `insert` instead
-    fn insert_by_key(
-        _key: u64,
-        _value: MemberCollection,
-    ) -> Result<(u64, MemberCollection), ApiError> {
-        Err(ApiError::unsupported()
-            .add_method_name("insert_by_key") // value should be `insert` as a string value
-            .add_info(NAME)
-            .add_message("This value does not require a key to be inserted, use `insert` instead"))
-    }
-
     /// Update a single event by key
     /// # Arguments
-    /// * `key` - The key of the event to update the members for
+    /// * `key` - The key of the event to update the attendees for
     /// * `value` - The MemberCollection to update
     /// # Returns
     /// * `Result<(u64, MemberCollection), ApiError>` - The updated event if successful, otherwise an error
