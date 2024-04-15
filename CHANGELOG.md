@@ -10,11 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Added `GroupMemberStore` to improve lookup performance
-- added `EventAttendeeStore` to improve loopup performance
+- Added `EventAttendeeStore` to improve loopup performance
 - Added `MemberCollection` struct for usage in `GroupMemberStore` and `EventAttendeeStore`
 
 - Added `GroupEventStore` to improve lookup performance
-- added `EventCollection` struct for usage in `GroupEventStore`
+- Added `EventCollection` struct for usage in `GroupEventStore`
+- Added migration logic to fill the stores
 
 ### Changed
 
