@@ -22,6 +22,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Notification now return a `NotificationResponse` which hold additional metadata instead of a `Notification`
 - Change `id: u64` to `id: Option<u64>` in `NotificationResponse` where a non-set `id` means a silent notification
+- change `FriendRequest` enum value from `FriendRequest` to `FriendRequestResponse`
+- change `JoinEventUserRequest` enum value from `u64` to `InviteAttendeeResponse`
+- change `JoinEventOwnerRequest` enum value from `u64` to `InviteAttendeeResponse`
+- change `JoinGroupUserRequest` enum value from `u64` to `InviteMemberResponse`
+- change `JoinGroupOwnerRequest` enum value from `u64` to `InviteMemberResponse`
 
 ### Fixed
 

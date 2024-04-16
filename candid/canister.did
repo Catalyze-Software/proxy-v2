@@ -119,8 +119,8 @@ type EventNotificationType = variant {
   EventReminder : nat64;
   JoinEventUserRequestAccept : nat64;
   JoinEventOwnerRequestAccept : nat64;
-  JoinEventOwnerRequest : nat64;
-  JoinEventUserRequest : nat64;
+  JoinEventOwnerRequest : InviteAttendeeResponse;
+  JoinEventUserRequest : InviteAttendeeResponse;
   JoinEventUserRequestDecline : nat64;
   UserLeaveEvent : nat64;
 };
@@ -162,13 +162,6 @@ type EventsCount = record {
   attending : nat64;
 };
 type FilterType = variant { Or : ReportFilter; And : ReportFilter };
-type FriendRequest = record {
-  to : principal;
-  created_at : nat64;
-  requested_by : principal;
-  notification_id : opt nat64;
-  message : text;
-};
 type FriendRequestResponse = record {
   id : nat64;
   to : principal;
@@ -195,9 +188,9 @@ type GroupFilter = variant {
 type GroupNotificationType = variant {
   UserLeaveGroup : nat64;
   UserJoinGroup : nat64;
-  JoinGroupUserRequest : nat64;
+  JoinGroupUserRequest : InviteMemberResponse;
   JoinGroupUserRequestDecline : nat64;
-  JoinGroupOwnerRequest : nat64;
+  JoinGroupOwnerRequest : InviteMemberResponse;
   GroupReminder : nat64;
   JoinGroupOwnerRequestDecline : nat64;
   JoinGroupUserRequestAccept : nat64;
@@ -435,7 +428,7 @@ type ProfileResponse = record {
   application_role : ApplicationRole;
 };
 type RelationNotificationType = variant {
-  FriendRequest : FriendRequest;
+  FriendRequest : FriendRequestResponse;
   FriendRequestDecline : nat64;
   FriendRemove : principal;
   FriendRequestReminder : nat64;

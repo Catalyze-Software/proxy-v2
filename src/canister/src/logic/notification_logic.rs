@@ -1,9 +1,9 @@
 use candid::Principal;
 use canister_types::models::{
     api_error::ApiError,
-    attendee::AttendeeInvite,
-    friend_request::FriendRequest,
-    member::MemberInvite,
+    attendee::{AttendeeInvite, InviteAttendeeResponse},
+    friend_request::{FriendRequest, FriendRequestResponse},
+    member::{InviteMemberResponse, MemberInvite},
     notification::{
         EventNotificationType, GroupNotificationType, Notification, NotificationResponse,
         NotificationType, RelationNotificationType,
@@ -23,7 +23,9 @@ impl NotificationCalls {
     // Friend request notifications
 
     /// stores + sends notification
-    pub fn notification_add_friend_request(friend_request: FriendRequest) -> Result<u64, ApiError> {
+    pub fn notification_add_friend_request(
+        friend_request: FriendRequestResponse,
+    ) -> Result<u64, ApiError> {
         let (notification_id, notification) = Self::add_notification(
             vec![friend_request.to.clone()],
             NotificationType::Relation(RelationNotificationType::FriendRequest(
@@ -125,11 +127,13 @@ impl NotificationCalls {
     // stores + sends notification
     pub fn notification_user_join_request_group(
         receivers: Vec<Principal>,
-        group_id: u64,
+        invite_member_response: InviteMemberResponse,
     ) -> Result<u64, ApiError> {
         let (notification_id, _) = Self::add_and_send_notification(
             receivers,
-            NotificationType::Group(GroupNotificationType::JoinGroupUserRequest(group_id)),
+            NotificationType::Group(GroupNotificationType::JoinGroupUserRequest(
+                invite_member_response,
+            )),
             true,
         )?;
 
@@ -145,12 +149,17 @@ impl NotificationCalls {
         if let Some(notification_id) = invite.notification_id {
             let (_, mut notification) = NotificationStore::get(notification_id)?;
 
-            if let NotificationType::Group(GroupNotificationType::JoinGroupUserRequest(group_id)) =
-                notification.notification_type.clone()
+            if let NotificationType::Group(GroupNotificationType::JoinGroupUserRequest(
+                invite_member_response,
+            )) = notification.notification_type.clone()
             {
                 let notification_type = match is_accepted {
-                    true => GroupNotificationType::JoinGroupUserRequestAccept(group_id),
-                    false => GroupNotificationType::JoinGroupUserRequestDecline(group_id),
+                    true => GroupNotificationType::JoinGroupUserRequestAccept(
+                        invite_member_response.group_id,
+                    ),
+                    false => GroupNotificationType::JoinGroupUserRequestDecline(
+                        invite_member_response.group_id,
+                    ),
                 };
 
                 notification
@@ -179,11 +188,13 @@ impl NotificationCalls {
     // stores + sends notification
     pub fn notification_owner_join_request_group(
         invitee_principal: Principal,
-        group_id: u64,
+        invite_member_response: InviteMemberResponse,
     ) -> Result<u64, ApiError> {
         let (notification_id, _) = Self::add_and_send_notification(
             vec![invitee_principal],
-            NotificationType::Group(GroupNotificationType::JoinGroupOwnerRequest(group_id)),
+            NotificationType::Group(GroupNotificationType::JoinGroupOwnerRequest(
+                invite_member_response,
+            )),
             true,
         )?;
 
@@ -199,12 +210,17 @@ impl NotificationCalls {
         if let Some(notification_id) = invite.notification_id {
             let (_, mut notification) = NotificationStore::get(notification_id)?;
 
-            if let NotificationType::Group(GroupNotificationType::JoinGroupOwnerRequest(group_id)) =
-                notification.notification_type.clone()
+            if let NotificationType::Group(GroupNotificationType::JoinGroupOwnerRequest(
+                invite_member_response,
+            )) = notification.notification_type.clone()
             {
                 let notification_type = match is_accepted {
-                    true => GroupNotificationType::JoinGroupOwnerRequestAccept(group_id),
-                    false => GroupNotificationType::JoinGroupOwnerRequestDecline(group_id),
+                    true => GroupNotificationType::JoinGroupOwnerRequestAccept(
+                        invite_member_response.group_id,
+                    ),
+                    false => GroupNotificationType::JoinGroupOwnerRequestDecline(
+                        invite_member_response.group_id,
+                    ),
                 };
 
                 notification
@@ -247,11 +263,13 @@ impl NotificationCalls {
     // store + sends notification
     pub fn notification_user_join_request_event(
         receivers: Vec<Principal>,
-        event_id: u64,
+        invite_attendee_response: InviteAttendeeResponse,
     ) -> Result<u64, ApiError> {
         let (notification_id, _) = Self::add_and_send_notification(
             receivers,
-            NotificationType::Event(EventNotificationType::JoinEventUserRequest(event_id)),
+            NotificationType::Event(EventNotificationType::JoinEventUserRequest(
+                invite_attendee_response,
+            )),
             true,
         )?;
 
@@ -267,12 +285,17 @@ impl NotificationCalls {
         if let Some(notification_id) = invite.notification_id {
             let (_, mut notification) = NotificationStore::get(notification_id)?;
 
-            if let NotificationType::Event(EventNotificationType::JoinEventUserRequest(group_id)) =
-                notification.notification_type.clone()
+            if let NotificationType::Event(EventNotificationType::JoinEventUserRequest(
+                invite_attendee_response,
+            )) = notification.notification_type.clone()
             {
                 let notification_type = match is_accepted {
-                    true => EventNotificationType::JoinEventUserRequestAccept(group_id),
-                    false => EventNotificationType::JoinEventUserRequestDecline(group_id),
+                    true => EventNotificationType::JoinEventUserRequestAccept(
+                        invite_attendee_response.event_id,
+                    ),
+                    false => EventNotificationType::JoinEventUserRequestDecline(
+                        invite_attendee_response.event_id,
+                    ),
                 };
 
                 notification
@@ -305,12 +328,17 @@ impl NotificationCalls {
         if let Some(notification_id) = invite.notification_id {
             let (_, mut notification) = NotificationStore::get(notification_id)?;
 
-            if let NotificationType::Group(GroupNotificationType::JoinGroupOwnerRequest(event_id)) =
-                notification.notification_type.clone()
+            if let NotificationType::Event(EventNotificationType::JoinEventOwnerRequest(
+                event_attendee_response,
+            )) = notification.notification_type.clone()
             {
                 let notification_type = match is_accepted {
-                    true => EventNotificationType::JoinEventOwnerRequestAccept(event_id),
-                    false => EventNotificationType::JoinEventOwnerRequestDecline(event_id),
+                    true => EventNotificationType::JoinEventOwnerRequestAccept(
+                        event_attendee_response.event_id,
+                    ),
+                    false => EventNotificationType::JoinEventOwnerRequestDecline(
+                        event_attendee_response.event_id,
+                    ),
                 };
 
                 notification
@@ -337,11 +365,13 @@ impl NotificationCalls {
     // stores + sends notification
     pub fn notification_owner_join_request_event(
         invitee_principal: Principal,
-        event_id: u64,
+        invite_attendee_response: InviteAttendeeResponse,
     ) -> Result<u64, ApiError> {
         let (notification_id, _) = Self::add_and_send_notification(
             vec![invitee_principal],
-            NotificationType::Event(EventNotificationType::JoinEventOwnerRequest(event_id)),
+            NotificationType::Event(EventNotificationType::JoinEventOwnerRequest(
+                invite_attendee_response,
+            )),
             true,
         )?;
 

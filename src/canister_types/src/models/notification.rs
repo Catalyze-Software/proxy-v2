@@ -6,7 +6,10 @@ use candid::{Decode, Encode};
 
 use crate::impl_storable_for;
 
-use super::{friend_request::FriendRequest, user_notifications::UserNotificationData};
+use super::{
+    attendee::InviteAttendeeResponse, friend_request::FriendRequestResponse,
+    member::InviteMemberResponse, user_notifications::UserNotificationData,
+};
 
 impl_storable_for!(Notification);
 #[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
@@ -64,7 +67,7 @@ pub enum NotificationType {
 
 #[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
 pub enum RelationNotificationType {
-    FriendRequest(FriendRequest),
+    FriendRequest(FriendRequestResponse),
     FriendRequestAccept(u64),   // friend_request_id
     FriendRequestDecline(u64),  // friend_request_id
     FriendRequestRemove(u64),   // friend_request_id
@@ -76,11 +79,11 @@ pub enum RelationNotificationType {
 #[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
 pub enum GroupNotificationType {
     // user wants to join the group
-    JoinGroupUserRequest(u64),
+    JoinGroupUserRequest(InviteMemberResponse),
     JoinGroupUserRequestAccept(u64),
     JoinGroupUserRequestDecline(u64),
     // group wants a user to join
-    JoinGroupOwnerRequest(u64),
+    JoinGroupOwnerRequest(InviteMemberResponse),
     JoinGroupOwnerRequestAccept(u64),
     JoinGroupOwnerRequestDecline(u64),
     UserJoinGroup(u64),
@@ -91,12 +94,12 @@ pub enum GroupNotificationType {
 #[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
 pub enum EventNotificationType {
     // user wants to join the event
-    JoinEventUserRequest(u64),
+    JoinEventUserRequest(InviteAttendeeResponse),
     JoinEventUserRequestAccept(u64),
     JoinEventUserRequestDecline(u64),
 
     // Event wants a user to join
-    JoinEventOwnerRequest(u64),
+    JoinEventOwnerRequest(InviteAttendeeResponse),
     JoinEventOwnerRequestAccept(u64),
     JoinEventOwnerRequestDecline(u64),
     UserJoinEvent(u64),
