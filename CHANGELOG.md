@@ -16,8 +16,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `GroupEventStore` to improve lookup performance
 - Added `EventCollection` struct for usage in `GroupEventStore`
 - Added migration logic to fill the stores
+-
 
 ### Changed
+
+- non-silent notification now return a `NotificationResponse` instead of a `Notification`
+- changed silent notification logic where the `silent: bool` is replaced with an `Option<notification_id>`
 
 ### Fixed
 

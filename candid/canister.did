@@ -314,6 +314,11 @@ type Notification = record {
   sender : principal;
   notification_type : NotificationType;
 };
+type NotificationResponse = record {
+  id : nat64;
+  user_data : opt UserNotificationData;
+  notification : Notification;
+};
 type NotificationType = variant {
   Event : EventNotificationType;
   Relation : RelationNotificationType;
@@ -576,8 +581,8 @@ type UserNotificationData = record { is_read : bool; is_sender : bool };
 type ValidationResponse = record { field : text; message : text };
 type WSMessage = variant {
   Error : ApiError;
-  Notification : Notification;
-  SendNotification : record { principal; Notification };
+  Notification : NotificationResponse;
+  SendNotification : record { principal; NotificationResponse };
   UnreadCount : nat64;
   SendSilentNotification : record { principal; Notification };
   SilentNotification : Notification;

@@ -5,8 +5,8 @@ use canister_types::models::{
     friend_request::FriendRequest,
     member::MemberInvite,
     notification::{
-        EventNotificationType, GroupNotificationType, Notification, NotificationType,
-        RelationNotificationType,
+        EventNotificationType, GroupNotificationType, Notification, NotificationResponse,
+        NotificationType, RelationNotificationType,
     },
     user_notifications::{UserNotificationData, UserNotifications},
     websocket_message::WSMessage,
@@ -32,7 +32,7 @@ impl NotificationCalls {
             true,
         )?;
 
-        Self::send_notification(notification, friend_request.to, false);
+        Self::send_notification(Some(notification_id), notification, friend_request.to);
         Ok(notification_id)
     }
 
@@ -62,8 +62,12 @@ impl NotificationCalls {
                     .mark_as_accepted(is_accepted, NotificationType::Relation(notification_type));
                 let _ = NotificationStore::update(notification_id, notification.clone());
 
-                Self::send_notification(notification.clone(), friend_request.requested_by, false);
-                Self::send_notification(notification, friend_request.to, true);
+                Self::send_notification(
+                    Some(notification_id),
+                    notification.clone(),
+                    friend_request.requested_by,
+                );
+                Self::send_notification(None, notification, friend_request.to);
 
                 Ok(())
             } else {
@@ -77,6 +81,7 @@ impl NotificationCalls {
     // sends notification
     pub fn notification_remove_friend_request(receiver: Principal, friend_request_id: u64) -> () {
         Self::send_notification(
+            None,
             Notification::new(
                 NotificationType::Relation(RelationNotificationType::FriendRequestRemove(
                     friend_request_id,
@@ -84,13 +89,13 @@ impl NotificationCalls {
                 false,
             ),
             receiver,
-            true,
         );
     }
 
     // sends notification
     pub fn notification_remove_friend(receiver: Principal, friend_principal: Principal) -> () {
         Self::send_notification(
+            None,
             Notification::new(
                 NotificationType::Relation(RelationNotificationType::FriendRemove(
                     friend_principal,
@@ -98,7 +103,6 @@ impl NotificationCalls {
                 false,
             ),
             receiver,
-            true,
         );
     }
 
@@ -108,12 +112,12 @@ impl NotificationCalls {
     pub fn notification_join_public_group(receivers: Vec<Principal>, group_id: u64) -> () {
         for receiver in receivers {
             Self::send_notification(
+                None,
                 Notification::new(
                     NotificationType::Group(GroupNotificationType::UserJoinGroup(group_id)),
                     false,
                 ),
                 receiver,
-                true,
             );
         }
     }
@@ -127,7 +131,6 @@ impl NotificationCalls {
             receivers,
             NotificationType::Group(GroupNotificationType::JoinGroupUserRequest(group_id)),
             true,
-            false,
         )?;
 
         Ok(notification_id)
@@ -156,14 +159,14 @@ impl NotificationCalls {
 
                 // send notification to the person who requested to join
                 let _ = Self::send_notification(
+                    Some(notification_id),
                     notification.clone(),
                     notification.sender, // the person who request to join
-                    false,
                 );
 
                 // send notification to the users who could have accepted the request
                 for r in receivers {
-                    let _ = Self::send_notification(notification.clone(), r, true);
+                    let _ = Self::send_notification(None, notification.clone(), r);
                 }
             }
             Ok(())
@@ -182,7 +185,6 @@ impl NotificationCalls {
             vec![invitee_principal],
             NotificationType::Group(GroupNotificationType::JoinGroupOwnerRequest(group_id)),
             true,
-            false,
         )?;
 
         Ok(notification_id)
@@ -211,13 +213,13 @@ impl NotificationCalls {
 
                 // send notification to the person who requested to join
                 let _ = Self::send_notification(
+                    Some(notification_id),
                     notification.clone(),
                     notification.sender, // the person who requested the user to join
-                    false,
                 );
 
                 // send notification to the users who could have accepted the request
-                Self::send_notification(notification.clone(), invitee_principal, true);
+                Self::send_notification(None, notification.clone(), invitee_principal);
             }
             Ok(())
         } else {
@@ -232,12 +234,12 @@ impl NotificationCalls {
     pub fn notification_join_public_event(receivers: Vec<Principal>, event_id: u64) -> () {
         for receiver in receivers {
             Self::send_notification(
+                None,
                 Notification::new(
                     NotificationType::Event(EventNotificationType::UserJoinEvent(event_id)),
                     false,
                 ),
                 receiver,
-                true,
             );
         }
     }
@@ -251,7 +253,6 @@ impl NotificationCalls {
             receivers,
             NotificationType::Event(EventNotificationType::JoinEventUserRequest(event_id)),
             true,
-            false,
         )?;
 
         Ok(notification_id)
@@ -280,13 +281,13 @@ impl NotificationCalls {
 
                 // send notification to the person who requested to join
                 let _ = Self::send_notification(
+                    Some(notification_id),
                     notification.clone(),
                     notification.sender, // the person who request to join
-                    false,
                 );
 
                 // send notification to the users who could have accepted the request
-                Self::send_notification(notification.clone(), receiver, true);
+                Self::send_notification(None, notification.clone(), receiver);
             }
             Ok(())
         } else {
@@ -318,13 +319,13 @@ impl NotificationCalls {
 
                 // send notification to the person who requested to join
                 let _ = Self::send_notification(
+                    Some(notification_id),
                     notification.clone(),
                     notification.sender, // the person who requested the user to join
-                    false,
                 );
 
                 // send notification to the users who could have accepted the request
-                Self::send_notification(notification.clone(), invitee_principal, true);
+                Self::send_notification(None, notification.clone(), invitee_principal);
             }
             Ok(())
         } else {
@@ -342,7 +343,6 @@ impl NotificationCalls {
             vec![invitee_principal],
             NotificationType::Event(EventNotificationType::JoinEventOwnerRequest(event_id)),
             true,
-            false,
         )?;
 
         Ok(notification_id)
@@ -423,17 +423,34 @@ impl NotificationCalls {
     }
 
     pub fn send_notification(
+        // If the notification is silent, the notification id is not required as its not stored in the user's notifications
+        notification_id: Option<u64>,
         notification: Notification,
         receiver: Principal,
-        is_silent: bool,
     ) -> () {
-        if !is_silent {
-            Websocket::send_message(receiver, WSMessage::Notification(notification.clone()));
-        } else {
-            Websocket::send_message(
-                receiver,
-                WSMessage::SilentNotification(notification.clone()),
-            );
+        match notification_id {
+            Some(notification_id) => {
+                // Loud
+                let (_, user_notifications) = UsernotificationStore::get(receiver)
+                    .unwrap_or((Principal::anonymous(), UserNotifications::new()));
+
+                let user_notification_data = user_notifications.get(&notification_id);
+
+                let notification_response = NotificationResponse::new(
+                    notification_id,
+                    notification,
+                    user_notification_data,
+                );
+
+                Websocket::send_message(
+                    receiver,
+                    WSMessage::Notification(notification_response.clone()),
+                );
+            }
+            None => {
+                // Silent
+                Websocket::send_message(receiver, WSMessage::SilentNotification(notification));
+            }
         }
     }
 
@@ -441,7 +458,6 @@ impl NotificationCalls {
         receivers: Vec<Principal>,
         notification_type: NotificationType,
         is_actionable: bool,
-        is_silent: bool,
     ) -> Result<(u64, Notification), ApiError> {
         // Create the new notification
         let notification = Notification::new(notification_type, is_actionable);
@@ -471,7 +487,11 @@ impl NotificationCalls {
             }
 
             // send the notification to the receiver
-            Self::send_notification(new_notification.clone(), receiver, is_silent);
+            Self::send_notification(
+                Some(new_notification_id),
+                new_notification.clone(),
+                receiver,
+            );
         }
 
         Ok((new_notification_id, new_notification))

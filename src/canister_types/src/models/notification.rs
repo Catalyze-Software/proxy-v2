@@ -118,3 +118,17 @@ pub struct NotificationResponse {
     pub notification: Notification,
     pub user_data: Option<UserNotificationData>,
 }
+
+impl NotificationResponse {
+    pub fn new(
+        id: u64,
+        notification: Notification,
+        user_data: Option<UserNotificationData>,
+    ) -> Self {
+        Self {
+            id,
+            notification,
+            user_data: None,
+        }
+    }
+}

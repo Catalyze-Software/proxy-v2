@@ -11,6 +11,7 @@ use super::old_models::profile_models::Profile as OldProfile;
 pub async fn read_profile_entries(env: String) -> Vec<(String, OldProfile)> {
     let canister_id = match env.as_str() {
         "production" => super::principals::PRODUCTION_CHILD_PROFILES,
+        "staging" => super::principals::STAGING_CHILD_PROFILES,
         "development" => super::principals::DEVELOPMENT_CHILD_PROFILES,
         _ => trap("Invalid environment"),
     };
@@ -26,6 +27,7 @@ pub async fn read_profile_entries(env: String) -> Vec<(String, OldProfile)> {
 pub async fn read_members_entries(env: String) -> Vec<(String, OldMember)> {
     let canister_id = match env.as_str() {
         "production" => super::principals::PRODUCTION_CHILD_MEMBERS,
+        "staging" => super::principals::STAGING_CHILD_MEMBERS,
         "development" => super::principals::DEVELOPMENT_CHILD_MEMBERS,
         _ => trap("Invalid environment"),
     };
@@ -41,6 +43,7 @@ pub async fn read_members_entries(env: String) -> Vec<(String, OldMember)> {
 pub async fn read_groups_entries(env: String) -> Vec<(String, OldGroup)> {
     let canister_id = match env.as_str() {
         "production" => super::principals::PRODUCTION_CHILD_GROUPS,
+        "staging" => super::principals::STAGING_CHILD_GROUPS,
         "development" => super::principals::DEVELOPMENT_CHILD_GROUPS,
         _ => trap("Invalid environment"),
     };
@@ -56,6 +59,7 @@ pub async fn read_groups_entries(env: String) -> Vec<(String, OldGroup)> {
 pub async fn read_events_entries(env: String) -> Vec<(String, OldEvent)> {
     let canister_id = match env.as_str() {
         "production" => super::principals::PRODUCTION_CHILD_EVENTS,
+        "staging" => super::principals::STAGING_CHILD_EVENTS,
         "development" => super::principals::DEVELOPMENT_CHILD_EVENTS,
         _ => trap("Invalid environment"),
     };
@@ -71,6 +75,7 @@ pub async fn read_events_entries(env: String) -> Vec<(String, OldEvent)> {
 pub async fn read_attendees_entries(env: String) -> Vec<(String, OldAttendee)> {
     let canister_id = match env.as_str() {
         "production" => super::principals::PRODUCTION_CHILD_EVENT_ATTENDEES,
+        "staging" => super::principals::STAGING_CHILD_EVENT_ATTENDEES,
         "development" => super::principals::DEVELOPMENT_CHILD_EVENT_ATTENDEES,
         _ => trap("Invalid environment"),
     };
@@ -83,16 +88,17 @@ pub async fn read_attendees_entries(env: String) -> Vec<(String, OldAttendee)> {
 }
 
 // notifications
-pub async fn read_notifications_entries(env: String) -> Vec<(u32, String)> {
-    let canister_id = match env.as_str() {
-        "production" => super::principals::PRODUCTION_NOTIFICATIONS,
-        "development" => super::principals::DEVELOPMENT_NOTIFICATIONS,
-        _ => trap("Invalid environment"),
-    };
-    let canister_id = Principal::from_text(canister_id).unwrap();
+// pub async fn read_notifications_entries(env: String) -> Vec<(u32, String)> {
+//     let canister_id = match env.as_str() {
+//         "production" => super::principals::PRODUCTION_NOTIFICATIONS,
+//         "staging" => super::principals::STAGING_NOTIFICATIONS,
+//         "development" => super::principals::DEVELOPMENT_NOTIFICATIONS,
+//         _ => trap("Invalid environment"),
+//     };
+//     let canister_id = Principal::from_text(canister_id).unwrap();
 
-    ic_cdk::call::<(), (Vec<(u32, String)>,)>(canister_id, "read_notifications_entries", ())
-        .await
-        .expect("Failed to call notification canister")
-        .0
-}
+//     ic_cdk::call::<(), (Vec<(u32, String)>,)>(canister_id, "read_notifications_entries", ())
+//         .await
+//         .expect("Failed to call notification canister")
+//         .0
+// }

@@ -16,7 +16,7 @@ use super::{
 
 #[ic_cdk::update]
 async fn migrate() -> Vec<Vec<String>> {
-    let old_data = read_old_data("development".to_string()).await;
+    let old_data = read_old_data("staging".to_string()).await;
 
     let new_data = transform_models(&old_data);
 

@@ -76,6 +76,10 @@ impl UserNotifications {
         }
     }
 
+    pub fn get(&self, id: &u64) -> Option<UserNotificationData> {
+        self.0.get(id).cloned()
+    }
+
     pub fn contains(&self, id: &u64) -> bool {
         self.0.contains_key(id)
     }
