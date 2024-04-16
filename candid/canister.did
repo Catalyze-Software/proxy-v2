@@ -315,7 +315,7 @@ type Notification = record {
   notification_type : NotificationType;
 };
 type NotificationResponse = record {
-  id : nat64;
+  id : opt nat64;
   user_data : opt UserNotificationData;
   notification : Notification;
 };
@@ -584,8 +584,6 @@ type WSMessage = variant {
   Notification : NotificationResponse;
   SendNotification : record { principal; NotificationResponse };
   UnreadCount : nat64;
-  SendSilentNotification : record { principal; Notification };
-  SilentNotification : Notification;
 };
 type WalletResponse = record {
   "principal" : principal;

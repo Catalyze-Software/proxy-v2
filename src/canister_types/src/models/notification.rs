@@ -114,21 +114,21 @@ pub enum TransactionNotificationType {
 
 #[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
 pub struct NotificationResponse {
-    pub id: u64,
+    pub id: Option<u64>,
     pub notification: Notification,
     pub user_data: Option<UserNotificationData>,
 }
 
 impl NotificationResponse {
     pub fn new(
-        id: u64,
+        id: Option<u64>,
         notification: Notification,
         user_data: Option<UserNotificationData>,
     ) -> Self {
         Self {
             id,
             notification,
-            user_data: None,
+            user_data,
         }
     }
 }

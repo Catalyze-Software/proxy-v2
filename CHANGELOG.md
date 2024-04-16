@@ -20,14 +20,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- non-silent notification now return a `NotificationResponse` instead of a `Notification`
-- changed silent notification logic where the `silent: bool` is replaced with an `Option<notification_id>`
+- Notification now return a `NotificationResponse` which hold additional metadata instead of a `Notification`
+- Change `id: u64` to `id: Option<u64>` in `NotificationResponse` where a non-set `id` means a silent notification
 
 ### Fixed
 
 - Fixed `event_count` and `member_count` by usage of the new stores
 
 ### Removed
+
+- Removed `SilentNotification` and `SendSilentNotification` from `NotificationType` enum
 
 ## [0.1.2]
 

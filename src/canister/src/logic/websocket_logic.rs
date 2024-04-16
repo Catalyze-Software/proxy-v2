@@ -54,11 +54,6 @@ impl Websocket {
                     Self::send_message(receiver, WSMessage::Notification(value.clone()));
                 }
             }
-            WSMessage::SendSilentNotification((receiver, value)) => {
-                if Self::is_connected(&receiver) {
-                    Self::send_message(receiver, WSMessage::SilentNotification(value.clone()));
-                }
-            }
             _ => Self::log_error("Unknown message type".to_string()),
         };
     }

@@ -428,16 +428,14 @@ impl NotificationCalls {
         notification: Notification,
         receiver: Principal,
     ) -> () {
+        let (_, user_notifications) = UsernotificationStore::get(receiver)
+            .unwrap_or((Principal::anonymous(), UserNotifications::new()));
+
         match notification_id {
             Some(notification_id) => {
-                // Loud
-                let (_, user_notifications) = UsernotificationStore::get(receiver)
-                    .unwrap_or((Principal::anonymous(), UserNotifications::new()));
-
                 let user_notification_data = user_notifications.get(&notification_id);
-
                 let notification_response = NotificationResponse::new(
-                    notification_id,
+                    Some(notification_id),
                     notification,
                     user_notification_data,
                 );
@@ -448,8 +446,10 @@ impl NotificationCalls {
                 );
             }
             None => {
-                // Silent
-                Websocket::send_message(receiver, WSMessage::SilentNotification(notification));
+                Websocket::send_message(
+                    receiver,
+                    WSMessage::Notification(NotificationResponse::new(None, notification, None)),
+                );
             }
         }
     }
