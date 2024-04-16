@@ -4,7 +4,6 @@ use crate::{
         guards::has_access,
     },
     logic::group_logic::GroupCalls,
-    storage::{IdentifierRefMethods, MemberStore},
 };
 
 /// # Group methods
@@ -19,8 +18,7 @@ use crate::{
 use candid::Principal;
 use canister_types::models::{
     api_error::ApiError,
-    filter_type::FilterType,
-    group::{GroupFilter, GroupResponse, GroupSort, PostGroup, UpdateGroup},
+    group::{GroupFilter, GroupResponse, GroupSort, GroupsCount, PostGroup, UpdateGroup},
     member::{InviteMemberResponse, JoinedMemberResponse, Member},
     paged_response::PagedResponse,
     permission::{PermissionType, PostPermission},
@@ -55,7 +53,7 @@ pub async fn add_group(
 /// * `ApiError` - If something went wrong while getting the group
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[query(guard = "has_access")]
+#[query]
 pub fn get_group(group_id: u64) -> Result<GroupResponse, ApiError> {
     GroupCalls::get_group(group_id)
 }
@@ -74,10 +72,18 @@ pub fn get_group(group_id: u64) -> Result<GroupResponse, ApiError> {
 pub fn get_groups(
     limit: usize,
     page: usize,
-    filters: Vec<FilterType<GroupFilter>>,
+    filters: Vec<GroupFilter>,
     sort: GroupSort,
 ) -> Result<PagedResponse<GroupResponse>, ApiError> {
     GroupCalls::get_groups(limit, page, filters, sort)
+}
+
+/// Get group counts - [`[query]`](query)
+/// # Returns
+/// * `GroupsCount` - The groups count
+#[query]
+pub fn get_groups_count(query: Option<String>) -> GroupsCount {
+    GroupCalls::get_groups_count(query)
 }
 
 /// Edit a group - [`[update]`](update)
@@ -118,9 +124,9 @@ pub fn get_groups_by_id(group_ids: Vec<u64>) -> Vec<GroupResponse> {
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "has_access")]
-pub fn delete_group(group_id: u64) -> Result<GroupResponse, ApiError> {
+pub fn delete_group(group_id: u64) -> Result<(bool, bool, bool), ApiError> {
     can_delete(group_id, PermissionType::Group(None))?;
-    GroupCalls::delete_group(group_id)
+    Ok(GroupCalls::delete_group(group_id))
 }
 
 /// Add a wallet reference to the group - [`[update]`](update)
@@ -356,15 +362,10 @@ pub fn decline_owner_request_group_invite(group_id: u64) -> Result<Member, ApiEr
 pub fn assign_role(
     group_id: u64,
     role: String,
-    member_identifier: Principal,
+    member_principal: Principal,
 ) -> Result<Member, ApiError> {
     can_edit(group_id, PermissionType::Group(None))?;
-    match MemberStore::get_id_by_identifier(&member_identifier) {
-        Some(member_principal) => {
-            GroupCalls::add_group_role_to_member(role, member_principal, group_id)
-        }
-        None => Err(ApiError::not_found().add_message("Member not found in id - identifier map")),
-    }
+    GroupCalls::add_group_role_to_member(role, member_principal, group_id)
 }
 
 /// Remove a role from a specific group member - [`[update]`](update)
@@ -385,15 +386,10 @@ pub fn assign_role(
 pub fn remove_member_role(
     group_id: u64,
     role: String,
-    member_identifier: Principal,
+    member_principal: Principal,
 ) -> Result<Member, ApiError> {
     can_edit(group_id, PermissionType::Group(None))?;
-    match MemberStore::get_id_by_identifier(&member_identifier) {
-        Some(member_principal) => {
-            GroupCalls::remove_group_role_from_member(role, member_principal, group_id)
-        }
-        None => Err(ApiError::not_found().add_message("Member not found in id - identifier map")),
-    }
+    GroupCalls::remove_group_role_from_member(role, member_principal, group_id)
 }
 
 /// Get the member entry of a specific group member - [`[query]`](query)
@@ -404,12 +400,12 @@ pub fn remove_member_role(
 /// * `JoinedMemberResponse` - The member entry
 /// # Errors
 /// * `ApiError` - If something went wrong while getting the member entry
-#[query(guard = "has_access")]
+#[query]
 pub fn get_group_member(
     group_id: u64,
     member_principal: Principal,
 ) -> Result<JoinedMemberResponse, ApiError> {
-    can_read(group_id, PermissionType::Group(None))?;
+    // can_read(group_id, PermissionType::Group(None))?;
     GroupCalls::get_group_member(member_principal, group_id)
 }
 
@@ -436,22 +432,31 @@ pub fn get_groups_for_members(member_principals: Vec<Principal>) -> Vec<JoinedMe
 /// This function is guarded by the [`has_access`](has_access) function.
 #[query(guard = "has_access")]
 pub fn get_group_members(group_id: u64) -> Result<Vec<JoinedMemberResponse>, ApiError> {
-    can_read(group_id, PermissionType::Group(None))?;
+    // can_read(group_id, PermissionType::Group(None))?;
     GroupCalls::get_group_members(group_id)
 }
 
 /// Get the caller member entry - [`[query]`](query)
 /// # Change
-/// * was `get_self` but due to conflict with other methods it was renamed
+/// * was `get_self_member` but due to conflict with other methods it was renamed
 /// # Returns
 /// * `Member` - The member entry
 /// # Errors
 /// * `ApiError` - If something went wrong while getting the member entry
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[query]
-pub fn get_self_group() -> Result<Member, ApiError> {
-    GroupCalls::get_self_group()
+#[query(guard = "has_access")]
+pub fn get_self_member() -> Result<Member, ApiError> {
+    GroupCalls::get_self_member()
+}
+/// Get the caller joined groups - [`[query]`](query)
+/// # Returns
+/// * `Vec<GroupResponse>` - All groups the user is part of
+/// # Note
+/// This function is guarded by the [`has_access`](has_access) function.
+#[query(guard = "has_access")]
+pub fn get_self_groups() -> Vec<GroupResponse> {
+    GroupCalls::get_self_groups()
 }
 
 /// Get the roles of a specific group member - [`[query]`](query)
@@ -464,12 +469,12 @@ pub fn get_self_group() -> Result<Member, ApiError> {
 /// * `ApiError` - If something went wrong while getting the roles
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[query(guard = "has_access")]
+#[query]
 pub fn get_member_roles(
     group_id: u64,
     member_principal: Principal,
 ) -> Result<Vec<String>, ApiError> {
-    can_read(group_id, PermissionType::Group(None))?;
+    // can_read(group_id, PermissionType::Group(None))?;
     GroupCalls::get_member_roles(member_principal, group_id)
 }
 

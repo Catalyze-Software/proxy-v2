@@ -1,4 +1,6 @@
-use super::{member_logic::MemberCalls, notification_logic::NotificationCalls};
+use super::{
+    attendee_logic::AttendeeCalls, member_logic::MemberCalls, notification_logic::NotificationCalls,
+};
 use crate::{
     helpers::validator::Validator,
     storage::{AttendeeStore, IdentifierRefMethods, MemberStore, ProfileStore, StorageMethods},
@@ -49,6 +51,8 @@ impl ProfileCalls {
         //////////////////////////////////////////////////////////////////////////////////////////
 
         let _ = MemberCalls::create_empty_member(caller());
+        let _ = AttendeeCalls::create_empty_attendee(caller());
+
         ProfileResponse::from_result(stored_profile)
     }
 
@@ -172,13 +176,53 @@ impl ProfileCalls {
         ProfileResponse::from_result(updated_profile)
     }
 
-    pub fn get_starred_by_subject(subject: SubjectType) -> Vec<Subject> {
+    pub fn get_starred_by_subject(subject: SubjectType) -> Vec<u64> {
         if let Ok((_, profile)) = ProfileStore::get(caller()) {
             return profile
                 .starred
                 .iter()
                 .filter(|s| s.get_type() == subject)
-                .cloned()
+                .map(|s| s.get_id().clone())
+                .collect();
+        }
+        vec![]
+    }
+
+    pub fn add_pinned(subject: Subject) -> Result<ProfileResponse, ApiError> {
+        let (_, mut existing_profile) = ProfileStore::get(caller())?;
+
+        if existing_profile.pinned.contains(&subject) {
+            return Err(ApiError::duplicate().add_message("already pinned"));
+        }
+
+        existing_profile.pinned.push(subject);
+
+        let updated_profile = ProfileStore::update(caller(), existing_profile);
+
+        ProfileResponse::from_result(updated_profile)
+    }
+
+    pub fn remove_pinned(subject: Subject) -> Result<ProfileResponse, ApiError> {
+        let (_, mut existing_profile) = ProfileStore::get(caller())?;
+
+        if !existing_profile.pinned.contains(&subject) {
+            return Err(ApiError::not_found().add_message("not pinned"));
+        }
+
+        existing_profile.pinned.retain(|s| s != &subject);
+
+        let updated_profile = ProfileStore::update(caller(), existing_profile);
+
+        ProfileResponse::from_result(updated_profile)
+    }
+
+    pub fn get_pinned_by_subject(subject: SubjectType) -> Vec<u64> {
+        if let Ok((_, profile)) = ProfileStore::get(caller()) {
+            return profile
+                .pinned
+                .iter()
+                .filter(|s| s.get_type() == subject)
+                .map(|s| s.get_id().clone())
                 .collect();
         }
         vec![]

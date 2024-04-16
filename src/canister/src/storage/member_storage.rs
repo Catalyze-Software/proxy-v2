@@ -178,6 +178,8 @@ impl StorageMethods<Principal, Member> for MemberStore {
             }
 
             data.borrow_mut().insert(key, value.clone());
+            // Add member to the member collection
+
             Ok((key, value))
         })
     }

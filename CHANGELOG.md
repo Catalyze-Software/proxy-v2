@@ -5,13 +5,59 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [unreleased]
 
 ### Added
 
+- Added `GroupMemberStore` to improve lookup performance
+- Added `EventAttendeeStore` to improve loopup performance
+- Added `MemberCollection` struct for usage in `GroupMemberStore` and `EventAttendeeStore`
+
+- Added `GroupEventStore` to improve lookup performance
+- Added `EventCollection` struct for usage in `GroupEventStore`
+- Added migration logic to fill the stores
+
 ### Changed
 
+### Fixed
+
+- Fixed `event_count` and `member_count` by usage of the new stores
+
 ### Removed
+
+## [0.1.2]
+
+### Added
+
+- Add query call `get_self_groups` that return all the groups that the user is part of
+- Add query call `get_self_events` that return all the events that the user is part of
+- Added `pinned: Vec<Subject>` to `Profile`
+- Added `is_pinned` method to `Profile` implementation
+- Added `is_pinned` variable to `GroupCallerData` implementation
+- Added `add_pinned` query call + method
+- Added `remove_pinned` query call + method
+- Added `get_pinned_by_subject` query call + method
+- Added `add_pinned` query call + method
+- Added `remove_pinned` query call + method
+- Added `hours_to_nanoseconds` method for date comparison
+- Added `members_count` to `GroupResponse`
+- Added `events_count` to `GroupResponse`
+- Added `get_groups_count` to give back all different filtering counts
+
+### Changed
+
+- Changed query call `get_self_group` to `get_self_member` because this call returns member specific data
+- Changed query call `get_self_event` to `get_self_attendee` because this call returns attendee specific data
+- Changed `get_event_count` to give back all different filtering counts
+- Changed `member_count` and `event_count` to always return `0` for the `get_groups` call because of the message execution limit
+
+### Removed
+
+- Removed not used empty variable from `TransactionNotificationType::Airdrop`
+- Removed `get_starred_groups` query in favor of `get_starred_by_subject`
+- Removed `get_starred_events` query in favor of `get_starred_by_subject`
+- Removed `group_id` param from `get_event` query method
+- Removed `group_id` param from `join_event` update method
 
 ### Fixed
 
@@ -44,5 +90,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Missing `notification_id` on migration models
 
+[0.1.2]: https://github.com/Catalyze-Software/proxy/compare/master...0.1.2
 [0.1.1]: https://github.com/Catalyze-Software/proxy/compare/master...0.1.1
 [0.1.0]: https://github.com/Catalyze-Software/proxy/releases/tag/0.1.0

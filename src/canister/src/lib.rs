@@ -36,6 +36,7 @@ pub fn __export_did_tmp_() -> String {
     use canister_types::models::subject::*;
     use canister_types::models::user_notifications::*;
     use canister_types::models::wallet::*;
+    use canister_types::models::websocket_message::WSMessage;
     use ic_cdk::api::management_canister::http_request::HttpResponse;
     use ic_websocket_cdk::types::*;
 

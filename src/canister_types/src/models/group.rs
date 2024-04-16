@@ -175,6 +175,7 @@ pub struct GroupCallerData {
     pub joined: Option<JoinedMemberResponse>,
     pub invite: Option<InviteMemberResponse>,
     pub is_starred: bool,
+    pub is_pinned: bool,
 }
 
 impl GroupCallerData {
@@ -182,11 +183,13 @@ impl GroupCallerData {
         joined: Option<JoinedMemberResponse>,
         invite: Option<InviteMemberResponse>,
         is_starred: bool,
+        is_pinned: bool,
     ) -> Self {
         Self {
             joined,
             invite,
             is_starred,
+            is_pinned,
         }
     }
 }
@@ -212,6 +215,8 @@ pub struct GroupResponse {
     pub updated_on: u64,
     pub created_on: u64,
     pub boosted: Option<Boost>,
+    pub events_count: u64,
+    pub members_count: u64,
     pub caller_data: Option<GroupCallerData>,
 }
 
@@ -220,8 +225,12 @@ impl GroupResponse {
         id: u64,
         group: Group,
         boosted: Option<Boost>,
+        events_count: u64,
+        members_count: u64,
         caller_data: Option<GroupCallerData>,
     ) -> Self {
+        let mut roles = default_roles();
+        roles.append(&mut group.roles.clone());
         Self {
             id,
             name: group.name,
@@ -235,7 +244,7 @@ impl GroupResponse {
             image: group.image,
             banner_image: group.banner_image,
             tags: group.tags,
-            roles: group.roles,
+            roles,
             wallets: group.wallets.into_iter().collect(),
             is_deleted: group.is_deleted,
             caller_data,
@@ -243,17 +252,28 @@ impl GroupResponse {
             boosted,
             updated_on: group.updated_on,
             created_on: group.created_on,
+            events_count,
+            members_count,
         }
     }
 
     pub fn from_result(
         group_result: Result<(u64, Group), ApiError>,
         boosted: Option<Boost>,
+        events_count: u64,
+        members_count: u64,
         caller_data: Option<GroupCallerData>,
     ) -> Result<Self, ApiError> {
         match group_result {
             Err(err) => Err(err),
-            Ok((id, group)) => Ok(Self::new(id, group, boosted, caller_data)),
+            Ok((id, group)) => Ok(Self::new(
+                id,
+                group,
+                boosted,
+                events_count,
+                members_count,
+                caller_data,
+            )),
         }
     }
 }
@@ -288,6 +308,15 @@ impl GroupSort {
         }
         groups
     }
+}
+
+#[derive(Clone, Debug, CandidType, Deserialize, Serialize)]
+pub struct GroupsCount {
+    pub total: u64,
+    pub joined: u64,
+    pub invited: u64,
+    pub starred: u64,
+    pub new: u64,
 }
 
 #[derive(Clone, Debug, CandidType, Deserialize)]

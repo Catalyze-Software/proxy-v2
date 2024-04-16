@@ -1,7 +1,10 @@
 mod attendee_storage;
 mod boosted_storage;
+mod event_attendees_storage;
 mod event_storage;
 mod friend_request_storage;
+mod group_events_storage;
+mod group_members_storage;
 mod group_storage;
 mod member_storage;
 mod notification_storage;
@@ -13,8 +16,11 @@ mod user_notification_storage;
 // Re-export stores
 pub use attendee_storage::AttendeeStore;
 pub use boosted_storage::BoostedStore;
+pub use event_attendees_storage::EventAttendeeStore;
 pub use event_storage::EventStore;
 pub use friend_request_storage::FriendRequestStore;
+pub use group_events_storage::GroupEventsStore;
+pub use group_members_storage::GroupMemberStore;
 pub use group_storage::GroupStore;
 pub use member_storage::MemberStore;
 pub use notification_storage::NotificationStore;

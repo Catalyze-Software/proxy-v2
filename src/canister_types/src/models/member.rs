@@ -62,6 +62,12 @@ impl Member {
         }
     }
 
+    pub fn replace_roles(&mut self, group_id: &u64, roles: Vec<String>) {
+        if let Some(group) = self.joined.get_mut(group_id) {
+            group.roles = roles;
+        }
+    }
+
     pub fn remove_group_role(&mut self, group_id: &u64, role: &String) {
         if let Some(group) = self.joined.get_mut(group_id) {
             group.roles.retain(|r| r != role);

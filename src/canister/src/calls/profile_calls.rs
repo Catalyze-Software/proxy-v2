@@ -123,9 +123,9 @@ pub fn remove_wallet_from_profile(
     ProfileCalls::remove_wallet_from_profile(wallet_principal)
 }
 
-/// Adds a group, event or task reference to the caller his profile - [`[update]`](update)
+/// Adds a starred subject to the caller his profile - [`[update]`](update)
 /// # Arguments
-/// * `identifier` - The group, event or task identifier to add
+/// * `subject` - The subject to add to starred
 /// # Returns
 /// * `ProfileResponse` - The profile that was updated
 /// # Errors
@@ -137,9 +137,9 @@ pub fn add_starred(subject: Subject) -> Result<ProfileResponse, ApiError> {
     ProfileCalls::add_starred(subject)
 }
 
-/// Removes a group, event or task reference from the caller his profile - [`[update]`](update)
+/// Removes a starred subject from the caller his profile - [`[update]`](update)
 /// # Arguments
-/// * `identifier` - The group, event or task identifier to remove
+/// * `subject` - The subject to remove from starred
 /// # Returns
 /// * `ProfileResponse` - The profile that was updated
 /// # Errors
@@ -151,24 +151,56 @@ pub fn remove_starred(subject: Subject) -> Result<ProfileResponse, ApiError> {
     ProfileCalls::remove_starred(subject)
 }
 
-/// Gets the starred events from the caller his profile - [`[query]`](query)
-/// # Returns
-/// * `Vec<Principal>` - The event identifiers that were found
-/// # Note
-/// This function is guarded by the [`has_access`](has_access) function.
-#[query(guard = "has_access")]
-pub fn get_starred_events() -> Vec<Subject> {
-    ProfileCalls::get_starred_by_subject(SubjectType::Event)
-}
-
-/// Gets the starred groups from the caller his profile - [`[query]`](query)
+/// Gets the starred subjects from the caller his profile - [`[query]`](query)
+/// # Arguments
+/// * `subject_type` - The starred subjects type to fetch
 /// # Returns
 /// * `Vec<Principal>` - The group identifiers that were found
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 #[query(guard = "has_access")]
-pub fn get_starred_groups() -> Vec<Subject> {
-    ProfileCalls::get_starred_by_subject(SubjectType::Group)
+pub fn get_starred_by_subject_type(subject_type: SubjectType) -> Vec<u64> {
+    ProfileCalls::get_starred_by_subject(subject_type)
+}
+
+/// Adds a pinned subject to the caller his profile - [`[update]`](update)
+/// # Arguments
+/// * `subject` - The subject to add to pinned
+/// # Returns
+/// * `ProfileResponse` - The profile that was updated
+/// # Errors
+/// * `ApiError` - If something went wrong while adding the profile
+/// # Note
+/// This function is guarded by the [`has_access`](has_access) function.
+#[update(guard = "has_access")]
+pub fn add_pinned(subject: Subject) -> Result<ProfileResponse, ApiError> {
+    ProfileCalls::add_pinned(subject)
+}
+
+/// Removes a pinned subject from the caller his profile - [`[update]`](update)
+/// # Arguments
+/// * `subject` - The subject to remove from pinned
+/// # Returns
+/// * `ProfileResponse` - The profile that was updated
+/// # Errors
+/// * `ApiError` - If something went wrong while removing the profile
+/// # Note
+/// This function is guarded by the [`has_access`](has_access) function.
+#[update(guard = "has_access")]
+pub fn remove_pinned(subject: Subject) -> Result<ProfileResponse, ApiError> {
+    ProfileCalls::remove_pinned(subject)
+}
+
+/// Gets the pinned subjects from the caller his profile - [`[query]`](query)
+/// /// # Arguments
+/// * `subject_type` - The pinned subjects type to fetch
+/// # Returns
+/// * `Vec<Principal>` - The group identifiers that were found
+/// # Note
+/// This function is guarded by the [`has_access`](has_access) function.
+#[query(guard = "has_access")]
+pub fn get_pinned_by_subject_type(subject_type: SubjectType) -> Vec<u64> {
+    ProfileCalls::get_pinned_by_subject(subject_type)
 }
 
 /// Create a friend request on behalf of the caller - [`[update]`](update)

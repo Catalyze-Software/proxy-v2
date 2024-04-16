@@ -29,7 +29,9 @@ pub mod member;
 pub mod profile;
 pub mod report;
 
+pub mod event_collection;
 pub mod http_types;
+pub mod member_collection;
 pub mod neuron;
 pub mod subject;
 pub mod user_notifications;

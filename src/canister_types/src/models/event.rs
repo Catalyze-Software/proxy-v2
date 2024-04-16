@@ -266,6 +266,17 @@ impl Default for EventFilter {
 }
 
 #[derive(Clone, Debug, CandidType, Deserialize, Serialize)]
+pub struct EventsCount {
+    pub total: u64,
+    pub attending: u64,
+    pub invited: u64,
+    pub starred: u64,
+    pub future: u64,
+    pub past: u64,
+    pub new: u64,
+}
+
+#[derive(Clone, Debug, CandidType, Deserialize, Serialize)]
 pub struct EventResponse {
     pub id: u64,
     pub name: String,

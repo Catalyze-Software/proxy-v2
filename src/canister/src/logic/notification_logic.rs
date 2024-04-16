@@ -349,11 +349,10 @@ impl NotificationCalls {
     }
 
     // sends notification
-    pub fn get_user_unread_notifications(
-        principal: Principal,
-    ) -> Result<Vec<(u64, Notification)>, ApiError> {
-        let (_, unread_notification_ids) = UsernotificationStore::get(principal)?;
-        Ok(NotificationStore::get_many(unread_notification_ids.ids()))
+    pub fn get_user_unread_notifications(principal: Principal) -> Vec<(u64, Notification)> {
+        let (_, unread_notification_ids) = UsernotificationStore::get(principal)
+            .unwrap_or((Principal::anonymous(), UserNotifications::new()));
+        NotificationStore::get_many(unread_notification_ids.ids())
     }
 
     pub fn get_user_notification_ids(principal: Principal) -> Vec<u64> {

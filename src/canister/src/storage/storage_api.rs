@@ -1,8 +1,9 @@
 use candid::Principal;
 use canister_types::models::{
     api_error::ApiError, attendee::Attendee, boosted::Boost, event::Event,
-    friend_request::FriendRequest, group::Group, member::Member, notification::Notification,
-    profile::Profile, report::Report, user_notifications::UserNotifications,
+    event_collection::EventCollection, friend_request::FriendRequest, group::Group, member::Member,
+    member_collection::MemberCollection, notification::Notification, profile::Profile,
+    report::Report, user_notifications::UserNotifications,
 };
 use ic_stable_structures::{
     memory_manager::{MemoryId, MemoryManager, VirtualMemory},
@@ -32,6 +33,10 @@ static USER_NOTIFICATIONS_MEMORY_ID: MemoryId = MemoryId::new(7);
 
 static FRIEND_REQUESTS_MEMORY_ID: MemoryId = MemoryId::new(8);
 static BOOSTED_MEMORY_ID: MemoryId = MemoryId::new(9);
+
+static GROUP_MEMBERS_MEMORY_ID: MemoryId = MemoryId::new(10);
+static EVENT_ATTENDEES_MEMORY_ID: MemoryId = MemoryId::new(11);
+static GROUP_EVENTS_MEMORY_ID: MemoryId = MemoryId::new(12);
 
 // TODO:
 /// The type of the key used in the user centric `StableBTreeMap` for the different stores.
@@ -126,6 +131,20 @@ thread_local! {
     pub static USER_NOTIFICATIONS: StorageRef<Principal, UserNotifications> = RefCell::new(
         StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.borrow().get(USER_NOTIFICATIONS_MEMORY_ID)))
     );
+
+    // Collections for more performant lookup
+    pub static GROUP_MEMBERS: StorageRef<u64, MemberCollection> = RefCell::new(
+        StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.borrow().get(GROUP_MEMBERS_MEMORY_ID)))
+    );
+
+    pub static GROUP_EVENTS: StorageRef<u64, EventCollection> = RefCell::new(
+        StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.borrow().get(GROUP_EVENTS_MEMORY_ID)))
+    );
+
+    pub static EVENT_ATTENDEES: StorageRef<u64, MemberCollection> = RefCell::new(
+        StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.borrow().get(EVENT_ATTENDEES_MEMORY_ID)))
+    );
+
 
     // TODO:
     // Temporary memories for the maps which are needed for backward compatibility
