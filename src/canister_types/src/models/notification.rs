@@ -68,8 +68,9 @@ pub enum NotificationType {
 #[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
 pub enum RelationNotificationType {
     FriendRequest(FriendRequestResponse),
-    FriendRequestAccept(u64),   // friend_request_id
-    FriendRequestDecline(u64),  // friend_request_id
+    FriendRequestAccept(FriendRequestResponse),
+    FriendRequestDecline(FriendRequestResponse),
+
     FriendRequestRemove(u64),   // friend_request_id
     FriendRemove(Principal),    // user principal
     BlockUser(Principal),       // user principal
@@ -86,6 +87,7 @@ pub enum GroupNotificationType {
     JoinGroupOwnerRequest(InviteMemberResponse),
     JoinGroupOwnerRequestAccept(u64),
     JoinGroupOwnerRequestDecline(u64),
+
     UserJoinGroup(u64),
     UserLeaveGroup(u64),
     GroupReminder(u64),
@@ -102,6 +104,7 @@ pub enum EventNotificationType {
     JoinEventOwnerRequest(InviteAttendeeResponse),
     JoinEventOwnerRequestAccept(u64),
     JoinEventOwnerRequestDecline(u64),
+
     UserJoinEvent(u64),
     UserLeaveEvent(u64),
     EventReminder(u64),

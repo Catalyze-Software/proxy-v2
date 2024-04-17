@@ -28,7 +28,7 @@ impl StorageMethods<Principal, UserNotifications> for UsernotificationStore {
     /// * `Vec<Group>` - The groups if found, otherwise an empty vector
     fn get_many(keys: Vec<Principal>) -> Vec<(Principal, UserNotifications)> {
         USER_NOTIFICATIONS.with(|data| {
-            let mut multi_unread_notifications = Vec::new();
+            let mut multi_unread_notifications: Vec<(Principal, UserNotifications)> = Vec::new();
             for key in keys {
                 if let Some(unread_notifications) = data.borrow().get(&key) {
                     multi_unread_notifications.push((key, unread_notifications));

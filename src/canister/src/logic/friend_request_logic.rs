@@ -50,11 +50,6 @@ impl FriendRequestCalls {
                 .add_message("Friend request already exists"));
         }
 
-        // make a notification for the friend request
-
-        // add the notification id to the friend request as reference
-
-        // insert the friend request into the store
         let (friend_request_id, mut inserted_friend_request) =
             FriendRequestStore::insert(friend_request)?;
 

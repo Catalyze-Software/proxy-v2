@@ -44,7 +44,7 @@ impl NotificationCalls {
         is_accepted: bool,
     ) -> Result<(), ApiError> {
         // get the associated friend request
-        let (friend_request_id, friend_request) = friend_request_data;
+        let (_, friend_request) = friend_request_data;
 
         // check if the notification exists
         if let Some(notification_id) = friend_request.notification_id {
@@ -57,8 +57,8 @@ impl NotificationCalls {
             {
                 // mark the notification as accepted, this also marks it as not actionable
                 let notification_type = match is_accepted {
-                    true => RelationNotificationType::FriendRequestAccept(friend_request_id),
-                    false => RelationNotificationType::FriendRequestDecline(friend_request_id),
+                    true => RelationNotificationType::FriendRequestAccept(friend_request.clone()),
+                    false => RelationNotificationType::FriendRequestDecline(friend_request.clone()),
                 };
                 notification
                     .mark_as_accepted(is_accepted, NotificationType::Relation(notification_type));
@@ -405,7 +405,7 @@ impl NotificationCalls {
         Ok(user_notifications.to_vec())
     }
 
-    pub fn remove_notifications(
+    pub fn remove_user_notifications(
         principal: Principal,
         ids: Vec<u64>,
     ) -> Vec<(u64, UserNotificationData)> {
@@ -427,6 +427,7 @@ impl NotificationCalls {
         // store the new notification in the notification store
         let (new_notification_id, new_notification) = NotificationStore::insert(notification)?;
 
+        // TODO: disabled for now, because of Selami
         // add the notification reference to the user's notifications
         if let Ok((_, mut caller_notifications)) = UsernotificationStore::get(caller()) {
             caller_notifications.add(new_notification_id.clone(), false, true);
@@ -439,7 +440,7 @@ impl NotificationCalls {
 
         // send the notification to the receivers
         for receiver in receivers {
-            if let Ok((_, mut notifications)) = UsernotificationStore::get(caller()) {
+            if let Ok((_, mut notifications)) = UsernotificationStore::get(receiver) {
                 notifications.add(new_notification_id.clone(), false, true);
                 let _ = UsernotificationStore::update(receiver, notifications);
             } else {

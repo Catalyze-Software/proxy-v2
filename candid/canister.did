@@ -429,12 +429,12 @@ type ProfileResponse = record {
 };
 type RelationNotificationType = variant {
   FriendRequest : FriendRequestResponse;
-  FriendRequestDecline : nat64;
+  FriendRequestDecline : FriendRequestResponse;
   FriendRemove : principal;
   FriendRequestReminder : nat64;
   BlockUser : principal;
   FriendRequestRemove : nat64;
-  FriendRequestAccept : nat64;
+  FriendRequestAccept : FriendRequestResponse;
 };
 type RelationType = variant { Blocked; Friend };
 type ReportFilter = variant {
@@ -662,7 +662,6 @@ service : () -> {
   get_self_member : () -> (Result_2) query;
   get_starred_by_subject_type : (SubjectType) -> (vec nat64) query;
   get_unread_notifications : () -> (vec record { nat64; Notification }) query;
-  get_user_notifications : () -> (vec record { nat64; Notification }) query;
   http_request : (HttpRequest) -> (HttpResponse) query;
   invite_to_event : (nat64, nat64, principal) -> (Result_23);
   invite_to_group : (nat64, principal) -> (Result_2);
