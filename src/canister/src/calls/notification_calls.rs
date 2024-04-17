@@ -11,11 +11,6 @@ fn get_notifications() -> Vec<(u64, Notification)> {
 }
 
 #[query]
-fn get_user_notifications() -> Vec<(u64, Notification)> {
-    NotificationCalls::get_user_notifications(caller())
-}
-
-#[query]
 fn get_unread_notifications() -> Vec<(u64, Notification)> {
     NotificationCalls::get_user_unread_notifications(caller())
 }
@@ -30,5 +25,5 @@ fn mark_notifications_as_read(
 
 #[update]
 fn remove_notifications(ids: Vec<u64>) -> Vec<(u64, UserNotificationData)> {
-    NotificationCalls::remove_notifications(caller(), ids)
+    NotificationCalls::remove_user_notifications(caller(), ids)
 }

@@ -238,18 +238,38 @@ impl EventCalls {
         let (attendee_principal, mut attendee) = AttendeeStore::get(caller())?;
         let (_, event) = EventStore::get(event_id)?;
 
-        attendee.add_joined(event_id, event.group_id);
-        let event_attendees_principals: Vec<Principal> = EventCalls::get_event_attendees(event_id)?
-            .iter()
-            .map(|member| member.principal)
-            .collect();
+        match event.privacy {
+            Privacy::Private => {
+                let invite_attendee_response = InviteAttendeeResponse::new(
+                    event_id,
+                    event.group_id,
+                    caller(),
+                    InviteType::UserRequest,
+                );
+                let notification_id = NotificationCalls::notification_user_join_request_event(
+                    vec![event.owner],
+                    invite_attendee_response,
+                )?;
+                attendee.add_invite(
+                    event_id,
+                    event.group_id,
+                    InviteType::UserRequest,
+                    Some(notification_id),
+                );
+            }
+            Privacy::Public => {
+                // let (_, event_attendees_principals) = EventAttendeeStore::get(event_id)?;
+                NotificationCalls::notification_join_public_event(vec![event.owner], event_id);
+                attendee.add_joined(event_id, event.group_id);
 
-        NotificationCalls::notification_join_public_event(event_attendees_principals, event_id);
-        AttendeeStore::update(attendee_principal, attendee)?;
+                AttendeeStore::update(attendee_principal, attendee)?;
 
-        let (_, mut attendees) = EventAttendeeStore::get(event_id)?;
-        attendees.add_member(caller());
-        EventAttendeeStore::update(event_id, attendees)?;
+                let (_, mut attendees) = EventAttendeeStore::get(event_id)?;
+                attendees.add_member(caller());
+                EventAttendeeStore::update(event_id, attendees)?;
+            }
+            _ => {}
+        }
 
         Ok(JoinedAttendeeResponse::new(
             event_id,
@@ -271,8 +291,18 @@ impl EventCalls {
 
         let (attendee_principal, mut attendee) = AttendeeStore::get(attendee_principal)?;
 
-        let notification_id =
-            NotificationCalls::notification_owner_join_request_event(attendee_principal, event_id)?;
+        let invite_attendee_response = InviteAttendeeResponse::new(
+            event_id,
+            group_id,
+            attendee_principal,
+            InviteType::OwnerRequest,
+        );
+
+        let notification_id = NotificationCalls::notification_owner_join_request_event(
+            attendee_principal,
+            invite_attendee_response.clone(),
+        )?;
+
         attendee.add_invite(
             event_id,
             group_id,
@@ -285,12 +315,7 @@ impl EventCalls {
         attendees.add_invite(attendee_principal);
         EventAttendeeStore::update(event_id, attendees)?;
 
-        Ok(InviteAttendeeResponse::new(
-            event_id,
-            group_id,
-            attendee_principal,
-            InviteType::OwnerRequest,
-        ))
+        Ok(invite_attendee_response)
     }
 
     pub fn accept_user_request_event_invite(

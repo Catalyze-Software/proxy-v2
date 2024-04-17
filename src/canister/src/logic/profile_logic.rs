@@ -3,7 +3,10 @@ use super::{
 };
 use crate::{
     helpers::validator::Validator,
-    storage::{AttendeeStore, IdentifierRefMethods, MemberStore, ProfileStore, StorageMethods},
+    storage::{
+        AttendeeStore, IdentifierRefMethods, MemberStore, ProfileStore, StorageMethods,
+        UsernotificationStore,
+    },
 };
 use candid::Principal;
 use canister_types::models::{
@@ -12,6 +15,7 @@ use canister_types::models::{
     profile::{PostProfile, Profile, ProfileResponse, UpdateProfile},
     relation_type::RelationType,
     subject::{Subject, SubjectType},
+    user_notifications::UserNotifications,
     validation::{ValidateField, ValidationType},
     wallet::{PostWallet, Wallet},
 };
@@ -52,6 +56,7 @@ impl ProfileCalls {
 
         let _ = MemberCalls::create_empty_member(caller());
         let _ = AttendeeCalls::create_empty_attendee(caller());
+        let _ = UsernotificationStore::insert_by_key(caller(), UserNotifications::new());
 
         ProfileResponse::from_result(stored_profile)
     }

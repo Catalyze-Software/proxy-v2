@@ -43,3 +43,15 @@ pub struct FriendRequestResponse {
     pub to: Principal,
     pub created_at: u64,
 }
+
+impl FriendRequestResponse {
+    pub fn new(id: u64, friend_request: FriendRequest) -> Self {
+        Self {
+            id,
+            requested_by: friend_request.requested_by,
+            message: friend_request.message,
+            to: friend_request.to,
+            created_at: friend_request.created_at,
+        }
+    }
+}

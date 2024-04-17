@@ -1,10 +1,7 @@
 use candid::{decode_one, encode_one, CandidType, Principal};
 use serde::{Deserialize, Serialize};
 
-use super::{
-    api_error::ApiError,
-    notification::{Notification, NotificationResponse},
-};
+use super::{api_error::ApiError, notification::NotificationResponse};
 
 #[derive(CandidType, Clone, Debug, Deserialize, Serialize)]
 pub enum WSMessage {
@@ -12,8 +9,6 @@ pub enum WSMessage {
     SendNotification((Principal, NotificationResponse)),
     Notification(NotificationResponse),
 
-    SendSilentNotification((Principal, Notification)),
-    SilentNotification(Notification),
     Error(ApiError),
 }
 

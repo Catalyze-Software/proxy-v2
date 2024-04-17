@@ -119,8 +119,8 @@ type EventNotificationType = variant {
   EventReminder : nat64;
   JoinEventUserRequestAccept : nat64;
   JoinEventOwnerRequestAccept : nat64;
-  JoinEventOwnerRequest : nat64;
-  JoinEventUserRequest : nat64;
+  JoinEventOwnerRequest : InviteAttendeeResponse;
+  JoinEventUserRequest : InviteAttendeeResponse;
   JoinEventUserRequestDecline : nat64;
   UserLeaveEvent : nat64;
 };
@@ -162,13 +162,6 @@ type EventsCount = record {
   attending : nat64;
 };
 type FilterType = variant { Or : ReportFilter; And : ReportFilter };
-type FriendRequest = record {
-  to : principal;
-  created_at : nat64;
-  requested_by : principal;
-  notification_id : opt nat64;
-  message : text;
-};
 type FriendRequestResponse = record {
   id : nat64;
   to : principal;
@@ -195,9 +188,9 @@ type GroupFilter = variant {
 type GroupNotificationType = variant {
   UserLeaveGroup : nat64;
   UserJoinGroup : nat64;
-  JoinGroupUserRequest : nat64;
+  JoinGroupUserRequest : InviteMemberResponse;
   JoinGroupUserRequestDecline : nat64;
-  JoinGroupOwnerRequest : nat64;
+  JoinGroupOwnerRequest : InviteMemberResponse;
   GroupReminder : nat64;
   JoinGroupOwnerRequestDecline : nat64;
   JoinGroupUserRequestAccept : nat64;
@@ -315,7 +308,7 @@ type Notification = record {
   notification_type : NotificationType;
 };
 type NotificationResponse = record {
-  id : nat64;
+  id : opt nat64;
   user_data : opt UserNotificationData;
   notification : Notification;
 };
@@ -435,13 +428,13 @@ type ProfileResponse = record {
   application_role : ApplicationRole;
 };
 type RelationNotificationType = variant {
-  FriendRequest : FriendRequest;
-  FriendRequestDecline : nat64;
+  FriendRequest : FriendRequestResponse;
+  FriendRequestDecline : FriendRequestResponse;
   FriendRemove : principal;
   FriendRequestReminder : nat64;
   BlockUser : principal;
   FriendRequestRemove : nat64;
-  FriendRequestAccept : nat64;
+  FriendRequestAccept : FriendRequestResponse;
 };
 type RelationType = variant { Blocked; Friend };
 type ReportFilter = variant {
@@ -584,8 +577,6 @@ type WSMessage = variant {
   Notification : NotificationResponse;
   SendNotification : record { principal; NotificationResponse };
   UnreadCount : nat64;
-  SendSilentNotification : record { principal; Notification };
-  SilentNotification : Notification;
 };
 type WalletResponse = record {
   "principal" : principal;
@@ -671,7 +662,6 @@ service : () -> {
   get_self_member : () -> (Result_2) query;
   get_starred_by_subject_type : (SubjectType) -> (vec nat64) query;
   get_unread_notifications : () -> (vec record { nat64; Notification }) query;
-  get_user_notifications : () -> (vec record { nat64; Notification }) query;
   http_request : (HttpRequest) -> (HttpResponse) query;
   invite_to_event : (nat64, nat64, principal) -> (Result_23);
   invite_to_group : (nat64, principal) -> (Result_2);

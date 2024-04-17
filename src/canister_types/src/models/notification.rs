@@ -6,7 +6,10 @@ use candid::{Decode, Encode};
 
 use crate::impl_storable_for;
 
-use super::{friend_request::FriendRequest, user_notifications::UserNotificationData};
+use super::{
+    attendee::InviteAttendeeResponse, friend_request::FriendRequestResponse,
+    member::InviteMemberResponse, user_notifications::UserNotificationData,
+};
 
 impl_storable_for!(Notification);
 #[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
@@ -64,9 +67,10 @@ pub enum NotificationType {
 
 #[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
 pub enum RelationNotificationType {
-    FriendRequest(FriendRequest),
-    FriendRequestAccept(u64),   // friend_request_id
-    FriendRequestDecline(u64),  // friend_request_id
+    FriendRequest(FriendRequestResponse),
+    FriendRequestAccept(FriendRequestResponse),
+    FriendRequestDecline(FriendRequestResponse),
+
     FriendRequestRemove(u64),   // friend_request_id
     FriendRemove(Principal),    // user principal
     BlockUser(Principal),       // user principal
@@ -76,13 +80,14 @@ pub enum RelationNotificationType {
 #[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
 pub enum GroupNotificationType {
     // user wants to join the group
-    JoinGroupUserRequest(u64),
+    JoinGroupUserRequest(InviteMemberResponse),
     JoinGroupUserRequestAccept(u64),
     JoinGroupUserRequestDecline(u64),
     // group wants a user to join
-    JoinGroupOwnerRequest(u64),
+    JoinGroupOwnerRequest(InviteMemberResponse),
     JoinGroupOwnerRequestAccept(u64),
     JoinGroupOwnerRequestDecline(u64),
+
     UserJoinGroup(u64),
     UserLeaveGroup(u64),
     GroupReminder(u64),
@@ -91,14 +96,15 @@ pub enum GroupNotificationType {
 #[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
 pub enum EventNotificationType {
     // user wants to join the event
-    JoinEventUserRequest(u64),
+    JoinEventUserRequest(InviteAttendeeResponse),
     JoinEventUserRequestAccept(u64),
     JoinEventUserRequestDecline(u64),
 
     // Event wants a user to join
-    JoinEventOwnerRequest(u64),
+    JoinEventOwnerRequest(InviteAttendeeResponse),
     JoinEventOwnerRequestAccept(u64),
     JoinEventOwnerRequestDecline(u64),
+
     UserJoinEvent(u64),
     UserLeaveEvent(u64),
     EventReminder(u64),
@@ -114,21 +120,21 @@ pub enum TransactionNotificationType {
 
 #[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
 pub struct NotificationResponse {
-    pub id: u64,
+    pub id: Option<u64>,
     pub notification: Notification,
     pub user_data: Option<UserNotificationData>,
 }
 
 impl NotificationResponse {
     pub fn new(
-        id: u64,
+        id: Option<u64>,
         notification: Notification,
         user_data: Option<UserNotificationData>,
     ) -> Self {
         Self {
             id,
             notification,
-            user_data: None,
+            user_data,
         }
     }
 }

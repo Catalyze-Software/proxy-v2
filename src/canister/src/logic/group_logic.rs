@@ -390,10 +390,16 @@ impl GroupCalls {
             return Err(ApiError::bad_request().add_message("Group is invite only"));
         }
 
-        // Add the group to the member
-        let notification_id =
-            NotificationCalls::notification_owner_join_request_group(invitee_principal, group_id)?;
+        // we dont have the `invitee_member.notification_id` at this point, not sure if needed
+        let invite_member_response =
+            InviteMemberResponse::new(invitee_principal, invitee_member.clone(), group_id);
 
+        let notification_id = NotificationCalls::notification_owner_join_request_group(
+            invitee_principal,
+            invite_member_response,
+        )?;
+
+        // Add the group to the member
         invitee_member.add_invite(group_id, InviteType::OwnerRequest, Some(notification_id));
         MemberStore::update(invitee_principal, invitee_member.clone())?;
 
@@ -1079,7 +1085,7 @@ impl GroupValidation {
 
                 let notification_id = NotificationCalls::notification_user_join_request_group(
                     higher_role_members,
-                    group_id,
+                    InviteMemberResponse::new(caller, member.clone(), group_id),
                 )?;
 
                 member.add_invite(group_id, InviteType::UserRequest, Some(notification_id));
