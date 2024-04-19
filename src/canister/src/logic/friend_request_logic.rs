@@ -2,6 +2,7 @@ use candid::Principal;
 use canister_types::models::{
     api_error::ApiError,
     friend_request::{FriendRequest, FriendRequestResponse},
+    profile::ProfileResponse,
     relation_type::RelationType,
 };
 use ic_cdk::caller;
@@ -136,10 +137,40 @@ impl FriendRequestCalls {
             .collect()
     }
 
+    pub fn get_incoming_friend_requests_with_profile(
+    ) -> Vec<(FriendRequestResponse, ProfileResponse)> {
+        FriendRequestStore::filter(|_, request| request.to == caller())
+            .into_iter()
+            .map(|data| {
+                // TODO: Unwrap is possibly safe, but needs to be handled better
+                let (principal, profile) = ProfileStore::get(data.1.requested_by).unwrap();
+                (
+                    FriendRequestMapper::to_response(data),
+                    ProfileResponse::new(principal, profile),
+                )
+            })
+            .collect()
+    }
+
     pub fn get_outgoing_friend_requests() -> Vec<FriendRequestResponse> {
         FriendRequestStore::filter(|_, request| request.requested_by == caller())
             .into_iter()
             .map(|data| FriendRequestMapper::to_response(data))
+            .collect()
+    }
+
+    pub fn get_outgoing_friend_requests_with_profile(
+    ) -> Vec<(FriendRequestResponse, ProfileResponse)> {
+        FriendRequestStore::filter(|_, request| request.requested_by == caller())
+            .into_iter()
+            .map(|data| {
+                // TODO: Unwrap is possibly safe, but needs to be handled better
+                let (principal, profile) = ProfileStore::get(data.1.to).unwrap();
+                (
+                    FriendRequestMapper::to_response(data),
+                    ProfileResponse::new(principal, profile),
+                )
+            })
             .collect()
     }
 }

@@ -28,7 +28,8 @@ static ATTENDEES_MEMORY_ID: MemoryId = MemoryId::new(4);
 
 static REPORTS_MEMORY_ID: MemoryId = MemoryId::new(5);
 
-static NOTIFICATIONS_MEMORY_ID: MemoryId = MemoryId::new(6);
+// static NOTIFICATIONS_MEMORY_ID: MemoryId = MemoryId::new(6);
+static NOTIFICATIONS_MEMORY_ID: MemoryId = MemoryId::new(13);
 static USER_NOTIFICATIONS_MEMORY_ID: MemoryId = MemoryId::new(7);
 
 static FRIEND_REQUESTS_MEMORY_ID: MemoryId = MemoryId::new(8);

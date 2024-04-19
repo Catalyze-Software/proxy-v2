@@ -34,6 +34,7 @@ use canister_types::{
         paged_response::PagedResponse,
         permission::{Permission, PermissionActionType, PermissionType, PostPermission},
         privacy::{GatedType, NeuronGatedRules, Privacy, TokenGated},
+        profile::ProfileResponse,
         role::Role,
         subject::{Subject, SubjectType},
         validation::{ValidateField, ValidationType},
@@ -106,6 +107,17 @@ impl GroupCalls {
         )
     }
 
+    pub fn get_group_by_name(name: String) -> Result<GroupResponse, ApiError> {
+        match GroupStore::find(|_, g| g.name.to_lowercase() == name.to_lowercase()) {
+            None => {
+                return Err(ApiError::not_found().add_message("Group not found"));
+            }
+            Some((id, _)) => {
+                return Self::get_group(id);
+            }
+        }
+    }
+
     pub fn get_groups(
         limit: usize,
         page: usize,
@@ -152,6 +164,13 @@ impl GroupCalls {
             .collect();
 
         Ok(PagedResponse::new(page, limit, result))
+    }
+
+    pub fn get_boosted_groups() -> Vec<GroupResponse> {
+        BoostCalls::get_boosts_by_subject(SubjectType::Group)
+            .into_iter()
+            .map(|(id, _)| Self::get_group(id).unwrap())
+            .collect()
     }
 
     pub fn get_groups_count(query: Option<String>) -> GroupsCount {
@@ -357,11 +376,6 @@ impl GroupCalls {
             GroupValidation::validate_member_join(caller(), group_id, &account_identifier).await?;
 
         MemberStore::update(caller(), member.clone())?;
-
-        let (id, mut member_collection) = GroupMemberStore::get(group_id)?;
-        member_collection.add_member(caller());
-        GroupMemberStore::update(id, member_collection)?;
-
         Ok(JoinedMemberResponse::new(caller(), member, group_id))
     }
 
@@ -597,6 +611,47 @@ impl GroupCalls {
         Ok(result)
     }
 
+    pub fn get_group_member_with_profile(
+        principal: Principal,
+        group_id: u64,
+    ) -> Result<(JoinedMemberResponse, ProfileResponse), ApiError> {
+        let (_, member) = MemberStore::get(principal)?;
+
+        // Check if the member is in the group
+        if !member.is_group_joined(&group_id) {
+            return Err(ApiError::bad_request().add_message("Member is not in the group"));
+        }
+
+        if let Ok((_, profile)) = ProfileStore::get(principal) {
+            return Ok((
+                JoinedMemberResponse::new(principal, member, group_id),
+                ProfileResponse::new(principal, profile),
+            ));
+        } else {
+            return Err(ApiError::not_found().add_message("Profile not found"));
+        }
+    }
+
+    pub fn get_group_members_with_profiles(
+        group_id: u64,
+    ) -> Result<Vec<(JoinedMemberResponse, ProfileResponse)>, ApiError> {
+        let (_, member_collection) = GroupMemberStore::get(group_id)?;
+        let members = MemberStore::get_many(member_collection.get_member_principals());
+
+        let mut result: Vec<(JoinedMemberResponse, ProfileResponse)> = vec![];
+
+        for (principal, member) in members {
+            if let Ok((_, profile)) = ProfileStore::get(principal) {
+                result.push((
+                    JoinedMemberResponse::new(principal, member, group_id),
+                    ProfileResponse::new(principal, profile),
+                ));
+            }
+        }
+
+        Ok(result)
+    }
+
     pub fn get_group_members_by_permission(
         group_id: u64,
         permission_type: PermissionType,
@@ -658,6 +713,12 @@ impl GroupCalls {
         MemberStore::update(caller(), member)?;
 
         let (id, mut member_collection) = GroupMemberStore::get(group_id)?;
+
+        NotificationCalls::notification_leave_group(
+            member_collection.get_member_principals(),
+            group_id,
+        );
+
         member_collection.remove_member(&caller());
         GroupMemberStore::update(id, member_collection)?;
 
@@ -735,6 +796,26 @@ impl GroupCalls {
 
         for (principal, member) in members {
             result.push(InviteMemberResponse::new(principal, member, group_id));
+        }
+
+        Ok(result)
+    }
+
+    pub fn get_group_invites_with_profiles(
+        group_id: u64,
+    ) -> Result<Vec<(InviteMemberResponse, ProfileResponse)>, ApiError> {
+        let (_, member_collection) = GroupMemberStore::get(group_id)?;
+        let members = MemberStore::get_many(member_collection.get_invite_principals());
+
+        let mut result: Vec<(InviteMemberResponse, ProfileResponse)> = vec![];
+
+        for (principal, member) in members {
+            if let Ok((_, profile)) = ProfileStore::get(principal) {
+                result.push((
+                    InviteMemberResponse::new(principal, member, group_id),
+                    ProfileResponse::new(principal, profile),
+                ));
+            }
         }
 
         Ok(result)
@@ -1054,8 +1135,10 @@ impl GroupValidation {
             return Err(ApiError::bad_request().add_message("Member is already in the group"));
         }
 
+        let (_, mut member_collection) = GroupMemberStore::get(group_id)?;
+
         use Privacy::*;
-        match group.privacy {
+        let validated_member = match group.privacy {
             // If the group is public, add the member to the group
             Public => {
                 member.add_joined(group_id, vec!["member".to_string()]);
@@ -1063,6 +1146,8 @@ impl GroupValidation {
                     .iter()
                     .map(|member| member.principal)
                     .collect();
+
+                member_collection.add_member(caller);
 
                 NotificationCalls::notification_join_public_group(
                     group_member_principals,
@@ -1087,6 +1172,8 @@ impl GroupValidation {
                     higher_role_members,
                     InviteMemberResponse::new(caller, member.clone(), group_id),
                 )?;
+
+                member_collection.add_invite(caller);
 
                 member.add_invite(group_id, InviteType::UserRequest, Some(notification_id));
                 Ok(member)
@@ -1114,6 +1201,7 @@ impl GroupValidation {
                         }
                         if is_valid {
                             member.add_joined(group_id, vec!["member".to_string()]);
+                            member_collection.add_member(caller);
                             Ok(member)
                             // If the caller does not own the neuron, throw an error
                         } else {
@@ -1137,6 +1225,7 @@ impl GroupValidation {
                         }
                         if is_valid {
                             member.add_joined(group_id, vec!["member".to_string()]);
+                            member_collection.add_member(caller);
                             Ok(member)
                             // If the caller does not own the NFT, throw an error
                         } else {
@@ -1147,6 +1236,10 @@ impl GroupValidation {
                     }
                 }
             }
-        }
+        };
+
+        GroupMemberStore::update(group_id, member_collection)?;
+
+        validated_member
     }
 }

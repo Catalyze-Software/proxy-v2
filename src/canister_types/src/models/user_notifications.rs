@@ -70,6 +70,15 @@ impl UserNotifications {
         }
     }
 
+    pub fn get_unread_ids(&self) -> Vec<u64> {
+        self.0
+            .clone()
+            .into_iter()
+            .filter(|(_, data)| !data.is_read())
+            .map(|(id, _)| id)
+            .collect()
+    }
+
     pub fn remove_many(&mut self, ids: Vec<u64>) {
         for id in ids {
             self.0.remove(&id);

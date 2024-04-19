@@ -21,6 +21,7 @@ use canister_types::models::{
     event::{EventFilter, EventResponse, EventSort, EventsCount, PostEvent, UpdateEvent},
     paged_response::PagedResponse,
     permission::PermissionType,
+    profile::ProfileResponse,
 };
 use ic_cdk::{query, update};
 
@@ -225,6 +226,38 @@ pub fn accept_owner_request_event_invite(event_id: u64) -> Result<Attendee, ApiE
 #[query(guard = "has_access")]
 pub fn get_event_attendees(event_id: u64) -> Result<Vec<JoinedAttendeeResponse>, ApiError> {
     EventCalls::get_event_attendees(event_id)
+}
+
+/// Get the attendees for an event - [`[query]`](query)
+/// # Arguments
+/// * `event_id` - The event identifier to get the attendees from
+/// # Returns
+/// * `Vec<JoinedAttendeeResponse>` - The attendees for the event
+/// # Errors
+/// * `ApiError` - If something went wrong while getting the attendees for the event
+/// # Note
+/// This function is guarded by the [`has_access`](has_access) function.
+#[query(guard = "has_access")]
+pub fn get_event_attendees_profiles_and_roles(
+    event_id: u64,
+) -> Result<Vec<(ProfileResponse, Vec<String>)>, ApiError> {
+    EventCalls::get_event_attendees_profiles_and_roles(event_id)
+}
+
+/// Get the attendees for an event with their profiles - [`[query]`](query)
+/// # Arguments
+/// * `event_id` - The event identifier to get the attendees from
+/// # Returns
+/// * `Vec<JoinedAttendeeResponse>` - The attendees for the event
+/// # Errors
+/// * `ApiError` - If something went wrong while getting the attendees for the event
+/// # Note
+/// This function is guarded by the [`has_access`](has_access) function.
+#[query(guard = "has_access")]
+pub fn get_event_invites_with_profiles(
+    event_id: u64,
+) -> Result<Vec<(ProfileResponse, InviteAttendeeResponse)>, ApiError> {
+    EventCalls::get_event_invites_with_profiles(event_id)
 }
 
 /// Get the caller attendee entry - [`[query]`](query)

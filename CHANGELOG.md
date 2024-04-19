@@ -9,9 +9,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added `get_group_by_name` query call
+- Added `get_event_attendees_profiles_and_roles` query call
+- Added `get_event_invites_with_profiles` query call
+- Added `get_group_members_with_profiles` query call
+- Added `get_group_member_with_profile` query call
+- Added `get_group_invites_with_profiles` query call
+- Added `get_incoming_friend_requests_with_profile` query call
+- Added `get_outgoing_friend_requests_with_profile` query call
+- Added `get_relations_with_profiles` query call
+
 ### Changed
 
+- Changed `get_boosted_groups` response from `Vec<(u64, Boost)>` to `Vec<GroupResponse>`
+- Changed `get_boosted_events` response from `Vec<(u64, Boost)>` to `Vec<EventResponse>`
+- changed `get_boosts_by_subject` parameter from `subject: Subject` to `subject: SubjectType`
+- Change `get_notifications` response to `Vec<NotificationResponse>`
+- Change `get_unread_notifications` response to `Vec<NotificationResponse>`
+
 ### Fixed
+
+- Fixed `get_unread_notifications` which returned all notifications
 
 ### Removed
 

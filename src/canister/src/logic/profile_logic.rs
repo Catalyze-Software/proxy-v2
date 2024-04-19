@@ -312,6 +312,10 @@ impl ProfileCalls {
         vec![]
     }
 
+    pub fn get_relations_with_profiles(relation_type: RelationType) -> Vec<ProfileResponse> {
+        Self::get_profiles(ProfileCalls::get_relations(relation_type))
+    }
+
     // TODO: add logic to check the current version of these documents and add something to prompt the user to approve the latest version
     pub fn approve_code_of_conduct(version: u64) -> Result<bool, ApiError> {
         let (_, mut profile) = ProfileStore::get(caller())?;

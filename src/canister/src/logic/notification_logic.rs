@@ -8,7 +8,7 @@ use canister_types::models::{
         EventNotificationType, GroupNotificationType, Notification, NotificationResponse,
         NotificationType, RelationNotificationType,
     },
-    user_notifications::{UserNotificationData, UserNotifications},
+    user_notifications::{self, UserNotificationData, UserNotifications},
     websocket_message::WSMessage,
 };
 use ic_cdk::caller;
@@ -117,6 +117,19 @@ impl NotificationCalls {
                 None,
                 Notification::new(
                     NotificationType::Group(GroupNotificationType::UserJoinGroup(group_id)),
+                    false,
+                ),
+                receiver,
+            );
+        }
+    }
+
+    pub fn notification_leave_group(receivers: Vec<Principal>, group_id: u64) -> () {
+        for receiver in receivers {
+            Self::send_notification(
+                None,
+                Notification::new(
+                    NotificationType::Group(GroupNotificationType::UserLeaveGroup(group_id)),
                     false,
                 ),
                 receiver,
@@ -379,20 +392,37 @@ impl NotificationCalls {
     }
 
     // sends notification
-    pub fn get_user_unread_notifications(principal: Principal) -> Vec<(u64, Notification)> {
-        let (_, unread_notification_ids) = UsernotificationStore::get(principal)
-            .unwrap_or((Principal::anonymous(), UserNotifications::new()));
-        NotificationStore::get_many(unread_notification_ids.ids())
+    pub fn get_user_unread_notifications(principal: Principal) -> Vec<NotificationResponse> {
+        let user_notifications = Self::get_user_notification_ids(principal);
+        NotificationStore::get_many(user_notifications.get_unread_ids())
+            .iter()
+            .map(|(id, data)| {
+                NotificationResponse::new(Some(*id), data.clone(), user_notifications.get(id))
+            })
+            .collect()
     }
 
-    pub fn get_user_notification_ids(principal: Principal) -> Vec<u64> {
-        let (_, notification_ids) =
+    pub fn get_user_notification_ids(principal: Principal) -> UserNotifications {
+        let (_, notifications) =
             UsernotificationStore::get(principal).unwrap_or((principal, UserNotifications::new()));
-        notification_ids.ids()
+        notifications
     }
 
-    pub fn get_user_notifications(principal: Principal) -> Vec<(u64, Notification)> {
-        NotificationStore::get_many(Self::get_user_notification_ids(principal))
+    pub fn get_user_notifications(principal: Principal) -> Vec<NotificationResponse> {
+        let user_notifications = Self::get_user_notification_ids(principal);
+        let notifications = NotificationStore::get_many(user_notifications.ids());
+
+        let mut notification_responses: Vec<NotificationResponse> = vec![];
+
+        for (notification_id, notification_data) in notifications {
+            notification_responses.push(NotificationResponse::new(
+                Some(notification_id),
+                notification_data,
+                user_notifications.get(&notification_id),
+            ));
+        }
+
+        notification_responses
     }
 
     pub fn mark_notifications_as_read(
@@ -508,7 +538,7 @@ impl NotificationCalls {
 
         // send the notification to the receivers
         for receiver in receivers {
-            if let Ok((_, mut notifications)) = UsernotificationStore::get(caller()) {
+            if let Ok((_, mut notifications)) = UsernotificationStore::get(receiver) {
                 notifications.add(new_notification_id.clone(), false, true);
                 let _ = UsernotificationStore::update(receiver, notifications);
             } else {

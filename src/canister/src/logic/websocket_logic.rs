@@ -79,6 +79,10 @@ impl Websocket {
         CONNECTED_CLIENTS.with(|c| c.borrow().contains_key(&principal))
     }
 
+    pub fn get_connected_clients() -> Vec<Principal> {
+        CONNECTED_CLIENTS.with(|c| c.borrow().keys().cloned().collect())
+    }
+
     pub fn log_error(error: String) {
         const MAX_LOGS: usize = 500;
 
