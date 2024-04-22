@@ -1,6 +1,5 @@
 use canister_types::models::{
-    api_error::ApiError,
-    notification::{Notification, NotificationResponse},
+    api_error::ApiError, notification::NotificationResponse,
     user_notifications::UserNotificationData,
 };
 use ic_cdk::{caller, query, update};

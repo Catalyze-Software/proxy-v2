@@ -1,12 +1,13 @@
 use candid::{CandidType, Principal};
 use serde::{Deserialize, Serialize};
 
+use super::{attendee::Attendee, event::Event, group::Group, member::Member, profile::Profile};
+
 #[derive(CandidType, Deserialize, Serialize, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Subject {
     None,
     Group(u64),
     Event(u64),
-    Task(u64),
     Profile(Principal),
     Member(Principal),
     Attendee(Principal),
@@ -18,7 +19,6 @@ impl Subject {
             Subject::None => SubjectType::None,
             Subject::Group(_) => SubjectType::Group,
             Subject::Event(_) => SubjectType::Event,
-            Subject::Task(_) => SubjectType::Task,
             Subject::Profile(_) => SubjectType::Profile,
             Subject::Member(_) => SubjectType::Member,
             Subject::Attendee(_) => SubjectType::Attendee,
@@ -29,7 +29,6 @@ impl Subject {
         match self {
             Subject::Group(id) => id,
             Subject::Event(id) => id,
-            Subject::Task(id) => id,
             _ => &0,
         }
     }
@@ -40,7 +39,6 @@ pub enum SubjectType {
     None,
     Group,
     Event,
-    Task,
     Profile,
     Member,
     Attendee,
@@ -50,4 +48,14 @@ impl Default for Subject {
     fn default() -> Self {
         Subject::None
     }
+}
+
+#[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
+pub enum SubjectResponse {
+    None,
+    Group(Option<(u64, Group)>),
+    Event(Option<(u64, Event)>),
+    Profile(Option<(Principal, Profile)>),
+    Member(Option<(Principal, Member)>),
+    Attendee(Option<(Principal, Attendee)>),
 }

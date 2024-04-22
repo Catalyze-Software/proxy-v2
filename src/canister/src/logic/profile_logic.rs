@@ -4,8 +4,8 @@ use super::{
 use crate::{
     helpers::validator::Validator,
     storage::{
-        AttendeeStore, IdentifierRefMethods, MemberStore, ProfileStore, StorageMethods,
-        UsernotificationStore,
+        AttendeeStore, EventStore, GroupStore, IdentifierRefMethods, MemberStore, ProfileStore,
+        StorageMethods, UsernotificationStore,
     },
 };
 use candid::Principal;
@@ -14,7 +14,7 @@ use canister_types::models::{
     document_details::DocumentDetails,
     profile::{PostProfile, Profile, ProfileResponse, UpdateProfile},
     relation_type::RelationType,
-    subject::{Subject, SubjectType},
+    subject::{Subject, SubjectResponse, SubjectType},
     user_notifications::UserNotifications,
     validation::{ValidateField, ValidationType},
     wallet::{PostWallet, Wallet},
@@ -221,13 +221,13 @@ impl ProfileCalls {
         ProfileResponse::from_result(updated_profile)
     }
 
-    pub fn get_pinned_by_subject(subject: SubjectType) -> Vec<u64> {
+    pub fn get_pinned_by_subject(subject: SubjectType) -> Vec<SubjectResponse> {
         if let Ok((_, profile)) = ProfileStore::get(caller()) {
             return profile
                 .pinned
                 .iter()
                 .filter(|s| s.get_type() == subject)
-                .map(|s| s.get_id().clone())
+                .map(|s| Self::get_subject_response_by_subject(s))
                 .collect();
         }
         vec![]
@@ -342,6 +342,17 @@ impl ProfileCalls {
         let updated_profile = ProfileStore::update(caller(), profile);
 
         Ok(updated_profile.is_ok())
+    }
+
+    pub fn get_subject_response_by_subject(subject: &Subject) -> SubjectResponse {
+        match subject.clone() {
+            Subject::Group(id) => SubjectResponse::Group(GroupStore::get(id).ok()),
+            Subject::Event(id) => SubjectResponse::Event(EventStore::get(id).ok()),
+            Subject::Profile(id) => SubjectResponse::Profile(ProfileStore::get(id).ok()),
+            Subject::Member(id) => SubjectResponse::Member(MemberStore::get(id).ok()),
+            Subject::Attendee(id) => SubjectResponse::Attendee(AttendeeStore::get(id).ok()),
+            Subject::None => SubjectResponse::None,
+        }
     }
 }
 

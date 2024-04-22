@@ -13,7 +13,6 @@ use crate::{
 };
 use canister_types::models::{
     api_error::ApiError,
-    filter_type::FilterType,
     paged_response::PagedResponse,
     permission::PermissionType,
     report::{PostReport, ReportFilter, ReportResponse, ReportSort},
@@ -69,7 +68,7 @@ pub fn get_reports(
     limit: usize,
     page: usize,
     sort: ReportSort,
-    filters: Vec<FilterType<ReportFilter>>,
+    filters: Vec<ReportFilter>,
     group_id: u64,
 ) -> Result<PagedResponse<ReportResponse>, ApiError> {
     can_write(group_id, PermissionType::Group(None))?;

@@ -8,7 +8,7 @@ use canister_types::models::{
         EventNotificationType, GroupNotificationType, Notification, NotificationResponse,
         NotificationType, RelationNotificationType,
     },
-    user_notifications::{self, UserNotificationData, UserNotifications},
+    user_notifications::{UserNotificationData, UserNotifications},
     websocket_message::WSMessage,
 };
 use ic_cdk::caller;

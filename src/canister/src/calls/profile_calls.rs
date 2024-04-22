@@ -16,7 +16,7 @@ use canister_types::models::{
     friend_request::FriendRequestResponse,
     profile::{PostProfile, ProfileResponse, UpdateProfile},
     relation_type::RelationType,
-    subject::{Subject, SubjectType},
+    subject::{Subject, SubjectResponse, SubjectType},
     wallet::PostWallet,
 };
 use ic_cdk::{query, update};
@@ -199,7 +199,7 @@ pub fn remove_pinned(subject: Subject) -> Result<ProfileResponse, ApiError> {
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 #[query(guard = "has_access")]
-pub fn get_pinned_by_subject_type(subject_type: SubjectType) -> Vec<u64> {
+pub fn get_pinned_by_subject_type(subject_type: SubjectType) -> Vec<SubjectResponse> {
     ProfileCalls::get_pinned_by_subject(subject_type)
 }
 

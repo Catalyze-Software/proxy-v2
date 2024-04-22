@@ -20,7 +20,6 @@ pub fn __export_did_tmp_() -> String {
     use canister_types::models::api_error::*;
     use canister_types::models::attendee::*;
     use canister_types::models::event::*;
-    use canister_types::models::filter_type::*;
     use canister_types::models::friend_request::*;
     use canister_types::models::group::*;
     use canister_types::models::http_types::HttpRequest;

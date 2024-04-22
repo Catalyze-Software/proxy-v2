@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `get_incoming_friend_requests_with_profile` query call
 - Added `get_outgoing_friend_requests_with_profile` query call
 - Added `get_relations_with_profiles` query call
+- Added `SubjectResponse` to pass back reported objects
 
 ### Changed
 
@@ -26,6 +27,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - changed `get_boosts_by_subject` parameter from `subject: Subject` to `subject: SubjectType`
 - Change `get_notifications` response to `Vec<NotificationResponse>`
 - Change `get_unread_notifications` response to `Vec<NotificationResponse>`
+- Changed `Subject` on `ReportResponse` to `SubjectResponse` which passes back the reported object
+- changed `get_pinned_by_subject_type` response to `Vec<SubjectResponse>`
 
 ### Fixed
 
