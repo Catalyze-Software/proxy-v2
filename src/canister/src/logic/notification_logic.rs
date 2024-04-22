@@ -167,12 +167,12 @@ impl NotificationCalls {
             )) = notification.notification_type.clone()
             {
                 let notification_type = match is_accepted {
-                    true => GroupNotificationType::JoinGroupUserRequestAccept(
-                        invite_member_response.group_id,
-                    ),
-                    false => GroupNotificationType::JoinGroupUserRequestDecline(
-                        invite_member_response.group_id,
-                    ),
+                    true => {
+                        GroupNotificationType::JoinGroupUserRequestAccept(invite_member_response)
+                    }
+                    false => {
+                        GroupNotificationType::JoinGroupUserRequestDecline(invite_member_response)
+                    }
                 };
 
                 notification
@@ -228,12 +228,12 @@ impl NotificationCalls {
             )) = notification.notification_type.clone()
             {
                 let notification_type = match is_accepted {
-                    true => GroupNotificationType::JoinGroupOwnerRequestAccept(
-                        invite_member_response.group_id,
-                    ),
-                    false => GroupNotificationType::JoinGroupOwnerRequestDecline(
-                        invite_member_response.group_id,
-                    ),
+                    true => {
+                        GroupNotificationType::JoinGroupOwnerRequestAccept(invite_member_response)
+                    }
+                    false => {
+                        GroupNotificationType::JoinGroupOwnerRequestDecline(invite_member_response)
+                    }
                 };
 
                 notification
@@ -303,12 +303,12 @@ impl NotificationCalls {
             )) = notification.notification_type.clone()
             {
                 let notification_type = match is_accepted {
-                    true => EventNotificationType::JoinEventUserRequestAccept(
-                        invite_attendee_response.event_id,
-                    ),
-                    false => EventNotificationType::JoinEventUserRequestDecline(
-                        invite_attendee_response.event_id,
-                    ),
+                    true => {
+                        EventNotificationType::JoinEventUserRequestAccept(invite_attendee_response)
+                    }
+                    false => {
+                        EventNotificationType::JoinEventUserRequestDecline(invite_attendee_response)
+                    }
                 };
 
                 notification
@@ -346,12 +346,12 @@ impl NotificationCalls {
             )) = notification.notification_type.clone()
             {
                 let notification_type = match is_accepted {
-                    true => EventNotificationType::JoinEventOwnerRequestAccept(
-                        event_attendee_response.event_id,
-                    ),
-                    false => EventNotificationType::JoinEventOwnerRequestDecline(
-                        event_attendee_response.event_id,
-                    ),
+                    true => {
+                        EventNotificationType::JoinEventOwnerRequestAccept(event_attendee_response)
+                    }
+                    false => {
+                        EventNotificationType::JoinEventOwnerRequestDecline(event_attendee_response)
+                    }
                 };
 
                 notification

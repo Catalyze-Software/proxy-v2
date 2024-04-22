@@ -81,12 +81,12 @@ pub enum RelationNotificationType {
 pub enum GroupNotificationType {
     // user wants to join the group
     JoinGroupUserRequest(InviteMemberResponse),
-    JoinGroupUserRequestAccept(u64),
-    JoinGroupUserRequestDecline(u64),
+    JoinGroupUserRequestAccept(InviteMemberResponse),
+    JoinGroupUserRequestDecline(InviteMemberResponse),
     // group wants a user to join
     JoinGroupOwnerRequest(InviteMemberResponse),
-    JoinGroupOwnerRequestAccept(u64),
-    JoinGroupOwnerRequestDecline(u64),
+    JoinGroupOwnerRequestAccept(InviteMemberResponse),
+    JoinGroupOwnerRequestDecline(InviteMemberResponse),
 
     UserJoinGroup(u64),
     UserLeaveGroup(u64),
@@ -97,13 +97,13 @@ pub enum GroupNotificationType {
 pub enum EventNotificationType {
     // user wants to join the event
     JoinEventUserRequest(InviteAttendeeResponse),
-    JoinEventUserRequestAccept(u64),
-    JoinEventUserRequestDecline(u64),
+    JoinEventUserRequestAccept(InviteAttendeeResponse),
+    JoinEventUserRequestDecline(InviteAttendeeResponse),
 
     // Event wants a user to join
     JoinEventOwnerRequest(InviteAttendeeResponse),
-    JoinEventOwnerRequestAccept(u64),
-    JoinEventOwnerRequestDecline(u64),
+    JoinEventOwnerRequestAccept(InviteAttendeeResponse),
+    JoinEventOwnerRequestDecline(InviteAttendeeResponse),
 
     UserJoinEvent(u64),
     UserLeaveEvent(u64),
