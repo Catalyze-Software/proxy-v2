@@ -1,4 +1,6 @@
-use super::storage_api::{StorageMethods, CLEAR_MEMORY_ID, FRIEND_REQUEST, MEMORY_MANAGER};
+use super::storage_api::{
+    StorageMethods, FRIEND_REQUEST, FRIEND_REQUESTS_MEMORY_ID, MEMORY_MANAGER,
+};
 use canister_types::models::{api_error::ApiError, friend_request::FriendRequest};
 use ic_stable_structures::StableBTreeMap;
 
@@ -141,7 +143,7 @@ impl StorageMethods<u64, FriendRequest> for FriendRequestStore {
     fn clear() -> () {
         FRIEND_REQUEST.with(|n| {
             n.replace(StableBTreeMap::new(
-                MEMORY_MANAGER.with(|m| m.borrow().get(CLEAR_MEMORY_ID)),
+                MEMORY_MANAGER.with(|m| m.borrow().get(FRIEND_REQUESTS_MEMORY_ID)),
             ))
         });
     }

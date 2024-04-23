@@ -1,4 +1,6 @@
-use super::storage_api::{StorageMethods, CLEAR_MEMORY_ID, EVENT_ATTENDEES, MEMORY_MANAGER};
+use super::storage_api::{
+    StorageMethods, EVENT_ATTENDEES, EVENT_ATTENDEES_MEMORY_ID, MEMORY_MANAGER,
+};
 use canister_types::models::{api_error::ApiError, member_collection::MemberCollection};
 use ic_stable_structures::StableBTreeMap;
 
@@ -140,7 +142,7 @@ impl StorageMethods<u64, MemberCollection> for EventAttendeeStore {
     fn clear() -> () {
         EVENT_ATTENDEES.with(|n| {
             n.replace(StableBTreeMap::new(
-                MEMORY_MANAGER.with(|m| m.borrow().get(CLEAR_MEMORY_ID)),
+                MEMORY_MANAGER.with(|m| m.borrow().get(EVENT_ATTENDEES_MEMORY_ID)),
             ))
         });
     }

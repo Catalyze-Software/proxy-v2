@@ -1,4 +1,4 @@
-use super::storage_api::{StorageMethods, CLEAR_MEMORY_ID, EVENTS, MEMORY_MANAGER};
+use super::storage_api::{StorageMethods, EVENTS, EVENTS_MEMORY_ID, MEMORY_MANAGER};
 use canister_types::models::{api_error::ApiError, event::Event};
 use ic_stable_structures::StableBTreeMap;
 
@@ -141,7 +141,7 @@ impl StorageMethods<u64, Event> for EventStore {
     fn clear() -> () {
         EVENTS.with(|n| {
             n.replace(StableBTreeMap::new(
-                MEMORY_MANAGER.with(|m| m.borrow().get(CLEAR_MEMORY_ID)),
+                MEMORY_MANAGER.with(|m| m.borrow().get(EVENTS_MEMORY_ID)),
             ))
         });
     }

@@ -1,4 +1,4 @@
-use super::storage_api::{StorageMethods, CLEAR_MEMORY_ID, MEMORY_MANAGER, NOTIFICATIONS};
+use super::storage_api::{StorageMethods, MEMORY_MANAGER, NOTIFICATIONS, NOTIFICATIONS_MEMORY_ID};
 use canister_types::models::{api_error::ApiError, notification::Notification};
 use ic_stable_structures::StableBTreeMap;
 
@@ -140,7 +140,7 @@ impl StorageMethods<u64, Notification> for NotificationStore {
     fn clear() -> () {
         NOTIFICATIONS.with(|n| {
             n.replace(StableBTreeMap::new(
-                MEMORY_MANAGER.with(|m| m.borrow().get(CLEAR_MEMORY_ID)),
+                MEMORY_MANAGER.with(|m| m.borrow().get(NOTIFICATIONS_MEMORY_ID)),
             ))
         });
     }

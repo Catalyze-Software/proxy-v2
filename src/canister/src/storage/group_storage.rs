@@ -1,4 +1,4 @@
-use super::storage_api::{StorageMethods, CLEAR_MEMORY_ID, GROUPS, MEMORY_MANAGER};
+use super::storage_api::{StorageMethods, GROUPS, GROUPS_MEMORY_ID, MEMORY_MANAGER};
 use canister_types::models::{api_error::ApiError, group::Group};
 use ic_stable_structures::StableBTreeMap;
 
@@ -140,7 +140,7 @@ impl StorageMethods<u64, Group> for GroupStore {
     fn clear() -> () {
         GROUPS.with(|n| {
             n.replace(StableBTreeMap::new(
-                MEMORY_MANAGER.with(|m| m.borrow().get(CLEAR_MEMORY_ID)),
+                MEMORY_MANAGER.with(|m| m.borrow().get(GROUPS_MEMORY_ID)),
             ))
         });
     }

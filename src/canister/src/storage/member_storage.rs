@@ -1,6 +1,6 @@
 use super::storage_api::{
-    IdentifierRefMethods, PrincipalIdentifier, StorageMethods, CLEAR_MEMORY_ID, MEMBERS,
-    MEMBERS_IDENTIFIER_REF, MEMORY_MANAGER,
+    IdentifierRefMethods, PrincipalIdentifier, StorageMethods, MEMBERS, MEMBERS_IDENTIFIER_REF,
+    MEMBERS_MEMORY_ID, MEMORY_MANAGER,
 };
 use candid::Principal;
 use canister_types::models::{
@@ -222,7 +222,7 @@ impl StorageMethods<Principal, Member> for MemberStore {
     fn clear() -> () {
         MEMBERS.with(|n| {
             n.replace(StableBTreeMap::new(
-                MEMORY_MANAGER.with(|m| m.borrow().get(CLEAR_MEMORY_ID)),
+                MEMORY_MANAGER.with(|m| m.borrow().get(MEMBERS_MEMORY_ID)),
             ))
         });
     }
