@@ -7,7 +7,7 @@ use canister_types::models::{
 };
 use ic_stable_structures::{
     memory_manager::{MemoryId, MemoryManager, VirtualMemory},
-    Cell, DefaultMemoryImpl, StableBTreeMap,
+    DefaultMemoryImpl, StableBTreeMap,
 };
 use std::cell::RefCell;
 
@@ -39,7 +39,6 @@ static EVENT_ATTENDEES_MEMORY_ID: MemoryId = MemoryId::new(11);
 static GROUP_EVENTS_MEMORY_ID: MemoryId = MemoryId::new(12);
 
 static LOGS_MEMORY_ID: MemoryId = MemoryId::new(13);
-static LOGS_INDEX_MEMORY_ID: MemoryId = MemoryId::new(14);
 
 // TODO:
 /// The type of the key used in the user centric `StableBTreeMap` for the different stores.
@@ -137,10 +136,6 @@ thread_local! {
 
     pub static LOGS: StorageRef<u64, Logger> = RefCell::new(
         StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.borrow().get(LOGS_MEMORY_ID)))
-    );
-
-    pub static LOGS_INDEX: RefCell<Cell<u64, Memory>> = RefCell::new(
-        Cell::init(MEMORY_MANAGER.with(|p| p.borrow().get(LOGS_INDEX_MEMORY_ID)), 0).expect("Failed to init logs index")
     );
 
     // Collections for more performant lookup

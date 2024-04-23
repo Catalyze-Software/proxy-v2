@@ -8,7 +8,7 @@ pub type LogId = u64;
 impl_storable_for!(Logger);
 
 #[derive(Clone, CandidType, Deserialize, Debug)]
-pub struct Log {
+pub struct Logger {
     pub description: String,
     pub source: Option<String>,
     pub principal: Option<Principal>,
@@ -22,16 +22,6 @@ pub struct PostLog {
     pub description: String,
     pub source: Option<String>,
     pub data: Option<String>,
-}
-
-#[derive(Clone, CandidType, Deserialize, Debug)]
-pub struct Logger {
-    pub id: LogId,
-    pub description: String,
-    pub source: Option<String>,
-    pub principal: Option<Principal>,
-    pub data: Option<String>,
-    pub created_on: Timestamp,
 }
 
 #[derive(Clone, CandidType, Deserialize, Debug)]
@@ -51,7 +41,7 @@ pub enum LogType {
     Info,
 }
 
-impl Log {
+impl Logger {
     /// Create a new log from a post log
     /// # Arguments
     /// * `post_log` - The post log to create the log from
@@ -66,7 +56,7 @@ impl Log {
 
         let description = format!("[{}] {}", log_type, post_log.description);
 
-        Log {
+        Logger {
             description,
             source: post_log.source,
             data: post_log.data,
@@ -81,25 +71,12 @@ impl Log {
     /// # Returns
     /// * `Log` - The log created from the post log
     pub fn from_post_log_with_caller(post_log: PostLog) -> Self {
-        let post_log = Log::from_post_log(post_log);
+        let post_log = Logger::from_post_log(post_log);
         let principal = ic_cdk::caller();
 
-        Log {
+        Logger {
             principal: Some(principal),
             ..post_log
-        }
-    }
-}
-
-impl Logger {
-    pub fn from_log(id: LogId, log: Log) -> Self {
-        Logger {
-            id,
-            description: log.description,
-            source: log.source,
-            principal: log.principal,
-            data: log.data,
-            created_on: log.created_on,
         }
     }
 }
