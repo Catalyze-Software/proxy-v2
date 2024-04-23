@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+### Fixed
+
+### Removed
+
+## [0.1.4]
+
+### Added
+
 - Added `get_group_by_name` query call
 - Added `get_event_attendees_profiles_and_roles` query call
 - Added `get_event_invites_with_profiles` query call
