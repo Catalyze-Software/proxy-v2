@@ -160,6 +160,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Missing `notification_id` on migration models
 
+[0.1.4]: https://github.com/Catalyze-Software/proxy/compare/master...0.1.4
 [0.1.3]: https://github.com/Catalyze-Software/proxy/compare/master...0.1.3
 [0.1.2]: https://github.com/Catalyze-Software/proxy/compare/master...0.1.2
 [0.1.1]: https://github.com/Catalyze-Software/proxy/compare/master...0.1.1
