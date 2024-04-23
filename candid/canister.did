@@ -134,13 +134,13 @@ type EventFilter = variant {
 };
 type EventNotificationType = variant {
   UserJoinEvent : nat64;
-  JoinEventOwnerRequestDecline : nat64;
+  JoinEventOwnerRequestDecline : InviteAttendeeResponse;
   EventReminder : nat64;
-  JoinEventUserRequestAccept : nat64;
-  JoinEventOwnerRequestAccept : nat64;
+  JoinEventUserRequestAccept : InviteAttendeeResponse;
+  JoinEventOwnerRequestAccept : InviteAttendeeResponse;
   JoinEventOwnerRequest : InviteAttendeeResponse;
   JoinEventUserRequest : InviteAttendeeResponse;
-  JoinEventUserRequestDecline : nat64;
+  JoinEventUserRequestDecline : InviteAttendeeResponse;
   UserLeaveEvent : nat64;
 };
 type EventResponse = record {
@@ -227,12 +227,12 @@ type GroupNotificationType = variant {
   UserLeaveGroup : nat64;
   UserJoinGroup : nat64;
   JoinGroupUserRequest : InviteMemberResponse;
-  JoinGroupUserRequestDecline : nat64;
+  JoinGroupUserRequestDecline : InviteMemberResponse;
   JoinGroupOwnerRequest : InviteMemberResponse;
   GroupReminder : nat64;
-  JoinGroupOwnerRequestDecline : nat64;
-  JoinGroupUserRequestAccept : nat64;
-  JoinGroupOwnerRequestAccept : nat64;
+  JoinGroupOwnerRequestDecline : InviteMemberResponse;
+  JoinGroupUserRequestAccept : InviteMemberResponse;
+  JoinGroupOwnerRequestAccept : InviteMemberResponse;
 };
 type GroupResponse = record {
   id : nat64;
