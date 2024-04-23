@@ -1,3 +1,4 @@
+use candid::Principal;
 use canister_types::models::websocket_message::WSMessage;
 use ic_cdk::{query, update};
 use ic_websocket_cdk::{
@@ -5,6 +6,8 @@ use ic_websocket_cdk::{
     CanisterWsGetMessagesResult, CanisterWsMessageArguments, CanisterWsMessageResult,
     CanisterWsOpenArguments, CanisterWsOpenResult,
 };
+
+use crate::logic::websocket_logic::Websocket;
 
 #[update]
 fn ws_open(args: CanisterWsOpenArguments) -> CanisterWsOpenResult {
@@ -32,4 +35,9 @@ fn ws_get_messages(args: CanisterWsGetMessagesArguments) -> CanisterWsGetMessage
 #[query]
 fn _expose() -> Option<WSMessage> {
     None
+}
+
+#[query]
+fn get_connected_clients() -> Vec<Principal> {
+    Websocket::get_connected_clients()
 }

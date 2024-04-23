@@ -1,5 +1,6 @@
-use super::storage_api::{StorageMethods, EVENTS};
+use super::storage_api::{StorageMethods, EVENTS, EVENTS_MEMORY_ID, MEMORY_MANAGER};
 use canister_types::models::{api_error::ApiError, event::Event};
+use ic_stable_structures::StableBTreeMap;
 
 pub struct EventStore;
 
@@ -134,5 +135,14 @@ impl StorageMethods<u64, Event> for EventStore {
     /// # Note
     fn remove(key: u64) -> bool {
         EVENTS.with(|data| data.borrow_mut().remove(&key).is_some())
+    }
+
+    /// Clear all attendees
+    fn clear() -> () {
+        EVENTS.with(|n| {
+            n.replace(StableBTreeMap::new(
+                MEMORY_MANAGER.with(|m| m.borrow().get(EVENTS_MEMORY_ID)),
+            ))
+        });
     }
 }

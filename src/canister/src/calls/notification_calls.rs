@@ -1,22 +1,18 @@
 use canister_types::models::{
-    api_error::ApiError, notification::Notification, user_notifications::UserNotificationData,
+    api_error::ApiError, notification::NotificationResponse,
+    user_notifications::UserNotificationData,
 };
 use ic_cdk::{caller, query, update};
 
 use crate::logic::notification_logic::NotificationCalls;
 
 #[query]
-fn get_notifications() -> Vec<(u64, Notification)> {
+fn get_notifications() -> Vec<NotificationResponse> {
     NotificationCalls::get_user_notifications(caller())
 }
 
 #[query]
-fn get_user_notifications() -> Vec<(u64, Notification)> {
-    NotificationCalls::get_user_notifications(caller())
-}
-
-#[query]
-fn get_unread_notifications() -> Vec<(u64, Notification)> {
+fn get_unread_notifications() -> Vec<NotificationResponse> {
     NotificationCalls::get_user_unread_notifications(caller())
 }
 
@@ -30,5 +26,5 @@ fn mark_notifications_as_read(
 
 #[update]
 fn remove_notifications(ids: Vec<u64>) -> Vec<(u64, UserNotificationData)> {
-    NotificationCalls::remove_notifications(caller(), ids)
+    NotificationCalls::remove_user_notifications(caller(), ids)
 }

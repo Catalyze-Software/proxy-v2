@@ -18,25 +18,25 @@ pub type Memory = VirtualMemory<DefaultMemoryImpl>;
 /// These IDs are used to identify the different stores in the `MemoryManager`.
 /// # Warning
 /// These IDs should not be changed. New IDs should be added to the end of the list
-static PROFILES_MEMORY_ID: MemoryId = MemoryId::new(0);
+pub static PROFILES_MEMORY_ID: MemoryId = MemoryId::new(0);
 
-static GROUPS_MEMORY_ID: MemoryId = MemoryId::new(1);
-static MEMBERS_MEMORY_ID: MemoryId = MemoryId::new(2);
+pub static GROUPS_MEMORY_ID: MemoryId = MemoryId::new(1);
+pub static MEMBERS_MEMORY_ID: MemoryId = MemoryId::new(2);
 
-static EVENTS_MEMORY_ID: MemoryId = MemoryId::new(3);
-static ATTENDEES_MEMORY_ID: MemoryId = MemoryId::new(4);
+pub static EVENTS_MEMORY_ID: MemoryId = MemoryId::new(3);
+pub static ATTENDEES_MEMORY_ID: MemoryId = MemoryId::new(4);
 
-static REPORTS_MEMORY_ID: MemoryId = MemoryId::new(5);
+pub static REPORTS_MEMORY_ID: MemoryId = MemoryId::new(5);
 
-static NOTIFICATIONS_MEMORY_ID: MemoryId = MemoryId::new(6);
-static USER_NOTIFICATIONS_MEMORY_ID: MemoryId = MemoryId::new(7);
+pub static NOTIFICATIONS_MEMORY_ID: MemoryId = MemoryId::new(6);
+pub static USER_NOTIFICATIONS_MEMORY_ID: MemoryId = MemoryId::new(7);
 
-static FRIEND_REQUESTS_MEMORY_ID: MemoryId = MemoryId::new(8);
-static BOOSTED_MEMORY_ID: MemoryId = MemoryId::new(9);
+pub static FRIEND_REQUESTS_MEMORY_ID: MemoryId = MemoryId::new(8);
+pub static BOOSTED_MEMORY_ID: MemoryId = MemoryId::new(9);
 
-static GROUP_MEMBERS_MEMORY_ID: MemoryId = MemoryId::new(10);
-static EVENT_ATTENDEES_MEMORY_ID: MemoryId = MemoryId::new(11);
-static GROUP_EVENTS_MEMORY_ID: MemoryId = MemoryId::new(12);
+pub static GROUP_MEMBERS_MEMORY_ID: MemoryId = MemoryId::new(10);
+pub static EVENT_ATTENDEES_MEMORY_ID: MemoryId = MemoryId::new(11);
+pub static GROUP_EVENTS_MEMORY_ID: MemoryId = MemoryId::new(12);
 
 static LOGS_MEMORY_ID: MemoryId = MemoryId::new(13);
 
@@ -74,6 +74,7 @@ pub trait StorageMethods<K, V> {
     fn insert_by_key(key: K, entity: V) -> Result<(K, V), ApiError>;
     fn update(id: K, entity: V) -> Result<(K, V), ApiError>;
     fn remove(id: K) -> bool;
+    fn clear() -> ();
 }
 
 /// A trait for the identifier reference maps.

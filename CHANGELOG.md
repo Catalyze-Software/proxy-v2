@@ -9,8 +9,63 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+### Fixed
+
+- Fix store clearing
+
+### Removed
+
+## [0.1.4]
+
+### Added
+
+- Added `get_group_by_name` query call
+- Added `get_event_attendees_profiles_and_roles` query call
+- Added `get_event_invites_with_profiles` query call
+- Added `get_group_members_with_profiles` query call
+- Added `get_group_member_with_profile` query call
+- Added `get_group_invites_with_profiles` query call
+- Added `get_incoming_friend_requests_with_profile` query call
+- Added `get_outgoing_friend_requests_with_profile` query call
+- Added `get_relations_with_profiles` query call
+- Added `SubjectResponse` to pass back reported objects
+- Added `clear` methods to the stores
+- added `_dev_clear_notifications` to clear the notifications from the frontend
+
+### Changed
+
+- Changed `get_boosted_groups` response from `Vec<(u64, Boost)>` to `Vec<GroupResponse>`
+- Changed `get_boosted_events` response from `Vec<(u64, Boost)>` to `Vec<EventResponse>`
+- changed `get_boosts_by_subject` parameter from `subject: Subject` to `subject: SubjectType`
+- Change `get_notifications` response to `Vec<NotificationResponse>`
+- Change `get_unread_notifications` response to `Vec<NotificationResponse>`
+- Changed `Subject` on `ReportResponse` to `SubjectResponse` which passes back the reported object
+- changed `get_pinned_by_subject_type` response to `Vec<SubjectResponse>`
+- Changed `GroupNotificationType` `JoinGroupUserRequestAccept` and `JoinGroupUserRequestDecline` to return `InviteMemberResponse`
+- Changed `GroupNotificationType` `JoinGroupOwnerRequestAccept` and `JoinGroupUserRequestDecline` to return `InviteMemberResponse`
+- Changed `EventNotificationType` `JoinEventUserRequestAccept` and `JoinEventUserRequestDecline` to return `InviteAttendeeResponse`
+- Changed `EventNotificationType` `JoinEventOwnerRequestAccept` and `JoinEventUserRequestDecline` to return `InviteAttendeeResponse`
+
+### Fixed
+
+- Fixed `get_unread_notifications` which returned all notifications
+
+### Removed
+
+## [0.1.3]
+
+### Added
+
 - Added `GroupMemberStore` to improve lookup performance
+- Added `GroupMemberStore` initialization when creating a new group
+- Added `GroupEventStore` initialization when creating a new group
+- Added `UserNotifications` initialization when creating a new profile
+-
 - Added `EventAttendeeStore` to improve loopup performance
+- Added `EventAttendeeStore` initialization when creating a new event
+-
 - Added `MemberCollection` struct for usage in `GroupMemberStore` and `EventAttendeeStore`
 
 - Added `GroupEventStore` to improve lookup performance
@@ -20,14 +75,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- non-silent notification now return a `NotificationResponse` instead of a `Notification`
-- changed silent notification logic where the `silent: bool` is replaced with an `Option<notification_id>`
+- Notification now return a `NotificationResponse` which hold additional metadata instead of a `Notification`
+- Change `id: u64` to `id: Option<u64>` in `NotificationResponse` where a non-set `id` means a silent notification
+- change `FriendRequest` enum value from `FriendRequest` to `FriendRequestResponse`
+- change `JoinEventUserRequest` enum value from `u64` to `InviteAttendeeResponse`
+- change `JoinEventOwnerRequest` enum value from `u64` to `InviteAttendeeResponse`
+- change `JoinGroupUserRequest` enum value from `u64` to `InviteMemberResponse`
+- change `JoinGroupOwnerRequest` enum value from `u64` to `InviteMemberResponse`
+- change `FriendRequestAccept` enum value from `u64` to `FriendRequestResponse`
+- change `FriendRequestDecline` enum value from `u64` to `FriendRequestResponse`
+- change `remove_notifications` to `remove_user_notifications` from `NotificationCalls`
 
 ### Fixed
 
 - Fixed `event_count` and `member_count` by usage of the new stores
 
 ### Removed
+
+- Removed `SilentNotification` and `SendSilentNotification` from `NotificationType` enum
+- Removed `get_user_notifications` query call
 
 ## [0.1.2]
 
@@ -94,6 +160,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Missing `notification_id` on migration models
 
+[0.1.4]: https://github.com/Catalyze-Software/proxy/compare/master...0.1.4
+[0.1.3]: https://github.com/Catalyze-Software/proxy/compare/master...0.1.3
 [0.1.2]: https://github.com/Catalyze-Software/proxy/compare/master...0.1.2
 [0.1.1]: https://github.com/Catalyze-Software/proxy/compare/master...0.1.1
 [0.1.0]: https://github.com/Catalyze-Software/proxy/releases/tag/0.1.0

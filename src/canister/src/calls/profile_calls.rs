@@ -16,7 +16,7 @@ use canister_types::models::{
     friend_request::FriendRequestResponse,
     profile::{PostProfile, ProfileResponse, UpdateProfile},
     relation_type::RelationType,
-    subject::{Subject, SubjectType},
+    subject::{Subject, SubjectResponse, SubjectType},
     wallet::PostWallet,
 };
 use ic_cdk::{query, update};
@@ -199,7 +199,7 @@ pub fn remove_pinned(subject: Subject) -> Result<ProfileResponse, ApiError> {
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 #[query(guard = "has_access")]
-pub fn get_pinned_by_subject_type(subject_type: SubjectType) -> Vec<u64> {
+pub fn get_pinned_by_subject_type(subject_type: SubjectType) -> Vec<SubjectResponse> {
     ProfileCalls::get_pinned_by_subject(subject_type)
 }
 
@@ -259,6 +259,17 @@ pub fn get_incoming_friend_requests() -> Vec<FriendRequestResponse> {
     FriendRequestCalls::get_incoming_friend_requests()
 }
 
+/// Gets the friend requests that are addressed to the caller with the corresponding profile - [`[query]`](query)
+/// # Returns
+/// * `Vec<(FriendRequestResponse, ProfileResponse)>` - The friend requests that were found
+/// # Note
+/// This function is guarded by the [`has_access`](has_access) function.
+#[query(guard = "has_access")]
+pub fn get_incoming_friend_requests_with_profile() -> Vec<(FriendRequestResponse, ProfileResponse)>
+{
+    FriendRequestCalls::get_incoming_friend_requests_with_profile()
+}
+
 /// Gets the friend requests that are send by the caller - [`[query]`](query)
 /// # Returns
 /// * `Vec<FriendRequestResponse>` - The friend requests that were found
@@ -267,6 +278,17 @@ pub fn get_incoming_friend_requests() -> Vec<FriendRequestResponse> {
 #[query(guard = "has_access")]
 pub fn get_outgoing_friend_requests() -> Vec<FriendRequestResponse> {
     FriendRequestCalls::get_outgoing_friend_requests()
+}
+
+/// Gets the friend requests that are send to the caller with the corresponding profile - [`[query]`](query)
+/// # Returns
+/// * `Vec<(FriendRequestResponse, ProfileResponse)>` - The friend requests that were found
+/// # Note
+/// This function is guarded by the [`has_access`](has_access) function.
+#[query(guard = "has_access")]
+pub fn get_outgoing_friend_requests_with_profile() -> Vec<(FriendRequestResponse, ProfileResponse)>
+{
+    FriendRequestCalls::get_outgoing_friend_requests_with_profile()
 }
 
 /// Decline a friend request that is addressed to the caller - [`[update]`](update)
@@ -337,6 +359,18 @@ pub fn unblock_user(principal: Principal) -> Result<ProfileResponse, ApiError> {
 #[query(guard = "has_access")]
 pub fn get_relations(relation_type: RelationType) -> Vec<Principal> {
     ProfileCalls::get_relations(relation_type)
+}
+
+/// Get the current relation profiles for the caller based on the relation type - [`[query]`](query)
+/// # Arguments
+/// * `relation_type` - The relation type to get the relation for `friend` or `blocked`
+/// # Returns
+/// * `Vec<ProfileResponse>` - The principals of the relations
+/// # Note
+/// This function is guarded by the [`has_access`](has_access) function.
+#[query(guard = "has_access")]
+pub fn get_relations_with_profiles(relation_type: RelationType) -> Vec<ProfileResponse> {
+    ProfileCalls::get_relations_with_profiles(relation_type)
 }
 
 /// Get the current relation count for the caller based on the relation type - [`[query]`](query)

@@ -5,6 +5,7 @@
       "package": "canister",
       "candid": "candid/canister.did",
       "wasm": "wasm/canister.wasm.gz",
+      "optimize": "O3",
       "build": [
         "bash scripts/build.sh"
       ]

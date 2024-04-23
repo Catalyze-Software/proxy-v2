@@ -1,5 +1,6 @@
-use super::storage_api::{StorageMethods, REPORTS};
+use super::storage_api::{StorageMethods, MEMORY_MANAGER, REPORTS, REPORTS_MEMORY_ID};
 use canister_types::models::{api_error::ApiError, report::Report};
+use ic_stable_structures::StableBTreeMap;
 
 pub struct ReportStore;
 
@@ -134,5 +135,14 @@ impl StorageMethods<u64, Report> for ReportStore {
     /// # Note
     fn remove(key: u64) -> bool {
         REPORTS.with(|data| data.borrow_mut().remove(&key).is_some())
+    }
+
+    /// Clear all attendees
+    fn clear() -> () {
+        REPORTS.with(|n| {
+            n.replace(StableBTreeMap::new(
+                MEMORY_MANAGER.with(|m| m.borrow().get(REPORTS_MEMORY_ID)),
+            ))
+        });
     }
 }

@@ -1,5 +1,6 @@
-use super::storage_api::{StorageMethods, GROUPS};
+use super::storage_api::{StorageMethods, GROUPS, GROUPS_MEMORY_ID, MEMORY_MANAGER};
 use canister_types::models::{api_error::ApiError, group::Group};
+use ic_stable_structures::StableBTreeMap;
 
 pub struct GroupStore;
 
@@ -131,8 +132,16 @@ impl StorageMethods<u64, Group> for GroupStore {
     /// * `key` - The key of the group to remove
     /// # Returns
     /// * `bool` - True if the group was removed, otherwise false
-    /// # Note
     fn remove(key: u64) -> bool {
         GROUPS.with(|data| data.borrow_mut().remove(&key).is_some())
+    }
+
+    /// Clear all attendees
+    fn clear() -> () {
+        GROUPS.with(|n| {
+            n.replace(StableBTreeMap::new(
+                MEMORY_MANAGER.with(|m| m.borrow().get(GROUPS_MEMORY_ID)),
+            ))
+        });
     }
 }

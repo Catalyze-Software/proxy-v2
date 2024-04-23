@@ -1,5 +1,6 @@
 use super::storage_api::{
-    IdentifierRefMethods, PrincipalIdentifier, StorageMethods, PROFILES, PROFILES_IDENTIFIER_REF,
+    IdentifierRefMethods, PrincipalIdentifier, StorageMethods, MEMORY_MANAGER, PROFILES,
+    PROFILES_IDENTIFIER_REF, PROFILES_MEMORY_ID,
 };
 use candid::Principal;
 use canister_types::models::{
@@ -8,6 +9,7 @@ use canister_types::models::{
     profile::Profile,
 };
 use ic_cdk::caller;
+use ic_stable_structures::StableBTreeMap;
 
 pub struct ProfileStore;
 
@@ -212,5 +214,14 @@ impl StorageMethods<Principal, Profile> for ProfileStore {
     /// # Note
     fn remove(key: Principal) -> bool {
         PROFILES.with(|data| data.borrow_mut().remove(&key).is_some())
+    }
+
+    /// Clear all attendees
+    fn clear() -> () {
+        PROFILES.with(|n| {
+            n.replace(StableBTreeMap::new(
+                MEMORY_MANAGER.with(|m| m.borrow().get(PROFILES_MEMORY_ID)),
+            ))
+        });
     }
 }

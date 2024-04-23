@@ -1,9 +1,9 @@
 use candid::Principal;
 use canister_types::models::{
     api_error::ApiError,
-    attendee::AttendeeInvite,
-    friend_request::FriendRequest,
-    member::MemberInvite,
+    attendee::{AttendeeInvite, InviteAttendeeResponse},
+    friend_request::{FriendRequest, FriendRequestResponse},
+    member::{InviteMemberResponse, MemberInvite},
     notification::{
         EventNotificationType, GroupNotificationType, Notification, NotificationResponse,
         NotificationType, RelationNotificationType,
@@ -23,7 +23,9 @@ impl NotificationCalls {
     // Friend request notifications
 
     /// stores + sends notification
-    pub fn notification_add_friend_request(friend_request: FriendRequest) -> Result<u64, ApiError> {
+    pub fn notification_add_friend_request(
+        friend_request: FriendRequestResponse,
+    ) -> Result<u64, ApiError> {
         let (notification_id, notification) = Self::add_notification(
             vec![friend_request.to.clone()],
             NotificationType::Relation(RelationNotificationType::FriendRequest(
@@ -42,7 +44,7 @@ impl NotificationCalls {
         is_accepted: bool,
     ) -> Result<(), ApiError> {
         // get the associated friend request
-        let (friend_request_id, friend_request) = friend_request_data;
+        let (_, friend_request) = friend_request_data;
 
         // check if the notification exists
         if let Some(notification_id) = friend_request.notification_id {
@@ -55,8 +57,8 @@ impl NotificationCalls {
             {
                 // mark the notification as accepted, this also marks it as not actionable
                 let notification_type = match is_accepted {
-                    true => RelationNotificationType::FriendRequestAccept(friend_request_id),
-                    false => RelationNotificationType::FriendRequestDecline(friend_request_id),
+                    true => RelationNotificationType::FriendRequestAccept(friend_request.clone()),
+                    false => RelationNotificationType::FriendRequestDecline(friend_request.clone()),
                 };
                 notification
                     .mark_as_accepted(is_accepted, NotificationType::Relation(notification_type));
@@ -122,14 +124,29 @@ impl NotificationCalls {
         }
     }
 
+    pub fn notification_leave_group(receivers: Vec<Principal>, group_id: u64) -> () {
+        for receiver in receivers {
+            Self::send_notification(
+                None,
+                Notification::new(
+                    NotificationType::Group(GroupNotificationType::UserLeaveGroup(group_id)),
+                    false,
+                ),
+                receiver,
+            );
+        }
+    }
+
     // stores + sends notification
     pub fn notification_user_join_request_group(
         receivers: Vec<Principal>,
-        group_id: u64,
+        invite_member_response: InviteMemberResponse,
     ) -> Result<u64, ApiError> {
         let (notification_id, _) = Self::add_and_send_notification(
             receivers,
-            NotificationType::Group(GroupNotificationType::JoinGroupUserRequest(group_id)),
+            NotificationType::Group(GroupNotificationType::JoinGroupUserRequest(
+                invite_member_response,
+            )),
             true,
         )?;
 
@@ -145,12 +162,17 @@ impl NotificationCalls {
         if let Some(notification_id) = invite.notification_id {
             let (_, mut notification) = NotificationStore::get(notification_id)?;
 
-            if let NotificationType::Group(GroupNotificationType::JoinGroupUserRequest(group_id)) =
-                notification.notification_type.clone()
+            if let NotificationType::Group(GroupNotificationType::JoinGroupUserRequest(
+                invite_member_response,
+            )) = notification.notification_type.clone()
             {
                 let notification_type = match is_accepted {
-                    true => GroupNotificationType::JoinGroupUserRequestAccept(group_id),
-                    false => GroupNotificationType::JoinGroupUserRequestDecline(group_id),
+                    true => {
+                        GroupNotificationType::JoinGroupUserRequestAccept(invite_member_response)
+                    }
+                    false => {
+                        GroupNotificationType::JoinGroupUserRequestDecline(invite_member_response)
+                    }
                 };
 
                 notification
@@ -179,11 +201,13 @@ impl NotificationCalls {
     // stores + sends notification
     pub fn notification_owner_join_request_group(
         invitee_principal: Principal,
-        group_id: u64,
+        invite_member_response: InviteMemberResponse,
     ) -> Result<u64, ApiError> {
         let (notification_id, _) = Self::add_and_send_notification(
             vec![invitee_principal],
-            NotificationType::Group(GroupNotificationType::JoinGroupOwnerRequest(group_id)),
+            NotificationType::Group(GroupNotificationType::JoinGroupOwnerRequest(
+                invite_member_response,
+            )),
             true,
         )?;
 
@@ -199,12 +223,17 @@ impl NotificationCalls {
         if let Some(notification_id) = invite.notification_id {
             let (_, mut notification) = NotificationStore::get(notification_id)?;
 
-            if let NotificationType::Group(GroupNotificationType::JoinGroupOwnerRequest(group_id)) =
-                notification.notification_type.clone()
+            if let NotificationType::Group(GroupNotificationType::JoinGroupOwnerRequest(
+                invite_member_response,
+            )) = notification.notification_type.clone()
             {
                 let notification_type = match is_accepted {
-                    true => GroupNotificationType::JoinGroupOwnerRequestAccept(group_id),
-                    false => GroupNotificationType::JoinGroupOwnerRequestDecline(group_id),
+                    true => {
+                        GroupNotificationType::JoinGroupOwnerRequestAccept(invite_member_response)
+                    }
+                    false => {
+                        GroupNotificationType::JoinGroupOwnerRequestDecline(invite_member_response)
+                    }
                 };
 
                 notification
@@ -247,11 +276,13 @@ impl NotificationCalls {
     // store + sends notification
     pub fn notification_user_join_request_event(
         receivers: Vec<Principal>,
-        event_id: u64,
+        invite_attendee_response: InviteAttendeeResponse,
     ) -> Result<u64, ApiError> {
         let (notification_id, _) = Self::add_and_send_notification(
             receivers,
-            NotificationType::Event(EventNotificationType::JoinEventUserRequest(event_id)),
+            NotificationType::Event(EventNotificationType::JoinEventUserRequest(
+                invite_attendee_response,
+            )),
             true,
         )?;
 
@@ -267,12 +298,17 @@ impl NotificationCalls {
         if let Some(notification_id) = invite.notification_id {
             let (_, mut notification) = NotificationStore::get(notification_id)?;
 
-            if let NotificationType::Event(EventNotificationType::JoinEventUserRequest(group_id)) =
-                notification.notification_type.clone()
+            if let NotificationType::Event(EventNotificationType::JoinEventUserRequest(
+                invite_attendee_response,
+            )) = notification.notification_type.clone()
             {
                 let notification_type = match is_accepted {
-                    true => EventNotificationType::JoinEventUserRequestAccept(group_id),
-                    false => EventNotificationType::JoinEventUserRequestDecline(group_id),
+                    true => {
+                        EventNotificationType::JoinEventUserRequestAccept(invite_attendee_response)
+                    }
+                    false => {
+                        EventNotificationType::JoinEventUserRequestDecline(invite_attendee_response)
+                    }
                 };
 
                 notification
@@ -305,12 +341,17 @@ impl NotificationCalls {
         if let Some(notification_id) = invite.notification_id {
             let (_, mut notification) = NotificationStore::get(notification_id)?;
 
-            if let NotificationType::Group(GroupNotificationType::JoinGroupOwnerRequest(event_id)) =
-                notification.notification_type.clone()
+            if let NotificationType::Event(EventNotificationType::JoinEventOwnerRequest(
+                event_attendee_response,
+            )) = notification.notification_type.clone()
             {
                 let notification_type = match is_accepted {
-                    true => EventNotificationType::JoinEventOwnerRequestAccept(event_id),
-                    false => EventNotificationType::JoinEventOwnerRequestDecline(event_id),
+                    true => {
+                        EventNotificationType::JoinEventOwnerRequestAccept(event_attendee_response)
+                    }
+                    false => {
+                        EventNotificationType::JoinEventOwnerRequestDecline(event_attendee_response)
+                    }
                 };
 
                 notification
@@ -337,11 +378,13 @@ impl NotificationCalls {
     // stores + sends notification
     pub fn notification_owner_join_request_event(
         invitee_principal: Principal,
-        event_id: u64,
+        invite_attendee_response: InviteAttendeeResponse,
     ) -> Result<u64, ApiError> {
         let (notification_id, _) = Self::add_and_send_notification(
             vec![invitee_principal],
-            NotificationType::Event(EventNotificationType::JoinEventOwnerRequest(event_id)),
+            NotificationType::Event(EventNotificationType::JoinEventOwnerRequest(
+                invite_attendee_response,
+            )),
             true,
         )?;
 
@@ -349,20 +392,37 @@ impl NotificationCalls {
     }
 
     // sends notification
-    pub fn get_user_unread_notifications(principal: Principal) -> Vec<(u64, Notification)> {
-        let (_, unread_notification_ids) = UsernotificationStore::get(principal)
-            .unwrap_or((Principal::anonymous(), UserNotifications::new()));
-        NotificationStore::get_many(unread_notification_ids.ids())
+    pub fn get_user_unread_notifications(principal: Principal) -> Vec<NotificationResponse> {
+        let user_notifications = Self::get_user_notification_ids(principal);
+        NotificationStore::get_many(user_notifications.get_unread_ids())
+            .iter()
+            .map(|(id, data)| {
+                NotificationResponse::new(Some(*id), data.clone(), user_notifications.get(id))
+            })
+            .collect()
     }
 
-    pub fn get_user_notification_ids(principal: Principal) -> Vec<u64> {
-        let (_, notification_ids) =
+    pub fn get_user_notification_ids(principal: Principal) -> UserNotifications {
+        let (_, notifications) =
             UsernotificationStore::get(principal).unwrap_or((principal, UserNotifications::new()));
-        notification_ids.ids()
+        notifications
     }
 
-    pub fn get_user_notifications(principal: Principal) -> Vec<(u64, Notification)> {
-        NotificationStore::get_many(Self::get_user_notification_ids(principal))
+    pub fn get_user_notifications(principal: Principal) -> Vec<NotificationResponse> {
+        let user_notifications = Self::get_user_notification_ids(principal);
+        let notifications = NotificationStore::get_many(user_notifications.ids());
+
+        let mut notification_responses: Vec<NotificationResponse> = vec![];
+
+        for (notification_id, notification_data) in notifications {
+            notification_responses.push(NotificationResponse::new(
+                Some(notification_id),
+                notification_data,
+                user_notifications.get(&notification_id),
+            ));
+        }
+
+        notification_responses
     }
 
     pub fn mark_notifications_as_read(
@@ -375,7 +435,7 @@ impl NotificationCalls {
         Ok(user_notifications.to_vec())
     }
 
-    pub fn remove_notifications(
+    pub fn remove_user_notifications(
         principal: Principal,
         ids: Vec<u64>,
     ) -> Vec<(u64, UserNotificationData)> {
@@ -397,6 +457,7 @@ impl NotificationCalls {
         // store the new notification in the notification store
         let (new_notification_id, new_notification) = NotificationStore::insert(notification)?;
 
+        // TODO: disabled for now, because of Selami
         // add the notification reference to the user's notifications
         if let Ok((_, mut caller_notifications)) = UsernotificationStore::get(caller()) {
             caller_notifications.add(new_notification_id.clone(), false, true);
@@ -409,7 +470,7 @@ impl NotificationCalls {
 
         // send the notification to the receivers
         for receiver in receivers {
-            if let Ok((_, mut notifications)) = UsernotificationStore::get(caller()) {
+            if let Ok((_, mut notifications)) = UsernotificationStore::get(receiver) {
                 notifications.add(new_notification_id.clone(), false, true);
                 let _ = UsernotificationStore::update(receiver, notifications);
             } else {
@@ -428,16 +489,14 @@ impl NotificationCalls {
         notification: Notification,
         receiver: Principal,
     ) -> () {
+        let (_, user_notifications) = UsernotificationStore::get(receiver)
+            .unwrap_or((Principal::anonymous(), UserNotifications::new()));
+
         match notification_id {
             Some(notification_id) => {
-                // Loud
-                let (_, user_notifications) = UsernotificationStore::get(receiver)
-                    .unwrap_or((Principal::anonymous(), UserNotifications::new()));
-
                 let user_notification_data = user_notifications.get(&notification_id);
-
                 let notification_response = NotificationResponse::new(
-                    notification_id,
+                    Some(notification_id),
                     notification,
                     user_notification_data,
                 );
@@ -448,8 +507,10 @@ impl NotificationCalls {
                 );
             }
             None => {
-                // Silent
-                Websocket::send_message(receiver, WSMessage::SilentNotification(notification));
+                Websocket::send_message(
+                    receiver,
+                    WSMessage::Notification(NotificationResponse::new(None, notification, None)),
+                );
             }
         }
     }
@@ -477,7 +538,7 @@ impl NotificationCalls {
 
         // send the notification to the receivers
         for receiver in receivers {
-            if let Ok((_, mut notifications)) = UsernotificationStore::get(caller()) {
+            if let Ok((_, mut notifications)) = UsernotificationStore::get(receiver) {
                 notifications.add(new_notification_id.clone(), false, true);
                 let _ = UsernotificationStore::update(receiver, notifications);
             } else {

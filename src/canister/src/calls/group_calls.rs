@@ -22,6 +22,7 @@ use canister_types::models::{
     member::{InviteMemberResponse, JoinedMemberResponse, Member},
     paged_response::PagedResponse,
     permission::{PermissionType, PostPermission},
+    profile::ProfileResponse,
     role::Role,
 };
 use ic_cdk::{query, update};
@@ -56,6 +57,20 @@ pub async fn add_group(
 #[query]
 pub fn get_group(group_id: u64) -> Result<GroupResponse, ApiError> {
     GroupCalls::get_group(group_id)
+}
+
+/// Get a group by name - [`[query]`](query)
+/// # Arguments
+/// * `name` - The name of the group
+/// # Returns
+/// * `GroupResponse` - The group
+/// # Errors
+/// * `ApiError` - If something went wrong while getting the group
+/// # Note
+/// This function is guarded by the [`has_access`](has_access) function.
+#[query]
+pub fn get_group_by_name(name: String) -> Result<GroupResponse, ApiError> {
+    GroupCalls::get_group_by_name(name)
 }
 
 /// Get groups - [`[query]`](query)
@@ -409,6 +424,22 @@ pub fn get_group_member(
     GroupCalls::get_group_member(member_principal, group_id)
 }
 
+/// Get the member entry and profile of a specific group member - [`[query]`](query)
+/// # Arguments
+/// * `group_id` - The identifier of the group
+/// * `member_principal` - The principal of the group member
+/// # Returns
+/// * `(JoinedMemberResponse, ProfileResponse)` - The member entry and profile
+/// # Errors
+/// * `ApiError` - If something went wrong while getting the member entry
+#[query]
+pub fn get_group_member_with_profile(
+    group_id: u64,
+    member_principal: Principal,
+) -> Result<(JoinedMemberResponse, ProfileResponse), ApiError> {
+    GroupCalls::get_group_member_with_profile(member_principal, group_id)
+}
+
 /// Get the groups for specific members - [`[query]`](query)
 /// # Arguments
 /// * `member_principals` - The principals of the members
@@ -434,6 +465,22 @@ pub fn get_groups_for_members(member_principals: Vec<Principal>) -> Vec<JoinedMe
 pub fn get_group_members(group_id: u64) -> Result<Vec<JoinedMemberResponse>, ApiError> {
     // can_read(group_id, PermissionType::Group(None))?;
     GroupCalls::get_group_members(group_id)
+}
+
+/// Get the group members for a specific group - [`[query]`](query)
+/// # Arguments
+/// * `group_id` - The identifier of the group
+/// # Returns
+/// * `Vec<(JoinedMemberResponse, ProfileResponse)` - The group members with profiles
+/// # Errors
+/// * `ApiError` - If something went wrong while getting the group members
+/// # Note
+/// This function is guarded by the [`has_access`](has_access) function.
+#[query(guard = "has_access")]
+pub fn get_group_members_with_profiles(
+    group_id: u64,
+) -> Result<Vec<(JoinedMemberResponse, ProfileResponse)>, ApiError> {
+    GroupCalls::get_group_members_with_profiles(group_id)
 }
 
 /// Get the caller member entry - [`[query]`](query)
@@ -556,4 +603,22 @@ pub fn remove_member_invite_from_group(
 pub fn get_group_invites(group_id: u64) -> Result<Vec<InviteMemberResponse>, ApiError> {
     can_read(group_id, PermissionType::Invite(None))?;
     GroupCalls::get_group_invites(group_id)
+}
+
+/// Get the group invites with profiles for a specific group - [`[query]`](query)
+/// # Arguments
+/// * `group_id` - The identifier of the group
+/// # Returns
+/// * `Vec<(InviteMemberResponse, ProfileResponse)>` - The group invites
+/// # Errors
+/// * `ApiError` - If something went wrong while getting the group invites
+/// # Note
+/// This function is guarded by the [`has_access`](has_access) function.
+/// TODO: This action is guarded by group role based authorization
+#[update(guard = "has_access")]
+pub fn get_group_invites_with_profiles(
+    group_id: u64,
+) -> Result<Vec<(InviteMemberResponse, ProfileResponse)>, ApiError> {
+    can_read(group_id, PermissionType::Invite(None))?;
+    GroupCalls::get_group_invites_with_profiles(group_id)
 }

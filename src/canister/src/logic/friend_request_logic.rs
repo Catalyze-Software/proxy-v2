@@ -2,6 +2,7 @@ use candid::Principal;
 use canister_types::models::{
     api_error::ApiError,
     friend_request::{FriendRequest, FriendRequestResponse},
+    profile::ProfileResponse,
     relation_type::RelationType,
 };
 use ic_cdk::caller;
@@ -19,7 +20,7 @@ impl FriendRequestCalls {
         to: Principal,
         message: String,
     ) -> Result<FriendRequestResponse, ApiError> {
-        let mut friend_request = FriendRequest::new(caller(), to, message);
+        let friend_request = FriendRequest::new(caller(), to, message);
         let (_, caller_profile) = ProfileStore::get(caller())?;
 
         if caller_profile.relations.contains_key(&to) {
@@ -50,16 +51,21 @@ impl FriendRequestCalls {
                 .add_message("Friend request already exists"));
         }
 
-        // make a notification for the friend request
+        let (friend_request_id, mut inserted_friend_request) =
+            FriendRequestStore::insert(friend_request)?;
+
+        let friend_request_response =
+            FriendRequestResponse::new(friend_request_id, inserted_friend_request.clone());
+
         let notification_id =
-            NotificationCalls::notification_add_friend_request(friend_request.clone())?;
+            NotificationCalls::notification_add_friend_request(friend_request_response)?;
 
-        // add the notification id to the friend request as reference
-        friend_request.set_notification_id(notification_id);
+        inserted_friend_request.set_notification_id(notification_id);
 
-        // insert the friend request into the store
-        let friend_request_result = FriendRequestStore::insert(friend_request);
-        FriendRequestMapper::to_result_response(friend_request_result)
+        FriendRequestMapper::to_result_response(FriendRequestStore::update(
+            friend_request_id,
+            inserted_friend_request,
+        ))
     }
 
     pub fn accept_friend_request(friend_request_id: u64) -> Result<bool, ApiError> {
@@ -78,15 +84,20 @@ impl FriendRequestCalls {
             RelationType::Friend.to_string(),
         );
 
-        let (_, mut to_profile) = ProfileStore::get(friend_request.requested_by)?;
+        let (requested_by_principal, mut to_profile) =
+            ProfileStore::get(friend_request.requested_by)?;
         to_profile
             .relations
             .insert(friend_request.to, RelationType::Friend.to_string());
+
+        ProfileStore::update(caller(), caller_profile)?;
+        ProfileStore::update(requested_by_principal, to_profile)?;
 
         NotificationCalls::notification_accept_or_decline_friend_request(
             (friend_request_id, friend_request),
             true,
         )?;
+
         Ok(FriendRequestStore::remove(friend_request_id))
     }
 
@@ -126,10 +137,40 @@ impl FriendRequestCalls {
             .collect()
     }
 
+    pub fn get_incoming_friend_requests_with_profile(
+    ) -> Vec<(FriendRequestResponse, ProfileResponse)> {
+        FriendRequestStore::filter(|_, request| request.to == caller())
+            .into_iter()
+            .map(|data| {
+                // TODO: Unwrap is possibly safe, but needs to be handled better
+                let (principal, profile) = ProfileStore::get(data.1.requested_by).unwrap();
+                (
+                    FriendRequestMapper::to_response(data),
+                    ProfileResponse::new(principal, profile),
+                )
+            })
+            .collect()
+    }
+
     pub fn get_outgoing_friend_requests() -> Vec<FriendRequestResponse> {
         FriendRequestStore::filter(|_, request| request.requested_by == caller())
             .into_iter()
             .map(|data| FriendRequestMapper::to_response(data))
+            .collect()
+    }
+
+    pub fn get_outgoing_friend_requests_with_profile(
+    ) -> Vec<(FriendRequestResponse, ProfileResponse)> {
+        FriendRequestStore::filter(|_, request| request.requested_by == caller())
+            .into_iter()
+            .map(|data| {
+                // TODO: Unwrap is possibly safe, but needs to be handled better
+                let (principal, profile) = ProfileStore::get(data.1.to).unwrap();
+                (
+                    FriendRequestMapper::to_response(data),
+                    ProfileResponse::new(principal, profile),
+                )
+            })
             .collect()
     }
 }

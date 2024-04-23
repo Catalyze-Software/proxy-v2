@@ -4,7 +4,11 @@ use crate::{
     E8S_PER_DAY_BOOST_COST,
 };
 use candid::Principal;
-use canister_types::models::{api_error::ApiError, boosted::Boost, subject::Subject};
+use canister_types::models::{
+    api_error::ApiError,
+    boosted::Boost,
+    subject::{Subject, SubjectType},
+};
 use ic_cdk::{api::time, caller};
 use ic_cdk_timers::{clear_timer, set_timer, TimerId};
 use ic_ledger_types::Tokens;
@@ -150,16 +154,16 @@ impl BoostCalls {
         }
     }
 
-    pub fn get_boosts_by_subject(subject: Subject) -> Vec<(u64, Boost)> {
+    pub fn get_boosts_by_subject(subject: SubjectType) -> Vec<(u64, Boost)> {
         BoostedStore::get_all()
             .into_iter()
-            .filter(|(_, boosted)| match boosted.subject {
-                Subject::Group(_) => match subject {
-                    Subject::Group(_) => true,
+            .filter(|(_, boosted)| match boosted.subject.get_type() {
+                SubjectType::Group => match subject {
+                    SubjectType::Group => true,
                     _ => false,
                 },
-                Subject::Event(_) => match subject {
-                    Subject::Event(_) => true,
+                SubjectType::Event => match subject {
+                    SubjectType::Event => true,
                     _ => false,
                 },
                 _ => false,

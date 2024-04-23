@@ -12,7 +12,7 @@ use crate::{
 
 use super::{
     api_error::ApiError,
-    subject::{Subject, SubjectType},
+    subject::{Subject, SubjectResponse, SubjectType},
 };
 
 impl_storable_for!(Report);
@@ -72,26 +72,29 @@ pub struct PostReport {
 pub struct ReportResponse {
     pub id: u64,
     pub reported_by: Principal,
-    pub subject: Subject,
+    pub subject: SubjectResponse,
     pub message: String,
     pub created_on: u64,
 }
 
 impl ReportResponse {
-    pub fn new(id: u64, report: Report) -> Self {
+    pub fn new(id: u64, report: Report, subject_response: SubjectResponse) -> Self {
         Self {
             id,
             reported_by: report.reported_by,
-            subject: report.subject,
+            subject: subject_response,
             message: report.message,
             created_on: report.created_on,
         }
     }
 
-    pub fn from_result(report_result: Result<(u64, Report), ApiError>) -> Result<Self, ApiError> {
+    pub fn from_result(
+        report_result: Result<(u64, Report), ApiError>,
+        subject_response: SubjectResponse,
+    ) -> Result<Self, ApiError> {
         match report_result {
             Err(err) => Err(err),
-            Ok((id, report)) => Ok(Self::new(id, report)),
+            Ok((id, report)) => Ok(Self::new(id, report, subject_response)),
         }
     }
 }
@@ -163,7 +166,6 @@ impl ReportFilter {
                 let _subject_type = match report.subject {
                     Subject::Group(_) => SubjectType::Group,
                     Subject::Event(_) => SubjectType::Event,
-                    Subject::Task(_) => SubjectType::Task,
                     Subject::Profile(_) => SubjectType::Profile,
                     Subject::Member(_) => SubjectType::Member,
                     Subject::Attendee(_) => SubjectType::Attendee,

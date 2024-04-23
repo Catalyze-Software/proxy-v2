@@ -54,11 +54,6 @@ impl Websocket {
                     Self::send_message(receiver, WSMessage::Notification(value.clone()));
                 }
             }
-            WSMessage::SendSilentNotification((receiver, value)) => {
-                if Self::is_connected(&receiver) {
-                    Self::send_message(receiver, WSMessage::SilentNotification(value.clone()));
-                }
-            }
             _ => Self::log_error("Unknown message type".to_string()),
         };
     }
@@ -82,6 +77,10 @@ impl Websocket {
 
     pub fn is_connected(principal: &Principal) -> bool {
         CONNECTED_CLIENTS.with(|c| c.borrow().contains_key(&principal))
+    }
+
+    pub fn get_connected_clients() -> Vec<Principal> {
+        CONNECTED_CLIENTS.with(|c| c.borrow().keys().cloned().collect())
     }
 
     pub fn log_error(error: String) {
