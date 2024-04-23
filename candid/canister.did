@@ -681,6 +681,7 @@ type WebsocketMessage = record {
 };
 service : () -> {
   __get_candid_interface_tmp_hack : () -> (text) query;
+  _dev_clear_notifications : (text) -> (bool);
   _expose : () -> (opt WSMessage) query;
   accept_friend_request : (nat64) -> (Result);
   accept_owner_request_event_invite : (nat64) -> (Result_1);

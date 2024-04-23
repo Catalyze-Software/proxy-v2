@@ -13,6 +13,8 @@ use std::cell::RefCell;
 
 pub type Memory = VirtualMemory<DefaultMemoryImpl>;
 
+pub static CLEAR_MEMORY_ID: MemoryId = MemoryId::new(254);
+
 /// The memory IDs for the different stores.
 /// # Note
 /// These IDs are used to identify the different stores in the `MemoryManager`.
@@ -28,10 +30,8 @@ static ATTENDEES_MEMORY_ID: MemoryId = MemoryId::new(4);
 
 static REPORTS_MEMORY_ID: MemoryId = MemoryId::new(5);
 
-// static NOTIFICATIONS_MEMORY_ID: MemoryId = MemoryId::new(6);
-static NOTIFICATIONS_MEMORY_ID: MemoryId = MemoryId::new(14);
-static USER_NOTIFICATIONS_MEMORY_ID: MemoryId = MemoryId::new(15);
-// static USER_NOTIFICATIONS_MEMORY_ID: MemoryId = MemoryId::new(7);
+static NOTIFICATIONS_MEMORY_ID: MemoryId = MemoryId::new(6);
+static USER_NOTIFICATIONS_MEMORY_ID: MemoryId = MemoryId::new(7);
 
 static FRIEND_REQUESTS_MEMORY_ID: MemoryId = MemoryId::new(8);
 static BOOSTED_MEMORY_ID: MemoryId = MemoryId::new(9);
@@ -74,6 +74,7 @@ pub trait StorageMethods<K, V> {
     fn insert_by_key(key: K, entity: V) -> Result<(K, V), ApiError>;
     fn update(id: K, entity: V) -> Result<(K, V), ApiError>;
     fn remove(id: K) -> bool;
+    fn clear() -> ();
 }
 
 /// A trait for the identifier reference maps.

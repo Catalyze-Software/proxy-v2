@@ -19,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `get_outgoing_friend_requests_with_profile` query call
 - Added `get_relations_with_profiles` query call
 - Added `SubjectResponse` to pass back reported objects
+- Added `clear` methods to the stores
+- added `_dev_clear_notifications` to clear the notifications from the frontend
 
 ### Changed
 

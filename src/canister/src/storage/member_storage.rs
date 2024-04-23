@@ -1,5 +1,6 @@
 use super::storage_api::{
-    IdentifierRefMethods, PrincipalIdentifier, StorageMethods, MEMBERS, MEMBERS_IDENTIFIER_REF,
+    IdentifierRefMethods, PrincipalIdentifier, StorageMethods, CLEAR_MEMORY_ID, MEMBERS,
+    MEMBERS_IDENTIFIER_REF, MEMORY_MANAGER,
 };
 use candid::Principal;
 use canister_types::models::{
@@ -8,6 +9,7 @@ use canister_types::models::{
     member::Member,
 };
 use ic_cdk::caller;
+use ic_stable_structures::StableBTreeMap;
 
 pub struct MemberStore;
 
@@ -214,5 +216,14 @@ impl StorageMethods<Principal, Member> for MemberStore {
     /// # Note
     fn remove(key: Principal) -> bool {
         MEMBERS.with(|data| data.borrow_mut().remove(&key).is_some())
+    }
+
+    /// Clear all attendees
+    fn clear() -> () {
+        MEMBERS.with(|n| {
+            n.replace(StableBTreeMap::new(
+                MEMORY_MANAGER.with(|m| m.borrow().get(CLEAR_MEMORY_ID)),
+            ))
+        });
     }
 }

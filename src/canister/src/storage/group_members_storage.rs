@@ -1,5 +1,6 @@
-use super::storage_api::{StorageMethods, GROUP_MEMBERS};
+use super::storage_api::{StorageMethods, CLEAR_MEMORY_ID, GROUP_MEMBERS, MEMORY_MANAGER};
 use canister_types::models::{api_error::ApiError, member_collection::MemberCollection};
+use ic_stable_structures::StableBTreeMap;
 
 pub struct GroupMemberStore;
 
@@ -133,5 +134,14 @@ impl StorageMethods<u64, MemberCollection> for GroupMemberStore {
     /// # Note
     fn remove(key: u64) -> bool {
         GROUP_MEMBERS.with(|data| data.borrow_mut().remove(&key).is_some())
+    }
+
+    /// Clear all attendees
+    fn clear() -> () {
+        GROUP_MEMBERS.with(|n| {
+            n.replace(StableBTreeMap::new(
+                MEMORY_MANAGER.with(|m| m.borrow().get(CLEAR_MEMORY_ID)),
+            ))
+        });
     }
 }
