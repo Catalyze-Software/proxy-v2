@@ -1,21 +1,27 @@
-use crate::{helpers::guards::has_access, logic::boost_logic::BoostCalls, E8S_PER_DAY_BOOST_COST};
-use canister_types::models::{api_error::ApiError, boosted::Boost, subject::Subject};
+use crate::{
+    helpers::guards::has_access,
+    logic::{boost_logic::BoostCalls, event_logic::EventCalls, group_logic::GroupCalls},
+    E8S_PER_DAY_BOOST_COST,
+};
+use canister_types::models::{
+    api_error::ApiError, event::EventResponse, group::GroupResponse, subject::Subject,
+};
 use ic_cdk::{query, update};
 
 /// Returns the boosted groups
 /// # Returns
-/// * `Vec<(u64, Boost)>` - (boost id, boosted groups)
+/// * `Vec<GroupResponse>`
 #[query]
-fn get_boosted_groups() -> Vec<(u64, Boost)> {
-    BoostCalls::get_boosts_by_subject(Subject::Group(0))
+fn get_boosted_groups() -> Vec<GroupResponse> {
+    GroupCalls::get_boosted_groups()
 }
 
 /// Returns the boosted events
 /// # Returns
-/// * `Vec<(u64, Boost)>` - (boost id, boosted groups)
+/// * `Vec<EventResponse>`
 #[query]
-fn get_boosted_events() -> Vec<(u64, Boost)> {
-    BoostCalls::get_boosts_by_subject(Subject::Event(0))
+fn get_boosted_events() -> Vec<EventResponse> {
+    EventCalls::get_boosted_events()
 }
 
 /// Returns the cost of boosting per day

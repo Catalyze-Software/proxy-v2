@@ -1,5 +1,6 @@
-use super::storage_api::{StorageMethods, BOOSTED};
+use super::storage_api::{StorageMethods, BOOSTED, CLEAR_MEMORY_ID, MEMORY_MANAGER};
 use canister_types::models::{api_error::ApiError, boosted::Boost};
+use ic_stable_structures::StableBTreeMap;
 
 pub struct BoostedStore;
 
@@ -133,6 +134,15 @@ impl StorageMethods<u64, Boost> for BoostedStore {
     /// * `bool` - True if the boosted was removed, otherwise false
     fn remove(key: u64) -> bool {
         BOOSTED.with(|data| data.borrow_mut().remove(&key).is_some())
+    }
+
+    /// Clear all attendees
+    fn clear() -> () {
+        BOOSTED.with(|n| {
+            n.replace(StableBTreeMap::new(
+                MEMORY_MANAGER.with(|m| m.borrow().get(CLEAR_MEMORY_ID)),
+            ))
+        });
     }
 }
 

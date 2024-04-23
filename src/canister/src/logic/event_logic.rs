@@ -1,7 +1,7 @@
 use crate::{
     helpers::time_helper::hours_to_nanoseconds,
     storage::{
-        AttendeeStore, EventAttendeeStore, EventStore, GroupEventsStore, ProfileStore,
+        AttendeeStore, EventAttendeeStore, EventStore, GroupEventsStore, MemberStore, ProfileStore,
         StorageMethods,
     },
 };
@@ -24,6 +24,7 @@ use canister_types::models::{
     member_collection::MemberCollection,
     paged_response::PagedResponse,
     privacy::Privacy,
+    profile::ProfileResponse,
     subject::{Subject, SubjectType},
 };
 use ic_cdk::{api::time, caller};
@@ -148,6 +149,13 @@ impl EventCalls {
             Self::get_boosted_event(event_id),
             Self::get_event_caller_data(event_id, event.group_id),
         ))
+    }
+
+    pub fn get_boosted_events() -> Vec<EventResponse> {
+        BoostCalls::get_boosts_by_subject(SubjectType::Event)
+            .into_iter()
+            .map(|(id, _)| Self::get_event(id).unwrap())
+            .collect()
     }
 
     pub fn get_events_count(group_ids: Option<Vec<u64>>, query: Option<String>) -> EventsCount {
@@ -397,6 +405,73 @@ impl EventCalls {
         Ok(response)
     }
 
+    pub fn get_event_attendees_profiles_and_roles(
+        event_id: u64,
+    ) -> Result<Vec<(ProfileResponse, Vec<String>)>, ApiError> {
+        let (_, event_attendees) = EventAttendeeStore::get(event_id)?;
+        let (_, event) = EventStore::get(event_id)?;
+
+        let mut result: Vec<(ProfileResponse, Vec<String>)> = vec![];
+
+        for principal in event_attendees.get_member_principals() {
+            if let Ok((_, profile)) = ProfileStore::get(principal) {
+                if let Ok((_, member)) = MemberStore::get(principal) {
+                    let roles = member.get_roles(event.group_id);
+                    result.push((ProfileResponse::new(principal, profile), roles));
+                }
+            }
+        }
+
+        Ok(result)
+    }
+
+    pub fn get_event_invites(
+        event_id: u64,
+        group_id: u64,
+    ) -> Result<Vec<InviteAttendeeResponse>, ApiError> {
+        let (_, event_attendees) = EventAttendeeStore::get(event_id)?;
+
+        let invites = AttendeeStore::get_many(event_attendees.get_invite_principals())
+            .iter()
+            .map(|(principal, attendee)| {
+                let invite_type = attendee.invites.get(&event_id).unwrap().invite_type.clone();
+                InviteAttendeeResponse::new(event_id, group_id, principal.clone(), invite_type)
+            })
+            .collect();
+
+        Ok(invites)
+    }
+
+    pub fn get_event_invites_with_profiles(
+        event_id: u64,
+    ) -> Result<Vec<(ProfileResponse, InviteAttendeeResponse)>, ApiError> {
+        let (_, event_attendees) = EventAttendeeStore::get(event_id)?;
+        let (_, event) = EventStore::get(event_id)?;
+
+        let mut result: Vec<(ProfileResponse, InviteAttendeeResponse)> = vec![];
+
+        for principal in event_attendees.get_invite_principals() {
+            if let Ok((_, profile)) = ProfileStore::get(principal) {
+                if let Ok((_, attendee)) = AttendeeStore::get(principal) {
+                    let invite = attendee.get_invite(event_id);
+                    if let Some(invite) = invite {
+                        result.push((
+                            ProfileResponse::new(principal, profile),
+                            InviteAttendeeResponse::new(
+                                event_id,
+                                event.group_id,
+                                principal,
+                                invite.invite_type,
+                            ),
+                        ));
+                    }
+                }
+            }
+        }
+
+        Ok(result)
+    }
+
     pub fn get_self_attendee() -> Result<Attendee, ApiError> {
         let (_, attendee) = AttendeeStore::get(caller())?;
         Ok(attendee)
@@ -513,23 +588,6 @@ impl EventCalls {
         EventAttendeeStore::update(event_id, attendees)?;
 
         Ok(())
-    }
-
-    pub fn get_event_invites(
-        event_id: u64,
-        group_id: u64,
-    ) -> Result<Vec<InviteAttendeeResponse>, ApiError> {
-        let (_, event_attendees) = EventAttendeeStore::get(event_id)?;
-
-        let invites = AttendeeStore::get_many(event_attendees.get_invite_principals())
-            .iter()
-            .map(|(principal, attendee)| {
-                let invite_type = attendee.invites.get(&event_id).unwrap().invite_type.clone();
-                InviteAttendeeResponse::new(event_id, group_id, principal.clone(), invite_type)
-            })
-            .collect();
-
-        Ok(invites)
     }
 
     fn get_boosted_event(id: u64) -> Option<Boost> {

@@ -15,6 +15,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+## [0.1.4]
+
+### Added
+
+- Added `get_group_by_name` query call
+- Added `get_event_attendees_profiles_and_roles` query call
+- Added `get_event_invites_with_profiles` query call
+- Added `get_group_members_with_profiles` query call
+- Added `get_group_member_with_profile` query call
+- Added `get_group_invites_with_profiles` query call
+- Added `get_incoming_friend_requests_with_profile` query call
+- Added `get_outgoing_friend_requests_with_profile` query call
+- Added `get_relations_with_profiles` query call
+- Added `SubjectResponse` to pass back reported objects
+- Added `clear` methods to the stores
+- added `_dev_clear_notifications` to clear the notifications from the frontend
+
+### Changed
+
+- Changed `get_boosted_groups` response from `Vec<(u64, Boost)>` to `Vec<GroupResponse>`
+- Changed `get_boosted_events` response from `Vec<(u64, Boost)>` to `Vec<EventResponse>`
+- changed `get_boosts_by_subject` parameter from `subject: Subject` to `subject: SubjectType`
+- Change `get_notifications` response to `Vec<NotificationResponse>`
+- Change `get_unread_notifications` response to `Vec<NotificationResponse>`
+- Changed `Subject` on `ReportResponse` to `SubjectResponse` which passes back the reported object
+- changed `get_pinned_by_subject_type` response to `Vec<SubjectResponse>`
+- Changed `GroupNotificationType` `JoinGroupUserRequestAccept` and `JoinGroupUserRequestDecline` to return `InviteMemberResponse`
+- Changed `GroupNotificationType` `JoinGroupOwnerRequestAccept` and `JoinGroupUserRequestDecline` to return `InviteMemberResponse`
+- Changed `EventNotificationType` `JoinEventUserRequestAccept` and `JoinEventUserRequestDecline` to return `InviteAttendeeResponse`
+- Changed `EventNotificationType` `JoinEventOwnerRequestAccept` and `JoinEventUserRequestDecline` to return `InviteAttendeeResponse`
+
+### Fixed
+
+- Fixed `get_unread_notifications` which returned all notifications
+
+### Removed
+
 ## [0.1.3]
 
 ### Added

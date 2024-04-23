@@ -1,6 +1,9 @@
-use crate::logic::{boost_logic::BoostCalls, websocket_logic::Websocket};
+use crate::{
+    logic::{boost_logic::BoostCalls, websocket_logic::Websocket},
+    storage::{NotificationStore, StorageMethods, UsernotificationStore},
+};
 use canister_types::models::http_types::{HttpRequest, HttpResponse};
-use ic_cdk::{init, post_upgrade, pre_upgrade, query};
+use ic_cdk::{init, post_upgrade, pre_upgrade, query, update};
 
 #[post_upgrade]
 pub fn post_upgrade() {
@@ -14,6 +17,17 @@ pub fn pre_upgrade() {}
 #[init]
 pub fn init() {
     Websocket::init();
+}
+
+#[update]
+pub fn _dev_clear_notifications(super_secret_password: String) -> bool {
+    if super_secret_password != "super_secret_password" {
+        return false;
+    } else {
+        UsernotificationStore::clear();
+        NotificationStore::clear();
+        return true;
+    }
 }
 
 #[query]

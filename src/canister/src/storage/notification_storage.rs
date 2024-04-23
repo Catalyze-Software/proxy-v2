@@ -1,5 +1,6 @@
-use super::storage_api::{StorageMethods, NOTIFICATIONS};
+use super::storage_api::{StorageMethods, CLEAR_MEMORY_ID, MEMORY_MANAGER, NOTIFICATIONS};
 use canister_types::models::{api_error::ApiError, notification::Notification};
+use ic_stable_structures::StableBTreeMap;
 
 pub struct NotificationStore;
 
@@ -133,6 +134,15 @@ impl StorageMethods<u64, Notification> for NotificationStore {
     /// * `bool` - True if the notification was removed, otherwise false
     fn remove(key: u64) -> bool {
         NOTIFICATIONS.with(|data| data.borrow_mut().remove(&key).is_some())
+    }
+
+    /// Clear all attendees
+    fn clear() -> () {
+        NOTIFICATIONS.with(|n| {
+            n.replace(StableBTreeMap::new(
+                MEMORY_MANAGER.with(|m| m.borrow().get(CLEAR_MEMORY_ID)),
+            ))
+        });
     }
 }
 

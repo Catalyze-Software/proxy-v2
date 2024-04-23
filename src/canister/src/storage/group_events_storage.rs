@@ -1,5 +1,6 @@
-use super::storage_api::{StorageMethods, GROUP_EVENTS, GROUP_MEMBERS};
+use super::storage_api::{StorageMethods, CLEAR_MEMORY_ID, GROUP_EVENTS, MEMORY_MANAGER};
 use canister_types::models::{api_error::ApiError, event_collection::EventCollection};
+use ic_stable_structures::StableBTreeMap;
 
 pub struct GroupEventsStore;
 
@@ -129,6 +130,15 @@ impl StorageMethods<u64, EventCollection> for GroupEventsStore {
     /// * `bool` - True if the group was removed, otherwise false
     /// # Note
     fn remove(key: u64) -> bool {
-        GROUP_MEMBERS.with(|data| data.borrow_mut().remove(&key).is_some())
+        GROUP_EVENTS.with(|data| data.borrow_mut().remove(&key).is_some())
+    }
+
+    /// Clear all attendees
+    fn clear() -> () {
+        GROUP_EVENTS.with(|n| {
+            n.replace(StableBTreeMap::new(
+                MEMORY_MANAGER.with(|m| m.borrow().get(CLEAR_MEMORY_ID)),
+            ))
+        });
     }
 }
