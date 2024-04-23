@@ -1,4 +1,6 @@
-use super::storage_api::{StorageMethods, CLEAR_MEMORY_ID, MEMORY_MANAGER, USER_NOTIFICATIONS};
+use super::storage_api::{
+    StorageMethods, MEMORY_MANAGER, USER_NOTIFICATIONS, USER_NOTIFICATIONS_MEMORY_ID,
+};
 use candid::Principal;
 use canister_types::models::{api_error::ApiError, user_notifications::UserNotifications};
 use ic_stable_structures::StableBTreeMap;
@@ -149,7 +151,7 @@ impl StorageMethods<Principal, UserNotifications> for UsernotificationStore {
     fn clear() -> () {
         USER_NOTIFICATIONS.with(|n| {
             n.replace(StableBTreeMap::new(
-                MEMORY_MANAGER.with(|m| m.borrow().get(CLEAR_MEMORY_ID)),
+                MEMORY_MANAGER.with(|m| m.borrow().get(USER_NOTIFICATIONS_MEMORY_ID)),
             ))
         });
     }

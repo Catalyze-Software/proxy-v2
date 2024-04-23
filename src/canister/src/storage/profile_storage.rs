@@ -1,6 +1,6 @@
 use super::storage_api::{
-    IdentifierRefMethods, PrincipalIdentifier, StorageMethods, CLEAR_MEMORY_ID, MEMORY_MANAGER,
-    PROFILES, PROFILES_IDENTIFIER_REF,
+    IdentifierRefMethods, PrincipalIdentifier, StorageMethods, MEMORY_MANAGER, PROFILES,
+    PROFILES_IDENTIFIER_REF, PROFILES_MEMORY_ID,
 };
 use candid::Principal;
 use canister_types::models::{
@@ -220,7 +220,7 @@ impl StorageMethods<Principal, Profile> for ProfileStore {
     fn clear() -> () {
         PROFILES.with(|n| {
             n.replace(StableBTreeMap::new(
-                MEMORY_MANAGER.with(|m| m.borrow().get(CLEAR_MEMORY_ID)),
+                MEMORY_MANAGER.with(|m| m.borrow().get(PROFILES_MEMORY_ID)),
             ))
         });
     }

@@ -1,6 +1,6 @@
 use super::storage_api::{
     IdentifierRefMethods, PrincipalIdentifier, StorageMethods, ATTENDEES, ATTENDEES_IDENTIFIER_REF,
-    CLEAR_MEMORY_ID, MEMORY_MANAGER,
+    ATTENDEES_MEMORY_ID, MEMORY_MANAGER,
 };
 use candid::Principal;
 use canister_types::models::{
@@ -220,7 +220,7 @@ impl StorageMethods<Principal, Attendee> for AttendeeStore {
     fn clear() -> () {
         ATTENDEES.with(|n| {
             n.replace(StableBTreeMap::new(
-                MEMORY_MANAGER.with(|m| m.borrow().get(CLEAR_MEMORY_ID)),
+                MEMORY_MANAGER.with(|m| m.borrow().get(ATTENDEES_MEMORY_ID)),
             ))
         });
     }
