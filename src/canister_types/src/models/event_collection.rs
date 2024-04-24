@@ -30,4 +30,8 @@ impl EventCollection {
     pub fn remove_event(&mut self, id: &u64) {
         self.events.retain(|p| p != id);
     }
+
+    pub fn has_event(&self, id: &u64) -> bool {
+        self.events.contains(id)
+    }
 }

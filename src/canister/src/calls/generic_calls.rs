@@ -1,7 +1,8 @@
 use crate::{
     logic::{boost_logic::BoostCalls, websocket_logic::Websocket},
     storage::{
-        GroupMemberStore, MemberStore, NotificationStore, StorageMethods, UsernotificationStore,
+        AttendeeStore, EventStore, GroupEventsStore, GroupMemberStore, MemberStore,
+        NotificationStore, StorageMethods, UsernotificationStore,
     },
 };
 use candid::Principal;
@@ -49,6 +50,39 @@ pub fn _dev_check_member_sync(
     };
 
     (member_store_check, group_member_store_check)
+}
+
+#[query]
+pub fn _dev_check_attendees_sync(
+    principal: Principal,
+    event_id: u64,
+) -> ((String, bool), (String, bool)) {
+    let mut attendee_store_check: (String, bool) = ("AttendeeStore".to_string(), false);
+    let mut event_attendee_store_check: (String, bool) = ("EventAttendeeStore".to_string(), false);
+
+    attendee_store_check.1 = AttendeeStore::get(principal).is_ok();
+    let group_members = GroupMemberStore::get(event_id);
+    event_attendee_store_check.1 = match group_members {
+        Ok((_, group_members)) => group_members.is_member(&principal),
+        Err(_) => false,
+    };
+
+    (attendee_store_check, event_attendee_store_check)
+}
+
+#[query]
+pub fn _dev_check_events_sync(event_id: u64, group_id: u64) -> ((String, bool), (String, bool)) {
+    let mut event_store_check: (String, bool) = ("EventStore".to_string(), false);
+    let mut group_event_store_check: (String, bool) = ("GroupEventStore".to_string(), false);
+
+    event_store_check.1 = EventStore::get(event_id).is_ok();
+    let group_events = GroupEventsStore::get(group_id);
+    group_event_store_check.1 = match group_events {
+        Ok((_, group_events)) => group_events.has_event(&event_id),
+        Err(_) => false,
+    };
+
+    (event_store_check, group_event_store_check)
 }
 
 #[query]

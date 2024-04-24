@@ -15,6 +15,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `ban_group_member` call
 - Added `remove_ban_from_group_member` call
 - Added `get_banned_group_members` call
+- Added `_dev_check_member_sync` call to check if the stores are in sync
+- Added `_dev_check_attendees_sync` call to check if the stores are in sync
+- Added `_dev_check_events_sync` call to check if the stores are in sync
 
 ### Changed
 
