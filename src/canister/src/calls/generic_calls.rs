@@ -1,7 +1,10 @@
 use crate::{
     logic::{boost_logic::BoostCalls, websocket_logic::Websocket},
-    storage::{NotificationStore, StorageMethods, UsernotificationStore},
+    storage::{
+        GroupMemberStore, MemberStore, NotificationStore, StorageMethods, UsernotificationStore,
+    },
 };
+use candid::Principal;
 use canister_types::models::http_types::{HttpRequest, HttpResponse};
 use ic_cdk::{init, post_upgrade, pre_upgrade, query, update};
 
@@ -28,6 +31,24 @@ pub fn _dev_clear_notifications(super_secret_password: String) -> bool {
         NotificationStore::clear();
         return true;
     }
+}
+
+#[query]
+pub fn _dev_check_member_sync(
+    principal: Principal,
+    group_id: u64,
+) -> ((String, bool), (String, bool)) {
+    let mut member_store_check: (String, bool) = ("MemberStore".to_string(), false);
+    let mut group_member_store_check: (String, bool) = ("GroupMemberStore".to_string(), false);
+
+    member_store_check.1 = MemberStore::get(principal).is_ok();
+    let group_members = GroupMemberStore::get(group_id);
+    group_member_store_check.1 = match group_members {
+        Ok((_, group_members)) => group_members.is_member(&principal),
+        Err(_) => false,
+    };
+
+    (member_store_check, group_member_store_check)
 }
 
 #[query]

@@ -18,11 +18,12 @@ use crate::{
 use candid::Principal;
 use canister_types::models::{
     api_error::ApiError,
-    group::{GroupFilter, GroupResponse, GroupSort, GroupsCount, PostGroup, UpdateGroup},
+    group::{Group, GroupFilter, GroupResponse, GroupSort, GroupsCount, PostGroup, UpdateGroup},
     member::{InviteMemberResponse, JoinedMemberResponse, Member},
     paged_response::PagedResponse,
     permission::{PermissionType, PostPermission},
     profile::ProfileResponse,
+    relation_type::RelationType,
     role::Role,
 };
 use ic_cdk::{query, update};
@@ -614,11 +615,32 @@ pub fn get_group_invites(group_id: u64) -> Result<Vec<InviteMemberResponse>, Api
 /// * `ApiError` - If something went wrong while getting the group invites
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-/// TODO: This action is guarded by group role based authorization
 #[update(guard = "has_access")]
 pub fn get_group_invites_with_profiles(
     group_id: u64,
 ) -> Result<Vec<(InviteMemberResponse, ProfileResponse)>, ApiError> {
     can_read(group_id, PermissionType::Invite(None))?;
     GroupCalls::get_group_invites_with_profiles(group_id)
+}
+
+#[query(guard = "has_access")]
+pub fn get_banned_group_members(group_id: u64) -> Result<Vec<Principal>, ApiError> {
+    can_edit(group_id, PermissionType::Member(None))?;
+    Ok(GroupCalls::get_banned_group_members(group_id))
+}
+
+#[update(guard = "has_access")]
+pub fn ban_group_member(group_id: u64, member_principal: Principal) -> Result<(), ApiError> {
+    can_edit(group_id, PermissionType::Member(None))?;
+    GroupCalls::remove_member_from_group(member_principal, group_id)?;
+    GroupCalls::add_special_member_to_group(group_id, member_principal, RelationType::Blocked)
+}
+
+#[update(guard = "has_access")]
+pub fn remove_ban_from_group_member(
+    group_id: u64,
+    member_principal: Principal,
+) -> Result<(), ApiError> {
+    can_edit(group_id, PermissionType::Member(None))?;
+    GroupCalls::remove_special_member_from_group(group_id, member_principal)
 }

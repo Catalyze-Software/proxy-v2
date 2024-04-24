@@ -35,6 +35,7 @@ use canister_types::{
         permission::{Permission, PermissionActionType, PermissionType, PostPermission},
         privacy::{GatedType, NeuronGatedRules, Privacy, TokenGated},
         profile::ProfileResponse,
+        relation_type::RelationType,
         role::Role,
         subject::{Subject, SubjectType},
         validation::{ValidateField, ValidationType},
@@ -745,6 +746,19 @@ impl GroupCalls {
         Ok(())
     }
 
+    pub fn get_banned_group_members(group_id: u64) -> Vec<Principal> {
+        if let Ok((_, group)) = GroupStore::get(group_id) {
+            group
+                .special_members
+                .into_iter()
+                .filter(|m| m.1 == RelationType::Blocked.to_string())
+                .map(|m| m.0)
+                .collect()
+        } else {
+            return vec![];
+        }
+    }
+
     pub fn remove_member_from_group(principal: Principal, group_id: u64) -> Result<(), ApiError> {
         let (_, mut member) = MemberStore::get(principal)?;
 
@@ -866,6 +880,29 @@ impl GroupCalls {
         };
 
         (member_count, event_count)
+    }
+
+    pub fn add_special_member_to_group(
+        group_id: u64,
+        principal: Principal,
+        relation: RelationType,
+    ) -> Result<(), ApiError> {
+        let (_, mut group) = GroupStore::get(group_id)?;
+
+        group.add_special_member(principal, relation);
+        GroupStore::update(group_id, group)?;
+        Ok(())
+    }
+
+    pub fn remove_special_member_from_group(
+        group_id: u64,
+        principal: Principal,
+    ) -> Result<(), ApiError> {
+        let (_, mut group) = GroupStore::get(group_id)?;
+
+        group.remove_special_member_from_group(principal);
+        GroupStore::update(group_id, group)?;
+        Ok(())
     }
 }
 
@@ -1129,6 +1166,10 @@ impl GroupValidation {
     ) -> Result<Member, ApiError> {
         let (group_id, group) = GroupStore::get(group_id)?;
         let (_, mut member) = MemberStore::get(caller)?;
+
+        if group.is_banned_member(caller) {
+            return Err(ApiError::unauthorized().add_message("You are allowed to join this group"));
+        }
 
         // Check if the member is already in the group
         if member.is_group_joined(&group_id) {

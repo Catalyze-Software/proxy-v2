@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added `special_members` to group to block or privilage members within a group
+- Added `ban_group_member` call
+- Added `remove_ban_from_group_member` call
+- Added `get_banned_group_members` call
+
 ### Changed
 
 ### Fixed
