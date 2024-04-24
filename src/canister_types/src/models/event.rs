@@ -296,6 +296,7 @@ pub struct EventResponse {
     pub updated_on: u64,
     pub created_on: u64,
     pub group_id: u64,
+    pub attendee_count: u64,
     pub boosted: Option<Boost>,
     pub caller_data: Option<EventCallerData>,
 }
@@ -306,6 +307,7 @@ impl EventResponse {
         event: Event,
         boosted: Option<Boost>,
         caller_data: Option<EventCallerData>,
+        attendee_count: u64,
     ) -> Self {
         Self {
             id,
@@ -328,6 +330,7 @@ impl EventResponse {
             group_id: event.group_id,
             boosted,
             caller_data,
+            attendee_count,
         }
     }
 
@@ -335,11 +338,12 @@ impl EventResponse {
         id: u64,
         event: Result<Event, ApiError>,
         boosted: Option<Boost>,
+        attendee_count: u64,
         caller_data: Option<EventCallerData>,
     ) -> Result<Self, ApiError> {
         match event {
             Err(e) => Err(e),
-            Ok(event) => Ok(Self::new(id, event, boosted, caller_data)),
+            Ok(event) => Ok(Self::new(id, event, boosted, caller_data, attendee_count)),
         }
     }
 }

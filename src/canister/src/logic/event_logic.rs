@@ -49,13 +49,14 @@ impl EventCalls {
         // initialize group events with the new event
         let mut group_events = EventCollection::new();
         group_events.add_event(new_event_id);
-        GroupEventsStore::insert_by_key(post_event.group_id, group_events)?;
+        GroupEventsStore::update(post_event.group_id, group_events)?;
 
         Ok(EventResponse::new(
             new_event_id,
             new_event.clone(),
             Self::get_boosted_event(new_event_id),
             Self::get_event_caller_data(new_event_id, new_event.group_id),
+            Self::get_attendees_count(new_event_id),
         ))
     }
 
@@ -71,6 +72,7 @@ impl EventCalls {
                     event.clone(),
                     Self::get_boosted_event(event_id),
                     Self::get_event_caller_data(event_id, event.group_id),
+                    Self::get_attendees_count(event_id),
                 ));
             } else {
                 return Err(ApiError::unauthorized());
@@ -81,6 +83,7 @@ impl EventCalls {
                 event.clone(),
                 Self::get_boosted_event(event_id),
                 Self::get_event_caller_data(event_id, event.group_id),
+                Self::get_attendees_count(event_id),
             ));
         }
     }
@@ -122,6 +125,7 @@ impl EventCalls {
                     data.1.clone(),
                     Self::get_boosted_event(data.0),
                     Self::get_event_caller_data(data.0, data.1.group_id),
+                    Self::get_attendees_count(data.0),
                 )
             })
             .collect();
@@ -148,6 +152,7 @@ impl EventCalls {
             event.clone(),
             Self::get_boosted_event(event_id),
             Self::get_event_caller_data(event_id, event.group_id),
+            Self::get_attendees_count(event_id),
         ))
     }
 
@@ -499,6 +504,7 @@ impl EventCalls {
                     data.1.clone(),
                     Self::get_boosted_event(data.0),
                     Self::get_event_caller_data(data.0, data.1.group_id),
+                    Self::get_attendees_count(data.0),
                 )
             })
             .collect()
@@ -622,5 +628,12 @@ impl EventCalls {
         };
 
         Some(EventCallerData::new(joined, invite, is_starred))
+    }
+
+    pub fn get_attendees_count(event_id: u64) -> u64 {
+        match EventAttendeeStore::get(event_id) {
+            Ok((_, member)) => member.get_member_count(),
+            Err(_) => 0,
+        }
     }
 }

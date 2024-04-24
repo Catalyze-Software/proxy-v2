@@ -150,6 +150,7 @@ type EventResponse = record {
   owner : principal;
   metadata : opt text;
   date : DateRange;
+  attendee_count : nat64;
   name : text;
   tags : vec nat32;
   description : text;

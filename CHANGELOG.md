@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `_dev_check_attendees_sync` call to check if the stores are in sync
 - Added `_dev_check_events_sync` call to check if the stores are in sync
 - Added `processed_by` to `Notification` struct
+- Added `attendee_count` to `EventResponse`
 
 ### Changed
 
