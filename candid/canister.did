@@ -722,6 +722,7 @@ service : () -> {
   block_user : (principal) -> (Result_7);
   boost : (Subject, nat64) -> (Result_11);
   cancel_event : (nat64, nat64, text) -> (Result_10);
+  check_new_stores : () -> (vec text) query;
   decline_friend_request : (nat64) -> (Result);
   decline_owner_request_group_invite : (nat64) -> (Result_2);
   decline_user_request_group_invite : (nat64, principal) -> (Result_2);

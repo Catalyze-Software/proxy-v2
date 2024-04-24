@@ -349,7 +349,7 @@ impl EventCalls {
             return Err(ApiError::not_found());
         }
 
-        if let Some(invite) = attendee.get_invite(event_id) {
+        if let Some(invite) = attendee.get_invite(&event_id) {
             attendee.turn_invite_into_joined(event_id);
             let _ = NotificationCalls::notification_user_join_request_event_accept_or_decline(
                 attendee_principal,
@@ -378,7 +378,7 @@ impl EventCalls {
             return Err(ApiError::not_found());
         }
 
-        if let Some(invite) = attendee.get_invite(event_id) {
+        if let Some(invite) = attendee.get_invite(&event_id) {
             attendee.turn_invite_into_joined(event_id);
             let _ = NotificationCalls::notification_owner_join_request_event_accept_or_decline(
                 caller(),
@@ -459,7 +459,7 @@ impl EventCalls {
         for principal in event_attendees.get_invite_principals() {
             if let Ok((_, profile)) = ProfileStore::get(principal) {
                 if let Ok((_, attendee)) = AttendeeStore::get(principal) {
-                    let invite = attendee.get_invite(event_id);
+                    let invite = attendee.get_invite(&event_id);
                     if let Some(invite) = invite {
                         result.push((
                             ProfileResponse::new(principal, profile),
@@ -609,21 +609,19 @@ impl EventCalls {
             .is_ok_and(|(_, profile)| profile.is_starred(&Subject::Event(event_id)));
 
         let (joined, invite) = match AttendeeStore::get(caller()) {
-            Ok((principal, member)) => {
-                let joined = JoinedAttendeeResponse::new(event_id, group_id, principal);
-                match member.get_invite(event_id) {
-                    Some(invite) => {
-                        let invite = InviteAttendeeResponse::new(
-                            event_id,
-                            group_id,
-                            principal,
-                            invite.invite_type,
-                        );
-                        (Some(joined), Some(invite))
-                    }
-                    None => (Some(joined), None),
-                }
-            }
+            Ok((principal, member)) => (
+                member.get_joined(&event_id).map_or(None, |_| {
+                    Some(JoinedAttendeeResponse::new(event_id, group_id, principal))
+                }),
+                member.get_invite(&event_id).map_or(None, |j| {
+                    Some(InviteAttendeeResponse::new(
+                        event_id,
+                        group_id,
+                        principal,
+                        j.invite_type,
+                    ))
+                }),
+            ),
             Err(_) => (None, None),
         };
 
