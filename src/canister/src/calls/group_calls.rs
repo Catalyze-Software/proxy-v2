@@ -18,7 +18,7 @@ use crate::{
 use candid::Principal;
 use canister_types::models::{
     api_error::ApiError,
-    group::{Group, GroupFilter, GroupResponse, GroupSort, GroupsCount, PostGroup, UpdateGroup},
+    group::{GroupFilter, GroupResponse, GroupSort, GroupsCount, PostGroup, UpdateGroup},
     member::{InviteMemberResponse, JoinedMemberResponse, Member},
     paged_response::PagedResponse,
     permission::{PermissionType, PostPermission},
