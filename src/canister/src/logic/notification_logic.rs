@@ -202,14 +202,19 @@ impl NotificationCalls {
     pub fn notification_owner_join_request_group(
         invitee_principal: Principal,
         invite_member_response: InviteMemberResponse,
+        receivers: Vec<Principal>,
     ) -> Result<u64, ApiError> {
-        let (notification_id, _) = Self::add_and_send_notification(
+        let (notification_id, notification) = Self::add_and_send_notification(
             vec![invitee_principal],
             NotificationType::Group(GroupNotificationType::JoinGroupOwnerRequest(
                 invite_member_response,
             )),
             true,
         )?;
+
+        for r in receivers {
+            Self::send_notification(None, notification.clone(), r);
+        }
 
         Ok(notification_id)
     }
@@ -379,14 +384,19 @@ impl NotificationCalls {
     pub fn notification_owner_join_request_event(
         invitee_principal: Principal,
         invite_attendee_response: InviteAttendeeResponse,
+        receivers: Vec<Principal>,
     ) -> Result<u64, ApiError> {
-        let (notification_id, _) = Self::add_and_send_notification(
+        let (notification_id, notification) = Self::add_and_send_notification(
             vec![invitee_principal],
             NotificationType::Event(EventNotificationType::JoinEventOwnerRequest(
                 invite_attendee_response,
             )),
             true,
         )?;
+
+        for r in receivers {
+            Self::send_notification(None, notification.clone(), r);
+        }
 
         Ok(notification_id)
     }

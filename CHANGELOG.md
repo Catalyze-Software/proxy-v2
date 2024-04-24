@@ -18,8 +18,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `_dev_check_member_sync` call to check if the stores are in sync
 - Added `_dev_check_attendees_sync` call to check if the stores are in sync
 - Added `_dev_check_events_sync` call to check if the stores are in sync
+- Added `processed_by` to `Notification` struct
 
 ### Changed
+
+- Send notification to higher role members when owner sends `group_join_request` to user
+- Send notification to higher role members when owner sends `event_join_request` to user (not used)
 
 ### Fixed
 

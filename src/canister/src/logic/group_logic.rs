@@ -412,6 +412,7 @@ impl GroupCalls {
         let notification_id = NotificationCalls::notification_owner_join_request_group(
             invitee_principal,
             invite_member_response,
+            Self::get_higher_role_members(group_id),
         )?;
 
         // Add the group to the member
@@ -440,18 +441,8 @@ impl GroupCalls {
         }
 
         if let Some(invite) = invite {
-            let higher_role_members: Vec<Principal> = GroupCalls::get_group_members_by_permission(
-                group_id,
-                PermissionType::Invite(None),
-                PermissionActionType::Write,
-            )
-            .unwrap_or(vec![])
-            .iter()
-            .map(|m| m.principal)
-            .collect();
-
             NotificationCalls::notification_user_join_request_group_accept_or_decline(
-                higher_role_members,
+                Self::get_higher_role_members(group_id),
                 invite,
                 accept,
             )?;
@@ -904,6 +895,18 @@ impl GroupCalls {
         GroupStore::update(group_id, group)?;
         Ok(())
     }
+
+    pub fn get_higher_role_members(group_id: u64) -> Vec<Principal> {
+        GroupCalls::get_group_members_by_permission(
+            group_id,
+            PermissionType::Invite(None),
+            PermissionActionType::Write,
+        )
+        .unwrap_or(vec![])
+        .iter()
+        .map(|m| m.principal)
+        .collect()
+    }
 }
 
 impl GroupValidation {
@@ -1198,19 +1201,8 @@ impl GroupValidation {
             }
             // If the group is private, add the invite to the member
             Private => {
-                let higher_role_members: Vec<Principal> =
-                    GroupCalls::get_group_members_by_permission(
-                        group_id,
-                        PermissionType::Invite(None),
-                        PermissionActionType::Write,
-                    )
-                    .unwrap_or(vec![])
-                    .iter()
-                    .map(|m| m.principal)
-                    .collect();
-
                 let notification_id = NotificationCalls::notification_user_join_request_group(
-                    higher_role_members,
+                    GroupCalls::get_higher_role_members(group_id),
                     InviteMemberResponse::new(caller, member.clone(), group_id),
                 )?;
 

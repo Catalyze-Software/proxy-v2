@@ -309,6 +309,7 @@ impl EventCalls {
         let notification_id = NotificationCalls::notification_owner_join_request_event(
             attendee_principal,
             invite_attendee_response.clone(),
+            vec![],
         )?;
 
         attendee.add_invite(
