@@ -728,8 +728,8 @@ service : () -> {
   get_events : (nat64, nat64, EventSort, vec EventFilter) -> (Result_17) query;
   get_group : (nat64) -> (Result_6) query;
   get_group_by_name : (text) -> (Result_6) query;
-  get_group_invites : (nat64) -> (Result_18);
-  get_group_invites_with_profiles : (nat64) -> (Result_19);
+  get_group_invites : (nat64) -> (Result_18) query;
+  get_group_invites_with_profiles : (nat64) -> (Result_19) query;
   get_group_member : (nat64, principal) -> (Result_20) query;
   get_group_member_with_profile : (nat64, principal) -> (Result_21) query;
   get_group_members : (nat64) -> (Result_22) query;

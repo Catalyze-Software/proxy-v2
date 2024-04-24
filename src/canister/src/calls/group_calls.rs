@@ -600,7 +600,7 @@ pub fn remove_member_invite_from_group(
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 /// TODO: This action is guarded by group role based authorization
-#[update(guard = "has_access")]
+#[query(guard = "has_access")]
 pub fn get_group_invites(group_id: u64) -> Result<Vec<InviteMemberResponse>, ApiError> {
     can_read(group_id, PermissionType::Invite(None))?;
     GroupCalls::get_group_invites(group_id)
@@ -615,7 +615,8 @@ pub fn get_group_invites(group_id: u64) -> Result<Vec<InviteMemberResponse>, Api
 /// * `ApiError` - If something went wrong while getting the group invites
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[update(guard = "has_access")]
+/// TODO: This action is guarded by group role based authorization
+#[query(guard = "has_access")]
 pub fn get_group_invites_with_profiles(
     group_id: u64,
 ) -> Result<Vec<(InviteMemberResponse, ProfileResponse)>, ApiError> {

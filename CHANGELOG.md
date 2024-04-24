@@ -18,6 +18,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- changed `get_group_invites` to `query`
+- changed `get_group_invites_with_profiles` to `query`
+- change `get_reports` permission to `can_read`
 - Fix store clearing
 
 ### Removed
