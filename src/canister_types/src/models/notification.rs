@@ -7,8 +7,10 @@ use candid::{Decode, Encode};
 use crate::impl_storable_for;
 
 use super::{
-    attendee::InviteAttendeeResponse, friend_request::FriendRequestResponse,
-    member::InviteMemberResponse, user_notifications::UserNotificationData,
+    attendee::InviteAttendeeResponse,
+    friend_request::FriendRequestResponse,
+    member::{InviteMemberResponse, JoinedMemberResponse},
+    user_notifications::UserNotificationData,
 };
 
 impl_storable_for!(Notification);
@@ -91,6 +93,8 @@ pub enum GroupNotificationType {
     JoinGroupOwnerRequestAccept(InviteMemberResponse),
     JoinGroupOwnerRequestDecline(InviteMemberResponse),
 
+    MemberRoleAssign(JoinedMemberResponse),
+    UserRemoveInvite(InviteMemberResponse),
     UserJoinGroup(u64),
     UserLeaveGroup(u64),
     GroupReminder(u64),

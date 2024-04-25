@@ -562,14 +562,13 @@ impl EventCalls {
     pub fn remove_attendee_from_event(
         attendee_principal: Principal,
         event_id: u64,
-        group_id: u64,
     ) -> Result<(), ApiError> {
         let (_, mut attendee) = AttendeeStore::get(attendee_principal)?;
         if !attendee.is_event_joined(&event_id) {
             return Err(ApiError::not_found());
         }
 
-        attendee.remove_joined(group_id);
+        attendee.remove_joined(event_id);
         AttendeeStore::update(attendee_principal, attendee)?;
 
         let (_, mut attendees) = EventAttendeeStore::get(event_id)?;

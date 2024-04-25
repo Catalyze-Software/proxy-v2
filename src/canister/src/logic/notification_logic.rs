@@ -3,7 +3,7 @@ use canister_types::models::{
     api_error::ApiError,
     attendee::{AttendeeInvite, InviteAttendeeResponse},
     friend_request::{FriendRequest, FriendRequestResponse},
-    member::{InviteMemberResponse, MemberInvite},
+    member::{InviteMemberResponse, JoinedMemberResponse, MemberInvite},
     notification::{
         EventNotificationType, GroupNotificationType, Notification, NotificationResponse,
         NotificationType, RelationNotificationType,
@@ -224,6 +224,7 @@ impl NotificationCalls {
         invitee_principal: Principal,
         invite: MemberInvite,
         is_accepted: bool,
+        receivers: Vec<Principal>,
     ) -> Result<(), ApiError> {
         if let Some(notification_id) = invite.notification_id {
             let (_, mut notification) = NotificationStore::get(notification_id)?;
@@ -254,11 +255,51 @@ impl NotificationCalls {
 
                 // send notification to the users who could have accepted the request
                 Self::send_notification(None, notification.clone(), invitee_principal);
+
+                for r in receivers {
+                    Self::send_notification(None, notification.clone(), r);
+                }
             }
             Ok(())
         } else {
             Err(ApiError::bad_request()
                 .add_message("Notification is not a user join group request"))
+        }
+    }
+
+    pub fn notification_change_member_role(
+        member: JoinedMemberResponse,
+        receivers: Vec<Principal>,
+    ) -> () {
+        for receiver in receivers {
+            Self::send_notification(
+                None,
+                Notification::new(
+                    NotificationType::Group(GroupNotificationType::MemberRoleAssign(
+                        member.clone(),
+                    )),
+                    false,
+                ),
+                receiver,
+            );
+        }
+    }
+
+    pub fn notification_remove_invite(
+        invite: InviteMemberResponse,
+        receivers: Vec<Principal>,
+    ) -> () {
+        for receiver in receivers {
+            Self::send_notification(
+                None,
+                Notification::new(
+                    NotificationType::Group(GroupNotificationType::UserRemoveInvite(
+                        invite.clone(),
+                    )),
+                    false,
+                ),
+                receiver,
+            );
         }
     }
 

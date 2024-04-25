@@ -231,7 +231,9 @@ type GroupNotificationType = variant {
   JoinGroupUserRequest : InviteMemberResponse;
   JoinGroupUserRequestDecline : InviteMemberResponse;
   JoinGroupOwnerRequest : InviteMemberResponse;
+  MemberRoleAssign : JoinedMemberResponse;
   GroupReminder : nat64;
+  UserRemoveInvite : InviteMemberResponse;
   JoinGroupOwnerRequestDecline : InviteMemberResponse;
   JoinGroupUserRequestAccept : InviteMemberResponse;
   JoinGroupOwnerRequestAccept : InviteMemberResponse;
@@ -697,6 +699,7 @@ service : () -> {
       record { text; bool },
       record { text; bool },
     ) query;
+  _dev_clear_friend_request : (text) -> (bool);
   _dev_clear_notifications : (text) -> (bool);
   _expose : () -> (opt WSMessage) query;
   accept_friend_request : (nat64) -> (Result);

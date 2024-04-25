@@ -501,6 +501,7 @@ impl GroupCalls {
                 caller(),
                 invite,
                 accept,
+                Self::get_higher_role_members(group_id),
             )?;
 
             MemberStore::update(caller(), member.clone())?;
@@ -528,7 +529,12 @@ impl GroupCalls {
         // Add the role to the member
         member.replace_roles(&group_id, vec![role]);
 
-        MemberStore::update(member_principal, member.clone())?;
+        let (principal, member) = MemberStore::update(member_principal, member.clone())?;
+
+        NotificationCalls::notification_change_member_role(
+            JoinedMemberResponse::new(principal, member.clone(), group_id),
+            Self::get_higher_role_members(group_id),
+        );
 
         Ok(member)
     }
@@ -784,11 +790,16 @@ impl GroupCalls {
         // Remove the group from the member
         member.remove_invite(group_id);
 
-        MemberStore::update(principal, member)?;
+        let (_, updated_member) = MemberStore::update(principal, member)?;
 
         let (id, mut member_collection) = GroupMemberStore::get(group_id)?;
         member_collection.remove_invite(&principal);
         GroupMemberStore::update(id, member_collection)?;
+
+        NotificationCalls::notification_remove_invite(
+            InviteMemberResponse::new(principal, updated_member, group_id),
+            Self::get_higher_role_members(group_id),
+        );
 
         Ok(())
     }

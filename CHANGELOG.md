@@ -20,11 +20,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `_dev_check_events_sync` call to check if the stores are in sync
 - Added `processed_by` to `Notification` struct
 - Added `attendee_count` to `EventResponse`
+- Added notification for group role change
+- Added notification for group invite remove
+- Added `_dev_clear_friend_request` call
 
 ### Changed
 
 - Send notification to higher role members when owner sends `group_join_request` to user
 - Send notification to higher role members when owner sends `event_join_request` to user (not used)
+- Send notification to higher role members when user accepts group invite
 
 ### Fixed
 
@@ -33,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - change `get_reports` permission to `can_read`
 - Fix store clearing
 - Fix `CallerData` to resturn the correct data for events
+- Fixed removing attendee from event
 
 ### Removed
 
