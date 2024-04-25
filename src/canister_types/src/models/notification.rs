@@ -7,8 +7,10 @@ use candid::{Decode, Encode};
 use crate::impl_storable_for;
 
 use super::{
-    attendee::InviteAttendeeResponse, friend_request::FriendRequestResponse,
-    member::InviteMemberResponse, user_notifications::UserNotificationData,
+    attendee::InviteAttendeeResponse,
+    friend_request::FriendRequestResponse,
+    member::{InviteMemberResponse, JoinedMemberResponse},
+    user_notifications::UserNotificationData,
 };
 
 impl_storable_for!(Notification);
@@ -18,6 +20,7 @@ pub struct Notification {
     // used on the frontend to determine if the notification is actionable
     // this value changes based on the action the user takes
     pub is_actionable: bool,
+    pub processed_by: Option<Principal>,
     pub is_accepted: Option<bool>,
     // additional data for the notification that the frontend can utilize
     pub metadata: Option<String>,
@@ -33,6 +36,7 @@ impl Notification {
             is_actionable,
             is_accepted: None,
             metadata: None,
+            processed_by: None,
             sender: caller(),
             created_at: time(),
             updated_at: time(),
@@ -42,6 +46,7 @@ impl Notification {
     pub fn mark_as_accepted(&mut self, is_accepted: bool, notification_type: NotificationType) {
         self.is_accepted = Some(is_accepted);
         self.is_actionable = false;
+        self.processed_by = Some(caller());
         self.updated_at = time();
         self.notification_type = notification_type;
     }
@@ -88,6 +93,8 @@ pub enum GroupNotificationType {
     JoinGroupOwnerRequestAccept(InviteMemberResponse),
     JoinGroupOwnerRequestDecline(InviteMemberResponse),
 
+    MemberRoleAssign(JoinedMemberResponse),
+    UserRemoveInvite(InviteMemberResponse),
     UserJoinGroup(u64),
     UserLeaveGroup(u64),
     GroupReminder(u64),

@@ -42,8 +42,8 @@ impl Attendee {
         );
     }
 
-    pub fn get_joined(&self) -> Vec<(u64, AttendeeJoin)> {
-        self.joined.iter().map(|(k, v)| (*k, v.clone())).collect()
+    pub fn get_joined(&self, event_id: &u64) -> Option<AttendeeJoin> {
+        self.joined.get(&event_id).cloned()
     }
 
     pub fn get_multiple_joined(&self) -> Vec<(u64, AttendeeJoin)> {
@@ -80,8 +80,8 @@ impl Attendee {
         );
     }
 
-    pub fn get_invite(&self, event_id: u64) -> Option<AttendeeInvite> {
-        self.invites.get(&event_id).cloned()
+    pub fn get_invite(&self, event_id: &u64) -> Option<AttendeeInvite> {
+        self.invites.get(event_id).cloned()
     }
 
     pub fn remove_invite(&mut self, event_id: u64) {

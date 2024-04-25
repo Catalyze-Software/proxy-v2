@@ -236,6 +236,7 @@ fn check_joined_and_invites(old_data: &OldData, new_data: &NewData) -> Vec<Strin
     assert_eq!(attendee_joined_counts, new_attendee_joined_counts);
     assert_eq!(attendee_invite_counts, new_attendee_invite_counts);
 
+    let ok = "OK";
     vec![
         format!("Old members joined count {}", member_joined_count),
         format!("Old members invite count {}", member_invite_count),
@@ -245,9 +246,21 @@ fn check_joined_and_invites(old_data: &OldData, new_data: &NewData) -> Vec<Strin
         format!("New members invite count {}", new_member_invite_count),
         format!("New attendees joined count {}", new_attendee_joined_count),
         format!("New attendees invite count {}", new_attendee_invite_count),
-        format!("Old member joined sorted vector equals new member joined sorted vector"),
-        format!("Old member invite sorted vector equals new member invite sorted vector"),
-        format!("Old attendee joined sorted vector equals new attendee joined sorted vector"),
-        format!("Old attendee invite sorted vector equals new attendee invite sorted vector"),
+        format!(
+            "Old member joined sorted vector equals new member joined sorted vector {}",
+            ok
+        ),
+        format!(
+            "Old member invite sorted vector equals new member invite sorted vector {}",
+            ok
+        ),
+        format!(
+            "Old attendee joined sorted vector equals new attendee joined sorted vector {}",
+            ok
+        ),
+        format!(
+            "Old attendee invite sorted vector equals new attendee invite sorted vector {}",
+            ok
+        ),
     ]
 }

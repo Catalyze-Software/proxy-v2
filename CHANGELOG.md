@@ -7,13 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [unreleased]
 
+## [0.1.5]
+
 ### Added
+
+- Added `special_members` to group to block or privilage members within a group
+- Added `ban_group_member` call
+- Added `remove_ban_from_group_member` call
+- Added `get_banned_group_members` call
+- Added `_dev_check_member_sync` call to check if the stores are in sync
+- Added `_dev_check_attendees_sync` call to check if the stores are in sync
+- Added `_dev_check_events_sync` call to check if the stores are in sync
+- Added `processed_by` to `Notification` struct
+- Added `attendee_count` to `EventResponse`
+- Added notification for group role change
+- Added notification for group invite remove
+- Added `_dev_clear_friend_request` call
 
 ### Changed
 
+- Send notification to higher role members when owner sends `group_join_request` to user
+- Send notification to higher role members when owner sends `event_join_request` to user (not used)
+- Send notification to higher role members when user accepts group invite
+
 ### Fixed
 
+- changed `get_group_invites` to `query`
+- changed `get_group_invites_with_profiles` to `query`
+- change `get_reports` permission to `can_read`
 - Fix store clearing
+- Fix `CallerData` to resturn the correct data for events
+- Fixed removing attendee from event
 
 ### Removed
 
@@ -160,6 +184,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Missing `notification_id` on migration models
 
+[0.1.5]: https://github.com/Catalyze-Software/proxy/compare/master...0.1.5
 [0.1.4]: https://github.com/Catalyze-Software/proxy/compare/master...0.1.4
 [0.1.3]: https://github.com/Catalyze-Software/proxy/compare/master...0.1.3
 [0.1.2]: https://github.com/Catalyze-Software/proxy/compare/master...0.1.2

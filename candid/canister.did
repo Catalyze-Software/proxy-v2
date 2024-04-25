@@ -150,6 +150,7 @@ type EventResponse = record {
   owner : principal;
   metadata : opt text;
   date : DateRange;
+  attendee_count : nat64;
   name : text;
   tags : vec nat32;
   description : text;
@@ -191,6 +192,7 @@ type GatedType = variant { Neuron : vec NeuronGated; Token : vec TokenGated };
 type Group = record {
   updated_on : nat64;
   banner_image : Asset;
+  special_members : vec record { principal; text };
   owner : principal;
   name : text;
   matrix_space_id : text;
@@ -229,7 +231,9 @@ type GroupNotificationType = variant {
   JoinGroupUserRequest : InviteMemberResponse;
   JoinGroupUserRequestDecline : InviteMemberResponse;
   JoinGroupOwnerRequest : InviteMemberResponse;
+  MemberRoleAssign : JoinedMemberResponse;
   GroupReminder : nat64;
+  UserRemoveInvite : InviteMemberResponse;
   JoinGroupOwnerRequestDecline : InviteMemberResponse;
   JoinGroupUserRequestAccept : InviteMemberResponse;
   JoinGroupOwnerRequestAccept : InviteMemberResponse;
@@ -344,6 +348,7 @@ type Notification = record {
   created_at : nat64;
   sender : principal;
   notification_type : NotificationType;
+  processed_by : opt principal;
 };
 type NotificationResponse = record {
   id : opt nat64;
@@ -529,48 +534,49 @@ type ReportSort = variant {
 };
 type Result = variant { Ok : bool; Err : ApiError };
 type Result_1 = variant { Ok : Attendee; Err : ApiError };
-type Result_10 = variant { Ok : nat64; Err : ApiError };
-type Result_11 = variant { Ok; Err : ApiError };
+type Result_10 = variant { Ok; Err : ApiError };
+type Result_11 = variant { Ok : nat64; Err : ApiError };
 type Result_12 = variant { Ok : record { bool; bool; bool }; Err : ApiError };
 type Result_13 = variant { Ok : vec JoinedAttendeeResponse; Err : ApiError };
-type Result_14 = variant {
+type Result_14 = variant { Ok : vec principal; Err : ApiError };
+type Result_15 = variant {
   Ok : vec record { ProfileResponse; vec text };
   Err : ApiError;
 };
-type Result_15 = variant { Ok : vec InviteAttendeeResponse; Err : ApiError };
-type Result_16 = variant {
+type Result_16 = variant { Ok : vec InviteAttendeeResponse; Err : ApiError };
+type Result_17 = variant {
   Ok : vec record { ProfileResponse; InviteAttendeeResponse };
   Err : ApiError;
 };
-type Result_17 = variant { Ok : PagedResponse; Err : ApiError };
-type Result_18 = variant { Ok : vec InviteMemberResponse; Err : ApiError };
-type Result_19 = variant {
+type Result_18 = variant { Ok : PagedResponse; Err : ApiError };
+type Result_19 = variant { Ok : vec InviteMemberResponse; Err : ApiError };
+type Result_2 = variant { Ok : Member; Err : ApiError };
+type Result_20 = variant {
   Ok : vec record { InviteMemberResponse; ProfileResponse };
   Err : ApiError;
 };
-type Result_2 = variant { Ok : Member; Err : ApiError };
-type Result_20 = variant { Ok : JoinedMemberResponse; Err : ApiError };
-type Result_21 = variant {
+type Result_21 = variant { Ok : JoinedMemberResponse; Err : ApiError };
+type Result_22 = variant {
   Ok : record { JoinedMemberResponse; ProfileResponse };
   Err : ApiError;
 };
-type Result_22 = variant { Ok : vec JoinedMemberResponse; Err : ApiError };
-type Result_23 = variant {
+type Result_23 = variant { Ok : vec JoinedMemberResponse; Err : ApiError };
+type Result_24 = variant {
   Ok : vec record { JoinedMemberResponse; ProfileResponse };
   Err : ApiError;
 };
-type Result_24 = variant { Ok : vec Role; Err : ApiError };
-type Result_25 = variant { Ok : PagedResponse_1; Err : ApiError };
-type Result_26 = variant { Ok : vec text; Err : ApiError };
-type Result_27 = variant { Ok : PagedResponse_2; Err : ApiError };
-type Result_28 = variant { Ok : InviteAttendeeResponse; Err : ApiError };
-type Result_29 = variant {
+type Result_25 = variant { Ok : vec Role; Err : ApiError };
+type Result_26 = variant { Ok : PagedResponse_1; Err : ApiError };
+type Result_27 = variant { Ok : vec text; Err : ApiError };
+type Result_28 = variant { Ok : PagedResponse_2; Err : ApiError };
+type Result_29 = variant { Ok : InviteAttendeeResponse; Err : ApiError };
+type Result_3 = variant { Ok : JoinedAttendeeResponse; Err : ApiError };
+type Result_30 = variant {
   Ok : vec record { nat64; UserNotificationData };
   Err : ApiError;
 };
-type Result_3 = variant { Ok : JoinedAttendeeResponse; Err : ApiError };
-type Result_30 = variant { Ok; Err : text };
-type Result_31 = variant { Ok : CanisterOutputCertifiedMessages; Err : text };
+type Result_31 = variant { Ok; Err : text };
+type Result_32 = variant { Ok : CanisterOutputCertifiedMessages; Err : text };
 type Result_4 = variant { Ok : EventResponse; Err : ApiError };
 type Result_5 = variant { Ok : FriendRequestResponse; Err : ApiError };
 type Result_6 = variant { Ok : GroupResponse; Err : ApiError };
@@ -681,6 +687,19 @@ type WebsocketMessage = record {
 };
 service : () -> {
   __get_candid_interface_tmp_hack : () -> (text) query;
+  _dev_check_attendees_sync : (principal, nat64) -> (
+      record { text; bool },
+      record { text; bool },
+    ) query;
+  _dev_check_events_sync : (nat64, nat64) -> (
+      record { text; bool },
+      record { text; bool },
+    ) query;
+  _dev_check_member_sync : (principal, nat64) -> (
+      record { text; bool },
+      record { text; bool },
+    ) query;
+  _dev_clear_friend_request : (text) -> (bool);
   _dev_clear_notifications : (text) -> (bool);
   _expose : () -> (opt WSMessage) query;
   accept_friend_request : (nat64) -> (Result);
@@ -702,40 +721,43 @@ service : () -> {
   approve_privacy_policy : (nat64) -> (Result);
   approve_terms_of_service : (nat64) -> (Result);
   assign_role : (nat64, text, principal) -> (Result_2);
+  ban_group_member : (nat64, principal) -> (Result_10);
   block_user : (principal) -> (Result_7);
-  boost : (Subject, nat64) -> (Result_10);
-  cancel_event : (nat64, nat64, text) -> (Result_11);
+  boost : (Subject, nat64) -> (Result_11);
+  cancel_event : (nat64, nat64, text) -> (Result_10);
+  check_new_stores : () -> (vec text) query;
   decline_friend_request : (nat64) -> (Result);
   decline_owner_request_group_invite : (nat64) -> (Result_2);
   decline_user_request_group_invite : (nat64, principal) -> (Result_2);
-  delete_event : (nat64, nat64) -> (Result_11);
+  delete_event : (nat64, nat64) -> (Result_10);
   delete_group : (nat64) -> (Result_12);
   edit_event : (nat64, nat64, UpdateEvent) -> (Result_4);
   edit_group : (nat64, UpdateGroup) -> (Result_6);
   edit_profile : (UpdateProfile) -> (Result_7);
   edit_role_permissions : (nat64, text, vec PostPermission) -> (Result);
   get_attending_from_principal : (principal) -> (Result_13) query;
+  get_banned_group_members : (nat64) -> (Result_14) query;
   get_boosted_events : () -> (vec EventResponse) query;
   get_boosted_groups : () -> (vec GroupResponse) query;
   get_connected_clients : () -> (vec principal) query;
   get_e8s_per_day_boost_cost : () -> (nat64) query;
   get_event : (nat64) -> (Result_4) query;
   get_event_attendees : (nat64) -> (Result_13) query;
-  get_event_attendees_profiles_and_roles : (nat64) -> (Result_14) query;
+  get_event_attendees_profiles_and_roles : (nat64) -> (Result_15) query;
   get_event_count : (opt vec nat64, opt text) -> (EventsCount) query;
-  get_event_invites : (nat64, nat64) -> (Result_15) query;
-  get_event_invites_with_profiles : (nat64) -> (Result_16) query;
-  get_events : (nat64, nat64, EventSort, vec EventFilter) -> (Result_17) query;
+  get_event_invites : (nat64, nat64) -> (Result_16) query;
+  get_event_invites_with_profiles : (nat64) -> (Result_17) query;
+  get_events : (nat64, nat64, EventSort, vec EventFilter) -> (Result_18) query;
   get_group : (nat64) -> (Result_6) query;
   get_group_by_name : (text) -> (Result_6) query;
-  get_group_invites : (nat64) -> (Result_18);
-  get_group_invites_with_profiles : (nat64) -> (Result_19);
-  get_group_member : (nat64, principal) -> (Result_20) query;
-  get_group_member_with_profile : (nat64, principal) -> (Result_21) query;
-  get_group_members : (nat64) -> (Result_22) query;
-  get_group_members_with_profiles : (nat64) -> (Result_23) query;
-  get_group_roles : (nat64) -> (Result_24);
-  get_groups : (nat64, nat64, vec GroupFilter, GroupSort) -> (Result_25) query;
+  get_group_invites : (nat64) -> (Result_19) query;
+  get_group_invites_with_profiles : (nat64) -> (Result_20) query;
+  get_group_member : (nat64, principal) -> (Result_21) query;
+  get_group_member_with_profile : (nat64, principal) -> (Result_22) query;
+  get_group_members : (nat64) -> (Result_23) query;
+  get_group_members_with_profiles : (nat64) -> (Result_24) query;
+  get_group_roles : (nat64) -> (Result_25);
+  get_groups : (nat64, nat64, vec GroupFilter, GroupSort) -> (Result_26) query;
   get_groups_by_id : (vec nat64) -> (vec GroupResponse) query;
   get_groups_count : (opt text) -> (GroupsCount) query;
   get_groups_for_members : (vec principal) -> (vec JoinedMemberResponse) query;
@@ -743,7 +765,7 @@ service : () -> {
   get_incoming_friend_requests_with_profile : () -> (
       vec record { FriendRequestResponse; ProfileResponse },
     ) query;
-  get_member_roles : (nat64, principal) -> (Result_26) query;
+  get_member_roles : (nat64, principal) -> (Result_27) query;
   get_notifications : () -> (vec NotificationResponse) query;
   get_outgoing_friend_requests : () -> (vec FriendRequestResponse) query;
   get_outgoing_friend_requests_with_profile : () -> (
@@ -755,10 +777,10 @@ service : () -> {
   get_relations : (RelationType) -> (vec principal) query;
   get_relations_count : (RelationType) -> (nat64) query;
   get_relations_with_profiles : (RelationType) -> (vec ProfileResponse) query;
-  get_remaining_boost_time_in_seconds : (Subject) -> (Result_10) query;
+  get_remaining_boost_time_in_seconds : (Subject) -> (Result_11) query;
   get_report : (nat64, nat64) -> (Result_8) query;
   get_reports : (nat64, nat64, ReportSort, vec ReportFilter, nat64) -> (
-      Result_27,
+      Result_28,
     ) query;
   get_self_attendee : () -> (Result_1) query;
   get_self_events : () -> (vec EventResponse) query;
@@ -767,23 +789,24 @@ service : () -> {
   get_starred_by_subject_type : (SubjectType) -> (vec nat64) query;
   get_unread_notifications : () -> (vec NotificationResponse) query;
   http_request : (HttpRequest) -> (HttpResponse) query;
-  invite_to_event : (nat64, nat64, principal) -> (Result_28);
+  invite_to_event : (nat64, nat64, principal) -> (Result_29);
   invite_to_group : (nat64, principal) -> (Result_2);
   join_event : (nat64) -> (Result_3);
-  join_group : (nat64, opt text) -> (Result_20);
-  leave_event : (nat64) -> (Result_11);
-  leave_group : (nat64) -> (Result_11);
-  mark_notifications_as_read : (vec nat64, bool) -> (Result_29);
+  join_group : (nat64, opt text) -> (Result_21);
+  leave_event : (nat64) -> (Result_10);
+  leave_group : (nat64) -> (Result_10);
+  mark_notifications_as_read : (vec nat64, bool) -> (Result_30);
   migrate : () -> (vec vec text);
-  remove_attendee_from_event : (nat64, nat64, principal) -> (Result_11);
-  remove_attendee_invite_from_event : (nat64, nat64, principal) -> (Result_11);
-  remove_event_invite : (nat64) -> (Result_11);
+  remove_attendee_from_event : (nat64, nat64, principal) -> (Result_10);
+  remove_attendee_invite_from_event : (nat64, nat64, principal) -> (Result_10);
+  remove_ban_from_group_member : (nat64, principal) -> (Result_10);
+  remove_event_invite : (nat64) -> (Result_10);
   remove_friend : (principal) -> (Result_7);
   remove_friend_request : (nat64) -> (Result);
   remove_group_role : (nat64, text) -> (Result);
-  remove_invite : (nat64) -> (Result_11);
-  remove_member_from_group : (nat64, principal) -> (Result_11);
-  remove_member_invite_from_group : (nat64, principal) -> (Result_11);
+  remove_invite : (nat64) -> (Result_10);
+  remove_member_from_group : (nat64, principal) -> (Result_10);
+  remove_member_invite_from_group : (nat64, principal) -> (Result_10);
   remove_member_role : (nat64, text, principal) -> (Result_2);
   remove_notifications : (vec nat64) -> (
       vec record { nat64; UserNotificationData },
@@ -794,8 +817,8 @@ service : () -> {
   remove_wallet_from_profile : (principal) -> (Result_7);
   set_wallet_as_primary : (principal) -> (Result_7);
   unblock_user : (principal) -> (Result_7);
-  ws_close : (CanisterWsCloseArguments) -> (Result_30);
-  ws_get_messages : (CanisterWsGetMessagesArguments) -> (Result_31) query;
-  ws_message : (CanisterWsMessageArguments, opt WSMessage) -> (Result_30);
-  ws_open : (CanisterWsOpenArguments) -> (Result_30);
+  ws_close : (CanisterWsCloseArguments) -> (Result_31);
+  ws_get_messages : (CanisterWsGetMessagesArguments) -> (Result_32) query;
+  ws_message : (CanisterWsMessageArguments, opt WSMessage) -> (Result_31);
+  ws_open : (CanisterWsOpenArguments) -> (Result_31);
 }

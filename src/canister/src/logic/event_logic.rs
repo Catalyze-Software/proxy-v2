@@ -49,13 +49,14 @@ impl EventCalls {
         // initialize group events with the new event
         let mut group_events = EventCollection::new();
         group_events.add_event(new_event_id);
-        GroupEventsStore::insert_by_key(post_event.group_id, group_events)?;
+        GroupEventsStore::update(post_event.group_id, group_events)?;
 
         Ok(EventResponse::new(
             new_event_id,
             new_event.clone(),
             Self::get_boosted_event(new_event_id),
             Self::get_event_caller_data(new_event_id, new_event.group_id),
+            Self::get_attendees_count(new_event_id),
         ))
     }
 
@@ -71,6 +72,7 @@ impl EventCalls {
                     event.clone(),
                     Self::get_boosted_event(event_id),
                     Self::get_event_caller_data(event_id, event.group_id),
+                    Self::get_attendees_count(event_id),
                 ));
             } else {
                 return Err(ApiError::unauthorized());
@@ -81,6 +83,7 @@ impl EventCalls {
                 event.clone(),
                 Self::get_boosted_event(event_id),
                 Self::get_event_caller_data(event_id, event.group_id),
+                Self::get_attendees_count(event_id),
             ));
         }
     }
@@ -122,6 +125,7 @@ impl EventCalls {
                     data.1.clone(),
                     Self::get_boosted_event(data.0),
                     Self::get_event_caller_data(data.0, data.1.group_id),
+                    Self::get_attendees_count(data.0),
                 )
             })
             .collect();
@@ -148,6 +152,7 @@ impl EventCalls {
             event.clone(),
             Self::get_boosted_event(event_id),
             Self::get_event_caller_data(event_id, event.group_id),
+            Self::get_attendees_count(event_id),
         ))
     }
 
@@ -309,6 +314,7 @@ impl EventCalls {
         let notification_id = NotificationCalls::notification_owner_join_request_event(
             attendee_principal,
             invite_attendee_response.clone(),
+            vec![],
         )?;
 
         attendee.add_invite(
@@ -343,7 +349,7 @@ impl EventCalls {
             return Err(ApiError::not_found());
         }
 
-        if let Some(invite) = attendee.get_invite(event_id) {
+        if let Some(invite) = attendee.get_invite(&event_id) {
             attendee.turn_invite_into_joined(event_id);
             let _ = NotificationCalls::notification_user_join_request_event_accept_or_decline(
                 attendee_principal,
@@ -372,7 +378,7 @@ impl EventCalls {
             return Err(ApiError::not_found());
         }
 
-        if let Some(invite) = attendee.get_invite(event_id) {
+        if let Some(invite) = attendee.get_invite(&event_id) {
             attendee.turn_invite_into_joined(event_id);
             let _ = NotificationCalls::notification_owner_join_request_event_accept_or_decline(
                 caller(),
@@ -453,7 +459,7 @@ impl EventCalls {
         for principal in event_attendees.get_invite_principals() {
             if let Ok((_, profile)) = ProfileStore::get(principal) {
                 if let Ok((_, attendee)) = AttendeeStore::get(principal) {
-                    let invite = attendee.get_invite(event_id);
+                    let invite = attendee.get_invite(&event_id);
                     if let Some(invite) = invite {
                         result.push((
                             ProfileResponse::new(principal, profile),
@@ -498,6 +504,7 @@ impl EventCalls {
                     data.1.clone(),
                     Self::get_boosted_event(data.0),
                     Self::get_event_caller_data(data.0, data.1.group_id),
+                    Self::get_attendees_count(data.0),
                 )
             })
             .collect()
@@ -555,14 +562,13 @@ impl EventCalls {
     pub fn remove_attendee_from_event(
         attendee_principal: Principal,
         event_id: u64,
-        group_id: u64,
     ) -> Result<(), ApiError> {
         let (_, mut attendee) = AttendeeStore::get(attendee_principal)?;
         if !attendee.is_event_joined(&event_id) {
             return Err(ApiError::not_found());
         }
 
-        attendee.remove_joined(group_id);
+        attendee.remove_joined(event_id);
         AttendeeStore::update(attendee_principal, attendee)?;
 
         let (_, mut attendees) = EventAttendeeStore::get(event_id)?;
@@ -602,24 +608,29 @@ impl EventCalls {
             .is_ok_and(|(_, profile)| profile.is_starred(&Subject::Event(event_id)));
 
         let (joined, invite) = match AttendeeStore::get(caller()) {
-            Ok((principal, member)) => {
-                let joined = JoinedAttendeeResponse::new(event_id, group_id, principal);
-                match member.get_invite(event_id) {
-                    Some(invite) => {
-                        let invite = InviteAttendeeResponse::new(
-                            event_id,
-                            group_id,
-                            principal,
-                            invite.invite_type,
-                        );
-                        (Some(joined), Some(invite))
-                    }
-                    None => (Some(joined), None),
-                }
-            }
+            Ok((principal, member)) => (
+                member.get_joined(&event_id).map_or(None, |_| {
+                    Some(JoinedAttendeeResponse::new(event_id, group_id, principal))
+                }),
+                member.get_invite(&event_id).map_or(None, |j| {
+                    Some(InviteAttendeeResponse::new(
+                        event_id,
+                        group_id,
+                        principal,
+                        j.invite_type,
+                    ))
+                }),
+            ),
             Err(_) => (None, None),
         };
 
         Some(EventCallerData::new(joined, invite, is_starred))
+    }
+
+    pub fn get_attendees_count(event_id: u64) -> u64 {
+        match EventAttendeeStore::get(event_id) {
+            Ok((_, member)) => member.get_member_count(),
+            Err(_) => 0,
+        }
     }
 }
