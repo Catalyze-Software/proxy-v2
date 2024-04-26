@@ -35,9 +35,9 @@ impl LoggerStore {
     }
 
     pub fn new_key() -> u64 {
-        LOGS.with(|logs| match logs.borrow().last_key_value() {
-            Some((key, _)) => key + 1,
-            None => 1,
+        LOGS.with(|logs| match logs.borrow().first_key_value() {
+            Some((key, _)) => key - 1,
+            None => u64::MAX,
         })
     }
 
@@ -46,38 +46,14 @@ impl LoggerStore {
     /// * `amount` - The number of logs to get
     /// # Returns
     /// * `Result<Vec<(u64, Logger)>, ApiError>` - The logs if found, otherwise an error
-    pub fn get_latest_logs(amount: u64) -> Result<Vec<Logger>, ApiError> {
-        let last_key = LOGS.with(|logs| logs.borrow().last_key_value().expect("empty logs").0);
-
-        if amount > last_key {
-            return Err(ApiError::bad_request()
-                .add_method_name("get_latest_logs: amount exceeds log size")
-                .add_info(NAME));
-        }
-
-        if amount == 0 {
-            return Ok(Vec::new());
-        }
-
-        if amount > MAX_LOGS {
-            return Err(ApiError::bad_request()
-                .add_method_name("get_latest_logs: amount exceeds max logs")
-                .add_info(NAME));
-        }
-
+    pub fn get_latest_logs(amount: u64) -> Vec<Logger> {
+        // keys are added in descending order so just take the first n
         LOGS.with(|logs| {
-            let logs = logs.borrow();
-
-            let mut logs_vec = Vec::new();
-
-            let range = (last_key - amount + 1)..=last_key;
-
-            for (_, value) in logs.range(range) {
-                logs_vec.push(value.clone());
-            }
-            logs_vec.reverse();
-
-            Ok(logs_vec)
+            logs.borrow()
+                .iter()
+                .take(amount as usize)
+                .map(|(_, log)| log.clone())
+                .collect()
         })
     }
 }
@@ -97,21 +73,7 @@ impl StorageMethods<u64, Logger> for LoggerStore {
         })
     }
 
-    /// Get multiple loggers by keys
-    /// # Arguments
-    /// * `keys` - The keys of the loggers to get
-    /// # Returns
-    /// * `Vec<(u64, Logger)>` - The loggers (and their keys) if found, otherwise an empty vector
     fn get_many(_: Vec<u64>) -> Vec<(u64, Logger)> {
-        // LOGS.with(|logs| {
-        //     let mut logs_vec = Vec::new();
-        //     for id in keys {
-        //         if let Some(log) = logs.borrow().get(&id) {
-        //             logs_vec.push((id, log.clone()));
-        //         }
-        //     }
-        //     logs_vec
-        // })
         todo!()
     }
 
@@ -156,10 +118,10 @@ impl StorageMethods<u64, Logger> for LoggerStore {
         while Self::size() > MAX_LOGS {
             LOGS.with(|logs| {
                 let mut logs = logs.borrow_mut();
-                let first_key_val = logs
-                    .first_key_value()
+                let last_key_val = logs
+                    .last_key_value()
                     .expect("Failed to get first key value");
-                logs.remove(&first_key_val.0);
+                logs.remove(&last_key_val.0);
             });
         }
 
@@ -175,6 +137,10 @@ impl StorageMethods<u64, Logger> for LoggerStore {
     }
 
     fn remove(_: u64) -> bool {
+        todo!()
+    }
+
+    fn clear() -> () {
         todo!()
     }
 }

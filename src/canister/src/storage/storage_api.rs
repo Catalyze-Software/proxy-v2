@@ -38,7 +38,7 @@ pub static GROUP_MEMBERS_MEMORY_ID: MemoryId = MemoryId::new(10);
 pub static EVENT_ATTENDEES_MEMORY_ID: MemoryId = MemoryId::new(11);
 pub static GROUP_EVENTS_MEMORY_ID: MemoryId = MemoryId::new(12);
 
-static LOGS_MEMORY_ID: MemoryId = MemoryId::new(13);
+pub static LOGS_MEMORY_ID: MemoryId = MemoryId::new(13);
 
 // TODO:
 /// The type of the key used in the user centric `StableBTreeMap` for the different stores.

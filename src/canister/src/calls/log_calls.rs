@@ -1,3 +1,4 @@
+use crate::helpers::guards::has_access;
 use crate::storage::LoggerStore;
 use canister_types::models::{
     api_error::ApiError,
@@ -5,24 +6,25 @@ use canister_types::models::{
 };
 use ic_cdk::{query, update};
 
-#[update]
+#[update(guard = "has_access")]
 fn log(post_log: PostLog) -> Result<(u64, Logger), ApiError> {
     LoggerStore::new_from_post_log(post_log)
 }
 
-#[update]
+#[update(guard = "has_access")]
 fn log_with_caller(post_log: PostLog) -> Result<(u64, Logger), ApiError> {
     LoggerStore::new_from_post_log_with_caller(post_log)
 }
 
+// Testers: to be removed
 #[query]
-fn get_latest_logs(count: u64) -> Result<Vec<Logger>, ApiError> {
+fn get_latest_logs(count: u64) -> Vec<Logger> {
     LoggerStore::get_latest_logs(count)
 }
 
 #[update]
 fn fill_logs(n: u64) {
-    for i in 1..n {
+    for i in 1..=n {
         let post_log = PostLog {
             log_type: LogType::Info,
             description: i.to_string(),

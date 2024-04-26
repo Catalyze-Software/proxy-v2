@@ -578,13 +578,14 @@ type Result_25 = variant { Ok : PagedResponse_1; Err : ApiError };
 type Result_26 = variant { Ok : vec text; Err : ApiError };
 type Result_27 = variant { Ok : PagedResponse_2; Err : ApiError };
 type Result_28 = variant { Ok : InviteAttendeeResponse; Err : ApiError };
-type Result_29 = variant {
+type Result_29 = variant { Ok : record { nat64; Logger }; Err : ApiError };
+type Result_3 = variant { Ok : JoinedAttendeeResponse; Err : ApiError };
+type Result_30 = variant {
   Ok : vec record { nat64; UserNotificationData };
   Err : ApiError;
 };
-type Result_3 = variant { Ok : JoinedAttendeeResponse; Err : ApiError };
-type Result_30 = variant { Ok; Err : text };
-type Result_31 = variant { Ok : CanisterOutputCertifiedMessages; Err : text };
+type Result_31 = variant { Ok; Err : text };
+type Result_32 = variant { Ok : CanisterOutputCertifiedMessages; Err : text };
 type Result_4 = variant { Ok : EventResponse; Err : ApiError };
 type Result_5 = variant { Ok : FriendRequestResponse; Err : ApiError };
 type Result_6 = variant { Ok : GroupResponse; Err : ApiError };
@@ -758,6 +759,7 @@ service : () -> {
   get_incoming_friend_requests_with_profile : () -> (
       vec record { FriendRequestResponse; ProfileResponse },
     ) query;
+  get_latest_logs : (nat64) -> (vec Logger) query;
   get_member_roles : (nat64, principal) -> (Result_26) query;
   get_notifications : () -> (vec NotificationResponse) query;
   get_outgoing_friend_requests : () -> (vec FriendRequestResponse) query;
@@ -788,7 +790,9 @@ service : () -> {
   join_group : (nat64, opt text) -> (Result_20);
   leave_event : (nat64) -> (Result_11);
   leave_group : (nat64) -> (Result_11);
-  mark_notifications_as_read : (vec nat64, bool) -> (Result_29);
+  log : (PostLog) -> (Result_29);
+  log_with_caller : (PostLog) -> (Result_29);
+  mark_notifications_as_read : (vec nat64, bool) -> (Result_30);
   migrate : () -> (vec vec text);
   remove_attendee_from_event : (nat64, nat64, principal) -> (Result_11);
   remove_attendee_invite_from_event : (nat64, nat64, principal) -> (Result_11);
@@ -810,8 +814,8 @@ service : () -> {
   set_wallet_as_primary : (principal) -> (Result_7);
   size : () -> (nat64) query;
   unblock_user : (principal) -> (Result_7);
-  ws_close : (CanisterWsCloseArguments) -> (Result_30);
-  ws_get_messages : (CanisterWsGetMessagesArguments) -> (Result_31) query;
-  ws_message : (CanisterWsMessageArguments, opt WSMessage) -> (Result_30);
-  ws_open : (CanisterWsOpenArguments) -> (Result_30);
+  ws_close : (CanisterWsCloseArguments) -> (Result_31);
+  ws_get_messages : (CanisterWsGetMessagesArguments) -> (Result_32) query;
+  ws_message : (CanisterWsMessageArguments, opt WSMessage) -> (Result_31);
+  ws_open : (CanisterWsOpenArguments) -> (Result_31);
 }

@@ -17,6 +17,7 @@ pub mod storage;
 #[query(name = "__get_candid_interface_tmp_hack")]
 pub fn __export_did_tmp_() -> String {
     use candid::export_service;
+
     use canister_types::models::api_error::*;
     use canister_types::models::attendee::*;
     use canister_types::models::event::*;
