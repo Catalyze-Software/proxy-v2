@@ -2,7 +2,7 @@ use crate::helpers::guards::has_access;
 use crate::storage::LoggerStore;
 use canister_types::models::{
     api_error::ApiError,
-    log::{LogType, Logger, PostLog},
+    log::{Logger, PostLog},
 };
 use ic_cdk::{query, update};
 
@@ -16,27 +16,12 @@ fn log_with_caller(post_log: PostLog) -> Result<(u64, Logger), ApiError> {
     LoggerStore::new_from_post_log_with_caller(post_log)
 }
 
-// Testers: to be removed
-#[query]
+#[query(guard = "has_access")]
 fn get_latest_logs(count: u64) -> Vec<Logger> {
     LoggerStore::get_latest_logs(count)
 }
 
-#[update]
-fn fill_logs(n: u64) {
-    for i in 1..=n {
-        let post_log = PostLog {
-            log_type: LogType::Info,
-            description: i.to_string(),
-            source: None,
-            data: None,
-        };
-
-        LoggerStore::new_from_post_log(post_log).expect("Failed to create log");
-    }
-}
-
-#[query]
-fn size() -> u64 {
+#[query(guard = "has_access")]
+fn log_size() -> u64 {
     LoggerStore::size()
 }
