@@ -9,6 +9,9 @@ pub struct LoggerStore;
 pub const NAME: &str = "logs";
 pub const MAX_LOGS: u64 = 50;
 
+// Logging constants
+pub const LOGIN_EVENT: &str = "LoginEvent";
+
 impl LoggerStore {
     /// Create a new logger from a post log
     /// # Arguments
@@ -55,6 +58,30 @@ impl LoggerStore {
                 .map(|(_, log)| log.clone())
                 .collect()
         })
+    }
+
+    pub fn logged_in_past_5_minutes() -> bool {
+        let now = ic_cdk::api::time();
+        let five_minutes_ago = now - 300_000_000_000;
+
+        let logged_in = LOGS.with(|logs| {
+            for log in logs.borrow().iter() {
+                let within_5_minutes = log.1.created_on > five_minutes_ago;
+                if !within_5_minutes {
+                    break;
+                }
+
+                let login_event = log.1.description == LOGIN_EVENT;
+                let same_principal = log.1.principal == Some(ic_cdk::caller());
+
+                if within_5_minutes && login_event && same_principal {
+                    return Some(true);
+                }
+            }
+            None
+        });
+
+        logged_in.unwrap_or(false)
     }
 }
 
