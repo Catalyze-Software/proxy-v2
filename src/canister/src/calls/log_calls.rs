@@ -2,7 +2,7 @@ use crate::helpers::guards::has_access;
 use crate::storage::LoggerStore;
 use canister_types::models::{
     api_error::ApiError,
-    logger::{LogType, Logger, PostLog},
+    log::{LogType, Logger, PostLog},
 };
 use ic_cdk::{query, update};
 

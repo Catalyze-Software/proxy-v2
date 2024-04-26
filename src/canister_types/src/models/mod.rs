@@ -37,4 +37,4 @@ pub mod subject;
 pub mod user_notifications;
 pub mod websocket_message;
 
-pub mod logger;
+pub mod log;

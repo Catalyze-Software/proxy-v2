@@ -1,13 +1,13 @@
 use super::{storage_api::LOGS, StorageMethods};
 use canister_types::models::{
     api_error::ApiError,
-    logger::{Logger, PostLog},
+    log::{Logger, PostLog},
 };
 
 pub struct LoggerStore;
 
 pub const NAME: &str = "logs";
-pub const MAX_LOGS: u64 = 5;
+pub const MAX_LOGS: u64 = 50;
 
 impl LoggerStore {
     /// Create a new logger from a post log
@@ -34,7 +34,7 @@ impl LoggerStore {
         LOGS.with(|logs| logs.borrow().len() as u64)
     }
 
-    pub fn new_key() -> u64 {
+    fn new_key() -> u64 {
         LOGS.with(|logs| match logs.borrow().first_key_value() {
             Some((key, _)) => key - 1,
             None => u64::MAX,
