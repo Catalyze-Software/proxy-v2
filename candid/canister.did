@@ -133,7 +133,7 @@ type EventFilter = variant {
   EndDate : DateRange;
 };
 type EventNotificationType = variant {
-  UserJoinEvent : nat64;
+  UserJoinEvent : record { nat64; nat64 };
   JoinEventOwnerRequestDecline : InviteAttendeeResponse;
   EventReminder : nat64;
   JoinEventUserRequestAccept : InviteAttendeeResponse;
@@ -141,7 +141,7 @@ type EventNotificationType = variant {
   JoinEventOwnerRequest : InviteAttendeeResponse;
   JoinEventUserRequest : InviteAttendeeResponse;
   JoinEventUserRequestDecline : InviteAttendeeResponse;
-  UserLeaveEvent : nat64;
+  UserLeaveEvent : record { nat64; nat64 };
 };
 type EventResponse = record {
   id : nat64;
@@ -228,6 +228,7 @@ type GroupFilter = variant {
 type GroupNotificationType = variant {
   UserLeaveGroup : nat64;
   UserJoinGroup : nat64;
+  UserRemoveMember : JoinedMemberResponse;
   JoinGroupUserRequest : InviteMemberResponse;
   JoinGroupUserRequestDecline : InviteMemberResponse;
   JoinGroupOwnerRequest : InviteMemberResponse;

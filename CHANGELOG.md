@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [unreleased]
 
+### Changed
+
+- changed `UserJoinEvent(event_id)` to `UserJoinEvent((group_id, event_id))`
+- on group invite accept send silent notification to all group members
+- on group invite decline send silent notification to all higher role members
+
 ## [0.1.5]
 
 ### Added

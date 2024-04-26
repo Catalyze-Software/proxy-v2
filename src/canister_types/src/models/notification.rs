@@ -95,8 +95,9 @@ pub enum GroupNotificationType {
 
     MemberRoleAssign(JoinedMemberResponse),
     UserRemoveInvite(InviteMemberResponse),
-    UserJoinGroup(u64),
+    UserRemoveMember(JoinedMemberResponse),
     UserLeaveGroup(u64),
+    UserJoinGroup(u64),
     GroupReminder(u64),
 }
 
@@ -112,8 +113,8 @@ pub enum EventNotificationType {
     JoinEventOwnerRequestAccept(InviteAttendeeResponse),
     JoinEventOwnerRequestDecline(InviteAttendeeResponse),
 
-    UserJoinEvent(u64),
-    UserLeaveEvent(u64),
+    UserJoinEvent((u64, u64)),
+    UserLeaveEvent((u64, u64)),
     EventReminder(u64),
 }
 

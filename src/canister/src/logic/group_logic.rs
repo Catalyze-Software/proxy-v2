@@ -440,11 +440,14 @@ impl GroupCalls {
             );
         }
 
+        let (_, members_collection) = GroupMemberStore::get(group_id)?;
+
         if let Some(invite) = invite {
             NotificationCalls::notification_user_join_request_group_accept_or_decline(
-                Self::get_higher_role_members(group_id),
                 invite,
                 accept,
+                members_collection.get_member_principals(),
+                Self::get_higher_role_members(group_id),
             )?;
 
             if accept {
@@ -497,10 +500,13 @@ impl GroupCalls {
                 })?;
             }
 
+            let (_, members_collection) = GroupMemberStore::get(group_id)?;
+
             NotificationCalls::notification_owner_join_request_group_accept_or_decline(
                 caller(),
                 invite,
                 accept,
+                members_collection.get_member_principals(),
                 Self::get_higher_role_members(group_id),
             )?;
 
@@ -531,7 +537,7 @@ impl GroupCalls {
 
         let (principal, member) = MemberStore::update(member_principal, member.clone())?;
 
-        NotificationCalls::notification_change_member_role(
+        NotificationCalls::notification_change_group_member_role(
             JoinedMemberResponse::new(principal, member.clone(), group_id),
             Self::get_higher_role_members(group_id),
         );
@@ -767,11 +773,16 @@ impl GroupCalls {
         // Remove the group from the member
         member.remove_joined(group_id);
 
-        MemberStore::update(principal, member)?;
+        MemberStore::update(principal, member.clone())?;
 
         let (id, mut member_collection) = GroupMemberStore::get(group_id)?;
         member_collection.remove_member(&principal);
         GroupMemberStore::update(id, member_collection)?;
+
+        NotificationCalls::notification_remove_group_member(
+            JoinedMemberResponse::new(principal, member, group_id),
+            Self::get_higher_role_members(group_id),
+        );
 
         Ok(())
     }
@@ -796,7 +807,7 @@ impl GroupCalls {
         member_collection.remove_invite(&principal);
         GroupMemberStore::update(id, member_collection)?;
 
-        NotificationCalls::notification_remove_invite(
+        NotificationCalls::notification_remove_group_invite(
             InviteMemberResponse::new(principal, updated_member, group_id),
             Self::get_higher_role_members(group_id),
         );
