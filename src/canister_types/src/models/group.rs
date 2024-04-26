@@ -18,6 +18,7 @@ use super::{
     boosted::Boost,
     member::{InviteMemberResponse, JoinedMemberResponse},
     permission::Permission,
+    relation_type::RelationType,
 };
 
 impl_storable_for!(Group);
@@ -39,6 +40,7 @@ pub struct Group {
     pub roles: Vec<Role>,
     pub is_deleted: bool,
     pub notification_id: Option<u64>,
+    pub special_members: HashMap<Principal, String>,
     pub wallets: HashMap<Principal, String>,
     pub updated_on: u64,
     pub created_on: u64,
@@ -65,6 +67,7 @@ impl Group {
             updated_on: Default::default(),
             created_on: Default::default(),
             privacy_gated_type_amount: Default::default(),
+            special_members: Default::default(),
         }
     }
 
@@ -88,6 +91,7 @@ impl Group {
             updated_on: time(),
             created_on: time(),
             privacy_gated_type_amount: group.privacy_gated_type_amount,
+            special_members: HashMap::default(),
         }
     }
 
@@ -140,6 +144,21 @@ impl Group {
 
     pub fn remove_notification_id(&mut self) {
         self.notification_id = None;
+    }
+
+    pub fn add_special_member(&mut self, member: Principal, relation: RelationType) {
+        self.special_members.insert(member, relation.to_string());
+    }
+
+    pub fn remove_special_member_from_group(&mut self, member: Principal) {
+        self.special_members.remove(&member);
+    }
+
+    pub fn is_banned_member(&self, member: Principal) -> bool {
+        self.special_members
+            .get(&member)
+            .map(|relation| relation == &RelationType::Blocked.to_string())
+            .unwrap_or(false)
     }
 }
 

@@ -266,6 +266,7 @@ fn groups_from_old(old_data: &OldData) -> Vec<(u64, Group)> {
             is_deleted: old_group.is_deleted,
             wallets: old_group.wallets.clone(),
             notification_id: None,
+            special_members: HashMap::new(),
         };
 
         new_groups.push((id, group));

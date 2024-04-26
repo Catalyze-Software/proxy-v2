@@ -3,7 +3,7 @@ use canister_types::models::{
     api_error::ApiError,
     attendee::{AttendeeInvite, InviteAttendeeResponse},
     friend_request::{FriendRequest, FriendRequestResponse},
-    member::{InviteMemberResponse, MemberInvite},
+    member::{InviteMemberResponse, JoinedMemberResponse, MemberInvite},
     notification::{
         EventNotificationType, GroupNotificationType, Notification, NotificationResponse,
         NotificationType, RelationNotificationType,
@@ -202,14 +202,19 @@ impl NotificationCalls {
     pub fn notification_owner_join_request_group(
         invitee_principal: Principal,
         invite_member_response: InviteMemberResponse,
+        receivers: Vec<Principal>,
     ) -> Result<u64, ApiError> {
-        let (notification_id, _) = Self::add_and_send_notification(
+        let (notification_id, notification) = Self::add_and_send_notification(
             vec![invitee_principal],
             NotificationType::Group(GroupNotificationType::JoinGroupOwnerRequest(
                 invite_member_response,
             )),
             true,
         )?;
+
+        for r in receivers {
+            Self::send_notification(None, notification.clone(), r);
+        }
 
         Ok(notification_id)
     }
@@ -219,6 +224,7 @@ impl NotificationCalls {
         invitee_principal: Principal,
         invite: MemberInvite,
         is_accepted: bool,
+        receivers: Vec<Principal>,
     ) -> Result<(), ApiError> {
         if let Some(notification_id) = invite.notification_id {
             let (_, mut notification) = NotificationStore::get(notification_id)?;
@@ -249,11 +255,51 @@ impl NotificationCalls {
 
                 // send notification to the users who could have accepted the request
                 Self::send_notification(None, notification.clone(), invitee_principal);
+
+                for r in receivers {
+                    Self::send_notification(None, notification.clone(), r);
+                }
             }
             Ok(())
         } else {
             Err(ApiError::bad_request()
                 .add_message("Notification is not a user join group request"))
+        }
+    }
+
+    pub fn notification_change_member_role(
+        member: JoinedMemberResponse,
+        receivers: Vec<Principal>,
+    ) -> () {
+        for receiver in receivers {
+            Self::send_notification(
+                None,
+                Notification::new(
+                    NotificationType::Group(GroupNotificationType::MemberRoleAssign(
+                        member.clone(),
+                    )),
+                    false,
+                ),
+                receiver,
+            );
+        }
+    }
+
+    pub fn notification_remove_invite(
+        invite: InviteMemberResponse,
+        receivers: Vec<Principal>,
+    ) -> () {
+        for receiver in receivers {
+            Self::send_notification(
+                None,
+                Notification::new(
+                    NotificationType::Group(GroupNotificationType::UserRemoveInvite(
+                        invite.clone(),
+                    )),
+                    false,
+                ),
+                receiver,
+            );
         }
     }
 
@@ -379,14 +425,19 @@ impl NotificationCalls {
     pub fn notification_owner_join_request_event(
         invitee_principal: Principal,
         invite_attendee_response: InviteAttendeeResponse,
+        receivers: Vec<Principal>,
     ) -> Result<u64, ApiError> {
-        let (notification_id, _) = Self::add_and_send_notification(
+        let (notification_id, notification) = Self::add_and_send_notification(
             vec![invitee_principal],
             NotificationType::Event(EventNotificationType::JoinEventOwnerRequest(
                 invite_attendee_response,
             )),
             true,
         )?;
+
+        for r in receivers {
+            Self::send_notification(None, notification.clone(), r);
+        }
 
         Ok(notification_id)
     }

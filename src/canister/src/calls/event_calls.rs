@@ -347,7 +347,7 @@ pub fn remove_attendee_from_event(
     attendee_principal: Principal,
 ) -> Result<(), ApiError> {
     can_edit(group_id, PermissionType::Event(None))?;
-    EventCalls::remove_attendee_from_event(attendee_principal, event_id, group_id)
+    EventCalls::remove_attendee_from_event(attendee_principal, event_id)
 }
 
 /// Remove an event invite as a admin - [`[update]`](update)

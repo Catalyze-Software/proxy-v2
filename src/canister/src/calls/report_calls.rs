@@ -8,7 +8,10 @@
 use ic_cdk::{query, update};
 
 use crate::{
-    helpers::{group_permission::can_write, guards::has_access},
+    helpers::{
+        group_permission::{can_read, can_write},
+        guards::has_access,
+    },
     logic::report_logic::ReportCalls,
 };
 use canister_types::models::{
@@ -71,6 +74,6 @@ pub fn get_reports(
     filters: Vec<ReportFilter>,
     group_id: u64,
 ) -> Result<PagedResponse<ReportResponse>, ApiError> {
-    can_write(group_id, PermissionType::Group(None))?;
+    can_read(group_id, PermissionType::Group(None))?;
     ReportCalls::get_reports(limit, page, sort, filters, group_id)
 }

@@ -35,6 +35,7 @@ use canister_types::{
         permission::{Permission, PermissionActionType, PermissionType, PostPermission},
         privacy::{GatedType, NeuronGatedRules, Privacy, TokenGated},
         profile::ProfileResponse,
+        relation_type::RelationType,
         role::Role,
         subject::{Subject, SubjectType},
         validation::{ValidateField, ValidationType},
@@ -411,6 +412,7 @@ impl GroupCalls {
         let notification_id = NotificationCalls::notification_owner_join_request_group(
             invitee_principal,
             invite_member_response,
+            Self::get_higher_role_members(group_id),
         )?;
 
         // Add the group to the member
@@ -439,18 +441,8 @@ impl GroupCalls {
         }
 
         if let Some(invite) = invite {
-            let higher_role_members: Vec<Principal> = GroupCalls::get_group_members_by_permission(
-                group_id,
-                PermissionType::Invite(None),
-                PermissionActionType::Write,
-            )
-            .unwrap_or(vec![])
-            .iter()
-            .map(|m| m.principal)
-            .collect();
-
             NotificationCalls::notification_user_join_request_group_accept_or_decline(
-                higher_role_members,
+                Self::get_higher_role_members(group_id),
                 invite,
                 accept,
             )?;
@@ -509,6 +501,7 @@ impl GroupCalls {
                 caller(),
                 invite,
                 accept,
+                Self::get_higher_role_members(group_id),
             )?;
 
             MemberStore::update(caller(), member.clone())?;
@@ -536,7 +529,12 @@ impl GroupCalls {
         // Add the role to the member
         member.replace_roles(&group_id, vec![role]);
 
-        MemberStore::update(member_principal, member.clone())?;
+        let (principal, member) = MemberStore::update(member_principal, member.clone())?;
+
+        NotificationCalls::notification_change_member_role(
+            JoinedMemberResponse::new(principal, member.clone(), group_id),
+            Self::get_higher_role_members(group_id),
+        );
 
         Ok(member)
     }
@@ -745,6 +743,19 @@ impl GroupCalls {
         Ok(())
     }
 
+    pub fn get_banned_group_members(group_id: u64) -> Vec<Principal> {
+        if let Ok((_, group)) = GroupStore::get(group_id) {
+            group
+                .special_members
+                .into_iter()
+                .filter(|m| m.1 == RelationType::Blocked.to_string())
+                .map(|m| m.0)
+                .collect()
+        } else {
+            return vec![];
+        }
+    }
+
     pub fn remove_member_from_group(principal: Principal, group_id: u64) -> Result<(), ApiError> {
         let (_, mut member) = MemberStore::get(principal)?;
 
@@ -779,11 +790,16 @@ impl GroupCalls {
         // Remove the group from the member
         member.remove_invite(group_id);
 
-        MemberStore::update(principal, member)?;
+        let (_, updated_member) = MemberStore::update(principal, member)?;
 
         let (id, mut member_collection) = GroupMemberStore::get(group_id)?;
         member_collection.remove_invite(&principal);
         GroupMemberStore::update(id, member_collection)?;
+
+        NotificationCalls::notification_remove_invite(
+            InviteMemberResponse::new(principal, updated_member, group_id),
+            Self::get_higher_role_members(group_id),
+        );
 
         Ok(())
     }
@@ -866,6 +882,41 @@ impl GroupCalls {
         };
 
         (member_count, event_count)
+    }
+
+    pub fn add_special_member_to_group(
+        group_id: u64,
+        principal: Principal,
+        relation: RelationType,
+    ) -> Result<(), ApiError> {
+        let (_, mut group) = GroupStore::get(group_id)?;
+
+        group.add_special_member(principal, relation);
+        GroupStore::update(group_id, group)?;
+        Ok(())
+    }
+
+    pub fn remove_special_member_from_group(
+        group_id: u64,
+        principal: Principal,
+    ) -> Result<(), ApiError> {
+        let (_, mut group) = GroupStore::get(group_id)?;
+
+        group.remove_special_member_from_group(principal);
+        GroupStore::update(group_id, group)?;
+        Ok(())
+    }
+
+    pub fn get_higher_role_members(group_id: u64) -> Vec<Principal> {
+        GroupCalls::get_group_members_by_permission(
+            group_id,
+            PermissionType::Invite(None),
+            PermissionActionType::Write,
+        )
+        .unwrap_or(vec![])
+        .iter()
+        .map(|m| m.principal)
+        .collect()
     }
 }
 
@@ -1130,6 +1181,10 @@ impl GroupValidation {
         let (group_id, group) = GroupStore::get(group_id)?;
         let (_, mut member) = MemberStore::get(caller)?;
 
+        if group.is_banned_member(caller) {
+            return Err(ApiError::unauthorized().add_message("You are allowed to join this group"));
+        }
+
         // Check if the member is already in the group
         if member.is_group_joined(&group_id) {
             return Err(ApiError::bad_request().add_message("Member is already in the group"));
@@ -1157,19 +1212,8 @@ impl GroupValidation {
             }
             // If the group is private, add the invite to the member
             Private => {
-                let higher_role_members: Vec<Principal> =
-                    GroupCalls::get_group_members_by_permission(
-                        group_id,
-                        PermissionType::Invite(None),
-                        PermissionActionType::Write,
-                    )
-                    .unwrap_or(vec![])
-                    .iter()
-                    .map(|m| m.principal)
-                    .collect();
-
                 let notification_id = NotificationCalls::notification_user_join_request_group(
-                    higher_role_members,
+                    GroupCalls::get_higher_role_members(group_id),
                     InviteMemberResponse::new(caller, member.clone(), group_id),
                 )?;
 
