@@ -17,12 +17,14 @@ pub mod storage;
 #[query(name = "__get_candid_interface_tmp_hack")]
 pub fn __export_did_tmp_() -> String {
     use candid::export_service;
+
     use canister_types::models::api_error::*;
     use canister_types::models::attendee::*;
     use canister_types::models::event::*;
     use canister_types::models::friend_request::*;
     use canister_types::models::group::*;
     use canister_types::models::http_types::HttpRequest;
+    use canister_types::models::log::*;
     use canister_types::models::member::*;
     use canister_types::models::notification::*;
     use canister_types::models::paged_response::*;

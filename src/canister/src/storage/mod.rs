@@ -6,6 +6,7 @@ mod friend_request_storage;
 mod group_events_storage;
 mod group_members_storage;
 mod group_storage;
+mod logger_storage;
 mod member_storage;
 mod notification_storage;
 mod profile_storage;
@@ -30,3 +31,5 @@ pub use user_notification_storage::UsernotificationStore;
 
 pub use storage_api::IdentifierRefMethods;
 pub use storage_api::StorageMethods;
+
+pub use logger_storage::LoggerStore;

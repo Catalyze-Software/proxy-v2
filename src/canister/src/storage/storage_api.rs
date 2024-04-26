@@ -1,9 +1,9 @@
 use candid::Principal;
 use canister_types::models::{
     api_error::ApiError, attendee::Attendee, boosted::Boost, event::Event,
-    event_collection::EventCollection, friend_request::FriendRequest, group::Group, member::Member,
-    member_collection::MemberCollection, notification::Notification, profile::Profile,
-    report::Report, user_notifications::UserNotifications,
+    event_collection::EventCollection, friend_request::FriendRequest, group::Group, log::Logger,
+    member::Member, member_collection::MemberCollection, notification::Notification,
+    profile::Profile, report::Report, user_notifications::UserNotifications,
 };
 use ic_stable_structures::{
     memory_manager::{MemoryId, MemoryManager, VirtualMemory},
@@ -37,6 +37,8 @@ pub static BOOSTED_MEMORY_ID: MemoryId = MemoryId::new(9);
 pub static GROUP_MEMBERS_MEMORY_ID: MemoryId = MemoryId::new(10);
 pub static EVENT_ATTENDEES_MEMORY_ID: MemoryId = MemoryId::new(11);
 pub static GROUP_EVENTS_MEMORY_ID: MemoryId = MemoryId::new(12);
+
+pub static LOGS_MEMORY_ID: MemoryId = MemoryId::new(13);
 
 // TODO:
 /// The type of the key used in the user centric `StableBTreeMap` for the different stores.
@@ -131,6 +133,10 @@ thread_local! {
 
     pub static USER_NOTIFICATIONS: StorageRef<Principal, UserNotifications> = RefCell::new(
         StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.borrow().get(USER_NOTIFICATIONS_MEMORY_ID)))
+    );
+
+    pub static LOGS: StorageRef<u64, Logger> = RefCell::new(
+        StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.borrow().get(LOGS_MEMORY_ID)))
     );
 
     // Collections for more performant lookup
