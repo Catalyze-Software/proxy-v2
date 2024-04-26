@@ -272,7 +272,11 @@ impl EventCalls {
             }
             Privacy::Public => {
                 // let (_, event_attendees_principals) = EventAttendeeStore::get(event_id)?;
-                NotificationCalls::notification_join_public_event(vec![event.owner], event_id);
+                NotificationCalls::notification_join_public_event(
+                    vec![event.owner],
+                    event.group_id,
+                    event_id,
+                );
                 attendee.add_joined(event_id, event.group_id);
 
                 AttendeeStore::update(attendee_principal, attendee)?;

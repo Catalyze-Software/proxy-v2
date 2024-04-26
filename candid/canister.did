@@ -1,0 +1,825 @@
+type Address = record {
+  street : text;
+  country : text;
+  city : text;
+  postal_code : text;
+  label : text;
+  state_or_province : text;
+  house_number : text;
+  house_number_addition : text;
+};
+type ApiError = record {
+  tag : opt text;
+  info : opt vec text;
+  method_name : opt text;
+  message : opt text;
+  timestamp : nat64;
+  error_type : ApiErrorType;
+};
+type ApiErrorType = variant {
+  Duplicate;
+  SerializeError;
+  DeserializeError;
+  NotFound;
+  ValidationError : vec ValidationResponse;
+  Unsupported;
+  Unauthorized;
+  Unexpected;
+  NotImplemented;
+  BadRequest;
+};
+type ApplicationRole = variant {
+  Blocked;
+  Guest;
+  Member;
+  Banned;
+  Admin;
+  Moderator;
+  Leader;
+  Owner;
+  Watcher;
+};
+type Asset = variant { Url : text; None; CanisterStorage : CanisterStorage };
+type Attendee = record {
+  invites : vec record { nat64; AttendeeInvite };
+  joined : vec record { nat64; AttendeeJoin };
+};
+type AttendeeInvite = record {
+  updated_at : nat64;
+  invite_type : InviteType;
+  created_at : nat64;
+  notification_id : opt nat64;
+  group_id : nat64;
+};
+type AttendeeJoin = record {
+  updated_at : nat64;
+  created_at : nat64;
+  group_id : nat64;
+};
+type Boost = record {
+  updated_at : nat64;
+  subject : Subject;
+  owner : principal;
+  seconds : nat64;
+  created_at : nat64;
+  blockheight : nat64;
+  notification_id : opt nat64;
+};
+type CanisterOutputCertifiedMessages = record {
+  messages : vec CanisterOutputMessage;
+  cert : vec nat8;
+  tree : vec nat8;
+  is_end_of_queue : bool;
+};
+type CanisterOutputMessage = record {
+  key : text;
+  content : vec nat8;
+  client_key : ClientKey;
+};
+type CanisterStorage = variant { None; Manifest : Manifest; Chunk : ChunkData };
+type CanisterWsCloseArguments = record { client_key : ClientKey };
+type CanisterWsGetMessagesArguments = record { nonce : nat64 };
+type CanisterWsMessageArguments = record { msg : WebsocketMessage };
+type CanisterWsOpenArguments = record {
+  gateway_principal : principal;
+  client_nonce : nat64;
+};
+type ChunkData = record {
+  chunk_id : nat64;
+  canister : principal;
+  index : nat64;
+};
+type ClientKey = record { client_principal : principal; client_nonce : nat64 };
+type DateRange = record { end_date : nat64; start_date : nat64 };
+type DocumentDetails = record {
+  approved_date : nat64;
+  approved_version : nat64;
+};
+type Event = record {
+  updated_on : nat64;
+  banner_image : Asset;
+  owner : principal;
+  metadata : opt text;
+  date : DateRange;
+  name : text;
+  tags : vec nat32;
+  description : text;
+  created_by : principal;
+  created_on : nat64;
+  website : text;
+  privacy : Privacy;
+  group_id : nat64;
+  is_canceled : record { bool; text };
+  image : Asset;
+  location : Location;
+  is_deleted : bool;
+};
+type EventCallerData = record {
+  is_starred : bool;
+  joined : opt JoinedAttendeeResponse;
+  invite : opt InviteAttendeeResponse;
+};
+type EventFilter = variant {
+  Ids : vec nat64;
+  Tag : nat32;
+  UpdatedOn : DateRange;
+  Name : text;
+  None;
+  Groups : vec nat64;
+  IsCanceled : bool;
+  StartDate : DateRange;
+  Owner : principal;
+  CreatedOn : DateRange;
+  EndDate : DateRange;
+};
+type EventNotificationType = variant {
+  UserJoinEvent : record { nat64; nat64 };
+  JoinEventOwnerRequestDecline : InviteAttendeeResponse;
+  EventReminder : nat64;
+  JoinEventUserRequestAccept : InviteAttendeeResponse;
+  JoinEventOwnerRequestAccept : InviteAttendeeResponse;
+  JoinEventOwnerRequest : InviteAttendeeResponse;
+  JoinEventUserRequest : InviteAttendeeResponse;
+  JoinEventUserRequestDecline : InviteAttendeeResponse;
+  UserLeaveEvent : record { nat64; nat64 };
+};
+type EventResponse = record {
+  id : nat64;
+  updated_on : nat64;
+  banner_image : Asset;
+  owner : principal;
+  metadata : opt text;
+  date : DateRange;
+  attendee_count : nat64;
+  name : text;
+  tags : vec nat32;
+  description : text;
+  created_by : principal;
+  created_on : nat64;
+  website : text;
+  boosted : opt Boost;
+  privacy : Privacy;
+  group_id : nat64;
+  is_canceled : record { bool; text };
+  image : Asset;
+  caller_data : opt EventCallerData;
+  location : Location;
+  is_deleted : bool;
+};
+type EventSort = variant {
+  UpdatedOn : SortDirection;
+  StartDate : SortDirection;
+  CreatedOn : SortDirection;
+  EndDate : SortDirection;
+};
+type EventsCount = record {
+  new : nat64;
+  total : nat64;
+  starred : nat64;
+  invited : nat64;
+  past : nat64;
+  future : nat64;
+  attending : nat64;
+};
+type FriendRequestResponse = record {
+  id : nat64;
+  to : principal;
+  created_at : nat64;
+  requested_by : principal;
+  message : text;
+};
+type GatedType = variant { Neuron : vec NeuronGated; Token : vec TokenGated };
+type Group = record {
+  updated_on : nat64;
+  banner_image : Asset;
+  special_members : vec record { principal; text };
+  owner : principal;
+  name : text;
+  matrix_space_id : text;
+  tags : vec nat32;
+  description : text;
+  created_by : principal;
+  created_on : nat64;
+  website : text;
+  notification_id : opt nat64;
+  privacy : Privacy;
+  wallets : vec record { principal; text };
+  image : Asset;
+  privacy_gated_type_amount : opt nat64;
+  location : Location;
+  roles : vec Role;
+  is_deleted : bool;
+};
+type GroupCallerData = record {
+  is_starred : bool;
+  is_pinned : bool;
+  joined : opt JoinedMemberResponse;
+  invite : opt InviteMemberResponse;
+};
+type GroupFilter = variant {
+  Ids : vec nat64;
+  Tag : nat32;
+  UpdatedOn : DateRange;
+  Name : text;
+  None;
+  Owner : principal;
+  CreatedOn : DateRange;
+};
+type GroupNotificationType = variant {
+  UserLeaveGroup : nat64;
+  UserJoinGroup : nat64;
+  UserRemoveMember : JoinedMemberResponse;
+  JoinGroupUserRequest : InviteMemberResponse;
+  JoinGroupUserRequestDecline : InviteMemberResponse;
+  JoinGroupOwnerRequest : InviteMemberResponse;
+  MemberRoleAssign : JoinedMemberResponse;
+  GroupReminder : nat64;
+  UserRemoveInvite : InviteMemberResponse;
+  JoinGroupOwnerRequestDecline : InviteMemberResponse;
+  JoinGroupUserRequestAccept : InviteMemberResponse;
+  JoinGroupOwnerRequestAccept : InviteMemberResponse;
+};
+type GroupResponse = record {
+  id : nat64;
+  updated_on : nat64;
+  banner_image : Asset;
+  owner : principal;
+  name : text;
+  matrix_space_id : text;
+  tags : vec nat32;
+  description : text;
+  created_by : principal;
+  created_on : nat64;
+  website : text;
+  boosted : opt Boost;
+  privacy : Privacy;
+  wallets : vec record { principal; text };
+  events_count : nat64;
+  image : Asset;
+  caller_data : opt GroupCallerData;
+  members_count : nat64;
+  privacy_gated_type_amount : opt nat64;
+  location : Location;
+  roles : vec Role;
+  is_deleted : bool;
+};
+type GroupSort = variant {
+  UpdatedOn : SortDirection;
+  Name : SortDirection;
+  CreatedOn : SortDirection;
+};
+type GroupsCount = record {
+  new : nat64;
+  total : nat64;
+  starred : nat64;
+  invited : nat64;
+  joined : nat64;
+};
+type HttpHeader = record { value : text; name : text };
+type HttpRequest = record {
+  url : text;
+  method : text;
+  body : vec nat8;
+  headers : vec record { text; text };
+};
+type HttpResponse = record {
+  status : nat;
+  body : vec nat8;
+  headers : vec HttpHeader;
+};
+type InviteAttendeeResponse = record {
+  "principal" : principal;
+  invite_type : InviteType;
+  group_id : nat64;
+  event_id : nat64;
+};
+type InviteMemberResponse = record {
+  "principal" : principal;
+  group_id : nat64;
+  invite : opt MemberInvite;
+};
+type InviteType = variant { OwnerRequest; UserRequest };
+type Join = record { updated_at : nat64; created_at : nat64; roles : vec text };
+type JoinedAttendeeResponse = record {
+  "principal" : principal;
+  group_id : nat64;
+  event_id : nat64;
+};
+type JoinedMemberResponse = record {
+  "principal" : principal;
+  group_id : nat64;
+  roles : vec text;
+};
+type Location = variant {
+  None;
+  Digital : text;
+  Physical : PhysicalLocation;
+  MultiLocation : MultiLocation;
+};
+type Manifest = record { entries : vec ChunkData };
+type Member = record {
+  invites : vec record { nat64; MemberInvite };
+  joined : vec record { nat64; Join };
+};
+type MemberInvite = record {
+  updated_at : nat64;
+  invite_type : InviteType;
+  created_at : nat64;
+  notification_id : opt nat64;
+};
+type MultiLocation = record { physical : PhysicalLocation; digital : text };
+type NeuronGated = record {
+  governance_canister : principal;
+  name : text;
+  description : text;
+  ledger_canister : principal;
+  rules : vec NeuronGatedRules;
+};
+type NeuronGatedRules = variant {
+  IsDisolving : bool;
+  MinStake : nat64;
+  MinAge : nat64;
+  MinDissolveDelay : nat64;
+};
+type Notification = record {
+  updated_at : nat64;
+  metadata : opt text;
+  is_accepted : opt bool;
+  is_actionable : bool;
+  created_at : nat64;
+  sender : principal;
+  notification_type : NotificationType;
+  processed_by : opt principal;
+};
+type NotificationResponse = record {
+  id : opt nat64;
+  user_data : opt UserNotificationData;
+  notification : Notification;
+};
+type NotificationType = variant {
+  Event : EventNotificationType;
+  Relation : RelationNotificationType;
+  Group : GroupNotificationType;
+  Transaction : TransactionNotificationType;
+};
+type PagedResponse = record {
+  total : nat64;
+  data : vec EventResponse;
+  page : nat64;
+  limit : nat64;
+  number_of_pages : nat64;
+};
+type PagedResponse_1 = record {
+  total : nat64;
+  data : vec GroupResponse;
+  page : nat64;
+  limit : nat64;
+  number_of_pages : nat64;
+};
+type PagedResponse_2 = record {
+  total : nat64;
+  data : vec ReportResponse;
+  page : nat64;
+  limit : nat64;
+  number_of_pages : nat64;
+};
+type Permission = record {
+  name : text;
+  actions : PermissionActions;
+  protected : bool;
+};
+type PermissionActions = record {
+  edit : bool;
+  read : bool;
+  delete : bool;
+  write : bool;
+};
+type PhysicalLocation = record {
+  longtitude : float32;
+  address : Address;
+  lattitude : float32;
+};
+type PostEvent = record {
+  banner_image : Asset;
+  metadata : opt text;
+  date : DateRange;
+  name : text;
+  tags : vec nat32;
+  description : text;
+  website : text;
+  privacy : Privacy;
+  group_id : nat64;
+  image : Asset;
+  location : Location;
+};
+type PostGroup = record {
+  banner_image : Asset;
+  name : text;
+  matrix_space_id : text;
+  tags : vec nat32;
+  description : text;
+  website : text;
+  privacy : Privacy;
+  image : Asset;
+  privacy_gated_type_amount : opt nat64;
+  location : Location;
+};
+type PostPermission = record { name : text; actions : PermissionActions };
+type PostProfile = record {
+  username : text;
+  display_name : text;
+  extra : text;
+  privacy : ProfilePrivacy;
+  first_name : text;
+  last_name : text;
+};
+type PostReport = record {
+  subject : Subject;
+  group_id : nat64;
+  message : text;
+};
+type PostWallet = record { "principal" : principal; provider : text };
+type Privacy = variant { Gated : GatedType; Private; Public; InviteOnly };
+type Profile = record {
+  updated_on : nat64;
+  profile_image : Asset;
+  banner_image : Asset;
+  about : text;
+  country : text;
+  username : text;
+  starred : vec Subject;
+  interests : vec nat32;
+  city : text;
+  created_on : nat64;
+  email : text;
+  website : text;
+  terms_of_service : opt DocumentDetails;
+  display_name : text;
+  extra : text;
+  privacy_policy : opt DocumentDetails;
+  notification_id : opt nat64;
+  pinned : vec Subject;
+  privacy : ProfilePrivacy;
+  wallets : vec record { principal; Wallet };
+  state_or_province : text;
+  first_name : text;
+  last_name : text;
+  causes : vec nat32;
+  code_of_conduct : opt DocumentDetails;
+  date_of_birth : nat64;
+  skills : vec nat32;
+  relations : vec record { principal; text };
+  application_role : ApplicationRole;
+};
+type ProfilePrivacy = variant { Private; Public };
+type ProfileResponse = record {
+  updated_on : nat64;
+  profile_image : Asset;
+  "principal" : principal;
+  banner_image : Asset;
+  about : text;
+  country : text;
+  username : text;
+  starred : vec Subject;
+  interests : vec nat32;
+  city : text;
+  created_on : nat64;
+  email : text;
+  website : text;
+  terms_of_service : opt DocumentDetails;
+  display_name : text;
+  extra : text;
+  privacy_policy : opt DocumentDetails;
+  pinned : vec Subject;
+  privacy : ProfilePrivacy;
+  wallets : vec WalletResponse;
+  state_or_province : text;
+  first_name : text;
+  last_name : text;
+  causes : vec nat32;
+  code_of_conduct : opt DocumentDetails;
+  date_of_birth : nat64;
+  skills : vec nat32;
+  application_role : ApplicationRole;
+};
+type RelationNotificationType = variant {
+  FriendRequest : FriendRequestResponse;
+  FriendRequestDecline : FriendRequestResponse;
+  FriendRemove : principal;
+  FriendRequestReminder : nat64;
+  BlockUser : principal;
+  FriendRequestRemove : nat64;
+  FriendRequestAccept : FriendRequestResponse;
+};
+type RelationType = variant { Blocked; Friend };
+type ReportFilter = variant {
+  SubjectType : SubjectType;
+  None;
+  GroupId : nat64;
+  ReportedBy : principal;
+  CreatedOn : DateRange;
+  Subject : Subject;
+};
+type ReportResponse = record {
+  id : nat64;
+  subject : SubjectResponse;
+  created_on : nat64;
+  message : text;
+  reported_by : principal;
+};
+type ReportSort = variant {
+  SubjectType : SortDirection;
+  ReportedBy : SortDirection;
+  CreatedOn : SortDirection;
+  Subject : SortDirection;
+};
+type Result = variant { Ok : bool; Err : ApiError };
+type Result_1 = variant { Ok : Attendee; Err : ApiError };
+type Result_10 = variant { Ok; Err : ApiError };
+type Result_11 = variant { Ok : nat64; Err : ApiError };
+type Result_12 = variant { Ok : record { bool; bool; bool }; Err : ApiError };
+type Result_13 = variant { Ok : vec JoinedAttendeeResponse; Err : ApiError };
+type Result_14 = variant { Ok : vec principal; Err : ApiError };
+type Result_15 = variant {
+  Ok : vec record { ProfileResponse; vec text };
+  Err : ApiError;
+};
+type Result_16 = variant { Ok : vec InviteAttendeeResponse; Err : ApiError };
+type Result_17 = variant {
+  Ok : vec record { ProfileResponse; InviteAttendeeResponse };
+  Err : ApiError;
+};
+type Result_18 = variant { Ok : PagedResponse; Err : ApiError };
+type Result_19 = variant { Ok : vec InviteMemberResponse; Err : ApiError };
+type Result_2 = variant { Ok : Member; Err : ApiError };
+type Result_20 = variant {
+  Ok : vec record { InviteMemberResponse; ProfileResponse };
+  Err : ApiError;
+};
+type Result_21 = variant { Ok : JoinedMemberResponse; Err : ApiError };
+type Result_22 = variant {
+  Ok : record { JoinedMemberResponse; ProfileResponse };
+  Err : ApiError;
+};
+type Result_23 = variant { Ok : vec JoinedMemberResponse; Err : ApiError };
+type Result_24 = variant {
+  Ok : vec record { JoinedMemberResponse; ProfileResponse };
+  Err : ApiError;
+};
+type Result_25 = variant { Ok : vec Role; Err : ApiError };
+type Result_26 = variant { Ok : PagedResponse_1; Err : ApiError };
+type Result_27 = variant { Ok : vec text; Err : ApiError };
+type Result_28 = variant { Ok : PagedResponse_2; Err : ApiError };
+type Result_29 = variant { Ok : InviteAttendeeResponse; Err : ApiError };
+type Result_3 = variant { Ok : JoinedAttendeeResponse; Err : ApiError };
+type Result_30 = variant {
+  Ok : vec record { nat64; UserNotificationData };
+  Err : ApiError;
+};
+type Result_31 = variant { Ok; Err : text };
+type Result_32 = variant { Ok : CanisterOutputCertifiedMessages; Err : text };
+type Result_4 = variant { Ok : EventResponse; Err : ApiError };
+type Result_5 = variant { Ok : FriendRequestResponse; Err : ApiError };
+type Result_6 = variant { Ok : GroupResponse; Err : ApiError };
+type Result_7 = variant { Ok : ProfileResponse; Err : ApiError };
+type Result_8 = variant { Ok : ReportResponse; Err : ApiError };
+type Result_9 = variant { Ok : Role; Err : ApiError };
+type Role = record {
+  permissions : vec Permission;
+  name : text;
+  color : text;
+  protected : bool;
+  index : opt nat64;
+};
+type SortDirection = variant { Asc; Desc };
+type Subject = variant {
+  Event : nat64;
+  Group : nat64;
+  Attendee : principal;
+  None;
+  Member : principal;
+  Profile : principal;
+};
+type SubjectResponse = variant {
+  Event : opt record { nat64; Event };
+  Group : opt record { nat64; Group };
+  Attendee : opt record { principal; Attendee };
+  None;
+  Member : opt record { principal; Member };
+  Profile : opt record { principal; Profile };
+};
+type SubjectType = variant { Event; Group; Attendee; None; Member; Profile };
+type TokenGated = record {
+  "principal" : principal;
+  name : text;
+  description : text;
+  amount : nat64;
+  standard : text;
+};
+type TransactionNotificationType = variant {
+  SingleTransaction : nat64;
+  MultisigTransaction : nat64;
+  MultipleTransaction : vec nat64;
+  Airdrop;
+};
+type UpdateEvent = record {
+  banner_image : Asset;
+  owner : principal;
+  metadata : opt text;
+  date : DateRange;
+  name : text;
+  tags : vec nat32;
+  description : text;
+  website : text;
+  privacy : Privacy;
+  image : Asset;
+  location : Location;
+};
+type UpdateGroup = record {
+  banner_image : Asset;
+  name : text;
+  tags : vec nat32;
+  description : text;
+  website : text;
+  privacy : Privacy;
+  image : Asset;
+  privacy_gated_type_amount : opt nat64;
+  location : Location;
+};
+type UpdateProfile = record {
+  profile_image : Asset;
+  banner_image : Asset;
+  about : text;
+  country : text;
+  interests : vec nat32;
+  city : text;
+  email : opt text;
+  website : text;
+  display_name : text;
+  extra : text;
+  privacy : ProfilePrivacy;
+  state_or_province : text;
+  first_name : text;
+  last_name : text;
+  causes : vec nat32;
+  date_of_birth : nat64;
+  skills : vec nat32;
+};
+type UserNotificationData = record { is_read : bool; is_sender : bool };
+type ValidationResponse = record { field : text; message : text };
+type WSMessage = variant {
+  Error : ApiError;
+  Notification : NotificationResponse;
+  SendNotification : record { principal; NotificationResponse };
+  UnreadCount : nat64;
+};
+type Wallet = record { provider : text; is_primary : bool };
+type WalletResponse = record {
+  "principal" : principal;
+  provider : text;
+  is_primary : bool;
+};
+type WebsocketMessage = record {
+  sequence_num : nat64;
+  content : vec nat8;
+  client_key : ClientKey;
+  timestamp : nat64;
+  is_service_message : bool;
+};
+service : () -> {
+  __get_candid_interface_tmp_hack : () -> (text) query;
+  _dev_check_attendees_sync : (principal, nat64) -> (
+    record { text; bool },
+    record { text; bool },
+  ) query;
+  _dev_check_events_sync : (nat64, nat64) -> (
+    record { text; bool },
+    record { text; bool },
+  ) query;
+  _dev_check_member_sync : (principal, nat64) -> (
+    record { text; bool },
+    record { text; bool },
+  ) query;
+  _dev_clear_friend_request : (text) -> (bool);
+  _dev_clear_notifications : (text) -> (bool);
+  _expose : () -> (opt WSMessage) query;
+  accept_friend_request : (nat64) -> (Result);
+  accept_owner_request_event_invite : (nat64) -> (Result_1);
+  accept_owner_request_group_invite : (nat64) -> (Result_2);
+  accept_user_request_event_invite : (nat64, nat64, principal) -> (Result_3);
+  accept_user_request_group_invite : (nat64, principal) -> (Result_2);
+  add_event : (PostEvent) -> (Result_4);
+  add_friend_request : (principal, text) -> (Result_5);
+  add_group : (PostGroup, opt text) -> (Result_6);
+  add_pinned : (Subject) -> (Result_7);
+  add_profile : (PostProfile) -> (Result_7);
+  add_report : (PostReport) -> (Result_8);
+  add_role_to_group : (nat64, text, text, nat64) -> (Result_9);
+  add_starred : (Subject) -> (Result_7);
+  add_wallet_to_group : (nat64, principal, text) -> (Result_6);
+  add_wallet_to_profile : (PostWallet) -> (Result_7);
+  approve_code_of_conduct : (nat64) -> (Result);
+  approve_privacy_policy : (nat64) -> (Result);
+  approve_terms_of_service : (nat64) -> (Result);
+  assign_role : (nat64, text, principal) -> (Result_2);
+  ban_group_member : (nat64, principal) -> (Result_10);
+  block_user : (principal) -> (Result_7);
+  boost : (Subject, nat64) -> (Result_11);
+  cancel_event : (nat64, nat64, text) -> (Result_10);
+  check_new_stores : () -> (vec text) query;
+  decline_friend_request : (nat64) -> (Result);
+  decline_owner_request_group_invite : (nat64) -> (Result_2);
+  decline_user_request_group_invite : (nat64, principal) -> (Result_2);
+  delete_event : (nat64, nat64) -> (Result_10);
+  delete_group : (nat64) -> (Result_12);
+  edit_event : (nat64, nat64, UpdateEvent) -> (Result_4);
+  edit_group : (nat64, UpdateGroup) -> (Result_6);
+  edit_profile : (UpdateProfile) -> (Result_7);
+  edit_role_permissions : (nat64, text, vec PostPermission) -> (Result);
+  get_attending_from_principal : (principal) -> (Result_13) query;
+  get_banned_group_members : (nat64) -> (Result_14) query;
+  get_boosted_events : () -> (vec EventResponse) query;
+  get_boosted_groups : () -> (vec GroupResponse) query;
+  get_connected_clients : () -> (vec principal) query;
+  get_e8s_per_day_boost_cost : () -> (nat64) query;
+  get_event : (nat64) -> (Result_4) query;
+  get_event_attendees : (nat64) -> (Result_13) query;
+  get_event_attendees_profiles_and_roles : (nat64) -> (Result_15) query;
+  get_event_count : (opt vec nat64, opt text) -> (EventsCount) query;
+  get_event_invites : (nat64, nat64) -> (Result_16) query;
+  get_event_invites_with_profiles : (nat64) -> (Result_17) query;
+  get_events : (nat64, nat64, EventSort, vec EventFilter) -> (Result_18) query;
+  get_group : (nat64) -> (Result_6) query;
+  get_group_by_name : (text) -> (Result_6) query;
+  get_group_invites : (nat64) -> (Result_19) query;
+  get_group_invites_with_profiles : (nat64) -> (Result_20) query;
+  get_group_member : (nat64, principal) -> (Result_21) query;
+  get_group_member_with_profile : (nat64, principal) -> (Result_22) query;
+  get_group_members : (nat64) -> (Result_23) query;
+  get_group_members_with_profiles : (nat64) -> (Result_24) query;
+  get_group_roles : (nat64) -> (Result_25);
+  get_groups : (nat64, nat64, vec GroupFilter, GroupSort) -> (Result_26) query;
+  get_groups_by_id : (vec nat64) -> (vec GroupResponse) query;
+  get_groups_count : (opt text) -> (GroupsCount) query;
+  get_groups_for_members : (vec principal) -> (vec JoinedMemberResponse) query;
+  get_incoming_friend_requests : () -> (vec FriendRequestResponse) query;
+  get_incoming_friend_requests_with_profile : () -> (
+    vec record { FriendRequestResponse; ProfileResponse }
+  ) query;
+  get_member_roles : (nat64, principal) -> (Result_27) query;
+  get_notifications : () -> (vec NotificationResponse) query;
+  get_outgoing_friend_requests : () -> (vec FriendRequestResponse) query;
+  get_outgoing_friend_requests_with_profile : () -> (
+    vec record { FriendRequestResponse; ProfileResponse }
+  ) query;
+  get_pinned_by_subject_type : (SubjectType) -> (vec SubjectResponse) query;
+  get_profile : (principal) -> (Result_7) query;
+  get_profiles : (vec principal) -> (vec ProfileResponse) query;
+  get_relations : (RelationType) -> (vec principal) query;
+  get_relations_count : (RelationType) -> (nat64) query;
+  get_relations_with_profiles : (RelationType) -> (vec ProfileResponse) query;
+  get_remaining_boost_time_in_seconds : (Subject) -> (Result_11) query;
+  get_report : (nat64, nat64) -> (Result_8) query;
+  get_reports : (nat64, nat64, ReportSort, vec ReportFilter, nat64) -> (
+    Result_28
+  ) query;
+  get_self_attendee : () -> (Result_1) query;
+  get_self_events : () -> (vec EventResponse) query;
+  get_self_groups : () -> (vec GroupResponse) query;
+  get_self_member : () -> (Result_2) query;
+  get_starred_by_subject_type : (SubjectType) -> (vec nat64) query;
+  get_unread_notifications : () -> (vec NotificationResponse) query;
+  http_request : (HttpRequest) -> (HttpResponse) query;
+  invite_to_event : (nat64, nat64, principal) -> (Result_29);
+  invite_to_group : (nat64, principal) -> (Result_2);
+  join_event : (nat64) -> (Result_3);
+  join_group : (nat64, opt text) -> (Result_21);
+  leave_event : (nat64) -> (Result_10);
+  leave_group : (nat64) -> (Result_10);
+  mark_notifications_as_read : (vec nat64, bool) -> (Result_30);
+  migrate : () -> (vec vec text);
+  remove_attendee_from_event : (nat64, nat64, principal) -> (Result_10);
+  remove_attendee_invite_from_event : (nat64, nat64, principal) -> (Result_10);
+  remove_ban_from_group_member : (nat64, principal) -> (Result_10);
+  remove_event_invite : (nat64) -> (Result_10);
+  remove_friend : (principal) -> (Result_7);
+  remove_friend_request : (nat64) -> (Result);
+  remove_group_role : (nat64, text) -> (Result);
+  remove_invite : (nat64) -> (Result_10);
+  remove_member_from_group : (nat64, principal) -> (Result_10);
+  remove_member_invite_from_group : (nat64, principal) -> (Result_10);
+  remove_member_role : (nat64, text, principal) -> (Result_2);
+  remove_notifications : (vec nat64) -> (
+    vec record { nat64; UserNotificationData }
+  );
+  remove_pinned : (Subject) -> (Result_7);
+  remove_starred : (Subject) -> (Result_7);
+  remove_wallet_from_group : (nat64, principal) -> (Result_6);
+  remove_wallet_from_profile : (principal) -> (Result_7);
+  set_wallet_as_primary : (principal) -> (Result_7);
+  unblock_user : (principal) -> (Result_7);
+  ws_close : (CanisterWsCloseArguments) -> (Result_31);
+  ws_get_messages : (CanisterWsGetMessagesArguments) -> (Result_32) query;
+  ws_message : (CanisterWsMessageArguments, opt WSMessage) -> (Result_31);
+  ws_open : (CanisterWsOpenArguments) -> (Result_31);
+};
