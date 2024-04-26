@@ -180,6 +180,12 @@ impl NotificationCalls {
                     .mark_as_accepted(is_accepted, NotificationType::Group(notification_type));
                 let _ = NotificationStore::update(notification_id, notification.clone());
 
+                Self::send_notification(
+                    Some(notification_id),
+                    notification.clone(),
+                    notification.sender, // the person who request to join
+                );
+
                 match is_accepted {
                     true => {
                         for r in higher_role_members {
@@ -252,13 +258,29 @@ impl NotificationCalls {
                 match is_accepted {
                     true => {
                         Self::send_notification(None, notification.clone(), invitee_principal);
-                        for r in higher_role_members {
-                            Self::send_notification(None, notification.clone(), r);
+                        for r in group_members {
+                            if notification.sender == r {
+                                Self::send_notification(
+                                    Some(notification_id),
+                                    notification.clone(),
+                                    r,
+                                );
+                            } else {
+                                Self::send_notification(None, notification.clone(), r);
+                            }
                         }
                     }
                     false => {
-                        for r in group_members {
-                            Self::send_notification(None, notification.clone(), r);
+                        for r in higher_role_members {
+                            if notification.sender == r {
+                                Self::send_notification(
+                                    Some(notification_id),
+                                    notification.clone(),
+                                    r,
+                                );
+                            } else {
+                                Self::send_notification(None, notification.clone(), r);
+                            }
                         }
                     }
                 }
