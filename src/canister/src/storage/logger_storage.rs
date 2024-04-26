@@ -7,7 +7,7 @@ use canister_types::models::{
 pub struct LoggerStore;
 
 pub const NAME: &str = "logs";
-pub const MAX_LOGS: u64 = 50;
+pub const MAX_LOGS: u64 = 10_000;
 
 // Logging constants
 pub const LOGIN_EVENT: &str = "LoginEvent";
