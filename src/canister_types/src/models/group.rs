@@ -17,6 +17,7 @@ use super::{
     api_error::ApiError,
     boosted::Boost,
     member::{InviteMemberResponse, JoinedMemberResponse},
+    member_collection::MemberCollection,
     permission::Permission,
     relation_type::RelationType,
 };
@@ -302,6 +303,7 @@ pub enum GroupSort {
     Name(SortDirection),
     CreatedOn(SortDirection),
     UpdatedOn(SortDirection),
+    MemberCount(SortDirection),
 }
 
 impl GroupSort {
@@ -309,7 +311,11 @@ impl GroupSort {
         GroupSort::CreatedOn(SortDirection::Asc)
     }
 
-    pub fn sort(&self, groups: HashMap<u64, Group>) -> Vec<(u64, Group)> {
+    pub fn sort(
+        &self,
+        groups: HashMap<u64, Group>,
+        group_members: HashMap<u64, MemberCollection>,
+    ) -> Vec<(u64, Group)> {
         let mut groups: Vec<(u64, Group)> = groups.into_iter().collect();
         use GroupSort::*;
         use SortDirection::*;
@@ -324,6 +330,28 @@ impl GroupSort {
             CreatedOn(Desc) => groups.sort_by(|(_, a), (_, b)| b.created_on.cmp(&a.created_on)),
             UpdatedOn(Asc) => groups.sort_by(|(_, a), (_, b)| a.updated_on.cmp(&b.updated_on)),
             UpdatedOn(Desc) => groups.sort_by(|(_, a), (_, b)| b.updated_on.cmp(&a.updated_on)),
+            MemberCount(Asc) => groups.sort_by(|(a_id, a), (b_id, b)| {
+                let a_members = group_members
+                    .get(&a_id)
+                    .map(|m| m.get_member_count())
+                    .unwrap_or(0);
+                let b_members = group_members
+                    .get(&b_id)
+                    .map(|m| m.get_member_count())
+                    .unwrap_or(0);
+                a_members.cmp(&b_members)
+            }),
+            MemberCount(Desc) => groups.sort_by(|(a_id, a), (b_id, b)| {
+                let a_members = group_members
+                    .get(&a_id)
+                    .map(|m| m.get_member_count())
+                    .unwrap_or(0);
+                let b_members = group_members
+                    .get(&b_id)
+                    .map(|m| m.get_member_count())
+                    .unwrap_or(0);
+                b_members.cmp(&a_members)
+            }),
         }
         groups
     }

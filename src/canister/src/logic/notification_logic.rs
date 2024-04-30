@@ -1,7 +1,7 @@
 use candid::Principal;
 use canister_types::models::{
     api_error::ApiError,
-    attendee::{AttendeeInvite, InviteAttendeeResponse},
+    attendee::{AttendeeInvite, InviteAttendeeResponse, JoinedAttendeeResponse},
     friend_request::{FriendRequest, FriendRequestResponse},
     member::{InviteMemberResponse, JoinedMemberResponse, MemberInvite},
     notification::{
@@ -300,7 +300,7 @@ impl NotificationCalls {
             Self::send_notification(
                 None,
                 Notification::new(
-                    NotificationType::Group(GroupNotificationType::MemberRoleAssign(
+                    NotificationType::Group(GroupNotificationType::RoleAssignByOwner(
                         member.clone(),
                     )),
                     false,
@@ -317,7 +317,7 @@ impl NotificationCalls {
         Self::send_notification(
             None,
             Notification::new(
-                NotificationType::Group(GroupNotificationType::UserRemoveMember(member.clone())),
+                NotificationType::Group(GroupNotificationType::RemoveMemberByOwner(member.clone())),
                 false,
             ),
             member.principal,
@@ -327,7 +327,7 @@ impl NotificationCalls {
             Self::send_notification(
                 None,
                 Notification::new(
-                    NotificationType::Group(GroupNotificationType::UserRemoveMember(
+                    NotificationType::Group(GroupNotificationType::RemoveMemberByOwner(
                         member.clone(),
                     )),
                     false,
@@ -341,26 +341,24 @@ impl NotificationCalls {
         invite: InviteMemberResponse,
         receivers: Vec<Principal>,
     ) -> () {
-        Self::send_notification(
-            None,
-            Notification::new(
-                NotificationType::Group(GroupNotificationType::UserRemoveInvite(invite.clone())),
-                false,
-            ),
-            invite.principal,
-        );
+        if let Some(_invite) = invite.invite.clone() {
+            if let Some(notification_id) = _invite.notification_id {
+                if let Ok((_, mut notification)) = NotificationStore::get(notification_id) {
+                    notification.mark_as_accepted(
+                        false,
+                        NotificationType::Group(GroupNotificationType::RemoveInviteByOwner(
+                            invite.clone(),
+                        )),
+                    );
+                    let _ = NotificationStore::update(notification_id, notification.clone());
 
-        for receiver in receivers {
-            Self::send_notification(
-                None,
-                Notification::new(
-                    NotificationType::Group(GroupNotificationType::UserRemoveInvite(
-                        invite.clone(),
-                    )),
-                    false,
-                ),
-                receiver,
-            );
+                    Self::send_notification(None, notification.clone(), invite.principal);
+
+                    for receiver in receivers {
+                        Self::send_notification(None, notification.clone(), receiver);
+                    }
+                }
+            }
         }
     }
 
@@ -406,6 +404,7 @@ impl NotificationCalls {
     pub fn notification_user_join_request_event_accept_or_decline(
         receiver: Principal,
         invite: AttendeeInvite,
+        event_attendees: Vec<Principal>,
         is_accepted: bool,
     ) -> Result<(), ApiError> {
         if let Some(notification_id) = invite.notification_id {
@@ -428,15 +427,18 @@ impl NotificationCalls {
                     .mark_as_accepted(is_accepted, NotificationType::Event(notification_type));
                 let _ = NotificationStore::update(notification_id, notification.clone());
 
-                // send notification to the person who requested to join
-                let _ = Self::send_notification(
-                    Some(notification_id),
-                    notification.clone(),
-                    notification.sender, // the person who request to join
-                );
-
                 // send notification to the users who could have accepted the request
                 Self::send_notification(None, notification.clone(), receiver);
+
+                if is_accepted {
+                    for r in event_attendees {
+                        if notification.sender == r {
+                            Self::send_notification(Some(notification_id), notification.clone(), r);
+                        } else {
+                            Self::send_notification(None, notification.clone(), r);
+                        }
+                    }
+                }
             }
             Ok(())
         } else {
@@ -449,6 +451,7 @@ impl NotificationCalls {
     pub fn notification_owner_join_request_event_accept_or_decline(
         invitee_principal: Principal,
         invite: AttendeeInvite,
+        event_attendees: Vec<Principal>,
         is_accepted: bool,
     ) -> Result<(), ApiError> {
         if let Some(notification_id) = invite.notification_id {
@@ -471,15 +474,18 @@ impl NotificationCalls {
                     .mark_as_accepted(is_accepted, NotificationType::Event(notification_type));
                 let _ = NotificationStore::update(notification_id, notification.clone());
 
-                // send notification to the person who requested to join
-                let _ = Self::send_notification(
-                    Some(notification_id),
-                    notification.clone(),
-                    notification.sender, // the person who requested the user to join
-                );
-
                 // send notification to the users who could have accepted the request
                 Self::send_notification(None, notification.clone(), invitee_principal);
+
+                if is_accepted {
+                    for r in event_attendees {
+                        if notification.sender == r {
+                            Self::send_notification(Some(notification_id), notification.clone(), r);
+                        } else {
+                            Self::send_notification(None, notification.clone(), r);
+                        }
+                    }
+                }
             }
             Ok(())
         } else {
@@ -507,6 +513,50 @@ impl NotificationCalls {
         }
 
         Ok(notification_id)
+    }
+
+    pub fn notification_remove_event_invite(
+        notification_id: u64,
+        invite: InviteAttendeeResponse,
+    ) -> () {
+        if let Ok((_, mut notification)) = NotificationStore::get(notification_id) {
+            notification.mark_as_accepted(
+                false,
+                NotificationType::Event(EventNotificationType::RemoveInviteByOwner(invite.clone())),
+            );
+            let _ = NotificationStore::update(notification_id, notification.clone());
+
+            Self::send_notification(None, notification.clone(), invite.principal);
+        }
+    }
+
+    pub fn notification_remove_event_attendee(
+        attendee: JoinedAttendeeResponse,
+        receivers: Vec<Principal>,
+    ) -> () {
+        Self::send_notification(
+            None,
+            Notification::new(
+                NotificationType::Event(EventNotificationType::RemoveAttendeeByOwner(
+                    attendee.clone(),
+                )),
+                false,
+            ),
+            attendee.principal,
+        );
+
+        for receiver in receivers {
+            Self::send_notification(
+                None,
+                Notification::new(
+                    NotificationType::Event(EventNotificationType::RemoveAttendeeByOwner(
+                        attendee.clone(),
+                    )),
+                    false,
+                ),
+                receiver,
+            );
+        }
     }
 
     // sends notification

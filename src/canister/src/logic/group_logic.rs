@@ -148,7 +148,7 @@ impl GroupCalls {
             }
         }
 
-        let sorted_groups = sort.sort(groups);
+        let sorted_groups = sort.sort(groups, GroupMemberStore::get_all());
         let result: Vec<GroupResponse> = sorted_groups
             .into_iter()
             .map(|(group_id, group)| {
@@ -480,9 +480,7 @@ impl GroupCalls {
 
         // Check if the member has a pending join request for the group
         if !member.has_pending_group_invite(group_id) {
-            return Err(
-                ApiError::bad_request().add_message("Member does not have a pending invite")
-            );
+            return Err(ApiError::not_found().add_message("Member does not have a pending invite"));
         }
         if let Some(invite) = member.get_invite(&group_id) {
             // Add the group to the member and set the role
@@ -798,19 +796,18 @@ impl GroupCalls {
             return Err(ApiError::bad_request().add_message("Member is not invited to the group"));
         }
 
-        // Remove the group from the member
-        member.remove_invite(group_id);
-
-        let (_, updated_member) = MemberStore::update(principal, member)?;
-
-        let (id, mut member_collection) = GroupMemberStore::get(group_id)?;
-        member_collection.remove_invite(&principal);
-        GroupMemberStore::update(id, member_collection)?;
-
         NotificationCalls::notification_remove_group_invite(
-            InviteMemberResponse::new(principal, updated_member, group_id),
+            InviteMemberResponse::new(principal, member.clone(), group_id),
             Self::get_higher_role_members(group_id),
         );
+
+        // Remove the group from the member
+        member.remove_invite(group_id);
+        let _ = MemberStore::update(principal, member.clone())?;
+
+        let (_, mut member_collection) = GroupMemberStore::get(group_id)?;
+        member_collection.remove_invite(&principal);
+        GroupMemberStore::update(group_id, member_collection)?;
 
         Ok(())
     }
