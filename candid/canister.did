@@ -708,17 +708,17 @@ type WebsocketMessage = record {
 service : () -> {
   __get_candid_interface_tmp_hack : () -> (text) query;
   _dev_check_attendees_sync : (principal, nat64) -> (
-      record { text; bool },
-      record { text; bool },
-    ) query;
+    record { text; bool },
+    record { text; bool },
+  ) query;
   _dev_check_events_sync : (nat64, nat64) -> (
-      record { text; bool },
-      record { text; bool },
-    ) query;
+    record { text; bool },
+    record { text; bool },
+  ) query;
   _dev_check_member_sync : (principal, nat64) -> (
-      record { text; bool },
-      record { text; bool },
-    ) query;
+    record { text; bool },
+    record { text; bool },
+  ) query;
   _dev_clear_friend_request : (text) -> (bool);
   _dev_clear_notifications : (text) -> (bool);
   _expose : () -> (opt WSMessage) query;
@@ -785,15 +785,15 @@ service : () -> {
   get_groups_for_members : (vec principal) -> (vec JoinedMemberResponse) query;
   get_incoming_friend_requests : () -> (vec FriendRequestResponse) query;
   get_incoming_friend_requests_with_profile : () -> (
-      vec record { FriendRequestResponse; ProfileResponse },
-    ) query;
+    vec record { FriendRequestResponse; ProfileResponse }
+  ) query;
   get_latest_logs : (nat64) -> (vec Logger) query;
   get_member_roles : (nat64, principal) -> (Result_27) query;
   get_notifications : () -> (vec NotificationResponse) query;
   get_outgoing_friend_requests : () -> (vec FriendRequestResponse) query;
   get_outgoing_friend_requests_with_profile : () -> (
-      vec record { FriendRequestResponse; ProfileResponse },
-    ) query;
+    vec record { FriendRequestResponse; ProfileResponse }
+  ) query;
   get_pinned_by_subject_type : (SubjectType) -> (vec SubjectResponse) query;
   get_profile : (principal) -> (Result_7) query;
   get_profiles : (vec principal) -> (vec ProfileResponse) query;
@@ -803,8 +803,8 @@ service : () -> {
   get_remaining_boost_time_in_seconds : (Subject) -> (Result_11) query;
   get_report : (nat64, nat64) -> (Result_8) query;
   get_reports : (nat64, nat64, ReportSort, vec ReportFilter, nat64) -> (
-      Result_28,
-    ) query;
+    Result_28
+  ) query;
   get_self_attendee : () -> (Result_1) query;
   get_self_events : () -> (vec EventResponse) query;
   get_self_groups : () -> (vec GroupResponse) query;
@@ -818,6 +818,11 @@ service : () -> {
   join_group : (nat64, opt text) -> (Result_21);
   leave_event : (nat64) -> (Result_10);
   leave_group : (nat64) -> (Result_10);
+  log : (PostLog) -> (Result_30);
+  log_login : () -> (Result_30);
+  log_size : () -> (nat64) query;
+  log_with_caller : (PostLog) -> (Result_30);
+  mark_notifications_as_read : (vec nat64, bool) -> (Result_31);
   log : (PostLog) -> (Result_30);
   log_size : () -> (nat64) query;
   log_with_caller : (PostLog) -> (Result_30);
@@ -835,16 +840,17 @@ service : () -> {
   remove_member_invite_from_group : (nat64, principal) -> (Result_10);
   remove_member_role : (nat64, text, principal) -> (Result_2);
   remove_notifications : (vec nat64) -> (
-      vec record { nat64; UserNotificationData },
-    );
+    vec record { nat64; UserNotificationData }
+  );
   remove_pinned : (Subject) -> (Result_7);
   remove_starred : (Subject) -> (Result_7);
   remove_wallet_from_group : (nat64, principal) -> (Result_6);
   remove_wallet_from_profile : (principal) -> (Result_7);
   set_wallet_as_primary : (principal) -> (Result_7);
+  test_log : () -> ();
   unblock_user : (principal) -> (Result_7);
   ws_close : (CanisterWsCloseArguments) -> (Result_32);
   ws_get_messages : (CanisterWsGetMessagesArguments) -> (Result_33) query;
   ws_message : (CanisterWsMessageArguments, opt WSMessage) -> (Result_32);
   ws_open : (CanisterWsOpenArguments) -> (Result_32);
-}
+};

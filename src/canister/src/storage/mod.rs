@@ -33,3 +33,6 @@ pub use storage_api::IdentifierRefMethods;
 pub use storage_api::StorageMethods;
 
 pub use logger_storage::LoggerStore;
+
+// Re-export constants
+pub use logger_storage::LOGIN_EVENT;
