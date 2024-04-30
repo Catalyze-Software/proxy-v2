@@ -135,13 +135,16 @@ type EventFilter = variant {
 type EventNotificationType = variant {
   UserJoinEvent : record { nat64; nat64 };
   JoinEventOwnerRequestDecline : InviteAttendeeResponse;
+  RemoveAttendeeByOwner : JoinedAttendeeResponse;
   EventReminder : nat64;
   JoinEventUserRequestAccept : InviteAttendeeResponse;
+  RoleAssignByOwner : JoinedAttendeeResponse;
   JoinEventOwnerRequestAccept : InviteAttendeeResponse;
   JoinEventOwnerRequest : InviteAttendeeResponse;
   JoinEventUserRequest : InviteAttendeeResponse;
   JoinEventUserRequestDecline : InviteAttendeeResponse;
   UserLeaveEvent : record { nat64; nat64 };
+  RemoveInviteByOwner : InviteAttendeeResponse;
 };
 type EventResponse = record {
   id : nat64;
@@ -228,15 +231,15 @@ type GroupFilter = variant {
 type GroupNotificationType = variant {
   UserLeaveGroup : nat64;
   UserJoinGroup : nat64;
-  UserRemoveMember : JoinedMemberResponse;
   JoinGroupUserRequest : InviteMemberResponse;
   JoinGroupUserRequestDecline : InviteMemberResponse;
+  RoleAssignByOwner : JoinedMemberResponse;
   JoinGroupOwnerRequest : InviteMemberResponse;
-  MemberRoleAssign : JoinedMemberResponse;
+  RemoveMemberByOwner : JoinedMemberResponse;
   GroupReminder : nat64;
-  UserRemoveInvite : InviteMemberResponse;
   JoinGroupOwnerRequestDecline : InviteMemberResponse;
   JoinGroupUserRequestAccept : InviteMemberResponse;
+  RemoveInviteByOwner : InviteMemberResponse;
   JoinGroupOwnerRequestAccept : InviteMemberResponse;
 };
 type GroupResponse = record {
@@ -265,6 +268,7 @@ type GroupResponse = record {
 };
 type GroupSort = variant {
   UpdatedOn : SortDirection;
+  MemberCount : SortDirection;
   Name : SortDirection;
   CreatedOn : SortDirection;
 };
@@ -728,7 +732,9 @@ service : () -> {
   cancel_event : (nat64, nat64, text) -> (Result_10);
   check_new_stores : () -> (vec text) query;
   decline_friend_request : (nat64) -> (Result);
+  decline_owner_request_event_invite : (nat64) -> (Result_1);
   decline_owner_request_group_invite : (nat64) -> (Result_2);
+  decline_user_request_event_invite : (nat64, nat64, principal) -> (Result_3);
   decline_user_request_group_invite : (nat64, principal) -> (Result_2);
   delete_event : (nat64, nat64) -> (Result_10);
   delete_group : (nat64) -> (Result_12);

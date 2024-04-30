@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use super::storage_api::{StorageMethods, GROUP_MEMBERS, GROUP_MEMBERS_MEMORY_ID, MEMORY_MANAGER};
 use canister_types::models::{api_error::ApiError, member_collection::MemberCollection};
 use ic_stable_structures::StableBTreeMap;
@@ -143,5 +145,14 @@ impl StorageMethods<u64, MemberCollection> for GroupMemberStore {
                 MEMORY_MANAGER.with(|m| m.borrow().get(GROUP_MEMBERS_MEMORY_ID)),
             ))
         });
+    }
+}
+
+impl GroupMemberStore {
+    /// Get all group members
+    /// # Returns
+    /// * `Vec<(u64, GroupMembers)>` - All groups
+    pub fn get_all() -> HashMap<u64, MemberCollection> {
+        GROUP_MEMBERS.with(|data| data.borrow().iter().map(|(k, v)| (k, v.clone())).collect())
     }
 }
