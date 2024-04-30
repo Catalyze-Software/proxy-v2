@@ -51,6 +51,36 @@ pub fn has_access() -> Result<(), String> {
         }
     }
 }
+
+/// Checks if the caller is the monitor principal
+pub fn is_monitor() -> Result<(), String> {
+    // monitor principal
+    let monitor_principal =
+        Principal::from_text("6or45-oyaaa-aaaap-absua-cai").expect("Invalid principal");
+    if caller() == monitor_principal {
+        Ok(())
+    } else {
+        Err(ApiError::unauthorized()
+            .add_message("Unauthorized")
+            .to_string())
+    }
+}
+
+// Check if the caller is the Catalyze developer principal
+pub fn is_developer() -> Result<(), String> {
+    // Catalyze developer principal
+    let developer_principal =
+        Principal::from_text("syzio-xu6ca-burmx-4afo2-ojpcw-e75j3-m67o5-s5bes-5vvsv-du3t4-wae")
+            .expect("Invalid principal");
+    if caller() == developer_principal {
+        Ok(())
+    } else {
+        Err(ApiError::unauthorized()
+            .add_message("Unauthorized")
+            .to_string())
+    }
+}
+
 // TODO: add guards for group role based access
 // https://forum.dfinity.org/t/rust-guard-access-arguments/22229?u=rmcs
 // https://docs.rs/ic-cdk/latest/ic_cdk/api/call/fn.arg_data.html
