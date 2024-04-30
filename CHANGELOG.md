@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [unreleased]
 
+## Added
+
+- Added `decline_user_request_event_invite` update call
+- Added `decline_owner_request_event_invite` update call
+
+### Changed
+
+- changed `UserJoinEvent(event_id)` to `UserJoinEvent((group_id, event_id))`
+- on group invite accept send silent notification to all group members
+- on group invite decline send silent notification to all higher role members
+- rename `accept_user_request_event_invite` to `accept_or_decline_user_request_event_invite`
+- rename `accept_owner_request_event_invite` to `accept_or_decline_owner_request_event_invite`
+- Changed error text for `create_empty_attendee` and `to_joined_attendee_response`
+
+# Fixed
+
+- Fixed bug on `create_empty_attendee` where it was checking the `MemberStore` instead of the `AttendeeStore`
+- Fixed notification bug for events and groups
+
 ## [0.1.5]
 
 ### Added

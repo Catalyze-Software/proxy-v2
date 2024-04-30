@@ -55,10 +55,10 @@ impl Attendee {
     }
 
     pub fn turn_invite_into_joined(&mut self, event_id: u64) {
-        self.invites.remove(&event_id);
         if let Some(invite) = self.invites.get(&event_id) {
             self.add_joined(event_id, invite.group_id);
         }
+        self.invites.remove(&event_id);
     }
 
     pub fn add_invite(

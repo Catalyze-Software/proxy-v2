@@ -197,7 +197,39 @@ pub fn accept_user_request_event_invite(
     attendee_principal: Principal,
 ) -> Result<JoinedAttendeeResponse, ApiError> {
     can_edit(group_id, PermissionType::Event(None))?;
-    EventCalls::accept_user_request_event_invite(event_id, attendee_principal, group_id)
+    EventCalls::accept_or_decline_user_request_event_invite(
+        event_id,
+        attendee_principal,
+        group_id,
+        true,
+    )
+}
+
+/// Decline an user invite to an event as a admin - [`[update]`](update)
+/// # Arguments
+/// * `event_id` - The identifier of the event
+/// * `group_id` - Used to check if the user has access to the group the event belongs to
+/// * `attendee_principal` - The principal of the user to accept
+/// # Returns
+/// * `JoinedAttendeeResponse` - the event join details
+/// # Errors
+/// * `ApiError` - If something went wrong while accepting the user invite to the event
+/// # Note
+/// This function is guarded by the [`has_access`](has_access) function.
+/// TODO: This action is guarded by group role based authorization
+#[update(guard = "has_access")]
+pub fn decline_user_request_event_invite(
+    event_id: u64,
+    group_id: u64,
+    attendee_principal: Principal,
+) -> Result<JoinedAttendeeResponse, ApiError> {
+    can_edit(group_id, PermissionType::Event(None))?;
+    EventCalls::accept_or_decline_user_request_event_invite(
+        event_id,
+        attendee_principal,
+        group_id,
+        false,
+    )
 }
 
 /// Accept an owner invite to an event as a user - [`[update]`](update)
@@ -211,7 +243,21 @@ pub fn accept_user_request_event_invite(
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "has_access")]
 pub fn accept_owner_request_event_invite(event_id: u64) -> Result<Attendee, ApiError> {
-    EventCalls::accept_owner_request_event_invite(event_id)
+    EventCalls::accept_or_decline_owner_request_event_invite(event_id, true)
+}
+
+/// Decline an owner invite to an event as a user - [`[update]`](update)
+/// # Arguments
+/// * `event_id` - The identifier of the event
+/// # Returns
+/// * `Attendee` - The attendee
+/// # Errors
+/// * `ApiError` - If something went wrong while accepting the owner invite to the event
+/// # Note
+/// This function is guarded by the [`has_access`](has_access) function.
+#[update(guard = "has_access")]
+pub fn decline_owner_request_event_invite(event_id: u64) -> Result<Attendee, ApiError> {
+    EventCalls::accept_or_decline_owner_request_event_invite(event_id, false)
 }
 
 /// Get the attendees for an event - [`[query]`](query)

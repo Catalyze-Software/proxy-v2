@@ -148,7 +148,7 @@ impl GroupCalls {
             }
         }
 
-        let sorted_groups = sort.sort(groups);
+        let sorted_groups = sort.sort(groups, GroupMemberStore::get_all());
         let result: Vec<GroupResponse> = sorted_groups
             .into_iter()
             .map(|(group_id, group)| {
@@ -440,11 +440,14 @@ impl GroupCalls {
             );
         }
 
+        let (_, members_collection) = GroupMemberStore::get(group_id)?;
+
         if let Some(invite) = invite {
             NotificationCalls::notification_user_join_request_group_accept_or_decline(
-                Self::get_higher_role_members(group_id),
                 invite,
                 accept,
+                members_collection.get_member_principals(),
+                Self::get_higher_role_members(group_id),
             )?;
 
             if accept {
@@ -477,9 +480,7 @@ impl GroupCalls {
 
         // Check if the member has a pending join request for the group
         if !member.has_pending_group_invite(group_id) {
-            return Err(
-                ApiError::bad_request().add_message("Member does not have a pending invite")
-            );
+            return Err(ApiError::not_found().add_message("Member does not have a pending invite"));
         }
         if let Some(invite) = member.get_invite(&group_id) {
             // Add the group to the member and set the role
@@ -497,10 +498,13 @@ impl GroupCalls {
                 })?;
             }
 
+            let (_, members_collection) = GroupMemberStore::get(group_id)?;
+
             NotificationCalls::notification_owner_join_request_group_accept_or_decline(
                 caller(),
                 invite,
                 accept,
+                members_collection.get_member_principals(),
                 Self::get_higher_role_members(group_id),
             )?;
 
@@ -531,7 +535,7 @@ impl GroupCalls {
 
         let (principal, member) = MemberStore::update(member_principal, member.clone())?;
 
-        NotificationCalls::notification_change_member_role(
+        NotificationCalls::notification_change_group_member_role(
             JoinedMemberResponse::new(principal, member.clone(), group_id),
             Self::get_higher_role_members(group_id),
         );
@@ -767,11 +771,16 @@ impl GroupCalls {
         // Remove the group from the member
         member.remove_joined(group_id);
 
-        MemberStore::update(principal, member)?;
+        MemberStore::update(principal, member.clone())?;
 
         let (id, mut member_collection) = GroupMemberStore::get(group_id)?;
         member_collection.remove_member(&principal);
         GroupMemberStore::update(id, member_collection)?;
+
+        NotificationCalls::notification_remove_group_member(
+            JoinedMemberResponse::new(principal, member, group_id),
+            Self::get_higher_role_members(group_id),
+        );
 
         Ok(())
     }
@@ -787,19 +796,18 @@ impl GroupCalls {
             return Err(ApiError::bad_request().add_message("Member is not invited to the group"));
         }
 
-        // Remove the group from the member
-        member.remove_invite(group_id);
-
-        let (_, updated_member) = MemberStore::update(principal, member)?;
-
-        let (id, mut member_collection) = GroupMemberStore::get(group_id)?;
-        member_collection.remove_invite(&principal);
-        GroupMemberStore::update(id, member_collection)?;
-
-        NotificationCalls::notification_remove_invite(
-            InviteMemberResponse::new(principal, updated_member, group_id),
+        NotificationCalls::notification_remove_group_invite(
+            InviteMemberResponse::new(principal, member.clone(), group_id),
             Self::get_higher_role_members(group_id),
         );
+
+        // Remove the group from the member
+        member.remove_invite(group_id);
+        let _ = MemberStore::update(principal, member.clone())?;
+
+        let (_, mut member_collection) = GroupMemberStore::get(group_id)?;
+        member_collection.remove_invite(&principal);
+        GroupMemberStore::update(group_id, member_collection)?;
 
         Ok(())
     }
