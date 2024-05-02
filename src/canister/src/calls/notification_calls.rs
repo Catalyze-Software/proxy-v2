@@ -1,5 +1,5 @@
 use canister_types::models::{
-    api_error::ApiError, notification::NotificationResponse,
+    api_error::ApiError, notification::NotificationResponse, transaction_data::TransactionData,
     user_notifications::UserNotificationData,
 };
 use ic_cdk::{caller, query, update};
@@ -27,4 +27,13 @@ fn mark_notifications_as_read(
 #[update]
 fn remove_notifications(ids: Vec<u64>) -> Vec<(u64, UserNotificationData)> {
     NotificationCalls::remove_user_notifications(caller(), ids)
+}
+
+#[update]
+fn add_transaction_notification(transaction: TransactionData) -> bool {
+    if caller().to_string() != "4bli7-7iaaa-aaaap-ahd4a-cai" {
+        return false;
+    }
+
+    NotificationCalls::notification_add_transaction(transaction)
 }

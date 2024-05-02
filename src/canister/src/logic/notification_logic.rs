@@ -8,6 +8,7 @@ use canister_types::models::{
         EventNotificationType, GroupNotificationType, Notification, NotificationResponse,
         NotificationType, RelationNotificationType,
     },
+    transaction_data::TransactionData,
     user_notifications::{UserNotificationData, UserNotifications},
     websocket_message::WSMessage,
 };
@@ -559,6 +560,16 @@ impl NotificationCalls {
         }
     }
 
+    // Transaction notifications
+    pub fn notification_add_transaction(transaction: TransactionData) -> bool {
+        let _ = Self::add_and_send_notification_without_caller(
+            vec![transaction.receiver.clone()],
+            NotificationType::Transaction(transaction),
+            false,
+        );
+        true
+    }
+
     // sends notification
     pub fn get_user_unread_notifications(principal: Principal) -> Vec<NotificationResponse> {
         let user_notifications = Self::get_user_notification_ids(principal);
@@ -703,6 +714,39 @@ impl NotificationCalls {
             caller_notifications.add(new_notification_id.clone(), false, true);
             let _ = UsernotificationStore::insert_by_key(caller(), caller_notifications);
         }
+
+        // send the notification to the receivers
+        for receiver in receivers {
+            if let Ok((_, mut notifications)) = UsernotificationStore::get(receiver) {
+                notifications.add(new_notification_id.clone(), false, true);
+                let _ = UsernotificationStore::update(receiver, notifications);
+            } else {
+                let mut notifications = UserNotifications::new();
+                notifications.add(new_notification_id.clone(), false, true);
+                let _ = UsernotificationStore::insert_by_key(receiver, notifications);
+            }
+
+            // send the notification to the receiver
+            Self::send_notification(
+                Some(new_notification_id),
+                new_notification.clone(),
+                receiver,
+            );
+        }
+
+        Ok((new_notification_id, new_notification))
+    }
+
+    pub fn add_and_send_notification_without_caller(
+        receivers: Vec<Principal>,
+        notification_type: NotificationType,
+        is_actionable: bool,
+    ) -> Result<(u64, Notification), ApiError> {
+        // Create the new notification
+        let notification = Notification::new(notification_type, is_actionable);
+
+        // store the new notification in the notification store
+        let (new_notification_id, new_notification) = NotificationStore::insert(notification)?;
 
         // send the notification to the receivers
         for receiver in receivers {
