@@ -339,6 +339,12 @@ type MemberInvite = record {
   created_at : nat64;
   notification_id : opt nat64;
 };
+type MetadataValue = variant {
+  Int : int;
+  Nat : nat;
+  Blob : vec nat8;
+  Text : text;
+};
 type MultiLocation = record { physical : PhysicalLocation; digital : text };
 type NeuronGated = record {
   governance_canister : principal;
@@ -372,7 +378,7 @@ type NotificationType = variant {
   Event : EventNotificationType;
   Relation : RelationNotificationType;
   Group : GroupNotificationType;
-  Transaction : TransactionData;
+  Transaction : TransactionNotificationType;
 };
 type PagedResponse = record {
   total : nat64;
@@ -635,14 +641,26 @@ type TokenGated = record {
   amount : nat64;
   standard : text;
 };
+type TransactionCompleteData = record {
+  metadata : vec record { text; MetadataValue };
+  sender : principal;
+  total_amount_distributed : nat;
+  canister : principal;
+  receiver_count : nat64;
+};
 type TransactionData = record {
   fee : nat;
-  memo : opt nat64;
+  metadata : vec record { text; MetadataValue };
+  memo : opt vec nat8;
   sender : principal;
   canister : principal;
   amount : nat;
   block_height : nat;
   receiver : principal;
+};
+type TransactionNotificationType = variant {
+  SingleTransaction : TransactionData;
+  TransactionsComplete : TransactionCompleteData;
 };
 type UpdateEvent = record {
   banner_image : Asset;
@@ -739,6 +757,7 @@ service : () -> {
   add_role_to_group : (nat64, text, text, nat64) -> (Result_9);
   add_starred : (Subject) -> (Result_7);
   add_transaction_notification : (TransactionData) -> (bool);
+  add_transactions_complete_notification : (TransactionCompleteData) -> (bool);
   add_wallet_to_group : (nat64, principal, text) -> (Result_6);
   add_wallet_to_profile : (PostWallet) -> (Result_7);
   approve_code_of_conduct : (nat64) -> (Result);

@@ -40,20 +40,6 @@ pub static GROUP_EVENTS_MEMORY_ID: MemoryId = MemoryId::new(12);
 
 pub static LOGS_MEMORY_ID: MemoryId = MemoryId::new(13);
 
-// TODO:
-/// The type of the key used in the user centric `StableBTreeMap` for the different stores.
-/// # Note
-/// This is just a `Principal` but renamed to `PrincipalIdentifier` to make it more clear.
-/// Should be removed once the old data is migrated to the new data model
-pub type PrincipalIdentifier = Principal;
-
-// Temporary memory IDs for the maps which are needed for backward compatibility
-// should be removed once the old data is migrated to the new data model
-
-static PROFILES_IDENTIFIER_REF_MEMORY_ID: MemoryId = MemoryId::new(109);
-static MEMBERS_IDENTIFIER_REF_MEMORY_ID: MemoryId = MemoryId::new(111);
-static ATTENDEES_IDENTIFIER_REF_MEMORY_ID: MemoryId = MemoryId::new(113);
-
 /// A reference to a `StableBTreeMap` that is wrapped in a `RefCell`.
 ///# Generics
 /// * `K` - The key type of the `StableBTreeMap`.
@@ -75,20 +61,6 @@ pub trait StorageMethods<K, V> {
     fn update(id: K, entity: V) -> Result<(K, V), ApiError>;
     fn remove(id: K) -> bool;
     fn clear() -> ();
-}
-
-/// A trait for the identifier reference maps.
-/// # Generics
-/// * `V` - The value type of the map. (Principal or u64)
-/// # Note
-/// This trait is used to define the methods that are common to the identifier reference maps.
-/// Temporary trait for backward compatibility
-pub trait IdentifierRefMethods<V> {
-    fn new_identifier() -> PrincipalIdentifier;
-    fn get_id_by_identifier(key: &PrincipalIdentifier) -> Option<V>;
-    fn get_identifier_by_id(value: &V) -> Option<PrincipalIdentifier>;
-    fn insert_identifier_ref(value: V) -> Result<V, ApiError>;
-    fn remove_identifier_ref(key: &PrincipalIdentifier) -> bool;
 }
 
 thread_local! {
@@ -150,22 +122,6 @@ thread_local! {
 
     pub static EVENT_ATTENDEES: StorageRef<u64, MemberCollection> = RefCell::new(
         StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.borrow().get(EVENT_ATTENDEES_MEMORY_ID)))
-    );
-
-
-    // TODO:
-    // Temporary memories for the maps which are needed for backward compatibility
-    // should be removed once the old data is migrated to the new data model
-    pub static PROFILES_IDENTIFIER_REF: StorageRef<PrincipalIdentifier, Principal> = RefCell::new(
-        StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.borrow().get(PROFILES_IDENTIFIER_REF_MEMORY_ID)))
-    );
-
-    pub static MEMBERS_IDENTIFIER_REF: StorageRef<PrincipalIdentifier, Principal> = RefCell::new(
-        StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.borrow().get(MEMBERS_IDENTIFIER_REF_MEMORY_ID)))
-    );
-
-    pub static ATTENDEES_IDENTIFIER_REF: StorageRef<PrincipalIdentifier, Principal> = RefCell::new(
-        StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.borrow().get(ATTENDEES_IDENTIFIER_REF_MEMORY_ID)))
     );
 
 }

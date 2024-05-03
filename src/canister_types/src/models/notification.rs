@@ -10,7 +10,7 @@ use super::{
     attendee::{InviteAttendeeResponse, JoinedAttendeeResponse},
     friend_request::FriendRequestResponse,
     member::{InviteMemberResponse, JoinedMemberResponse},
-    transaction_data::TransactionData,
+    transaction_data::{TransactionCompleteData, TransactionData},
     user_notifications::UserNotificationData,
 };
 
@@ -68,7 +68,13 @@ pub enum NotificationType {
     Relation(RelationNotificationType),
     Group(GroupNotificationType),
     Event(EventNotificationType),
-    Transaction(TransactionData),
+    Transaction(TransactionNotificationType),
+}
+
+#[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
+pub enum TransactionNotificationType {
+    SingleTransaction(TransactionData),
+    TransactionsComplete(TransactionCompleteData),
 }
 
 #[derive(CandidType, Deserialize, Serialize, Clone, Debug)]

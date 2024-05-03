@@ -6,9 +6,9 @@ use canister_types::models::{
     member::{InviteMemberResponse, JoinedMemberResponse, MemberInvite},
     notification::{
         EventNotificationType, GroupNotificationType, Notification, NotificationResponse,
-        NotificationType, RelationNotificationType,
+        NotificationType, RelationNotificationType, TransactionNotificationType,
     },
-    transaction_data::TransactionData,
+    transaction_data::{TransactionCompleteData, TransactionData},
     user_notifications::{UserNotificationData, UserNotifications},
     websocket_message::WSMessage,
 };
@@ -564,7 +564,18 @@ impl NotificationCalls {
     pub fn notification_add_transaction(transaction: TransactionData) -> bool {
         let _ = Self::add_and_send_notification_without_caller(
             vec![transaction.receiver.clone()],
-            NotificationType::Transaction(transaction),
+            NotificationType::Transaction(TransactionNotificationType::SingleTransaction(
+                transaction,
+            )),
+            false,
+        );
+        true
+    }
+
+    pub fn notification_add_complete_transaction(data: TransactionCompleteData) -> bool {
+        let _ = Self::add_and_send_notification_without_caller(
+            vec![data.sender.clone()],
+            NotificationType::Transaction(TransactionNotificationType::TransactionsComplete(data)),
             false,
         );
         true

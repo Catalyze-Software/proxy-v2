@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Specific login log api
 - Added `decline_user_request_event_invite` update call
 - Added `decline_owner_request_event_invite` update call
+- Added `TransactionData` struct for handling transaction
+- Added `TransactionDataComplete` struct for handling transaction
+- Added `add_transaction_notification` update call
+- Added `add_transactions_complete_notification` update call
 
 ### Changed
 
@@ -24,11 +28,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - rename `accept_user_request_event_invite` to `accept_or_decline_user_request_event_invite`
 - rename `accept_owner_request_event_invite` to `accept_or_decline_owner_request_event_invite`
 - Changed error text for `create_empty_attendee` and `to_joined_attendee_response`
+- Store counters start at `1` instead of `0`!!
 
-# Fixed
+### Fixed
 
 - Fixed bug on `create_empty_attendee` where it was checking the `MemberStore` instead of the `AttendeeStore`
 - Fixed notification bug for events and groups
+
+### Removed
+
+- Removed stores for storing the `Identifier - id` reference (thus removing backward compatibility)
 
 ## [0.1.5]
 

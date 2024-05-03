@@ -1,5 +1,7 @@
 use canister_types::models::{
-    api_error::ApiError, notification::NotificationResponse, transaction_data::TransactionData,
+    api_error::ApiError,
+    notification::NotificationResponse,
+    transaction_data::{TransactionCompleteData, TransactionData},
     user_notifications::UserNotificationData,
 };
 use ic_cdk::{caller, query, update};
@@ -36,4 +38,13 @@ fn add_transaction_notification(transaction: TransactionData) -> bool {
     }
 
     NotificationCalls::notification_add_transaction(transaction)
+}
+
+#[update]
+fn add_transactions_complete_notification(data: TransactionCompleteData) -> bool {
+    if caller().to_string() != "4bli7-7iaaa-aaaap-ahd4a-cai" {
+        return false;
+    }
+
+    NotificationCalls::notification_add_complete_transaction(data)
 }
