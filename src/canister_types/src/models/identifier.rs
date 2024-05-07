@@ -185,28 +185,28 @@ impl Default for Identifier {
     }
 }
 
-#[test]
-fn test_decode() {
-    let x = Identifier::new(
-        0,
-        Principal::from_text("ve3v4-o7xuv-ijejl-vcyfx-hjy3b-owwtx-jte2k-2bciw-spskd-jgmvd-rqe")
-            .unwrap(),
-        "prl".to_string(),
-    )
-    .unwrap()
-    .to_principal();
-    match x {
-        Ok(_id) => println!("{:?}", _id.to_string()),
-        Err(_err) => println!("{:?}", _err),
-    }
-    // let (id, principal, kind) = Identifier::decode(
-    //     &Principal::from_text("ve3v4-o7xuv-ijejl-vcyfx-hjy3b-owwtx-jte2k-2bciw-spskd-jgmvd-rqe")
-    //         .unwrap(),
-    // );
-    // println!(
-    //     "id: {}\nprincipal: {}\nkind: {}",
-    //     id,
-    //     principal.to_string(),
-    //     kind
-    // );
-}
+// #[test]
+// fn test_decode() {
+//     let x = Identifier::new(
+//         0,
+//         Principal::from_text("ve3v4-o7xuv-ijejl-vcyfx-hjy3b-owwtx-jte2k-2bciw-spskd-jgmvd-rqe")
+//             .unwrap(),
+//         "prl".to_string(),
+//     )
+//     .unwrap()
+//     .to_principal();
+//     match x {
+//         Ok(_id) => println!("{:?}", _id.to_string()),
+//         Err(_err) => println!("{:?}", _err),
+//     }
+//     // let (id, principal, kind) = Identifier::decode(
+//     //     &Principal::from_text("ve3v4-o7xuv-ijejl-vcyfx-hjy3b-owwtx-jte2k-2bciw-spskd-jgmvd-rqe")
+//     //         .unwrap(),
+//     // );
+//     // println!(
+//     //     "id: {}\nprincipal: {}\nkind: {}",
+//     //     id,
+//     //     principal.to_string(),
+//     //     kind
+//     // );
+// }

@@ -4,8 +4,8 @@ use super::{
 use crate::{
     helpers::validator::Validator,
     storage::{
-        AttendeeStore, EventStore, GroupStore, IdentifierRefMethods, MemberStore, ProfileStore,
-        StorageMethods, UsernotificationStore,
+        AttendeeStore, EventStore, GroupStore, MemberStore, ProfileStore, StorageMethods,
+        UsernotificationStore,
     },
 };
 use candid::Principal;
@@ -32,27 +32,6 @@ impl ProfileCalls {
 
         let new_profile = Profile::from(post_profile);
         let stored_profile = ProfileStore::insert_by_key(caller(), new_profile);
-
-        //////////////////////////////////////////////////////////////////////////////////////////
-        // TODO: REMOVE THIS SECTION
-        // ADDED FOR BACKWARD COMPATIBILITY
-        // SHOULD BE REMOVED IN THE FUTURE
-        //////////////////////////////////////////////////////////////////////////////////////////
-
-        // generate and store an profile identifier
-        let profile_identifier = ProfileStore::new_identifier();
-        let _ = ProfileStore::insert_identifier_ref(profile_identifier);
-
-        // generate and store an member identifier
-        let member_identifier = MemberStore::new_identifier();
-        let _ = MemberStore::insert_identifier_ref(member_identifier);
-
-        // generate and store an attendee identifier
-        let attendee_identifier = AttendeeStore::new_identifier();
-        let _ = AttendeeStore::insert_identifier_ref(attendee_identifier);
-
-        //////////////////////////////////////////////////////////////////////////////////////////
-        //////////////////////////////////////////////////////////////////////////////////////////
 
         let _ = MemberCalls::create_empty_member(caller());
         let _ = AttendeeCalls::create_empty_attendee(caller());

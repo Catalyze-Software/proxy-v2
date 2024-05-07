@@ -80,7 +80,7 @@ impl StorageMethods<u64, Event> for EventStore {
                 .borrow()
                 .last_key_value()
                 .map(|(k, _)| k + 1)
-                .unwrap_or(0);
+                .unwrap_or(1);
 
             if data.borrow().contains_key(&key) {
                 return Err(ApiError::duplicate()

@@ -10,6 +10,7 @@ use super::{
     attendee::{InviteAttendeeResponse, JoinedAttendeeResponse},
     friend_request::FriendRequestResponse,
     member::{InviteMemberResponse, JoinedMemberResponse},
+    transaction_data::{TransactionCompleteData, TransactionData},
     user_notifications::UserNotificationData,
 };
 
@@ -71,6 +72,12 @@ pub enum NotificationType {
 }
 
 #[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
+pub enum TransactionNotificationType {
+    SingleTransaction(TransactionData),
+    TransactionsComplete(TransactionCompleteData),
+}
+
+#[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
 pub enum RelationNotificationType {
     FriendRequest(FriendRequestResponse),
     FriendRequestAccept(FriendRequestResponse),
@@ -121,14 +128,6 @@ pub enum EventNotificationType {
     UserJoinEvent((u64, u64)),
     UserLeaveEvent((u64, u64)),
     EventReminder(u64),
-}
-
-#[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
-pub enum TransactionNotificationType {
-    SingleTransaction(u64),
-    MultipleTransaction(Vec<u64>),
-    Airdrop,
-    MultisigTransaction(u64),
 }
 
 #[derive(CandidType, Deserialize, Serialize, Clone, Debug)]

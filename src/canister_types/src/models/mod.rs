@@ -34,6 +34,7 @@ pub mod http_types;
 pub mod member_collection;
 pub mod neuron;
 pub mod subject;
+pub mod transaction_data;
 pub mod user_notifications;
 pub mod websocket_message;
 

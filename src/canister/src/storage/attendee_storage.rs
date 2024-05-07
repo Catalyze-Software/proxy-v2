@@ -1,88 +1,12 @@
-use super::storage_api::{
-    IdentifierRefMethods, PrincipalIdentifier, StorageMethods, ATTENDEES, ATTENDEES_IDENTIFIER_REF,
-    ATTENDEES_MEMORY_ID, MEMORY_MANAGER,
-};
+use super::storage_api::{StorageMethods, ATTENDEES, ATTENDEES_MEMORY_ID, MEMORY_MANAGER};
 use candid::Principal;
-use canister_types::models::{
-    api_error::ApiError,
-    attendee::Attendee,
-    identifier::{Identifier, IdentifierKind},
-};
-use ic_cdk::caller;
+use canister_types::models::{api_error::ApiError, attendee::Attendee};
+
 use ic_stable_structures::StableBTreeMap;
 
 pub struct AttendeeStore;
 
 pub const NAME: &str = "attendees";
-
-impl IdentifierRefMethods<PrincipalIdentifier> for AttendeeStore {
-    /// get a new identifier
-    /// # Returns
-    /// * `PrincipalIdentifier` - The new identifier
-    fn new_identifier() -> PrincipalIdentifier {
-        let id = ATTENDEES_IDENTIFIER_REF.with(|data| {
-            data.borrow()
-                .last_key_value()
-                .map(|(k, _)| Identifier::from(k).id() + 1)
-                .unwrap_or(0)
-        });
-
-        Identifier::generate(IdentifierKind::Profile(id))
-            .to_principal()
-            .unwrap()
-    }
-
-    /// Get the key by identifier
-    /// # Arguments
-    /// * `key` - The identifier to get the key for
-    /// # Returns
-    /// * `Option<Principal>` - The key if found, otherwise None
-    fn get_id_by_identifier(key: &PrincipalIdentifier) -> Option<Principal> {
-        ATTENDEES_IDENTIFIER_REF.with(|data| data.borrow().get(key))
-    }
-
-    /// Get the identifier by key
-    /// # Arguments
-    /// * `value` - The value to get the identifier for
-    /// # Returns
-    /// * `Option<PrincipalIdentifier>` - The identifier if found, otherwise None
-    fn get_identifier_by_id(value: &Principal) -> Option<PrincipalIdentifier> {
-        ATTENDEES_IDENTIFIER_REF.with(|data| {
-            data.borrow()
-                .iter()
-                .find(|(_, v)| v == value)
-                .map(|(k, _)| k.clone())
-        })
-    }
-
-    /// Insert an identifier reference with the caller as value
-    /// # Arguments
-    /// * `key` - The increment value to insert
-    /// # Returns
-    /// * `Result<Principal, ApiError>` - The inserted principal if successful, otherwise an error
-    fn insert_identifier_ref(key: PrincipalIdentifier) -> Result<Principal, ApiError> {
-        ATTENDEES_IDENTIFIER_REF.with(|data| {
-            if data.borrow().contains_key(&key) {
-                return Err(ApiError::duplicate()
-                    .add_method_name("insert_identifier_ref")
-                    .add_info(NAME)
-                    .add_message("Key already exists"));
-            }
-
-            data.borrow_mut().insert(key, caller());
-            Ok(caller())
-        })
-    }
-
-    /// Remove an identifier reference
-    /// # Arguments
-    /// * `key` - The identifier to remove
-    /// # Returns
-    /// * `bool` - True if the identifier was removed, otherwise false
-    fn remove_identifier_ref(key: &PrincipalIdentifier) -> bool {
-        ATTENDEES_IDENTIFIER_REF.with(|data| data.borrow_mut().remove(key).is_some())
-    }
-}
 
 impl StorageMethods<Principal, Attendee> for AttendeeStore {
     /// Get a single attendee by key
