@@ -40,6 +40,10 @@ pub static GROUP_EVENTS_MEMORY_ID: MemoryId = MemoryId::new(12);
 
 pub static LOGS_MEMORY_ID: MemoryId = MemoryId::new(13);
 
+pub static TAGS_MEMORY_ID: MemoryId = MemoryId::new(14);
+pub static INTERESTS_MEMORY_ID: MemoryId = MemoryId::new(15);
+pub static SKILLS_MEMORY_ID: MemoryId = MemoryId::new(16);
+
 /// A reference to a `StableBTreeMap` that is wrapped in a `RefCell`.
 ///# Generics
 /// * `K` - The key type of the `StableBTreeMap`.
@@ -60,7 +64,7 @@ pub trait StorageMethods<K, V> {
     fn insert_by_key(key: K, entity: V) -> Result<(K, V), ApiError>;
     fn update(id: K, entity: V) -> Result<(K, V), ApiError>;
     fn remove(id: K) -> bool;
-    fn clear() -> ();
+    fn clear();
 }
 
 thread_local! {
@@ -122,6 +126,18 @@ thread_local! {
 
     pub static EVENT_ATTENDEES: StorageRef<u64, MemberCollection> = RefCell::new(
         StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.borrow().get(EVENT_ATTENDEES_MEMORY_ID)))
+    );
+
+    pub static TAGS: StorageRef<u64, String> = RefCell::new(
+        StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.borrow().get(TAGS_MEMORY_ID)))
+    );
+
+    pub static INTERESTS: StorageRef<u64, String> = RefCell::new(
+        StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.borrow().get(INTERESTS_MEMORY_ID)))
+    );
+
+    pub static SKILLS: StorageRef<u64, String> = RefCell::new(
+        StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.borrow().get(SKILLS_MEMORY_ID)))
     );
 
 }

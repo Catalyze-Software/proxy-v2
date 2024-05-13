@@ -12,6 +12,7 @@ mod notification_storage;
 mod profile_storage;
 mod report_storage;
 pub mod storage_api;
+mod topics_storage;
 mod user_notification_storage;
 
 // Re-export stores
