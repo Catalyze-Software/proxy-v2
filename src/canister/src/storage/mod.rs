@@ -28,7 +28,7 @@ pub use member_storage::MemberStore;
 pub use notification_storage::NotificationStore;
 pub use profile_storage::ProfileStore;
 pub use report_storage::ReportStore;
-pub use user_notification_storage::UsernotificationStore;
+pub use user_notification_storage::UserNotificationStore;
 
 pub use storage_api::StorageMethods;
 

@@ -7,9 +7,9 @@ use canister_types::models::{
 };
 use ic_stable_structures::{
     memory_manager::{MemoryId, MemoryManager, VirtualMemory},
-    DefaultMemoryImpl, StableBTreeMap,
+    DefaultMemoryImpl, StableBTreeMap, Storable,
 };
-use std::cell::RefCell;
+use std::{cell::RefCell, thread::LocalKey};
 
 pub type Memory = VirtualMemory<DefaultMemoryImpl>;
 
@@ -49,22 +49,150 @@ pub static SKILLS_MEMORY_ID: MemoryId = MemoryId::new(16);
 /// * `K` - The key type of the `StableBTreeMap`.
 /// * `V` - The value type of the `StableBTreeMap`.
 pub type StorageRef<K, V> = RefCell<StableBTreeMap<K, V, Memory>>;
+pub type StaticStorageRef<K, V> = &'static LocalKey<StorageRef<K, V>>;
 type MemManagerStore = RefCell<MemoryManager<DefaultMemoryImpl>>;
 
-pub trait StorageMethods<K, V> {
-    fn get(id: K) -> Result<(K, V), ApiError>;
-    fn get_many(ids: Vec<K>) -> Vec<(K, V)>;
+pub trait Storage<K: Storable + Ord + Clone, V: Storable + Clone> {
+    const NAME: &'static str;
+
+    fn memory_id() -> MemoryId;
+    fn storage() -> StaticStorageRef<K, V>;
+}
+
+pub trait StorageMethods<K: 'static + Storable + Ord + Clone, V: 'static + Storable + Clone>:
+    Storage<K, V>
+{
+    fn insert(entity: V) -> Result<(K, V), ApiError>;
+
+    /// Get a single entity by key
+    /// # Arguments
+    /// * `key` - The key of the entity to get
+    /// # Returns
+    /// * `Result<(K, V), ApiError>` - The entity if found, otherwise an error
+    fn get(key: K) -> Result<(K, V), ApiError> {
+        Self::storage().with(|data| {
+            data.borrow()
+                .get(&key)
+                .ok_or(
+                    ApiError::not_found()
+                        .add_method_name("get")
+                        .add_info(Self::NAME),
+                )
+                .map(|value| (key, value))
+        })
+    }
+
+    /// Get multiple entities by key
+    /// # Arguments
+    /// * `keys` - The keys of the entities to get
+    /// # Returns
+    /// * `Vec<(K, V)>` - The entities if found, otherwise an empty vector
+    fn get_many(keys: Vec<K>) -> Vec<(K, V)> {
+        Self::storage().with(|data| {
+            let mut entities = Vec::new();
+            for key in keys {
+                if let Some(value) = data.borrow().get(&key) {
+                    entities.push((key, value));
+                }
+            }
+            entities
+        })
+    }
+
+    /// Get all entities by key
+    /// # Returns
+    /// * `Vec<(K, V)>` - The entities if found, otherwise an empty vector
+    fn get_all() -> Vec<(K, V)> {
+        Self::storage().with(|data| data.borrow().iter().collect())
+    }
+
+    /// Find a single entity by filter
+    /// # Arguments
+    /// * `filter` - The filter to apply
+    /// # Returns
+    /// * `Option<(K, V)>` - The entity if found, otherwise None
     fn find<F>(filter: F) -> Option<(K, V)>
     where
-        F: Fn(&K, &V) -> bool;
+        F: Fn(&K, &V) -> bool,
+    {
+        Self::storage().with(|data| data.borrow().iter().find(|(id, value)| filter(id, value)))
+    }
+
+    /// Find all entities by filter
+    /// # Arguments
+    /// * `filter` - The filter to apply
+    /// # Returns
+    /// * `Vec<(K, V)>` - The entities if found, otherwise an empty vector
     fn filter<F>(filter: F) -> Vec<(K, V)>
     where
-        F: Fn(&K, &V) -> bool;
-    fn insert(entity: V) -> Result<(K, V), ApiError>;
-    fn insert_by_key(key: K, entity: V) -> Result<(K, V), ApiError>;
-    fn update(id: K, entity: V) -> Result<(K, V), ApiError>;
-    fn remove(id: K) -> bool;
-    fn clear();
+        F: Fn(&K, &V) -> bool,
+    {
+        Self::storage().with(|data| {
+            data.borrow()
+                .iter()
+                .filter(|(id, value)| filter(id, value))
+                .collect()
+        })
+    }
+
+    /// This method is not supported by default, if needed it should be implemented manually
+    fn insert_by_key(_key: K, _value: V) -> Result<(K, V), ApiError> {
+        Err(ApiError::unsupported()
+            .add_method_name("insert_by_key") // value should be `insert` as a string value
+            .add_info(Self::NAME)
+            .add_message("This value does not require a key to be inserted, use `insert` instead"))
+    }
+
+    /// Update a single entity by key
+    /// # Arguments
+    /// * `key` - The key of the entity to update
+    /// * `value` - The entity to update
+    /// # Returns
+    /// * `Result<(K, V), ApiError>` - The updated entity if successful, otherwise an error
+    /// # Note
+    /// Does check if a entity with the same key already exists, if not returns an error
+    fn update(key: K, value: V) -> Result<(K, V), ApiError> {
+        Self::storage().with(|data| {
+            if !data.borrow().contains_key(&key) {
+                return Err(ApiError::not_found()
+                    .add_method_name("update")
+                    .add_info(Self::NAME)
+                    .add_message("Key does not exist"));
+            }
+
+            data.borrow_mut().insert(key.clone(), value.clone());
+            Ok((key, value))
+        })
+    }
+
+    /// Remove a single entity by key
+    /// # Arguments
+    /// * `key` - The key of the entity to remove
+    /// # Returns
+    /// * `bool` - True if the entity was removed, otherwise false
+    fn remove(key: K) -> bool {
+        Self::storage().with(|data| data.borrow_mut().remove(&key).is_some())
+    }
+
+    /// Remove a entities by keys
+    /// # Arguments
+    /// * `keys` - The keys of the entities to remove
+    fn remove_many(keys: Vec<K>) {
+        Self::storage().with(|data| {
+            for key in keys {
+                data.borrow_mut().remove(&key);
+            }
+        })
+    }
+
+    /// Clear all entities
+    fn clear() {
+        Self::storage().with(|n| {
+            n.replace(StableBTreeMap::new(
+                MEMORY_MANAGER.with(|m| m.borrow().get(Self::memory_id())),
+            ))
+        });
+    }
 }
 
 thread_local! {

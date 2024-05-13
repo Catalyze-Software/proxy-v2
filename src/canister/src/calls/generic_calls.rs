@@ -2,7 +2,7 @@ use crate::{
     logic::{boost_logic::BoostCalls, websocket_logic::Websocket},
     storage::{
         AttendeeStore, EventStore, FriendRequestStore, GroupEventsStore, GroupMemberStore,
-        MemberStore, NotificationStore, StorageMethods, UsernotificationStore,
+        MemberStore, NotificationStore, StorageMethods, UserNotificationStore,
     },
 };
 use candid::Principal;
@@ -28,7 +28,7 @@ pub fn _dev_clear_notifications(super_secret_password: String) -> bool {
     if super_secret_password != "super_secret_password" {
         return false;
     } else {
-        UsernotificationStore::clear();
+        UserNotificationStore::clear();
         NotificationStore::clear();
         return true;
     }
