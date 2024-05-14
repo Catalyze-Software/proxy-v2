@@ -4,7 +4,7 @@ use canister_types::models::{
     member::{JoinedMemberResponse, Member},
 };
 
-use crate::storage::{MemberStore, StorageMethods};
+use crate::storage::{MemberStore, StorageInsertableByKey, StorageQueryable};
 
 pub struct MemberCalls;
 pub struct MemberMapper;

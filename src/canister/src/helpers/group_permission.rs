@@ -6,7 +6,7 @@ use canister_types::models::{
 };
 use ic_cdk::caller;
 
-use crate::storage::{GroupStore, MemberStore, StorageMethods};
+use crate::storage::{GroupStore, MemberStore, StorageQueryable};
 
 /// Determine if the caller has permission to perform an action on group based entities
 /// # Arguments

@@ -2,7 +2,7 @@ use crate::{
     helpers::time_helper::hours_to_nanoseconds,
     storage::{
         AttendeeStore, EventAttendeeStore, EventStore, GroupEventsStore, MemberStore, ProfileStore,
-        StorageMethods,
+        StorageInsertable, StorageInsertableByKey, StorageQueryable, StorageUpdatable,
     },
 };
 

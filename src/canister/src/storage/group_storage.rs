@@ -1,5 +1,8 @@
-use super::storage_api::{StaticStorageRef, Storage, StorageMethods, GROUPS, GROUPS_MEMORY_ID};
-use canister_types::models::{api_error::ApiError, group::Group};
+use super::storage_api::{
+    StaticStorageRef, Storage, StorageInsertable, StorageQueryable, StorageUpdatable, GROUPS,
+    GROUPS_MEMORY_ID,
+};
+use canister_types::models::group::Group;
 use ic_stable_structures::memory_manager::MemoryId;
 
 pub struct GroupStore;
@@ -16,31 +19,6 @@ impl Storage<u64, Group> for GroupStore {
     }
 }
 
-impl StorageMethods<u64, Group> for GroupStore {
-    /// Insert a single group
-    /// # Arguments
-    /// * `value` - The group to insert
-    /// # Returns
-    /// * `Result<Group, ApiError>` - The inserted group if successful, otherwise an error
-    /// # Note
-    /// Does check if a group with the same key already exists, if so returns an error
-    fn insert(value: Group) -> Result<(u64, Group), ApiError> {
-        Self::storage().with(|data| {
-            let key = data
-                .borrow()
-                .last_key_value()
-                .map(|(k, _)| k + 1)
-                .unwrap_or_else(|| 1);
-
-            if data.borrow().contains_key(&key) {
-                return Err(ApiError::duplicate()
-                    .add_method_name("insert")
-                    .add_info(Self::NAME)
-                    .add_message("Key already exists"));
-            }
-
-            data.borrow_mut().insert(key, value.clone());
-            Ok((key, value))
-        })
-    }
-}
+impl StorageQueryable<u64, Group> for GroupStore {}
+impl StorageUpdatable<u64, Group> for GroupStore {}
+impl StorageInsertable<Group> for GroupStore {}

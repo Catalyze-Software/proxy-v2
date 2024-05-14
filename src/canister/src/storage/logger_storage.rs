@@ -1,6 +1,6 @@
-use super::{
-    storage_api::{StaticStorageRef, Storage, LOGS, LOGS_MEMORY_ID},
-    StorageMethods,
+use super::storage_api::{
+    StaticStorageRef, Storage, StorageInsertable, StorageQueryable, StorageUpdatable, LOGS,
+    LOGS_MEMORY_ID,
 };
 use canister_types::models::{
     api_error::ApiError,
@@ -100,7 +100,9 @@ impl LoggerStore {
     }
 }
 
-impl StorageMethods<u64, Logger> for LoggerStore {
+impl StorageQueryable<u64, Logger> for LoggerStore {}
+impl StorageUpdatable<u64, Logger> for LoggerStore {}
+impl StorageInsertable<Logger> for LoggerStore {
     /// # Arguments
     /// * `logger` - The logger to insert
     /// # Returns

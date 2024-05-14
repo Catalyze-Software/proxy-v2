@@ -4,8 +4,8 @@ use super::{
 use crate::{
     helpers::validator::Validator,
     storage::{
-        AttendeeStore, EventStore, GroupStore, MemberStore, ProfileStore, StorageMethods,
-        UserNotificationStore,
+        AttendeeStore, EventStore, GroupStore, MemberStore, ProfileStore, StorageInsertableByKey,
+        StorageQueryable, StorageUpdatable, UserNotificationStore,
     },
 };
 use candid::Principal;

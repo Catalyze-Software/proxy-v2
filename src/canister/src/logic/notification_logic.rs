@@ -14,7 +14,10 @@ use canister_types::models::{
 };
 use ic_cdk::caller;
 
-use crate::storage::{NotificationStore, StorageMethods, UserNotificationStore};
+use crate::storage::{
+    NotificationStore, StorageInsertable, StorageInsertableByKey, StorageQueryable,
+    StorageUpdatable, UserNotificationStore,
+};
 
 use super::websocket_logic::Websocket;
 
@@ -82,7 +85,7 @@ impl NotificationCalls {
     }
 
     // sends notification
-    pub fn notification_remove_friend_request(receiver: Principal, friend_request_id: u64) -> () {
+    pub fn notification_remove_friend_request(receiver: Principal, friend_request_id: u64) {
         Self::send_notification(
             None,
             Notification::new(
@@ -96,7 +99,7 @@ impl NotificationCalls {
     }
 
     // sends notification
-    pub fn notification_remove_friend(receiver: Principal, friend_principal: Principal) -> () {
+    pub fn notification_remove_friend(receiver: Principal, friend_principal: Principal) {
         Self::send_notification(
             None,
             Notification::new(
@@ -112,7 +115,7 @@ impl NotificationCalls {
     // Group notifications
 
     // sends notification
-    pub fn notification_join_public_group(receivers: Vec<Principal>, group_id: u64) -> () {
+    pub fn notification_join_public_group(receivers: Vec<Principal>, group_id: u64) {
         for receiver in receivers {
             Self::send_notification(
                 None,
@@ -125,7 +128,7 @@ impl NotificationCalls {
         }
     }
 
-    pub fn notification_leave_group(receivers: Vec<Principal>, group_id: u64) -> () {
+    pub fn notification_leave_group(receivers: Vec<Principal>, group_id: u64) {
         for receiver in receivers {
             Self::send_notification(
                 None,
@@ -296,7 +299,7 @@ impl NotificationCalls {
     pub fn notification_change_group_member_role(
         member: JoinedMemberResponse,
         receivers: Vec<Principal>,
-    ) -> () {
+    ) {
         for receiver in receivers {
             Self::send_notification(
                 None,
@@ -314,7 +317,7 @@ impl NotificationCalls {
     pub fn notification_remove_group_member(
         member: JoinedMemberResponse,
         receivers: Vec<Principal>,
-    ) -> () {
+    ) {
         Self::send_notification(
             None,
             Notification::new(
@@ -341,7 +344,7 @@ impl NotificationCalls {
     pub fn notification_remove_group_invite(
         invite: InviteMemberResponse,
         receivers: Vec<Principal>,
-    ) -> () {
+    ) {
         if let Some(_invite) = invite.invite.clone() {
             if let Some(notification_id) = _invite.notification_id {
                 if let Ok((_, mut notification)) = NotificationStore::get(notification_id) {
@@ -366,11 +369,7 @@ impl NotificationCalls {
     // Event notifications
 
     // sends notification
-    pub fn notification_join_public_event(
-        receivers: Vec<Principal>,
-        group_id: u64,
-        event_id: u64,
-    ) -> () {
+    pub fn notification_join_public_event(receivers: Vec<Principal>, group_id: u64, event_id: u64) {
         for receiver in receivers {
             Self::send_notification(
                 None,
@@ -516,10 +515,7 @@ impl NotificationCalls {
         Ok(notification_id)
     }
 
-    pub fn notification_remove_event_invite(
-        notification_id: u64,
-        invite: InviteAttendeeResponse,
-    ) -> () {
+    pub fn notification_remove_event_invite(notification_id: u64, invite: InviteAttendeeResponse) {
         if let Ok((_, mut notification)) = NotificationStore::get(notification_id) {
             notification.mark_as_accepted(
                 false,
@@ -534,7 +530,7 @@ impl NotificationCalls {
     pub fn notification_remove_event_attendee(
         attendee: JoinedAttendeeResponse,
         receivers: Vec<Principal>,
-    ) -> () {
+    ) {
         Self::send_notification(
             None,
             Notification::new(
@@ -678,7 +674,7 @@ impl NotificationCalls {
         notification_id: Option<u64>,
         notification: Notification,
         receiver: Principal,
-    ) -> () {
+    ) {
         let (_, user_notifications) = UserNotificationStore::get(receiver)
             .unwrap_or((Principal::anonymous(), UserNotifications::new()));
 

@@ -1,4 +1,4 @@
-use crate::storage::{LoggerStore, StorageMethods, LOGIN_EVENT};
+use crate::storage::{LoggerStore, StorageInsertable, LOGIN_EVENT};
 use canister_types::models::{api_error::ApiError, log::Logger};
 use ic_cdk::{api::time, caller};
 

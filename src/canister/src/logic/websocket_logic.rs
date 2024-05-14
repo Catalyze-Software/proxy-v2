@@ -8,7 +8,7 @@ use ic_websocket_cdk::{
     WsInitParams,
 };
 
-use crate::storage::{StorageMethods, UserNotificationStore};
+use crate::storage::{StorageQueryable, UserNotificationStore};
 
 // type TimeInNanos = u64;
 

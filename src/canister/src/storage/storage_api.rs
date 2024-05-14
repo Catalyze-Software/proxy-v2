@@ -59,11 +59,9 @@ pub trait Storage<K: Storable + Ord + Clone, V: Storable + Clone> {
     fn storage() -> StaticStorageRef<K, V>;
 }
 
-pub trait StorageMethods<K: 'static + Storable + Ord + Clone, V: 'static + Storable + Clone>:
+pub trait StorageQueryable<K: 'static + Storable + Ord + Clone, V: 'static + Storable + Clone>:
     Storage<K, V>
 {
-    fn insert(entity: V) -> Result<(K, V), ApiError>;
-
     /// Get a single entity by key
     /// # Arguments
     /// * `key` - The key of the entity to get
@@ -134,15 +132,66 @@ pub trait StorageMethods<K: 'static + Storable + Ord + Clone, V: 'static + Stora
                 .collect()
         })
     }
+}
 
-    /// This method is not supported by default, if needed it should be implemented manually
-    fn insert_by_key(_key: K, _value: V) -> Result<(K, V), ApiError> {
-        Err(ApiError::unsupported()
-            .add_method_name("insert_by_key") // value should be `insert` as a string value
-            .add_info(Self::NAME)
-            .add_message("This value does not require a key to be inserted, use `insert` instead"))
+pub trait StorageInsertable<V: 'static + Storable + Clone>: Storage<u64, V> {
+    /// Insert a single entity
+    /// # Arguments
+    /// * `value` - The entity to insert
+    /// # Returns
+    /// * `Result<(u64, V), ApiError>` - The inserted entity if successful, otherwise an error
+    /// # Note
+    /// Does check if a entity with the same key already exists, if so returns an error
+    fn insert(value: V) -> Result<(u64, V), ApiError> {
+        Self::storage().with(|data| {
+            let key = data
+                .borrow()
+                .last_key_value()
+                .map(|(k, _)| k + 1)
+                .unwrap_or_else(|| 1);
+
+            if data.borrow().contains_key(&key) {
+                return Err(ApiError::duplicate()
+                    .add_method_name("insert")
+                    .add_info(Self::NAME)
+                    .add_message("Key already exists"));
+            }
+
+            data.borrow_mut().insert(key, value.clone());
+            Ok((key, value))
+        })
     }
+}
 
+pub trait StorageInsertableByKey<K: 'static + Storable + Ord + Clone, V: 'static + Storable + Clone>:
+    Storage<K, V>
+{
+    /// Insert a single entity by key
+    /// # Arguments
+    /// * `key` - The entity as key of the entity to insert
+    /// * `value` - The entity to insert
+    /// # Returns
+    /// * `Result<(K, V), ApiError>` - The inserted entity if successful, otherwise an error
+    /// # Note
+    /// Does check if a entity with the same key already exists, if so returns an error
+    fn insert_by_key(key: K, value: V) -> Result<(K, V), ApiError> {
+        Self::storage().with(|data| {
+            if data.borrow().contains_key(&key) {
+                return Err(ApiError::duplicate()
+                    .add_method_name("insert_by_key")
+                    .add_info(Self::NAME)
+                    .add_message("Key already exists"));
+            }
+
+            data.borrow_mut().insert(key.clone(), value.clone());
+            Ok((key, value))
+        })
+    }
+}
+
+pub trait StorageUpdatable<K: 'static + Storable + Ord + Clone, V: 'static + Storable + Clone>:
+    Storage<K, V>
+{
     /// Update a single entity by key
     /// # Arguments
     /// * `key` - The key of the entity to update

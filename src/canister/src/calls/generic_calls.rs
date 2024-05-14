@@ -1,8 +1,9 @@
 use crate::{
     logic::{boost_logic::BoostCalls, websocket_logic::Websocket},
     storage::{
+        storage_api::{StorageQueryable, StorageUpdatable},
         AttendeeStore, EventStore, FriendRequestStore, GroupEventsStore, GroupMemberStore,
-        MemberStore, NotificationStore, StorageMethods, UserNotificationStore,
+        MemberStore, NotificationStore, UserNotificationStore,
     },
 };
 use candid::Principal;

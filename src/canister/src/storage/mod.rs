@@ -30,7 +30,9 @@ pub use profile_storage::ProfileStore;
 pub use report_storage::ReportStore;
 pub use user_notification_storage::UserNotificationStore;
 
-pub use storage_api::StorageMethods;
+pub use storage_api::{
+    StorageInsertable, StorageInsertableByKey, StorageQueryable, StorageUpdatable,
+};
 
 pub use logger_storage::LoggerStore;
 

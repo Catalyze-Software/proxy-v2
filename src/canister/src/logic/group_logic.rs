@@ -12,7 +12,8 @@ use crate::{
         validator::Validator,
     },
     storage::{
-        GroupEventsStore, GroupMemberStore, GroupStore, MemberStore, ProfileStore, StorageMethods,
+        GroupEventsStore, GroupMemberStore, GroupStore, MemberStore, ProfileStore,
+        StorageInsertable, StorageInsertableByKey, StorageQueryable, StorageUpdatable,
     },
 };
 use candid::Principal;
@@ -148,7 +149,12 @@ impl GroupCalls {
             }
         }
 
-        let sorted_groups = sort.sort(groups, GroupMemberStore::get_all());
+        let group_members: HashMap<u64, MemberCollection> = GroupMemberStore::get_all()
+            .into_iter()
+            .map(|(k, v)| (k, v))
+            .collect();
+
+        let sorted_groups = sort.sort(groups, group_members);
         let result: Vec<GroupResponse> = sorted_groups
             .into_iter()
             .map(|(group_id, group)| {

@@ -1,12 +1,11 @@
-use canister_types::models::api_error::ApiError;
 use ic_stable_structures::memory_manager::MemoryId;
 
 use super::{
     storage_api::{
-        StaticStorageRef, Storage, INTERESTS, INTERESTS_MEMORY_ID, SKILLS, SKILLS_MEMORY_ID, TAGS,
-        TAGS_MEMORY_ID,
+        StaticStorageRef, Storage, StorageQueryable, StorageUpdatable, INTERESTS,
+        INTERESTS_MEMORY_ID, SKILLS, SKILLS_MEMORY_ID, TAGS, TAGS_MEMORY_ID,
     },
-    StorageMethods,
+    StorageInsertable,
 };
 
 pub type Topic = (u64, String);
@@ -55,31 +54,6 @@ impl Storage<u64, String> for SkillsStore {
     }
 }
 
-impl<T: Storage<u64, String>> StorageMethods<u64, String> for T {
-    /// Insert a single topic
-    /// # Arguments
-    /// * `value` - The topic content to insert
-    /// # Returns
-    /// * `Result<Topic, ApiError>` - The inserted topic if successful, otherwise an error
-    /// # Note
-    /// Does check if a topic with the same key already exists, if so returns an error
-    fn insert(value: String) -> Result<Topic, ApiError> {
-        Self::storage().with(|data| {
-            let key = data
-                .borrow()
-                .last_key_value()
-                .map(|(k, _)| k + 1)
-                .unwrap_or_else(|| 1);
-
-            if data.borrow().contains_key(&key) {
-                return Err(ApiError::duplicate()
-                    .add_method_name("insert")
-                    .add_info(Self::NAME)
-                    .add_message("Key already exists"));
-            }
-
-            data.borrow_mut().insert(key, value.clone());
-            Ok((key, value))
-        })
-    }
-}
+impl<T: Storage<u64, String>> StorageQueryable<u64, String> for T {}
+impl<T: Storage<u64, String>> StorageUpdatable<u64, String> for T {}
+impl<T: Storage<u64, String>> StorageInsertable<String> for T {}

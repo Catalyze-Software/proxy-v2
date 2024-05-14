@@ -4,7 +4,7 @@ use canister_types::models::{
     attendee::{Attendee, JoinedAttendeeResponse},
 };
 
-use crate::storage::{AttendeeStore, StorageMethods};
+use crate::storage::{AttendeeStore, StorageInsertableByKey, StorageQueryable};
 
 pub struct AttendeeCalls;
 pub struct AttendeeMapper;
