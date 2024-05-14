@@ -3,3 +3,4 @@ pub mod guards;
 pub mod time_helper;
 pub mod token_balance;
 pub mod validator;
+pub mod str;

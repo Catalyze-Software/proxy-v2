@@ -54,5 +54,5 @@ pub fn candid() {
 
     let dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
     let dir = dir.parent().unwrap().parent().unwrap().join("candid");
-    write(dir.join(format!("canister.did")), __export_did_tmp_()).expect("Write failed.");
+    write(dir.join("canister.did"), __export_did_tmp_()).expect("Write failed.");
 }

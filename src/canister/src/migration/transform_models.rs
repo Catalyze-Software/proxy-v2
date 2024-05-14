@@ -75,8 +75,8 @@ fn profiles_from_old(old_data: &OldData) -> Vec<(Principal, Profile)> {
         let new_starred: Vec<Subject> = old_profile
             .starred
             .clone()
-            .into_iter()
-            .map(|(identifier, _)| {
+            .into_keys()
+            .map(|identifier| {
                 let x = Identifier::from(identifier);
                 match x.kind().as_str() {
                     "grp" => Subject::Group(x.id()),
@@ -253,11 +253,11 @@ fn groups_from_old(old_data: &OldData) -> Vec<(u64, Group)> {
             updated_on: old_group.updated_on,
             created_on: old_group.created_on,
             website: old_group.website.clone(),
-            owner: old_group.owner.clone(),
-            created_by: old_group.created_by.clone(),
+            owner: old_group.owner,
+            created_by: old_group.created_by,
             matrix_space_id: old_group.matrix_space_id.clone(),
             image: old_group.image.clone(),
-            privacy_gated_type_amount: old_group.privacy_gated_type_amount.clone(),
+            privacy_gated_type_amount: old_group.privacy_gated_type_amount,
             roles: old_group
                 .roles
                 .iter()
@@ -286,7 +286,7 @@ impl From<GroupRole> for Role {
             permissions: group_role
                 .permissions
                 .into_iter()
-                .map(|permission| Permission::from(permission))
+                .map(Permission::from)
                 .collect(),
             color: group_role.color,
             index: group_role.index,
@@ -310,8 +310,8 @@ fn events_from_old(old_data: &OldData) -> Vec<(u64, Event)> {
             updated_on: old_event.updated_on,
             created_on: old_event.created_on,
             website: old_event.website.clone(),
-            owner: old_event.owner.clone(),
-            created_by: old_event.created_by.clone(),
+            owner: old_event.owner,
+            created_by: old_event.created_by,
             group_id: Identifier::from(old_event.group_identifier).id(),
             is_canceled: old_event.is_canceled.clone(),
             metadata: old_event.metadata.clone(),

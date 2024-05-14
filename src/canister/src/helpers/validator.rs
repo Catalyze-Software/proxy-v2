@@ -7,6 +7,8 @@ use email_address::EmailAddress;
 use ic_cdk::api::time;
 use std::str::FromStr;
 
+use super::str::str_len;
+
 pub struct Validator {
     fields: Vec<ValidateField>,
 }
@@ -25,11 +27,11 @@ impl Validator {
             }
         });
 
-        if errors.len() > 0 {
+        if !errors.is_empty() {
             return Err(ApiError::validation_response(errors));
         }
 
-        return Ok(());
+        Ok(())
     }
 
     fn validate_field(validation_field: &ValidateField) -> Result<(), ValidationResponse> {
@@ -46,24 +48,25 @@ impl Validator {
     }
 
     fn validate_string_length(
-        value: &String,
+        value: &str,
         min: &usize,
         max: &usize,
         field: &String,
     ) -> Result<(), ValidationResponse> {
-        if value.len() < *min {
+        if str_len(value) < *min {
             return Err(ValidationResponse {
                 field: field.to_string(),
                 message: format!("Minimum required length is {}", min),
             });
-        } else if value.len() > *max {
+        }
+        if str_len(value) > *max {
             return Err(ValidationResponse {
                 field: field.to_string(),
                 message: format!("Maximum length is {}", max),
             });
-        } else {
-            return Ok(());
         }
+
+        Ok(())
     }
 
     fn validate_count(
@@ -77,18 +80,19 @@ impl Validator {
                 field: field.to_string(),
                 message: format!("Minimum size length is {}", min),
             });
-        } else if value > max {
+        }
+        if value > max {
             return Err(ValidationResponse {
                 field: field.to_string(),
                 message: format!("Maximum size is {}", max),
             });
-        } else {
-            return Ok(());
         }
+
+        Ok(())
     }
 
-    fn validate_email(value: &String, field: &String) -> Result<(), ValidationResponse> {
-        let email = EmailAddress::from_str(&value.as_str());
+    fn validate_email(value: &str, field: &String) -> Result<(), ValidationResponse> {
+        let email = EmailAddress::from_str(value);
 
         match email {
             Ok(_email) => Ok(()),
@@ -103,15 +107,16 @@ impl Validator {
         if value.start_date() > value.end_date() {
             return Err(ValidationResponse {
                 field: field.to_string(),
-                message: format!("The start_date is after the end_date"),
+                message: "The start_date is after the end_date".to_string(),
             });
-        } else if value.start_date() < time() {
+        }
+        if value.start_date() < time() {
             return Err(ValidationResponse {
                 field: field.to_string(),
-                message: format!("The start_date can't be in the past"),
+                message: "The start_date can't be in the past".to_string(),
             });
-        } else {
-            return Ok(());
         }
+
+        Ok(())
     }
 }

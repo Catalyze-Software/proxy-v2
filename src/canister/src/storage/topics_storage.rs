@@ -8,12 +8,6 @@ use super::{
     StorageInsertable,
 };
 
-pub type Topic = (u64, String);
-
-const TAGS_NAME: &str = "tags";
-const INTERESTS_NAME: &str = "interests";
-const SKILLS_NAME: &str = "skills";
-
 pub struct TagsStore;
 pub struct InterestsStore;
 pub struct SkillsStore;

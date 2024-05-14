@@ -49,7 +49,7 @@ impl LoggerStore {
     }
 
     pub fn size() -> u64 {
-        Self::storage().with(|logs| logs.borrow().len() as u64)
+        Self::storage().with(|logs| logs.borrow().len())
     }
 
     fn new_key() -> u64 {
