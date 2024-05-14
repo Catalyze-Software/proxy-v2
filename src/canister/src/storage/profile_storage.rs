@@ -1,6 +1,6 @@
 use super::{
     storage_api::{
-        StaticStorageRef, Storage, StorageQueryable, StorageUpdatable, PROFILES, PROFILES_MEMORY_ID,
+        StaticStorageRef, Storage, StorageQueryable, StorageUpdateable, PROFILES, PROFILES_MEMORY_ID,
     },
     StorageInsertableByKey,
 };
@@ -24,5 +24,5 @@ impl Storage<Principal, Profile> for ProfileStore {
 }
 
 impl StorageQueryable<Principal, Profile> for ProfileStore {}
-impl StorageUpdatable<Principal, Profile> for ProfileStore {}
+impl StorageUpdateable<Principal, Profile> for ProfileStore {}
 impl StorageInsertableByKey<Principal, Profile> for ProfileStore {}

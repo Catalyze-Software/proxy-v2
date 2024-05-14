@@ -1,5 +1,5 @@
 use super::storage_api::{
-    StaticStorageRef, Storage, StorageInsertable, StorageQueryable, StorageUpdatable, BOOSTED,
+    StaticStorageRef, Storage, StorageInsertable, StorageQueryable, StorageUpdateable, BOOSTED,
     BOOSTED_MEMORY_ID,
 };
 use canister_types::models::boosted::Boost;
@@ -20,5 +20,5 @@ impl Storage<u64, Boost> for BoostedStore {
 }
 
 impl StorageQueryable<u64, Boost> for BoostedStore {}
-impl StorageUpdatable<u64, Boost> for BoostedStore {}
+impl StorageUpdateable<u64, Boost> for BoostedStore {}
 impl StorageInsertable<Boost> for BoostedStore {}

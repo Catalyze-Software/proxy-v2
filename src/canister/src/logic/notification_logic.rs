@@ -16,7 +16,7 @@ use ic_cdk::caller;
 
 use crate::storage::{
     NotificationStore, StorageInsertable, StorageInsertableByKey, StorageQueryable,
-    StorageUpdatable, UserNotificationStore,
+    StorageUpdateable, UserNotificationStore,
 };
 
 use super::websocket_logic::Websocket;

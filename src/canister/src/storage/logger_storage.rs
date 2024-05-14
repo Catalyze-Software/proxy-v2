@@ -1,5 +1,5 @@
 use super::storage_api::{
-    StaticStorageRef, Storage, StorageInsertable, StorageQueryable, StorageUpdatable, LOGS,
+    StaticStorageRef, Storage, StorageInsertable, StorageQueryable, StorageUpdateable, LOGS,
     LOGS_MEMORY_ID,
 };
 use canister_types::models::{
@@ -101,7 +101,7 @@ impl LoggerStore {
 }
 
 impl StorageQueryable<u64, Logger> for LoggerStore {}
-impl StorageUpdatable<u64, Logger> for LoggerStore {}
+impl StorageUpdateable<u64, Logger> for LoggerStore {}
 impl StorageInsertable<Logger> for LoggerStore {
     /// # Arguments
     /// * `logger` - The logger to insert

@@ -1,6 +1,6 @@
 use super::storage_api::{
-    StaticStorageRef, Storage, StorageInsertableByKey, StorageQueryable, StorageUpdatable, MEMBERS,
-    MEMBERS_MEMORY_ID,
+    StaticStorageRef, Storage, StorageInsertableByKey, StorageQueryable, StorageUpdateable,
+    MEMBERS, MEMBERS_MEMORY_ID,
 };
 use candid::Principal;
 use canister_types::models::member::Member;
@@ -21,5 +21,5 @@ impl Storage<Principal, Member> for MemberStore {
 }
 
 impl StorageQueryable<Principal, Member> for MemberStore {}
-impl StorageUpdatable<Principal, Member> for MemberStore {}
+impl StorageUpdateable<Principal, Member> for MemberStore {}
 impl StorageInsertableByKey<Principal, Member> for MemberStore {}

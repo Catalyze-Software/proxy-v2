@@ -8,7 +8,7 @@ use ic_cdk::query;
 use crate::storage::{
     storage_api::{ATTENDEES, EVENTS, EVENT_ATTENDEES, GROUP_EVENTS, GROUP_MEMBERS, MEMBERS},
     AttendeeStore, EventAttendeeStore, EventStore, GroupEventsStore, GroupMemberStore, GroupStore,
-    MemberStore, ProfileStore, StorageInsertable, StorageInsertableByKey, StorageUpdatable,
+    MemberStore, ProfileStore, StorageInsertable, StorageInsertableByKey, StorageUpdateable,
 };
 
 use super::{

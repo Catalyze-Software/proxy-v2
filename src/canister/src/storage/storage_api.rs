@@ -189,7 +189,7 @@ pub trait StorageInsertableByKey<K: 'static + Storable + Ord + Clone, V: 'static
     }
 }
 
-pub trait StorageUpdatable<K: 'static + Storable + Ord + Clone, V: 'static + Storable + Clone>:
+pub trait StorageUpdateable<K: 'static + Storable + Ord + Clone, V: 'static + Storable + Clone>:
     Storage<K, V>
 {
     /// Update a single entity by key

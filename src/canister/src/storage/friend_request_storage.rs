@@ -1,5 +1,5 @@
 use super::storage_api::{
-    StaticStorageRef, Storage, StorageInsertable, StorageQueryable, StorageUpdatable,
+    StaticStorageRef, Storage, StorageInsertable, StorageQueryable, StorageUpdateable,
     FRIEND_REQUEST, FRIEND_REQUESTS_MEMORY_ID,
 };
 use canister_types::models::friend_request::FriendRequest;
@@ -20,5 +20,5 @@ impl Storage<u64, FriendRequest> for FriendRequestStore {
 }
 
 impl StorageQueryable<u64, FriendRequest> for FriendRequestStore {}
-impl StorageUpdatable<u64, FriendRequest> for FriendRequestStore {}
+impl StorageUpdateable<u64, FriendRequest> for FriendRequestStore {}
 impl StorageInsertable<FriendRequest> for FriendRequestStore {}

@@ -5,7 +5,7 @@ use crate::{
     helpers::validator::Validator,
     storage::{
         AttendeeStore, EventStore, GroupStore, MemberStore, ProfileStore, StorageInsertableByKey,
-        StorageQueryable, StorageUpdatable, UserNotificationStore,
+        StorageQueryable, StorageUpdateable, UserNotificationStore,
     },
 };
 use candid::Principal;

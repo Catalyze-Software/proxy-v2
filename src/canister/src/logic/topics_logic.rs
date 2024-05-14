@@ -1,7 +1,6 @@
-use std::fmt::{Display, Formatter};
-
 use canister_types::models::{
     api_error::ApiError,
+    topics::{Topic, TopicKind},
     validation::{ValidateField, ValidationType},
 };
 
@@ -10,60 +9,53 @@ use crate::{
     storage::{InterestsStore, SkillsStore, StorageInsertable, StorageQueryable, TagsStore},
 };
 
-#[derive(Clone, Debug)]
-pub enum TopicKind {
-    Tag,
-    Interest,
-    Skill,
-}
-
-impl Display for TopicKind {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match self {
-            TopicKind::Tag => write!(f, "tag"),
-            TopicKind::Interest => write!(f, "interest"),
-            TopicKind::Skill => write!(f, "skill"),
-        }
-    }
-}
-
 pub struct TopicsCalls;
 
 impl TopicsCalls {
-    pub fn add(kind: TopicKind, topic: String) -> Result<(u64, String), ApiError> {
+    pub fn add(kind: TopicKind, topic: String) -> Result<Topic, ApiError> {
         let topic = handle_topic(kind.clone(), topic)?;
 
-        match kind {
+        let raw = match kind {
             TopicKind::Tag => TagsStore::insert(topic),
             TopicKind::Interest => InterestsStore::insert(topic),
             TopicKind::Skill => SkillsStore::insert(topic),
-        }
+        }?;
+
+        Topic::from((raw, kind)).into()
     }
 
-    pub fn get_all(kind: TopicKind) -> Result<Vec<(u64, String)>, ApiError> {
+    pub fn get_all(kind: TopicKind) -> Result<Vec<Topic>, ApiError> {
         let result = match kind {
             TopicKind::Tag => TagsStore::get_all(),
             TopicKind::Interest => InterestsStore::get_all(),
             TopicKind::Skill => SkillsStore::get_all(),
-        };
+        }
+        .into_iter()
+        .map(|raw| Topic::from((raw, kind.clone())))
+        .collect();
 
         Ok(result)
     }
 
-    pub fn get(kind: TopicKind, id: u64) -> Result<(u64, String), ApiError> {
-        match kind {
+    pub fn get(kind: TopicKind, id: u64) -> Result<Topic, ApiError> {
+        let raw = match kind {
             TopicKind::Tag => TagsStore::get(id),
             TopicKind::Interest => InterestsStore::get(id),
             TopicKind::Skill => SkillsStore::get(id),
-        }
+        }?;
+
+        Topic::from((raw, kind)).into()
     }
 
-    pub fn get_many(kind: TopicKind, ids: Vec<u64>) -> Result<Vec<(u64, String)>, ApiError> {
+    pub fn get_many(kind: TopicKind, ids: Vec<u64>) -> Result<Vec<Topic>, ApiError> {
         let result = match kind {
             TopicKind::Tag => TagsStore::get_many(ids),
             TopicKind::Interest => InterestsStore::get_many(ids),
             TopicKind::Skill => SkillsStore::get_many(ids),
-        };
+        }
+        .into_iter()
+        .map(|raw| Topic::from((raw, kind.clone())))
+        .collect();
 
         Ok(result)
     }

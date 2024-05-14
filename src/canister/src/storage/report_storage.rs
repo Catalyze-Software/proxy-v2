@@ -1,6 +1,6 @@
 use super::{
     storage_api::{
-        StaticStorageRef, Storage, StorageQueryable, StorageUpdatable, REPORTS, REPORTS_MEMORY_ID,
+        StaticStorageRef, Storage, StorageQueryable, StorageUpdateable, REPORTS, REPORTS_MEMORY_ID,
     },
     StorageInsertable,
 };
@@ -22,5 +22,5 @@ impl Storage<u64, Report> for ReportStore {
 }
 
 impl StorageQueryable<u64, Report> for ReportStore {}
-impl StorageUpdatable<u64, Report> for ReportStore {}
+impl StorageUpdateable<u64, Report> for ReportStore {}
 impl StorageInsertable<Report> for ReportStore {}

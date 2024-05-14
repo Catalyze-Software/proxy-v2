@@ -1,5 +1,5 @@
 use super::storage_api::{
-    StaticStorageRef, Storage, StorageInsertable, StorageQueryable, StorageUpdatable, GROUPS,
+    StaticStorageRef, Storage, StorageInsertable, StorageQueryable, StorageUpdateable, GROUPS,
     GROUPS_MEMORY_ID,
 };
 use canister_types::models::group::Group;
@@ -20,5 +20,5 @@ impl Storage<u64, Group> for GroupStore {
 }
 
 impl StorageQueryable<u64, Group> for GroupStore {}
-impl StorageUpdatable<u64, Group> for GroupStore {}
+impl StorageUpdateable<u64, Group> for GroupStore {}
 impl StorageInsertable<Group> for GroupStore {}

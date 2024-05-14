@@ -1,7 +1,7 @@
 use crate::{
     logic::{boost_logic::BoostCalls, websocket_logic::Websocket},
     storage::{
-        storage_api::{StorageQueryable, StorageUpdatable},
+        storage_api::{StorageQueryable, StorageUpdateable},
         AttendeeStore, EventStore, FriendRequestStore, GroupEventsStore, GroupMemberStore,
         MemberStore, NotificationStore, UserNotificationStore,
     },

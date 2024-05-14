@@ -2,7 +2,7 @@ use ic_stable_structures::memory_manager::MemoryId;
 
 use super::{
     storage_api::{
-        StaticStorageRef, Storage, StorageQueryable, StorageUpdatable, INTERESTS,
+        StaticStorageRef, Storage, StorageQueryable, StorageUpdateable, INTERESTS,
         INTERESTS_MEMORY_ID, SKILLS, SKILLS_MEMORY_ID, TAGS, TAGS_MEMORY_ID,
     },
     StorageInsertable,
@@ -49,5 +49,5 @@ impl Storage<u64, String> for SkillsStore {
 }
 
 impl<T: Storage<u64, String>> StorageQueryable<u64, String> for T {}
-impl<T: Storage<u64, String>> StorageUpdatable<u64, String> for T {}
+impl<T: Storage<u64, String>> StorageUpdateable<u64, String> for T {}
 impl<T: Storage<u64, String>> StorageInsertable<String> for T {}

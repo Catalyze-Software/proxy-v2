@@ -1,5 +1,5 @@
 use super::storage_api::{
-    StaticStorageRef, Storage, StorageInsertableByKey, StorageQueryable, StorageUpdatable,
+    StaticStorageRef, Storage, StorageInsertableByKey, StorageQueryable, StorageUpdateable,
     EVENT_ATTENDEES, EVENT_ATTENDEES_MEMORY_ID,
 };
 use canister_types::models::member_collection::MemberCollection;
@@ -20,5 +20,5 @@ impl Storage<u64, MemberCollection> for EventAttendeeStore {
 }
 
 impl StorageQueryable<u64, MemberCollection> for EventAttendeeStore {}
-impl StorageUpdatable<u64, MemberCollection> for EventAttendeeStore {}
+impl StorageUpdateable<u64, MemberCollection> for EventAttendeeStore {}
 impl StorageInsertableByKey<u64, MemberCollection> for EventAttendeeStore {}

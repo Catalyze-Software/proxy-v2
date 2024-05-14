@@ -1,5 +1,5 @@
 use super::storage_api::{
-    StaticStorageRef, Storage, StorageInsertableByKey, StorageQueryable, StorageUpdatable,
+    StaticStorageRef, Storage, StorageInsertableByKey, StorageQueryable, StorageUpdateable,
     GROUP_EVENTS, GROUP_EVENTS_MEMORY_ID,
 };
 use canister_types::models::event_collection::EventCollection;
@@ -20,5 +20,5 @@ impl Storage<u64, EventCollection> for GroupEventsStore {
 }
 
 impl StorageQueryable<u64, EventCollection> for GroupEventsStore {}
-impl StorageUpdatable<u64, EventCollection> for GroupEventsStore {}
+impl StorageUpdateable<u64, EventCollection> for GroupEventsStore {}
 impl StorageInsertableByKey<u64, EventCollection> for GroupEventsStore {}

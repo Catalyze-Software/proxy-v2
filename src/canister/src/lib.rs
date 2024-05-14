@@ -34,6 +34,7 @@ pub fn __export_did_tmp_() -> String {
     use canister_types::models::report::*;
     use canister_types::models::role::*;
     use canister_types::models::subject::*;
+    use canister_types::models::topics::*;
     use canister_types::models::transaction_data::*;
     use canister_types::models::user_notifications::*;
     use canister_types::models::wallet::*;

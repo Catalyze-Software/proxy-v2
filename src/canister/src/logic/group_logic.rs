@@ -13,7 +13,7 @@ use crate::{
     },
     storage::{
         GroupEventsStore, GroupMemberStore, GroupStore, MemberStore, ProfileStore,
-        StorageInsertable, StorageInsertableByKey, StorageQueryable, StorageUpdatable,
+        StorageInsertable, StorageInsertableByKey, StorageQueryable, StorageUpdateable,
     },
 };
 use candid::Principal;

@@ -1,5 +1,5 @@
 use super::storage_api::{
-    StaticStorageRef, Storage, StorageInsertableByKey, StorageQueryable, StorageUpdatable,
+    StaticStorageRef, Storage, StorageInsertableByKey, StorageQueryable, StorageUpdateable,
     ATTENDEES, ATTENDEES_MEMORY_ID,
 };
 use candid::Principal;
@@ -22,5 +22,5 @@ impl Storage<Principal, Attendee> for AttendeeStore {
 }
 
 impl StorageQueryable<Principal, Attendee> for AttendeeStore {}
-impl StorageUpdatable<Principal, Attendee> for AttendeeStore {}
+impl StorageUpdateable<Principal, Attendee> for AttendeeStore {}
 impl StorageInsertableByKey<Principal, Attendee> for AttendeeStore {}

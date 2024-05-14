@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use super::storage_api::{
-    StaticStorageRef, Storage, StorageInsertableByKey, StorageQueryable, StorageUpdatable,
+    StaticStorageRef, Storage, StorageInsertableByKey, StorageQueryable, StorageUpdateable,
     GROUP_MEMBERS, GROUP_MEMBERS_MEMORY_ID,
 };
 use canister_types::models::member_collection::MemberCollection;
@@ -22,7 +22,7 @@ impl Storage<u64, MemberCollection> for GroupMemberStore {
 }
 
 impl StorageQueryable<u64, MemberCollection> for GroupMemberStore {}
-impl StorageUpdatable<u64, MemberCollection> for GroupMemberStore {}
+impl StorageUpdateable<u64, MemberCollection> for GroupMemberStore {}
 impl StorageInsertableByKey<u64, MemberCollection> for GroupMemberStore {}
 
 impl GroupMemberStore {

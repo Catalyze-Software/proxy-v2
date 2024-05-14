@@ -1,6 +1,6 @@
 use super::{
     storage_api::{
-        StaticStorageRef, Storage, StorageQueryable, StorageUpdatable, NOTIFICATIONS,
+        StaticStorageRef, Storage, StorageQueryable, StorageUpdateable, NOTIFICATIONS,
         NOTIFICATIONS_MEMORY_ID,
     },
     StorageInsertable,
@@ -23,5 +23,5 @@ impl Storage<u64, Notification> for NotificationStore {
 }
 
 impl StorageQueryable<u64, Notification> for NotificationStore {}
-impl StorageUpdatable<u64, Notification> for NotificationStore {}
+impl StorageUpdateable<u64, Notification> for NotificationStore {}
 impl StorageInsertable<Notification> for NotificationStore {}
