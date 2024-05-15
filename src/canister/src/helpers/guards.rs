@@ -68,11 +68,14 @@ pub fn is_monitor() -> Result<(), String> {
 
 // Check if the caller is the Catalyze developer principal
 pub fn is_developer() -> Result<(), String> {
-    // Catalyze developer principal
-    let developer_principal =
-        Principal::from_text("syzio-xu6ca-burmx-4afo2-ojpcw-e75j3-m67o5-s5bes-5vvsv-du3t4-wae")
-            .expect("Invalid principal");
-    if caller() == developer_principal {
+    let developers = vec![
+        // production
+        "ledm3-52ncq-rffuv-6ed44-hg5uo-iicyu-pwkzj-syfva-heo4k-p7itq-aqe",
+        // staging
+        "syzio-xu6ca-burmx-4afo2-ojpcw-e75j3-m67o5-s5bes-5vvsv-du3t4-wae",
+    ];
+
+    if developers.contains(&caller().to_text().as_str()) {
         Ok(())
     } else {
         Err(ApiError::unauthorized()
