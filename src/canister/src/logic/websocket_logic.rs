@@ -8,7 +8,7 @@ use ic_websocket_cdk::{
     WsInitParams,
 };
 
-use crate::storage::{StorageMethods, UsernotificationStore};
+use crate::storage::{StorageQueryable, UserNotificationStore};
 
 // type TimeInNanos = u64;
 
@@ -34,7 +34,7 @@ impl Websocket {
     pub fn on_open(args: OnOpenCallbackArgs) {
         Self::add_connected_to_clients(args.client_principal);
 
-        let (_, notification_ids) = UsernotificationStore::get(args.client_principal)
+        let (_, notification_ids) = UserNotificationStore::get(args.client_principal)
             .unwrap_or((args.client_principal, UserNotifications::new()));
         // ::get_unread_notifications(&args.client_principal).len() as u64;
         Self::send_message(

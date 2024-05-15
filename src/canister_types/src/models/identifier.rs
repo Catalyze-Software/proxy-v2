@@ -5,6 +5,8 @@ use serde::Serialize;
 
 use super::api_error::ApiError;
 
+// If not to allow this, it will block clippy to scan the whole project
+#[allow(clippy::derived_hash_with_manual_eq)]
 #[derive(Clone, Debug, CandidType, Serialize, Deserialize, Eq, Hash)]
 pub struct Identifier {
     id: u64,

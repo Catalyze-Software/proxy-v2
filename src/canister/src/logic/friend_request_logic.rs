@@ -7,7 +7,9 @@ use canister_types::models::{
 };
 use ic_cdk::caller;
 
-use crate::storage::{FriendRequestStore, ProfileStore, StorageMethods};
+use crate::storage::{
+    FriendRequestStore, ProfileStore, StorageInsertable, StorageQueryable, StorageUpdateable,
+};
 
 use super::notification_logic::NotificationCalls;
 

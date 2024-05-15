@@ -29,7 +29,7 @@ impl ApiError {
     }
 
     pub fn validation_response(validation_response: Vec<ValidationResponse>) -> Self {
-        Self::new(ApiErrorType::ValidationError(validation_response))
+        Self::new(ApiErrorType::ValidationError(Box::new(validation_response)))
     }
 
     pub fn serialize() -> Self {
@@ -103,7 +103,7 @@ pub enum ApiErrorType {
     BadRequest,
     Unsupported,
     Duplicate,
-    ValidationError(Vec<ValidationResponse>),
+    ValidationError(Box<Vec<ValidationResponse>>),
     SerializeError,
     DeserializeError,
 }

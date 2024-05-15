@@ -6,7 +6,7 @@ use canister_types::models::{
 use ic_cdk::caller;
 use std::collections::HashMap;
 
-use crate::storage::{MemberStore, ReportStore, StorageMethods};
+use crate::storage::{MemberStore, ReportStore, StorageInsertable, StorageQueryable};
 
 use super::profile_logic::ProfileCalls;
 
