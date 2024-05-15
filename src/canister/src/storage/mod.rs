@@ -12,7 +12,7 @@ mod notification_storage;
 mod profile_storage;
 mod report_storage;
 pub mod storage_api;
-mod topics_storage;
+mod topic_storage;
 mod user_notification_storage;
 
 // Re-export stores
@@ -31,7 +31,7 @@ pub use report_storage::ReportStore;
 pub use storage_api::{
     StorageInsertable, StorageInsertableByKey, StorageQueryable, StorageUpdateable,
 };
-pub use topics_storage::{InterestsStore, SkillsStore, TagsStore};
+pub use topic_storage::{InterestStore, SkillStore, TagStore};
 pub use user_notification_storage::UserNotificationStore;
 
 pub use logger_storage::LoggerStore;

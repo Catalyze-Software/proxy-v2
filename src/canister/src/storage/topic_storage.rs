@@ -8,11 +8,11 @@ use super::{
     StorageInsertable,
 };
 
-pub struct TagsStore;
-pub struct InterestsStore;
-pub struct SkillsStore;
+pub struct TagStore;
+pub struct InterestStore;
+pub struct SkillStore;
 
-impl Storage<u64, String> for TagsStore {
+impl Storage<u64, String> for TagStore {
     const NAME: &'static str = "tags";
 
     fn storage() -> StaticStorageRef<u64, String> {
@@ -24,7 +24,7 @@ impl Storage<u64, String> for TagsStore {
     }
 }
 
-impl Storage<u64, String> for InterestsStore {
+impl Storage<u64, String> for InterestStore {
     const NAME: &'static str = "interests";
 
     fn storage() -> StaticStorageRef<u64, String> {
@@ -36,7 +36,7 @@ impl Storage<u64, String> for InterestsStore {
     }
 }
 
-impl Storage<u64, String> for SkillsStore {
+impl Storage<u64, String> for SkillStore {
     const NAME: &'static str = "skills";
 
     fn storage() -> StaticStorageRef<u64, String> {

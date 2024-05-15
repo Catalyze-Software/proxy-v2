@@ -84,10 +84,10 @@ impl GroupCalls {
         // Add member to the member collection
         let mut member_collection = MemberCollection::new();
         member_collection.add_member(caller());
-        GroupMemberStore::insert_by_key(new_group_id.clone(), member_collection)?;
+        GroupMemberStore::insert_by_key(new_group_id, member_collection)?;
 
         // initialze the group event collection
-        GroupEventsStore::insert_by_key(new_group_id.clone(), EventCollection::new())?;
+        GroupEventsStore::insert_by_key(new_group_id, EventCollection::new())?;
 
         GroupResponse::from_result(
             Ok((new_group_id, new_group)),
@@ -110,14 +110,12 @@ impl GroupCalls {
     }
 
     pub fn get_group_by_name(name: String) -> Result<GroupResponse, ApiError> {
-        match GroupStore::find(|_, g| g.name.to_lowercase() == name.to_lowercase()) {
-            None => {
-                return Err(ApiError::not_found().add_message("Group not found"));
-            }
-            Some((id, _)) => {
-                return Self::get_group(id);
-            }
-        }
+        if let Some((id, _)) = GroupStore::find(|_, g| g.name.to_lowercase() == name.to_lowercase())
+        {
+            return Self::get_group(id);
+        };
+
+        Err(ApiError::not_found().add_message("Group not found"))
     }
 
     pub fn get_groups(
@@ -133,9 +131,9 @@ impl GroupCalls {
                 if let Ok((_, caller_member)) = MemberStore::get(caller()) {
                     return caller_member.is_group_joined(group_id);
                 }
-                return false;
+                false
             } else {
-                return true;
+                true
             }
         })
         .into_iter()
@@ -144,15 +142,13 @@ impl GroupCalls {
         for filter in filters {
             for (id, group) in &groups.clone() {
                 if !filter.is_match(id, group) {
-                    groups.remove(&id);
+                    groups.remove(id);
                 }
             }
         }
 
-        let group_members: HashMap<u64, MemberCollection> = GroupMemberStore::get_all()
-            .into_iter()
-            .map(|(k, v)| (k, v))
-            .collect();
+        let group_members: HashMap<u64, MemberCollection> =
+            GroupMemberStore::get_all().into_iter().collect();
 
         let sorted_groups = sort.sort(groups, group_members);
         let result: Vec<GroupResponse> = sorted_groups
@@ -201,15 +197,13 @@ impl GroupCalls {
 
         let starred = ProfileCalls::get_starred_by_subject(SubjectType::Group).len() as u64;
 
-        let result = GroupsCount {
+        GroupsCount {
             total: groups.len() as u64,
             joined,
             invited,
             starred,
             new,
-        };
-
-        return result;
+        }
     }
 
     pub fn edit_group(id: u64, update_group: UpdateGroup) -> Result<GroupResponse, ApiError> {
@@ -304,7 +298,7 @@ impl GroupCalls {
     ) -> Result<Role, ApiError> {
         let (id, mut group) = GroupStore::get(group_id)?;
         let role = Role::new(
-            role_name.into(),
+            role_name,
             false,
             read_only_permissions(),
             color,
@@ -328,22 +322,24 @@ impl GroupCalls {
             // get all members from the group with the role
             let group_member_principals = GroupMemberStore::get(group_id)
                 .map(|(_, member_collection)| member_collection.get_member_principals())
-                .unwrap_or(vec![]);
+                .unwrap_or_default();
 
             MemberStore::get_many(group_member_principals)
                 .into_iter()
-                .for_each(|(principal, mut member)| {
+                .try_for_each(|(principal, mut member)| {
                     if member.get_roles(group_id).is_empty() {
                         member.add_group_role(&group_id, &"member".to_string());
                     }
                     member.remove_group_role(&group_id, &role_name);
-                    MemberStore::update(principal, member).unwrap();
-                });
+                    MemberStore::update(principal, member)?;
 
-            Ok(true)
-        } else {
-            Ok(false)
+                    Ok(())
+                })?;
+
+            return Ok(true);
         }
+
+        Ok(false)
     }
 
     pub fn get_group_roles(group_id: u64) -> Vec<Role> {
@@ -363,16 +359,13 @@ impl GroupCalls {
         // remove the actual role from the group based on the index
         if let Some(index) = index {
             let role = group.roles.get_mut(index).unwrap();
-            role.permissions = post_permissions
-                .into_iter()
-                .map(|permission| Permission::from(permission))
-                .collect();
+            role.permissions = post_permissions.into_iter().map(Permission::from).collect();
 
             GroupStore::update(id, group)?;
-            Ok(true)
-        } else {
-            Ok(false)
+            return Ok(true);
         }
+
+        Ok(false)
     }
 
     pub async fn join_group(
@@ -635,9 +628,9 @@ impl GroupCalls {
                 JoinedMemberResponse::new(principal, member, group_id),
                 ProfileResponse::new(principal, profile),
             ));
-        } else {
-            return Err(ApiError::not_found().add_message("Profile not found"));
         }
+
+        Err(ApiError::not_found().add_message("Profile not found"))
     }
 
     pub fn get_group_members_with_profiles(
@@ -755,15 +748,15 @@ impl GroupCalls {
 
     pub fn get_banned_group_members(group_id: u64) -> Vec<Principal> {
         if let Ok((_, group)) = GroupStore::get(group_id) {
-            group
+            return group
                 .special_members
                 .into_iter()
                 .filter(|m| m.1 == RelationType::Blocked.to_string())
                 .map(|m| m.0)
-                .collect()
-        } else {
-            return vec![];
+                .collect();
         }
+
+        Default::default()
     }
 
     pub fn remove_member_from_group(principal: Principal, group_id: u64) -> Result<(), ApiError> {
@@ -885,12 +878,12 @@ impl GroupCalls {
     }
 
     pub fn get_group_count_data(group_id: &u64) -> (u64, u64) {
-        let member_count = match GroupMemberStore::get(group_id.clone()) {
+        let member_count = match GroupMemberStore::get(*group_id) {
             Ok((_, member_collection)) => member_collection.get_member_count(),
             Err(_) => 0,
         };
 
-        let event_count = match GroupEventsStore::get(group_id.clone()) {
+        let event_count = match GroupEventsStore::get(*group_id) {
             Ok((_, event_collection)) => event_collection.get_events_count(),
             Err(_) => 0,
         };
@@ -927,7 +920,7 @@ impl GroupCalls {
             PermissionType::Invite(None),
             PermissionActionType::Write,
         )
-        .unwrap_or(vec![])
+        .unwrap_or_default()
         .iter()
         .map(|m| m.principal)
         .collect()
@@ -998,7 +991,7 @@ impl GroupValidation {
                     Neuron(neuron_canisters) => {
                         for neuron_canister in neuron_canisters {
                             if Self::validate_neuron_gated(
-                                caller.clone(),
+                                *caller,
                                 neuron_canister.governance_canister,
                                 neuron_canister.rules,
                             )
@@ -1012,13 +1005,13 @@ impl GroupValidation {
                             }
                         }
                         if is_valid >= post_group.privacy_gated_type_amount.unwrap_or_default() {
-                            Ok(())
+                            return Ok(());
                             // If the caller does not own the neuron, throw an error
-                        } else {
-                            return Err(ApiError::unauthorized().add_message(
-                                "You are not owning the required neuron to join this group",
-                            ));
                         }
+
+                        Err(ApiError::unauthorized().add_message(
+                            "You are not owning the required neuron to join this group",
+                        ))
                     }
                     Token(nft_canisters) => {
                         // Loop over the canisters and check if the caller owns a specific NFT (inter-canister call)
@@ -1034,13 +1027,12 @@ impl GroupValidation {
                             }
                         }
                         if is_valid >= post_group.privacy_gated_type_amount.unwrap_or_default() {
-                            Ok(())
+                            return Ok(());
                             // If the caller does not own the neuron, throw an error
-                        } else {
-                            return Err(ApiError::unauthorized().add_message(
-                                "You are not owning the required NFT to join this group",
-                            ));
                         }
+
+                        Err(ApiError::unauthorized()
+                            .add_message("You are not owning the required NFT to join this group"))
                     }
                 }
             }

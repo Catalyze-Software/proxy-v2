@@ -6,19 +6,19 @@ use canister_types::models::{
 
 use crate::{
     helpers::validator::Validator,
-    storage::{InterestsStore, SkillsStore, StorageInsertable, StorageQueryable, TagsStore},
+    storage::{InterestStore, SkillStore, StorageInsertable, StorageQueryable, TagStore},
 };
 
-pub struct TopicsCalls;
+pub struct TopicCalls;
 
-impl TopicsCalls {
+impl TopicCalls {
     pub fn add(kind: TopicKind, topic: String) -> Result<Topic, ApiError> {
         let topic = handle_topic(kind.clone(), topic)?;
 
         let raw = match kind {
-            TopicKind::Tag => TagsStore::insert(topic),
-            TopicKind::Interest => InterestsStore::insert(topic),
-            TopicKind::Skill => SkillsStore::insert(topic),
+            TopicKind::Tag => TagStore::insert(topic),
+            TopicKind::Interest => InterestStore::insert(topic),
+            TopicKind::Skill => SkillStore::insert(topic),
         }?;
 
         Topic::from((raw, kind)).into()
@@ -26,9 +26,9 @@ impl TopicsCalls {
 
     pub fn get_all(kind: TopicKind) -> Result<Vec<Topic>, ApiError> {
         let result = match kind {
-            TopicKind::Tag => TagsStore::get_all(),
-            TopicKind::Interest => InterestsStore::get_all(),
-            TopicKind::Skill => SkillsStore::get_all(),
+            TopicKind::Tag => TagStore::get_all(),
+            TopicKind::Interest => InterestStore::get_all(),
+            TopicKind::Skill => SkillStore::get_all(),
         }
         .into_iter()
         .map(|raw| Topic::from((raw, kind.clone())))
@@ -39,9 +39,9 @@ impl TopicsCalls {
 
     pub fn get(kind: TopicKind, id: u64) -> Result<Topic, ApiError> {
         let raw = match kind {
-            TopicKind::Tag => TagsStore::get(id),
-            TopicKind::Interest => InterestsStore::get(id),
-            TopicKind::Skill => SkillsStore::get(id),
+            TopicKind::Tag => TagStore::get(id),
+            TopicKind::Interest => InterestStore::get(id),
+            TopicKind::Skill => SkillStore::get(id),
         }?;
 
         Topic::from((raw, kind)).into()
@@ -49,9 +49,9 @@ impl TopicsCalls {
 
     pub fn get_many(kind: TopicKind, ids: Vec<u64>) -> Result<Vec<Topic>, ApiError> {
         let result = match kind {
-            TopicKind::Tag => TagsStore::get_many(ids),
-            TopicKind::Interest => InterestsStore::get_many(ids),
-            TopicKind::Skill => SkillsStore::get_many(ids),
+            TopicKind::Tag => TagStore::get_many(ids),
+            TopicKind::Interest => InterestStore::get_many(ids),
+            TopicKind::Skill => SkillStore::get_many(ids),
         }
         .into_iter()
         .map(|raw| Topic::from((raw, kind.clone())))
@@ -75,9 +75,9 @@ fn handle_topic(kind: TopicKind, topic: String) -> Result<String, ApiError> {
     .validate()?;
 
     let existing = match kind {
-        TopicKind::Tag => TagsStore::find(|_, value| value == topic),
-        TopicKind::Interest => InterestsStore::find(|_, value| value == topic),
-        TopicKind::Skill => SkillsStore::find(|_, value| value == topic),
+        TopicKind::Tag => TagStore::find(|_, value| value == topic),
+        TopicKind::Interest => InterestStore::find(|_, value| value == topic),
+        TopicKind::Skill => SkillStore::find(|_, value| value == topic),
     };
 
     if let Some(existing) = existing {

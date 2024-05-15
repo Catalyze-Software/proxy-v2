@@ -1,4 +1,4 @@
-use crate::{helpers::guards::has_access, logic::topics_logic::TopicsCalls};
+use crate::{helpers::guards::has_access, logic::topic_logic::TopicCalls};
 use canister_types::models::{
     api_error::ApiError,
     topics::{Topic, TopicKind},
@@ -17,7 +17,7 @@ use ic_cdk::{query, update};
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "has_access")]
 pub async fn add_topic(kind: TopicKind, value: String) -> Result<Topic, ApiError> {
-    TopicsCalls::add(kind, value)
+    TopicCalls::add(kind, value)
 }
 
 /// Get a topic - [`[query]`](query)
@@ -30,9 +30,9 @@ pub async fn add_topic(kind: TopicKind, value: String) -> Result<Topic, ApiError
 /// * `ApiError` - If something went wrong while getting the topic
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[query]
+#[query(guard = "has_access")]
 pub fn get_topic(kind: TopicKind, id: u64) -> Result<Topic, ApiError> {
-    TopicsCalls::get(kind, id)
+    TopicCalls::get(kind, id)
 }
 
 /// Get topics by their identifiers and kind - [`[query]`](query)
@@ -45,7 +45,7 @@ pub fn get_topic(kind: TopicKind, id: u64) -> Result<Topic, ApiError> {
 /// * `ApiError` - If something went wrong while getting the topics
 #[query(guard = "has_access")]
 pub fn get_topics(kind: TopicKind, ids: Vec<u64>) -> Result<Vec<Topic>, ApiError> {
-    TopicsCalls::get_many(kind, ids)
+    TopicCalls::get_many(kind, ids)
 }
 
 /// Get all topics by kind - [`[query]`](query)
@@ -55,6 +55,7 @@ pub fn get_topics(kind: TopicKind, ids: Vec<u64>) -> Result<Vec<Topic>, ApiError
 /// * `Vec<Topic>` - The topics
 /// # Errors
 /// * `ApiError` - If something went wrong while getting the topics
+#[query(guard = "has_access")]
 pub fn get_all_topics(kind: TopicKind) -> Result<Vec<Topic>, ApiError> {
-    TopicsCalls::get_all(kind)
+    TopicCalls::get_all(kind)
 }
