@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.7]
+
 ### Added
 - `add_topic` update call, to add such topics as tags, interests and skills.
 - `get_topic` query call, to get the topic by their id and kind.
@@ -227,7 +229,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Missing `notification_id` on migration models
 
 
-[Unreleased]: https://github.com/Catalyze-Software/proxy/compare/0.1.6...HEAD
+[Unreleased]: https://github.com/Catalyze-Software/proxy/compare/0.1.7...HEAD
+[0.1.7]: https://github.com/Catalyze-Software/proxy/compare/0.1.6...0.1.7
 [0.1.6]: https://github.com/Catalyze-Software/proxy/compare/0.1.5...0.1.6
 [0.1.5]: https://github.com/Catalyze-Software/proxy/compare/0.1.4...0.1.5
 [0.1.4]: https://github.com/Catalyze-Software/proxy/compare/0.1.3...0.1.4
