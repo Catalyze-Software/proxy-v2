@@ -10,13 +10,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.7]
 
 ### Added
-- `add_topic` update call, to add such topics as tags, interests and skills.
+
+- `add_topic` update call, to add such topic as tags, interests and skills.
 - `get_topic` query call, to get the topic by their id and kind.
 - `get_topics` query call, to get the topics by their ids and kind.
 - `get_all_topics` query call, to get all the topics by their kind.
 
 ### Changed
-- Refactored `StorageMethods` trait into the `Storage`, `StorageQueryable`, `StorageUpdateable`, 
+
+- Refactored `StorageMethods` trait into the `Storage`, `StorageQueryable`, `StorageUpdateable`,
   `StorageInsertable` and `StorageInsertableByKey` traits.
 
 ## [0.1.6]
@@ -227,7 +229,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Fixed
 
 - Missing `notification_id` on migration models
-
 
 [Unreleased]: https://github.com/Catalyze-Software/proxy/compare/0.1.7...HEAD
 [0.1.7]: https://github.com/Catalyze-Software/proxy/compare/0.1.6...0.1.7

@@ -1,7 +1,7 @@
 use crate::{helpers::guards::has_access, logic::topic_logic::TopicCalls};
 use canister_types::models::{
     api_error::ApiError,
-    topics::{Topic, TopicKind},
+    topic::{Topic, TopicKind},
 };
 use ic_cdk::{query, update};
 
