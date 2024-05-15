@@ -66,6 +66,21 @@ pub fn is_monitor() -> Result<(), String> {
     }
 }
 
+pub fn is_prod_developer() -> Result<(), String> {
+    let developers = vec![
+        // production
+        "ledm3-52ncq-rffuv-6ed44-hg5uo-iicyu-pwkzj-syfva-heo4k-p7itq-aqe",
+    ];
+
+    if developers.contains(&caller().to_text().as_str()) {
+        Ok(())
+    } else {
+        Err(ApiError::unauthorized()
+            .add_message("Unauthorized")
+            .to_string())
+    }
+}
+
 // Check if the caller is the Catalyze developer principal
 pub fn is_developer() -> Result<(), String> {
     let developers = vec![
