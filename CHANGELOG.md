@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- added `is_prod_developer` guard
+- added `_dev_create_canister` call to spin up canisters on the same subnet
+
 ### Changed
 
 - added guards to the `_dev` prefixed calls
