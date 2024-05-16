@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- added guards to the `_dev` prefixed calls
+- removed `_dev_clear` calls
+
 ## [0.1.7]
 
 ### Added
