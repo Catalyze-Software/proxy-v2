@@ -24,27 +24,6 @@ pub fn init() {
     Websocket::init();
 }
 
-// #[update]
-// pub fn _dev_clear_notifications(super_secret_password: String) -> bool {
-//     if super_secret_password != "super_secret_password" {
-//         return false;
-//     } else {
-//         UserNotificationStore::clear();
-//         NotificationStore::clear();
-//         return true;
-//     }
-// }
-
-// #[update]
-// pub fn _dev_clear_friend_request(super_secret_password: String) -> bool {
-//     if super_secret_password != "super_secret_password" {
-//         return false;
-//     } else {
-//         FriendRequestStore::clear();
-//         return true;
-//     }
-// }
-
 #[query(guard = "is_developer")]
 pub fn _dev_check_member_sync(
     principal: Principal,
