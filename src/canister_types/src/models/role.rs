@@ -4,6 +4,7 @@ use serde::Serialize;
 use super::permission::{Permission, PostPermission};
 
 #[derive(Clone, CandidType, Serialize, Deserialize, Debug)]
+#[derive(Default)]
 pub struct Role {
     pub name: String,
     pub protected: bool,
@@ -12,17 +13,7 @@ pub struct Role {
     pub index: Option<u64>,
 }
 
-impl Default for Role {
-    fn default() -> Self {
-        Self {
-            name: Default::default(),
-            protected: false,
-            permissions: Default::default(),
-            color: Default::default(),
-            index: Default::default(),
-        }
-    }
-}
+
 
 impl From<PostRole> for Role {
     fn from(post_role: PostRole) -> Self {
@@ -32,7 +23,7 @@ impl From<PostRole> for Role {
             permissions: post_role
                 .permissions
                 .into_iter()
-                .map(|permission| Permission::from(permission))
+                .map(Permission::from)
                 .collect(),
             color: post_role.color,
             index: post_role.index,

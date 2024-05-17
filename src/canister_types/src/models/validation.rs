@@ -21,7 +21,9 @@ pub struct ValidationResponse {
 pub struct ValidateField(pub ValidationType, pub String);
 
 #[derive(Clone, Debug, CandidType, Serialize, Deserialize)]
+#[derive(Default)]
 pub enum ValidationType {
+    #[default]
     None,
     StringLength(String, usize, usize),
     DateRange(DateRange),
@@ -29,11 +31,7 @@ pub enum ValidationType {
     Count(usize, usize, usize),
 }
 
-impl Default for ValidationType {
-    fn default() -> Self {
-        ValidationType::None
-    }
-}
+
 
 impl fmt::Display for ValidationType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

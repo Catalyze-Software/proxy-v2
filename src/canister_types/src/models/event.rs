@@ -227,7 +227,9 @@ impl EventSort {
 }
 
 #[derive(Clone, Debug, CandidType, Deserialize)]
+#[derive(Default)]
 pub enum EventFilter {
+    #[default]
     None,
     Name(String),
     StartDate(DateRange),
@@ -250,7 +252,7 @@ impl EventFilter {
             EventFilter::EndDate(date) => date.is_within(event.date.end_date()),
             EventFilter::Owner(owner) => *owner == event.owner,
             EventFilter::Groups(groups) => groups.contains(&event.group_id),
-            EventFilter::Ids(ids) => ids.contains(&id),
+            EventFilter::Ids(ids) => ids.contains(id),
             EventFilter::Tag(tag) => event.tags.contains(tag),
             EventFilter::IsCanceled(is_canceled) => event.is_canceled.0 == *is_canceled,
             EventFilter::UpdatedOn(date) => date.is_within(event.updated_on),
@@ -259,11 +261,7 @@ impl EventFilter {
     }
 }
 
-impl Default for EventFilter {
-    fn default() -> Self {
-        EventFilter::None
-    }
-}
+
 
 #[derive(Clone, Debug, CandidType, Deserialize, Serialize)]
 pub struct EventsCount {

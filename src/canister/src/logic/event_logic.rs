@@ -67,24 +67,24 @@ impl EventCalls {
             let (_, caller_attendee) = AttendeeStore::get(caller())?;
 
             if caller_attendee.is_event_joined(&event_id) {
-                return Ok(EventResponse::new(
+                Ok(EventResponse::new(
                     event_id,
                     event.clone(),
                     Self::get_boosted_event(event_id),
                     Self::get_event_caller_data(event_id, event.group_id),
                     Self::get_attendees_count(event_id),
-                ));
+                ))
             } else {
-                return Err(ApiError::unauthorized());
+                Err(ApiError::unauthorized())
             }
         } else {
-            return Ok(EventResponse::new(
+            Ok(EventResponse::new(
                 event_id,
                 event.clone(),
                 Self::get_boosted_event(event_id),
                 Self::get_event_caller_data(event_id, event.group_id),
                 Self::get_attendees_count(event_id),
-            ));
+            ))
         }
     }
 
@@ -103,7 +103,7 @@ impl EventCalls {
                 }
                 return false;
             }
-            return true;
+            true
         })
         .into_iter()
         .collect::<HashMap<u64, Event>>();
@@ -200,7 +200,9 @@ impl EventCalls {
 
         let starred = ProfileCalls::get_starred_by_subject(SubjectType::Event).len() as u64;
 
-        let result = EventsCount {
+        
+
+        EventsCount {
             total: events.len() as u64,
             attending,
             invited,
@@ -208,9 +210,7 @@ impl EventCalls {
             new,
             future,
             past,
-        };
-
-        return result;
+        }
     }
 
     pub fn delete_event(event_id: u64, group_id: u64) -> Result<(), ApiError> {
@@ -467,7 +467,7 @@ impl EventCalls {
             .iter()
             .map(|(principal, attendee)| {
                 let invite_type = attendee.invites.get(&event_id).unwrap().invite_type.clone();
-                InviteAttendeeResponse::new(event_id, group_id, principal.clone(), invite_type)
+                InviteAttendeeResponse::new(event_id, group_id, *principal, invite_type)
             })
             .collect();
 

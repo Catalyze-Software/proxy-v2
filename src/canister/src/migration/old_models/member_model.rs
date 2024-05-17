@@ -51,16 +51,14 @@ pub struct Invite {
 }
 
 #[derive(CandidType, Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Default)]
 pub enum InviteType {
     OwnerRequest,
+    #[default]
     UserRequest,
 }
 
-impl Default for InviteType {
-    fn default() -> Self {
-        InviteType::UserRequest
-    }
-}
+
 
 #[derive(Clone, Debug, CandidType, Deserialize, Serialize)]
 pub struct JoinedMemberResponse {

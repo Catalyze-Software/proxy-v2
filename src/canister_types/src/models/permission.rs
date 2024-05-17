@@ -4,21 +4,14 @@ use candid::{CandidType, Deserialize};
 use serde::Serialize;
 
 #[derive(Clone, CandidType, Serialize, Deserialize, Debug)]
+#[derive(Default)]
 pub struct Permission {
     name: String,
     protected: bool,
     actions: PermissionActions,
 }
 
-impl Default for Permission {
-    fn default() -> Self {
-        Self {
-            name: Default::default(),
-            protected: false,
-            actions: Default::default(),
-        }
-    }
-}
+
 
 impl From<PostPermission> for Permission {
     fn from(post_permission: PostPermission) -> Self {
@@ -44,7 +37,7 @@ impl Permission {
     }
 
     pub fn actions(&self) -> PermissionActions {
-        self.actions.clone()
+        self.actions
     }
 }
 
@@ -55,6 +48,7 @@ pub struct PostPermission {
 }
 
 #[derive(Clone, Copy, CandidType, Serialize, Deserialize, Debug)]
+#[derive(Default)]
 pub struct PermissionActions {
     write: bool,
     read: bool,
@@ -62,16 +56,7 @@ pub struct PermissionActions {
     delete: bool,
 }
 
-impl Default for PermissionActions {
-    fn default() -> Self {
-        Self {
-            write: false,
-            read: false,
-            edit: false,
-            delete: false,
-        }
-    }
-}
+
 
 impl PermissionActions {
     pub fn new(write: bool, read: bool, edit: bool, delete: bool) -> Self {

@@ -32,26 +32,24 @@ impl Ledger {
                         }
                         if to
                             != Self::principal_to_account_identifier(
-                                Principal::from_text(CATALYZE_MULTI_SIG.to_string()).unwrap(),
+                                Principal::from_text(CATALYZE_MULTI_SIG).unwrap(),
                             )
                         {
                             return Err(ApiError::bad_request().add_message("Invalid to address"));
                         }
-                        return Ok(amount);
+                        Ok(amount)
                     } else {
                         // Not a transfer
-                        return Err(ApiError::bad_request()
-                            .add_message("This block does not contain a transfer"));
+                        Err(ApiError::bad_request()
+                            .add_message("This block does not contain a transfer"))
                     }
                 } else {
                     // No operation
-                    return Err(
-                        ApiError::bad_request().add_message("No operation found in the block")
-                    );
+                    Err(ApiError::bad_request().add_message("No operation found in the block"))
                 }
             }
             // No block
-            Err(_) => return Err(ApiError::bad_request().add_message("No block found")),
+            Err(_) => Err(ApiError::bad_request().add_message("No block found")),
         }
     }
 
@@ -63,7 +61,7 @@ impl Ledger {
 
         match query_blocks(MAINNET_LEDGER_CANISTER_ID, args.clone()).await {
             Ok(blocks_result) => {
-                if blocks_result.blocks.len() >= 1 {
+                if !blocks_result.blocks.is_empty() {
                     match blocks_result.blocks.into_iter().next() {
                         Some(block) => return Ok(block),
                         None => return Err(ApiError::bad_request().add_message("No block found")),
@@ -72,10 +70,10 @@ impl Ledger {
 
                 if let Some(func) = blocks_result.archived_blocks.into_iter().find_map(|b| {
                     (b.start <= block_index && (block_index - b.start) < b.length)
-                        .then(|| b.callback)
+                        .then_some(b.callback)
                 }) {
-                    match query_archived_blocks(&func, args).await {
-                        Ok(range) => match range {
+                    if let Ok(range) = query_archived_blocks(&func, args).await {
+                        match range {
                             Ok(_range) => match _range.blocks.into_iter().next() {
                                 Some(block) => return Ok(block),
                                 None => {
@@ -86,8 +84,7 @@ impl Ledger {
                             Err(err) => {
                                 return Err(ApiError::bad_request().add_message(&err.to_string()))
                             }
-                        },
-                        _ => (),
+                        }
                     }
                 }
             }

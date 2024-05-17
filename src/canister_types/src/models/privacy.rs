@@ -4,7 +4,9 @@ use candid::{CandidType, Principal};
 use serde::{Deserialize, Serialize};
 
 #[derive(CandidType, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Debug)]
+#[derive(Default)]
 pub enum Privacy {
+    #[default]
     Public,
     Private,
     InviteOnly,
@@ -43,11 +45,7 @@ pub struct TokenGated {
     pub amount: u64,
 }
 
-impl Default for Privacy {
-    fn default() -> Self {
-        Privacy::Public
-    }
-}
+
 
 impl fmt::Display for Privacy {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

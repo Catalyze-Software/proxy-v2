@@ -23,12 +23,7 @@ pub struct BoostCalls;
 
 impl BoostCalls {
     pub async fn boost(subject: Subject, blockheight: u64) -> Result<u64, ApiError> {
-        let is_valid_subject = match subject {
-            Subject::Group(_) => true,
-            Subject::Event(_) => true,
-            _ => false,
-        };
-        if !is_valid_subject {
+        if !matches!(subject, Subject::Group(_) | Subject::Event(_)) {
             return Err(ApiError::bad_request().add_message("Invalid identifier"));
         }
         let tokens = Ledger::validate_transaction(caller(), blockheight).await?;
@@ -104,8 +99,7 @@ impl BoostCalls {
     }
 
     pub fn calculate_days(tokens: Tokens) -> u64 {
-        let days = ((tokens.e8s() as f64) / (E8S_PER_DAY_BOOST_COST as f64)).round() as u64;
-        days
+        ((tokens.e8s() as f64) / (E8S_PER_DAY_BOOST_COST as f64)).round() as u64
     }
 
     pub fn get_seconds_from_days(days: u64) -> u64 {
@@ -119,7 +113,7 @@ impl BoostCalls {
     }
 
     pub fn get_last_block_height() -> u64 {
-        LAST_BLOCK_HEIGHT.with(|b| b.borrow().clone())
+        LAST_BLOCK_HEIGHT.with(|b| *b.borrow())
     }
 
     pub fn set_timer_id(boost_id: u64, timer_id: TimerId) {
@@ -158,14 +152,8 @@ impl BoostCalls {
         BoostedStore::get_all()
             .into_iter()
             .filter(|(_, boosted)| match boosted.subject.get_type() {
-                SubjectType::Group => match subject {
-                    SubjectType::Group => true,
-                    _ => false,
-                },
-                SubjectType::Event => match subject {
-                    SubjectType::Event => true,
-                    _ => false,
-                },
+                SubjectType::Group => matches!(subject, SubjectType::Group),
+                SubjectType::Event => matches!(subject, SubjectType::Event),
                 _ => false,
             })
             .collect()

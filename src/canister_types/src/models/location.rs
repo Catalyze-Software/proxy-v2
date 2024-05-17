@@ -4,7 +4,9 @@ use candid::CandidType;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Serialize, CandidType, Deserialize)]
+#[derive(Default)]
 pub enum Location {
+    #[default]
     None,
     Physical(PhysicalLocation),
     Digital(String),
@@ -29,11 +31,7 @@ pub struct MultiLocation {
     pub digital: String,
 }
 
-impl Default for Location {
-    fn default() -> Self {
-        Location::None
-    }
-}
+
 
 impl fmt::Display for Location {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

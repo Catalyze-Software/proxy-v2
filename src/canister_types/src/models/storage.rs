@@ -50,17 +50,15 @@ pub struct Manifest {
 }
 
 #[derive(Clone, Debug, CandidType, Serialize, Deserialize)]
+#[derive(Default)]
 pub enum CanisterStorage {
+    #[default]
     None,
     Chunk(ChunkData),
     Manifest(Manifest),
 }
 
-impl Default for CanisterStorage {
-    fn default() -> Self {
-        CanisterStorage::None
-    }
-}
+
 
 impl fmt::Display for CanisterStorage {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

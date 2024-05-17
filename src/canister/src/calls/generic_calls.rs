@@ -108,7 +108,7 @@ async fn _dev_create_canister(controllers: Vec<Principal>) -> Result<Principal, 
 #[query]
 fn http_request(req: HttpRequest) -> HttpResponse {
     let mut path: Vec<&str> = req.url.as_str().split('/').collect();
-    path = path.iter().filter(|p| !p.is_empty()).cloned().collect();
+    path.retain(|p| !p.is_empty());
 
     let permission_denied = HttpResponse {
         status_code: 403,

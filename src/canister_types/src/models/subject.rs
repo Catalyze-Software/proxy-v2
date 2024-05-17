@@ -4,7 +4,9 @@ use serde::{Deserialize, Serialize};
 use super::{attendee::Attendee, event::Event, group::Group, member::Member, profile::Profile};
 
 #[derive(CandidType, Deserialize, Serialize, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Default)]
 pub enum Subject {
+    #[default]
     None,
     Group(u64),
     Event(u64),
@@ -44,11 +46,7 @@ pub enum SubjectType {
     Attendee,
 }
 
-impl Default for Subject {
-    fn default() -> Self {
-        Subject::None
-    }
-}
+
 
 #[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
 pub enum SubjectResponse {
