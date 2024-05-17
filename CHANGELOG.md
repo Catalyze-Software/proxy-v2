@@ -12,10 +12,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - methods to the `DateRange` implementation
 - `Event` date check to see if an event is ongoing, if so the `StartDate` filter gets ignored
 
-### Changed
-
--
-
 ### Removed
 
 - testing folder
