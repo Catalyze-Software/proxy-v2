@@ -1,8 +1,8 @@
-use std::cell::RefCell;
 use candid::Principal;
 use ic_cdk::api::management_canister::provisional::CanisterId;
 use lazy_static::lazy_static;
 use pocket_ic::PocketIc;
+use std::cell::RefCell;
 
 #[cfg(test)]
 mod calls;

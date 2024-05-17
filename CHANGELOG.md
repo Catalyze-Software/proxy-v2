@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - added `is_prod_developer` guard
 - added `_dev_create_canister` call to spin up canisters on the same subnet
+- CI/CD pipelines for all environments
 
 ### Changed
 
