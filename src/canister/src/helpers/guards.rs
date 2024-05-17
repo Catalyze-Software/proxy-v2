@@ -29,9 +29,7 @@ pub fn is_not_anonymous() -> Result<(), String> {
 /// `Result<(), String>` type is required because of the usage as a guard in the `candid` attribute macro
 pub fn has_access() -> Result<(), String> {
     // Check if the caller is anonymous
-    if let Err(err) = is_not_anonymous() {
-        return Err(err);
-    }
+    is_not_anonymous()?;
 
     // Get the caller's profile
     match ProfileStore::get(caller()) {
@@ -39,7 +37,7 @@ pub fn has_access() -> Result<(), String> {
         Ok((_, profile)) => {
             // Check if the caller has a profile
             // Check if the caller is blocked or banned on the application level
-            if vec![ApplicationRole::Blocked, ApplicationRole::Banned]
+            if [ApplicationRole::Blocked, ApplicationRole::Banned]
                 .contains(&profile.application_role)
             {
                 Err(ApiError::unauthorized()
@@ -67,7 +65,7 @@ pub fn is_monitor() -> Result<(), String> {
 }
 
 pub fn is_prod_developer() -> Result<(), String> {
-    let developers = vec![
+    let developers = [
         // production
         "ledm3-52ncq-rffuv-6ed44-hg5uo-iicyu-pwkzj-syfva-heo4k-p7itq-aqe",
     ];
@@ -83,7 +81,7 @@ pub fn is_prod_developer() -> Result<(), String> {
 
 // Check if the caller is the Catalyze developer principal
 pub fn is_developer() -> Result<(), String> {
-    let developers = vec![
+    let developers = [
         // production
         "ledm3-52ncq-rffuv-6ed44-hg5uo-iicyu-pwkzj-syfva-heo4k-p7itq-aqe",
         // staging

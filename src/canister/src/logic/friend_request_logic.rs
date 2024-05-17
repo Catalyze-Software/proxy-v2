@@ -135,7 +135,7 @@ impl FriendRequestCalls {
     pub fn get_incoming_friend_requests() -> Vec<FriendRequestResponse> {
         FriendRequestStore::filter(|_, request| request.to == caller())
             .into_iter()
-            .map(|data| FriendRequestMapper::to_response(data))
+            .map(FriendRequestMapper::to_response)
             .collect()
     }
 
@@ -157,7 +157,7 @@ impl FriendRequestCalls {
     pub fn get_outgoing_friend_requests() -> Vec<FriendRequestResponse> {
         FriendRequestStore::filter(|_, request| request.requested_by == caller())
             .into_iter()
-            .map(|data| FriendRequestMapper::to_response(data))
+            .map(FriendRequestMapper::to_response)
             .collect()
     }
 

@@ -23,9 +23,9 @@ lazy_static! {
 }
 
 thread_local! {
-    pub static SENDER: RefCell<Option<Principal>> = RefCell::new(None);
-    pub static CANISTER_ID: RefCell<Option<Principal>> = RefCell::new(None);
-    pub static GROUP_ID: RefCell<Option<Principal>> = RefCell::new(None);
+    pub static SENDER: RefCell<Option<Principal>> = const { RefCell::new(None) };
+    pub static CANISTER_ID: RefCell<Option<Principal>> = const { RefCell::new(None) };
+    pub static GROUP_ID: RefCell<Option<Principal>> = const { RefCell::new(None) };
 }
 
 fn init_pocket_ic() -> TestEnv {

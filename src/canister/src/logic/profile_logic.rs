@@ -26,9 +26,7 @@ pub struct ProfileValidation;
 
 impl ProfileCalls {
     pub fn add_profile(post_profile: PostProfile) -> Result<ProfileResponse, ApiError> {
-        if let Err(err) = ProfileValidation::validate_post_profile(&post_profile) {
-            return Err(err);
-        }
+        ProfileValidation::validate_post_profile(&post_profile)?;
 
         let new_profile = Profile::from(post_profile);
         let stored_profile = ProfileStore::insert_by_key(caller(), new_profile);
@@ -41,9 +39,7 @@ impl ProfileCalls {
     }
 
     pub fn update_profile(update_profile: UpdateProfile) -> Result<ProfileResponse, ApiError> {
-        if let Err(err) = ProfileValidation::validate_update_profile(&update_profile) {
-            return Err(err);
-        }
+        ProfileValidation::validate_update_profile(&update_profile)?;
 
         let (_, existing_profile) = ProfileStore::get(caller())?;
         let updated_profile = existing_profile.update(update_profile);
@@ -66,7 +62,7 @@ impl ProfileCalls {
             post_wallet.principal,
             Wallet {
                 provider: post_wallet.provider,
-                is_primary: existing_profile.wallets.len() == 0,
+                is_primary: existing_profile.wallets.is_empty(),
             },
         );
 
@@ -166,7 +162,7 @@ impl ProfileCalls {
                 .starred
                 .iter()
                 .filter(|s| s.get_type() == subject)
-                .map(|s| s.get_id().clone())
+                .map(|s| *s.get_id())
                 .collect();
         }
         vec![]
@@ -206,7 +202,7 @@ impl ProfileCalls {
                 .pinned
                 .iter()
                 .filter(|s| s.get_type() == subject)
-                .map(|s| Self::get_subject_response_by_subject(s))
+                .map(Self::get_subject_response_by_subject)
                 .collect();
         }
         vec![]
@@ -271,7 +267,7 @@ impl ProfileCalls {
             return ProfileResponse::from_result(updated_profile);
         }
 
-        return Err(ApiError::not_found().add_message("User not blocked"));
+        Err(ApiError::not_found().add_message("User not blocked"))
     }
 
     pub fn get_relations(relation_type: RelationType) -> Vec<Principal> {

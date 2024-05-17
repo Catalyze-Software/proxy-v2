@@ -23,7 +23,7 @@ fn log_with_caller(post_log: PostLog) -> Result<(u64, Logger), ApiError> {
 
 #[update(guard = "has_access")]
 fn log_login() -> Result<(u64, Logger), ApiError> {
-    LoginEvent::new()
+    LoginEvent::log_event()
 }
 
 #[update(guard = "is_developer")]

@@ -62,10 +62,7 @@ pub async fn legacy_dip721_balance_of(canister: Principal, principal: &Principal
     let call: Result<(Result<u32, DipNftError>,), _> =
         api::call::call(canister, "balanceOf", (principal,)).await;
     match call {
-        Ok(response) => match response.0 {
-            Ok(_amount) => _amount,
-            Err(_) => 0,
-        },
+        Ok(response) => response.0.unwrap_or_default(),
         Err(_) => 0,
     }
 }
@@ -74,10 +71,7 @@ pub async fn dip721_balance_of(canister: Principal, principal: &Principal) -> u3
     let call: Result<(Result<u32, DipNftError>,), _> =
         api::call::call(canister, "dip721_balance_of", (principal,)).await;
     match call {
-        Ok(response) => match response.0 {
-            Ok(_amount) => _amount,
-            Err(_) => 0,
-        },
+        Ok(response) => response.0.unwrap_or_default(),
         Err(_) => 0,
     }
 }

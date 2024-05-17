@@ -328,7 +328,7 @@ impl GroupCalls {
                 .into_iter()
                 .try_for_each(|(principal, mut member)| {
                     if member.get_roles(group_id).is_empty() {
-                        member.add_group_role(&group_id, &"member".to_string());
+                        member.add_group_role(&group_id, "member");
                     }
                     member.remove_group_role(&group_id, &role_name);
                     MemberStore::update(principal, member)?;

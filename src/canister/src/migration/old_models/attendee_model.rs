@@ -50,17 +50,12 @@ pub struct Invite {
     pub created_at: u64,
 }
 
-#[derive(CandidType, Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(CandidType, Debug, Clone, Deserialize, Serialize, PartialEq, Eq, Default)]
 pub enum InviteType {
+    #[default]
     None,
     OwnerRequest,
     UserRequest,
-}
-
-impl Default for InviteType {
-    fn default() -> Self {
-        InviteType::None
-    }
 }
 
 #[derive(Clone, Debug, CandidType, Deserialize, Serialize)]
