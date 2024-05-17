@@ -44,14 +44,14 @@ runs:
         CARGO_TERM_COLOR: always
         RUSTFLAGS: "-D warnings"
       run: cargo fmt -- --check
-    # TODO: Enable clippy once warnings are fixed
-    # - name: clippy
-    #   shell: bash
-    #   if: ${{ inputs.lint == 'true' }}
-    #   env:
-    #     CARGO_TERM_COLOR: always
-    #     RUSTFLAGS: "-D warnings"
-    #   run: cargo clippy
+    
+    - name: clippy
+      shell: bash
+      if: ${{ inputs.lint == 'true' }}
+      env:
+        CARGO_TERM_COLOR: always
+        RUSTFLAGS: "-D warnings"
+      run: cargo clippy
 
     - name: Tests
       shell: bash
