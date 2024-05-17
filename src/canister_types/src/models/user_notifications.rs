@@ -50,7 +50,9 @@ impl UserNotifications {
     }
 
     pub fn add(&mut self, id: u64, is_read: bool, is_sender: bool) {
-        self.0.entry(id).or_insert_with(|| UserNotificationData::new(is_read, is_sender));
+        self.0
+            .entry(id)
+            .or_insert_with(|| UserNotificationData::new(is_read, is_sender));
     }
 
     pub fn remove(&mut self, id: &u64) {

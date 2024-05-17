@@ -20,8 +20,7 @@ pub struct ValidationResponse {
 #[derive(Clone, Debug, Default, CandidType, Serialize, Deserialize)]
 pub struct ValidateField(pub ValidationType, pub String);
 
-#[derive(Clone, Debug, CandidType, Serialize, Deserialize)]
-#[derive(Default)]
+#[derive(Clone, Debug, CandidType, Serialize, Deserialize, Default)]
 pub enum ValidationType {
     #[default]
     None,
@@ -30,8 +29,6 @@ pub enum ValidationType {
     Email(String),
     Count(usize, usize, usize),
 }
-
-
 
 impl fmt::Display for ValidationType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

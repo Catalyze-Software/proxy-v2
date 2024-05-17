@@ -3,8 +3,7 @@ use std::fmt;
 use candid::CandidType;
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, Serialize, CandidType, Deserialize)]
-#[derive(Default)]
+#[derive(Clone, Debug, Serialize, CandidType, Deserialize, Default)]
 pub enum Location {
     #[default]
     None,
@@ -30,8 +29,6 @@ pub struct MultiLocation {
     pub physical: PhysicalLocation,
     pub digital: String,
 }
-
-
 
 impl fmt::Display for Location {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

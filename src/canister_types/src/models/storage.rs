@@ -49,16 +49,13 @@ pub struct Manifest {
     pub entries: Vec<ChunkData>,
 }
 
-#[derive(Clone, Debug, CandidType, Serialize, Deserialize)]
-#[derive(Default)]
+#[derive(Clone, Debug, CandidType, Serialize, Deserialize, Default)]
 pub enum CanisterStorage {
     #[default]
     None,
     Chunk(ChunkData),
     Manifest(Manifest),
 }
-
-
 
 impl fmt::Display for CanisterStorage {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

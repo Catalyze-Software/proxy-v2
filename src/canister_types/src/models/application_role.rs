@@ -3,8 +3,9 @@ use core::fmt;
 use candid::CandidType;
 use serde::{Deserialize, Serialize};
 
-#[derive(CandidType, Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
-#[derive(Default)]
+#[derive(
+    CandidType, Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Default,
+)]
 pub enum ApplicationRole {
     Owner,
     Admin,
@@ -17,8 +18,6 @@ pub enum ApplicationRole {
     Blocked,
     Banned,
 }
-
-
 
 impl fmt::Display for ApplicationRole {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

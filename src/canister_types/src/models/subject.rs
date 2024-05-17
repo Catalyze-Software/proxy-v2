@@ -3,8 +3,9 @@ use serde::{Deserialize, Serialize};
 
 use super::{attendee::Attendee, event::Event, group::Group, member::Member, profile::Profile};
 
-#[derive(CandidType, Deserialize, Serialize, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
-#[derive(Default)]
+#[derive(
+    CandidType, Deserialize, Serialize, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Default,
+)]
 pub enum Subject {
     #[default]
     None,
@@ -45,8 +46,6 @@ pub enum SubjectType {
     Member,
     Attendee,
 }
-
-
 
 #[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
 pub enum SubjectResponse {

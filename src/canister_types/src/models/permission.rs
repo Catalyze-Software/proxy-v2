@@ -3,15 +3,12 @@ use std::fmt;
 use candid::{CandidType, Deserialize};
 use serde::Serialize;
 
-#[derive(Clone, CandidType, Serialize, Deserialize, Debug)]
-#[derive(Default)]
+#[derive(Clone, CandidType, Serialize, Deserialize, Debug, Default)]
 pub struct Permission {
     name: String,
     protected: bool,
     actions: PermissionActions,
 }
-
-
 
 impl From<PostPermission> for Permission {
     fn from(post_permission: PostPermission) -> Self {
@@ -47,16 +44,13 @@ pub struct PostPermission {
     actions: PermissionActions,
 }
 
-#[derive(Clone, Copy, CandidType, Serialize, Deserialize, Debug)]
-#[derive(Default)]
+#[derive(Clone, Copy, CandidType, Serialize, Deserialize, Debug, Default)]
 pub struct PermissionActions {
     write: bool,
     read: bool,
     edit: bool,
     delete: bool,
 }
-
-
 
 impl PermissionActions {
     pub fn new(write: bool, read: bool, edit: bool, delete: bool) -> Self {

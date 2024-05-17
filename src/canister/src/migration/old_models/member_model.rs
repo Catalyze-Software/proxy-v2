@@ -50,15 +50,12 @@ pub struct Invite {
     pub created_at: u64,
 }
 
-#[derive(CandidType, Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-#[derive(Default)]
+#[derive(CandidType, Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
 pub enum InviteType {
     OwnerRequest,
     #[default]
     UserRequest,
 }
-
-
 
 #[derive(Clone, Debug, CandidType, Deserialize, Serialize)]
 pub struct JoinedMemberResponse {

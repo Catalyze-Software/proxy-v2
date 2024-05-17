@@ -5,16 +5,13 @@ use serde::Serialize;
 
 use super::storage::CanisterStorage;
 
-#[derive(Clone, Debug, CandidType, Serialize, Deserialize)]
-#[derive(Default)]
+#[derive(Clone, Debug, CandidType, Serialize, Deserialize, Default)]
 pub enum Asset {
     #[default]
     None,
     CanisterStorage(CanisterStorage),
     Url(String),
 }
-
-
 
 impl fmt::Display for Asset {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

@@ -226,8 +226,7 @@ impl EventSort {
     }
 }
 
-#[derive(Clone, Debug, CandidType, Deserialize)]
-#[derive(Default)]
+#[derive(Clone, Debug, CandidType, Deserialize, Default)]
 pub enum EventFilter {
     #[default]
     None,
@@ -260,8 +259,6 @@ impl EventFilter {
         }
     }
 }
-
-
 
 #[derive(Clone, Debug, CandidType, Deserialize, Serialize)]
 pub struct EventsCount {

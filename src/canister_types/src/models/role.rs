@@ -3,8 +3,7 @@ use serde::Serialize;
 
 use super::permission::{Permission, PostPermission};
 
-#[derive(Clone, CandidType, Serialize, Deserialize, Debug)]
-#[derive(Default)]
+#[derive(Clone, CandidType, Serialize, Deserialize, Debug, Default)]
 pub struct Role {
     pub name: String,
     pub protected: bool,
@@ -12,8 +11,6 @@ pub struct Role {
     pub color: String,
     pub index: Option<u64>,
 }
-
-
 
 impl From<PostRole> for Role {
     fn from(post_role: PostRole) -> Self {

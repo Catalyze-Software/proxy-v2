@@ -200,8 +200,6 @@ impl EventCalls {
 
         let starred = ProfileCalls::get_starred_by_subject(SubjectType::Event).len() as u64;
 
-        
-
         EventsCount {
             total: events.len() as u64,
             attending,
