@@ -3,7 +3,8 @@ use canister_types::models::{
     api_error::ApiError, attendee::Attendee, boosted::Boost, event::Event,
     event_collection::EventCollection, friend_request::FriendRequest, group::Group, log::Logger,
     member::Member, member_collection::MemberCollection, notification::Notification,
-    profile::Profile, report::Report, user_notifications::UserNotifications,
+    profile::Profile, report::Report, reward::RewardableActivity,
+    user_notifications::UserNotifications,
 };
 use ic_stable_structures::{
     memory_manager::{MemoryId, MemoryManager, VirtualMemory},
@@ -43,6 +44,8 @@ pub static LOGS_MEMORY_ID: MemoryId = MemoryId::new(13);
 pub static TAGS_MEMORY_ID: MemoryId = MemoryId::new(14);
 pub static INTERESTS_MEMORY_ID: MemoryId = MemoryId::new(15);
 pub static SKILLS_MEMORY_ID: MemoryId = MemoryId::new(16);
+
+pub static REWARD_BUFFER_MEMORY_ID: MemoryId = MemoryId::new(17);
 
 /// A reference to a `StableBTreeMap` that is wrapped in a `RefCell`.
 ///# Generics
@@ -290,6 +293,10 @@ thread_local! {
 
     pub static LOGS: StorageRef<u64, Logger> = RefCell::new(
         StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.borrow().get(LOGS_MEMORY_ID)))
+    );
+
+    pub static REWARD_BUFFER: StorageRef<u64, RewardableActivity> = RefCell::new(
+        StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.borrow().get(REWARD_BUFFER_MEMORY_ID)))
     );
 
     // Collections for more performant lookup

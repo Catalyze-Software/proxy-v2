@@ -11,6 +11,7 @@ mod member_storage;
 mod notification_storage;
 mod profile_storage;
 mod report_storage;
+mod reward_storage;
 pub mod storage_api;
 mod topic_storage;
 mod user_notification_storage;
@@ -35,6 +36,7 @@ pub use topic_storage::{InterestStore, SkillStore, TagStore};
 pub use user_notification_storage::UserNotificationStore;
 
 pub use logger_storage::LoggerStore;
+pub use reward_storage::{RewardStore, RewardTimerStore};
 
 // Re-export constants
 pub use logger_storage::LOGIN_EVENT;

@@ -3,8 +3,8 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Default, CandidType, Serialize, Deserialize)]
 pub struct DateRange {
-    start_date: u64,
-    end_date: u64,
+    pub start_date: u64,
+    pub end_date: u64,
 }
 
 impl DateRange {

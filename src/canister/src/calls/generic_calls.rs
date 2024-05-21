@@ -14,6 +14,8 @@ use ic_cdk::{init, post_upgrade, pre_upgrade, query, update};
 pub fn post_upgrade() {
     let _ = BoostCalls::start_timers_after_upgrade();
     Websocket::init();
+
+    crate::storage::RewardTimerStore::start_reward_timer();
 }
 
 #[pre_upgrade]
@@ -22,6 +24,8 @@ pub fn pre_upgrade() {}
 #[init]
 pub fn init() {
     Websocket::init();
+
+    crate::storage::RewardTimerStore::start_reward_timer();
 }
 
 #[update]
