@@ -1,5 +1,8 @@
+use std::collections::HashMap;
+
 use crate::storage::{
-    GroupMemberStore, GroupStore, RewardStore, StorageQueryable, GROUP_COUNT, REWARD_CANISTER_ID,
+    EventAttendeeStore, EventStore, GroupMemberStore, GroupStore, RewardStore, StorageQueryable,
+    EVENT_ATTENDANCE, GROUP_ACTIVITY, GROUP_COUNT, REWARD_CANISTER_ID,
 };
 use candid::Principal;
 use canister_types::models::reward::{RewardData, RewardDataPackage, RewardableActivity};
@@ -49,9 +52,54 @@ pub fn process_buffer() -> RewardDataPackage {
     }
 
     // handle group activities
+    let mut group_average_counts: HashMap<u64, u64> = HashMap::new();
+    let last_month = ic_cdk::api::time() - 30 * 24 * 60 * 60;
+
+    for activity in group_activities {
+        // check not older than 30 days
+        if activity.timestamp < last_month {
+            continue;
+        }
+        group_average_counts
+            .entry(activity.id)
+            .and_modify(|e| *e += 1)
+            .or_insert(1);
+    }
+
+    for (group_id, count) in group_average_counts {
+        group_activity_counts.push(RewardData {
+            owner: GroupStore::get(group_id)
+                .expect("Group should exist")
+                .1
+                .owner,
+            id: group_id,
+            count,
+        });
+    }
+
     // handle event activities
+    event_activities
+        .into_iter()
+        .for_each(|rewardable_activity| {
+            let event_id = rewardable_activity.id;
+            let owner = EventStore::get(event_id)
+                .expect("Event should exist")
+                .1
+                .owner;
+            let attendees = EventAttendeeStore::get(event_id)
+                .expect("Event should exist")
+                .1
+                .get_member_count() as u64;
+
+            event_attendee_counts.push(RewardData {
+                owner,
+                id: event_id,
+                count: attendees,
+            });
+        });
 
     // clear buffer
+    RewardStore::clear();
 
     RewardDataPackage {
         group_member_counts,

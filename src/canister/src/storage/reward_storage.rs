@@ -1,5 +1,5 @@
 use super::storage_api::REWARD_BUFFER;
-use crate::{logic::reward_buffer_logic::send_reward_data, storage::storage_api::StorageQueryable};
+use crate::logic::reward_buffer_logic::send_reward_data;
 use canister_types::models::reward::RewardableActivity;
 use ic_cdk_timers::set_timer_interval;
 use std::time::Duration;
@@ -12,6 +12,7 @@ const INTERVAL: Duration = Duration::from_secs(24 * 60 * 60); // 1 day
 
 // thread local refcell for timer id
 thread_local! {
+    // add time till next trigger ?
    pub static REWARD_TIMER: std::cell::RefCell<Option<ic_cdk_timers::TimerId>> = std::cell::RefCell::new(None);
 }
 
@@ -48,7 +49,7 @@ impl RewardStore {
         })
     }
 
-    fn notify_group_count_changed(group_id: u64) {
+    pub fn notify_group_count_changed(group_id: u64) {
         let index = Self::new_index();
         let activity = RewardableActivity {
             timestamp: ic_cdk::api::time(),
@@ -60,8 +61,7 @@ impl RewardStore {
         });
     }
 
-    // 30 day average 'activities' per day
-    fn notify_group_is_active(group_id: u64) {
+    pub fn notify_group_is_active(group_id: u64) {
         let index = Self::new_index();
         let activity = RewardableActivity {
             timestamp: ic_cdk::api::time(),
@@ -73,7 +73,7 @@ impl RewardStore {
         });
     }
 
-    fn notify_event_attendance(event_id: u64) {
+    pub fn notify_event_attendance(event_id: u64) {
         let index = Self::new_index();
         let activity = RewardableActivity {
             timestamp: ic_cdk::api::time(),
@@ -87,5 +87,9 @@ impl RewardStore {
 
     pub fn get_all() -> Vec<(u64, RewardableActivity)> {
         REWARD_BUFFER.with(|tree| tree.borrow().iter().collect())
+    }
+
+    pub fn clear() {
+        REWARD_BUFFER.with(|tree| tree.borrow_mut().clear_new());
     }
 }
