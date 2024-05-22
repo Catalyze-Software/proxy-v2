@@ -1,9 +1,11 @@
-use super::{storage_api::REWARD_BUFFER, EventStore};
-use crate::logic::reward_buffer_logic::send_reward_activities;
-use crate::storage::storage_api::StorageQueryable;
+use super::storage_api::REWARD_BUFFER;
+use crate::{logic::reward_buffer_logic::send_reward_data, storage::storage_api::StorageQueryable};
 use canister_types::models::reward::RewardableActivity;
 use ic_cdk_timers::set_timer_interval;
 use std::time::Duration;
+
+//  Reward canister principal
+pub const REWARD_CANISTER_ID: &str = "zgfl7-pqaaa-aaaap-accpa-cai";
 
 // Interval for sending reward activities to Reward Canister
 const INTERVAL: Duration = Duration::from_secs(24 * 60 * 60); // 1 day
@@ -17,7 +19,7 @@ pub struct RewardTimerStore;
 
 impl RewardTimerStore {
     pub fn start_reward_timer() {
-        let id = set_timer_interval(INTERVAL, move || send_reward_activities());
+        let id = set_timer_interval(INTERVAL, move || ic_cdk::spawn(send_reward_data()));
 
         REWARD_TIMER.with(|t| *t.borrow_mut() = Some(id));
     }
@@ -30,7 +32,7 @@ impl RewardTimerStore {
 // Rewardable Activities
 pub const GROUP_COUNT: &str = "group_count";
 pub const GROUP_ACTIVITY: &str = "group_activity";
-// note: event attendance is checked periodically and not stored in the reward buffer
+pub const EVENT_ATTENDANCE: &str = "event_attendance";
 
 pub struct RewardStore;
 
@@ -58,6 +60,7 @@ impl RewardStore {
         });
     }
 
+    // 30 day average 'activities' per day
     fn notify_group_is_active(group_id: u64) {
         let index = Self::new_index();
         let activity = RewardableActivity {
@@ -70,11 +73,19 @@ impl RewardStore {
         });
     }
 
-    // fn notify_event_attendance() {
-    //     EventStore::get_all().iter().for_each(|(id, event)| {
-    //         if event.date.end_date < ic_cdk::api::time() {
+    fn notify_event_attendance(event_id: u64) {
+        let index = Self::new_index();
+        let activity = RewardableActivity {
+            timestamp: ic_cdk::api::time(),
+            id: event_id,
+            activity: EVENT_ATTENDANCE.to_string(),
+        };
+        REWARD_BUFFER.with(|tree| {
+            tree.borrow_mut().insert(index, activity);
+        });
+    }
 
-    //         }
-    //     });
-    // }
+    pub fn get_all() -> Vec<(u64, RewardableActivity)> {
+        REWARD_BUFFER.with(|tree| tree.borrow().iter().collect())
+    }
 }
