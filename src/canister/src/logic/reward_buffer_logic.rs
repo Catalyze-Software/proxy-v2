@@ -1,15 +1,16 @@
 use std::collections::HashMap;
 
 use crate::storage::{
-    EventAttendeeStore, EventStore, GroupMemberStore, GroupStore, RewardStore, StorageQueryable,
-    EVENT_ATTENDANCE, GROUP_ACTIVITY, GROUP_COUNT, REWARD_CANISTER_ID,
+    EventAttendeeStore, EventStore, GroupMemberStore, GroupStore, RewardBufferStore,
+    RewardTimerStore, StorageQueryable, EVENT_ATTENDANCE, GROUP_ACTIVITY, GROUP_COUNT,
+    REWARD_CANISTER_ID,
 };
 use candid::Principal;
 use canister_types::models::reward::{RewardData, RewardDataPackage, RewardableActivity};
 use ic_cdk::{call, trap};
 
 pub fn process_buffer() -> RewardDataPackage {
-    let rewardables = RewardStore::get_all();
+    let rewardables = RewardBufferStore::get_all();
 
     let mut group_member_counts: Vec<RewardData> = Vec::new();
     let mut group_activity_counts: Vec<RewardData> = Vec::new();
@@ -98,9 +99,6 @@ pub fn process_buffer() -> RewardDataPackage {
             });
         });
 
-    // clear buffer
-    RewardStore::clear();
-
     RewardDataPackage {
         group_member_counts,
         group_activity_counts,
@@ -109,6 +107,8 @@ pub fn process_buffer() -> RewardDataPackage {
 }
 
 pub async fn send_reward_data() {
+    RewardTimerStore::set_next_trigger();
+
     let reward_data = process_buffer();
 
     let group_member_counts = reward_data.group_member_counts.clone();
@@ -141,4 +141,7 @@ pub async fn send_reward_data() {
     )
     .await
     .expect("Failed to send event attendee counts");
+
+    // clear buffer
+    RewardBufferStore::clear();
 }

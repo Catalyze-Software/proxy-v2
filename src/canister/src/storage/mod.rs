@@ -36,7 +36,7 @@ pub use topic_storage::{InterestStore, SkillStore, TagStore};
 pub use user_notification_storage::UserNotificationStore;
 
 pub use logger_storage::LoggerStore;
-pub use reward_storage::{RewardStore, RewardTimerStore};
+pub use reward_storage::{RewardBufferStore, RewardTimerStore};
 
 // Re-export constants
 pub use logger_storage::LOGIN_EVENT;

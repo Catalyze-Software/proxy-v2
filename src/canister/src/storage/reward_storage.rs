@@ -2,7 +2,7 @@ use super::storage_api::REWARD_BUFFER;
 use crate::logic::reward_buffer_logic::send_reward_data;
 use canister_types::models::reward::RewardableActivity;
 use ic_cdk_timers::set_timer_interval;
-use std::time::Duration;
+use std::{cell::RefCell, time::Duration};
 
 //  Reward canister principal
 pub const REWARD_CANISTER_ID: &str = "zgfl7-pqaaa-aaaap-accpa-cai";
@@ -10,23 +10,32 @@ pub const REWARD_CANISTER_ID: &str = "zgfl7-pqaaa-aaaap-accpa-cai";
 // Interval for sending reward activities to Reward Canister
 const INTERVAL: Duration = Duration::from_secs(24 * 60 * 60); // 1 day
 
-// thread local refcell for timer id
+// timer to periodically process the reward buffer
 thread_local! {
     // add time till next trigger ?
-   pub static REWARD_TIMER: std::cell::RefCell<Option<ic_cdk_timers::TimerId>> = std::cell::RefCell::new(None);
+   pub static REWARD_TIMER: RefCell<Option<u64>> = RefCell::new(None);
 }
 
 pub struct RewardTimerStore;
 
 impl RewardTimerStore {
     pub fn start_reward_timer() {
-        let id = set_timer_interval(INTERVAL, move || ic_cdk::spawn(send_reward_data()));
+        let _ = set_timer_interval(INTERVAL, move || ic_cdk::spawn(send_reward_data()));
 
-        REWARD_TIMER.with(|t| *t.borrow_mut() = Some(id));
+        let next_trigger = ic_cdk::api::time() + INTERVAL.as_nanos() as u64;
+
+        REWARD_TIMER.with(|t| *t.borrow_mut() = Some(next_trigger));
     }
 
-    pub fn reward_timer_set() -> bool {
-        REWARD_TIMER.with(|t| t.borrow().is_some())
+    pub fn next_trigger() -> Option<u64> {
+        REWARD_TIMER.with(|t| *t.borrow())
+    }
+
+    pub fn set_next_trigger() {
+        REWARD_TIMER.with(|t| {
+            let next_trigger = ic_cdk::api::time() + INTERVAL.as_nanos() as u64;
+            *t.borrow_mut() = Some(next_trigger);
+        });
     }
 }
 
@@ -35,9 +44,9 @@ pub const GROUP_COUNT: &str = "group_count";
 pub const GROUP_ACTIVITY: &str = "group_activity";
 pub const EVENT_ATTENDANCE: &str = "event_attendance";
 
-pub struct RewardStore;
+pub struct RewardBufferStore;
 
-impl RewardStore {
+impl RewardBufferStore {
     fn new_index() -> u64 {
         REWARD_BUFFER.with(|tree| {
             let index = tree
