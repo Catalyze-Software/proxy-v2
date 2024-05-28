@@ -66,7 +66,7 @@ pub trait StorageQueryable<K: 'static + Storable + Ord + Clone, V: 'static + Sto
     /// # Returns
     /// * `u64` - The total number of entries
     fn size() -> u64 {
-        Self::storage().with(|data| data.borrow().len() as u64)
+        Self::storage().with(|data| data.borrow().len())
     }
 
     /// Get a single entity by key
