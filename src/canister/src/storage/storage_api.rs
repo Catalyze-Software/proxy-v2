@@ -65,6 +65,13 @@ pub trait Storage<K: Storable + Ord + Clone, V: Storable + Clone> {
 pub trait StorageQueryable<K: 'static + Storable + Ord + Clone, V: 'static + Storable + Clone>:
     Storage<K, V>
 {
+    /// Get the total number of entries
+    /// # Returns
+    /// * `u64` - The total number of entries
+    fn size() -> u64 {
+        Self::storage().with(|data| data.borrow().len())
+    }
+
     /// Get a single entity by key
     /// # Arguments
     /// * `key` - The key of the entity to get
