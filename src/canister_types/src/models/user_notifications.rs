@@ -38,16 +38,21 @@ impl UserNotificationData {
 #[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
 pub struct UserNotifications(HashMap<u64, UserNotificationData>);
 
+impl Default for UserNotifications {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl UserNotifications {
     pub fn new() -> Self {
         Self(HashMap::new())
     }
 
     pub fn add(&mut self, id: u64, is_read: bool, is_sender: bool) {
-        if !self.0.contains_key(&id) {
-            self.0
-                .insert(id, UserNotificationData::new(is_read, is_sender));
-        }
+        self.0
+            .entry(id)
+            .or_insert_with(|| UserNotificationData::new(is_read, is_sender));
     }
 
     pub fn remove(&mut self, id: &u64) {
@@ -110,6 +115,6 @@ impl UserNotifications {
     }
 
     pub fn ids(&self) -> Vec<u64> {
-        self.0.clone().into_iter().map(|(id, _)| id).collect()
+        self.0.clone().into_keys().collect()
     }
 }

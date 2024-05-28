@@ -72,11 +72,11 @@ impl Websocket {
     }
 
     fn remove_connected_from_clients(principal: &Principal) {
-        CONNECTED_CLIENTS.with(|c| c.borrow_mut().remove(&principal));
+        CONNECTED_CLIENTS.with(|c| c.borrow_mut().remove(principal));
     }
 
     pub fn is_connected(principal: &Principal) -> bool {
-        CONNECTED_CLIENTS.with(|c| c.borrow().contains_key(&principal))
+        CONNECTED_CLIENTS.with(|c| c.borrow().contains_key(principal))
     }
 
     pub fn get_connected_clients() -> Vec<Principal> {

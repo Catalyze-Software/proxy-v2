@@ -31,7 +31,7 @@ impl NotificationCalls {
         friend_request: FriendRequestResponse,
     ) -> Result<u64, ApiError> {
         let (notification_id, notification) = Self::add_notification(
-            vec![friend_request.to.clone()],
+            vec![friend_request.to],
             NotificationType::Relation(RelationNotificationType::FriendRequest(
                 friend_request.clone(),
             )),
@@ -559,7 +559,7 @@ impl NotificationCalls {
     // Transaction notifications
     pub fn notification_add_transaction(transaction: TransactionData) -> bool {
         let _ = Self::add_and_send_notification_without_caller(
-            vec![transaction.receiver.clone()],
+            vec![transaction.receiver],
             NotificationType::Transaction(TransactionNotificationType::SingleTransaction(
                 transaction,
             )),
@@ -570,7 +570,7 @@ impl NotificationCalls {
 
     pub fn notification_add_complete_transaction(data: TransactionCompleteData) -> bool {
         let _ = Self::add_and_send_notification_without_caller(
-            vec![data.sender.clone()],
+            vec![data.sender],
             NotificationType::Transaction(TransactionNotificationType::TransactionsComplete(data)),
             false,
         );
@@ -646,22 +646,22 @@ impl NotificationCalls {
         // TODO: disabled for now, because of Selami
         // add the notification reference to the user's notifications
         if let Ok((_, mut caller_notifications)) = UserNotificationStore::get(caller()) {
-            caller_notifications.add(new_notification_id.clone(), false, true);
+            caller_notifications.add(new_notification_id, false, true);
             let _ = UserNotificationStore::update(caller(), caller_notifications);
         } else {
             let mut caller_notifications = UserNotifications::new();
-            caller_notifications.add(new_notification_id.clone(), false, true);
+            caller_notifications.add(new_notification_id, false, true);
             let _ = UserNotificationStore::insert_by_key(caller(), caller_notifications);
         }
 
         // send the notification to the receivers
         for receiver in receivers {
             if let Ok((_, mut notifications)) = UserNotificationStore::get(receiver) {
-                notifications.add(new_notification_id.clone(), false, true);
+                notifications.add(new_notification_id, false, true);
                 let _ = UserNotificationStore::update(receiver, notifications);
             } else {
                 let mut notifications = UserNotifications::new();
-                notifications.add(new_notification_id.clone(), false, true);
+                notifications.add(new_notification_id, false, true);
                 let _ = UserNotificationStore::insert_by_key(receiver, notifications);
             }
         }
@@ -714,22 +714,22 @@ impl NotificationCalls {
 
         // add the notification reference to the user's notifications
         if let Ok((_, mut caller_notifications)) = UserNotificationStore::get(caller()) {
-            caller_notifications.add(new_notification_id.clone(), false, true);
+            caller_notifications.add(new_notification_id, false, true);
             let _ = UserNotificationStore::update(caller(), caller_notifications);
         } else {
             let mut caller_notifications = UserNotifications::new();
-            caller_notifications.add(new_notification_id.clone(), false, true);
+            caller_notifications.add(new_notification_id, false, true);
             let _ = UserNotificationStore::insert_by_key(caller(), caller_notifications);
         }
 
         // send the notification to the receivers
         for receiver in receivers {
             if let Ok((_, mut notifications)) = UserNotificationStore::get(receiver) {
-                notifications.add(new_notification_id.clone(), false, true);
+                notifications.add(new_notification_id, false, true);
                 let _ = UserNotificationStore::update(receiver, notifications);
             } else {
                 let mut notifications = UserNotifications::new();
-                notifications.add(new_notification_id.clone(), false, true);
+                notifications.add(new_notification_id, false, true);
                 let _ = UserNotificationStore::insert_by_key(receiver, notifications);
             }
 
@@ -758,11 +758,11 @@ impl NotificationCalls {
         // send the notification to the receivers
         for receiver in receivers {
             if let Ok((_, mut notifications)) = UserNotificationStore::get(receiver) {
-                notifications.add(new_notification_id.clone(), false, true);
+                notifications.add(new_notification_id, false, true);
                 let _ = UserNotificationStore::update(receiver, notifications);
             } else {
                 let mut notifications = UserNotifications::new();
-                notifications.add(new_notification_id.clone(), false, true);
+                notifications.add(new_notification_id, false, true);
                 let _ = UserNotificationStore::insert_by_key(receiver, notifications);
             }
 

@@ -11,7 +11,7 @@ pub struct MemberMapper;
 
 impl MemberCalls {
     pub fn create_empty_member(principal: Principal) -> Result<(Principal, Member), ApiError> {
-        if let Ok(_) = MemberStore::get(principal) {
+        if MemberStore::get(principal).is_ok() {
             return Err(ApiError::duplicate()
                 .add_method_name("create_empty_member")
                 .add_message("Member already exists"));

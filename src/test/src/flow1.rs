@@ -39,7 +39,7 @@ pub fn flow1() {
 
     let code_of_conduct_approved: bool = approve_code_of_conduct(version);
 
-    assert_eq!(code_of_conduct_approved, true);
+    assert!(code_of_conduct_approved);
 
     /*
      * Approve privacy policy
@@ -48,7 +48,7 @@ pub fn flow1() {
 
     let privacy_policy_approved: bool = approve_privacy_policy(version);
 
-    assert_eq!(privacy_policy_approved, true);
+    assert!(privacy_policy_approved);
 
     /*
      * Approve terms of service
@@ -57,7 +57,7 @@ pub fn flow1() {
 
     let terms_of_service_approved: bool = approve_terms_of_service(version);
 
-    assert_eq!(terms_of_service_approved, true);
+    assert!(terms_of_service_approved);
 
     /*
      * Add group

@@ -1,14 +1,20 @@
 use crate::{
+    helpers::guards::{is_developer, is_prod_developer},
     logic::{boost_logic::BoostCalls, websocket_logic::Websocket},
     storage::{
-        storage_api::{StorageQueryable, StorageUpdateable},
-        AttendeeStore, EventStore, FriendRequestStore, GroupEventsStore, GroupMemberStore,
-        MemberStore, NotificationStore, UserNotificationStore,
+        storage_api::StorageQueryable, AttendeeStore, EventStore, GroupEventsStore,
+        GroupMemberStore, MemberStore,
     },
 };
 use candid::Principal;
 use canister_types::models::http_types::{HttpRequest, HttpResponse};
-use ic_cdk::{init, post_upgrade, pre_upgrade, query, update};
+use ic_cdk::{
+    api::{
+        canister_balance128,
+        management_canister::main::{create_canister, CanisterSettings, CreateCanisterArgument},
+    },
+    init, post_upgrade, pre_upgrade, query, update,
+};
 
 #[post_upgrade]
 pub fn post_upgrade() {
@@ -28,28 +34,7 @@ pub fn init() {
     crate::storage::RewardTimerStore::start_reward_timer();
 }
 
-#[update]
-pub fn _dev_clear_notifications(super_secret_password: String) -> bool {
-    if super_secret_password != "super_secret_password" {
-        return false;
-    } else {
-        UserNotificationStore::clear();
-        NotificationStore::clear();
-        return true;
-    }
-}
-
-#[update]
-pub fn _dev_clear_friend_request(super_secret_password: String) -> bool {
-    if super_secret_password != "super_secret_password" {
-        return false;
-    } else {
-        FriendRequestStore::clear();
-        return true;
-    }
-}
-
-#[query]
+#[query(guard = "is_developer")]
 pub fn _dev_check_member_sync(
     principal: Principal,
     group_id: u64,
@@ -67,7 +52,7 @@ pub fn _dev_check_member_sync(
     (member_store_check, group_member_store_check)
 }
 
-#[query]
+#[query(guard = "is_developer")]
 pub fn _dev_check_attendees_sync(
     principal: Principal,
     event_id: u64,
@@ -85,7 +70,7 @@ pub fn _dev_check_attendees_sync(
     (attendee_store_check, event_attendee_store_check)
 }
 
-#[query]
+#[query(guard = "is_developer")]
 pub fn _dev_check_events_sync(event_id: u64, group_id: u64) -> ((String, bool), (String, bool)) {
     let mut event_store_check: (String, bool) = ("EventStore".to_string(), false);
     let mut group_event_store_check: (String, bool) = ("GroupEventStore".to_string(), false);
@@ -100,10 +85,34 @@ pub fn _dev_check_events_sync(event_id: u64, group_id: u64) -> ((String, bool), 
     (event_store_check, group_event_store_check)
 }
 
+#[update(guard = "is_prod_developer")]
+async fn _dev_create_canister(controllers: Vec<Principal>) -> Result<Principal, String> {
+    let arg = CreateCanisterArgument {
+        settings: Some(CanisterSettings {
+            controllers: Some(controllers),
+            compute_allocation: None,
+            memory_allocation: None,
+            freezing_threshold: None,
+        }),
+    };
+
+    let current_cycles = canister_balance128();
+    if current_cycles < 10_000_000_000_000 {
+        return Err("Pleas make sure there are more then 10T cycles available".to_string());
+    }
+
+    let cycles: u128 = 3_000_000_000_000;
+
+    match create_canister(arg, cycles).await {
+        Ok((canister,)) => Ok(canister.canister_id),
+        Err((_, err)) => Err(err),
+    }
+}
+
 #[query]
 fn http_request(req: HttpRequest) -> HttpResponse {
     let mut path: Vec<&str> = req.url.as_str().split('/').collect();
-    path = path.iter().filter(|p| !p.is_empty()).cloned().collect();
+    path.retain(|p| !p.is_empty());
 
     let permission_denied = HttpResponse {
         status_code: 403,

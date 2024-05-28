@@ -52,12 +52,12 @@ pub enum MessageType {
 impl MessageType {
     #[allow(unused)]
     pub fn serialize(&self) -> Vec<u8> {
-        encode_one(&self).unwrap()
+        encode_one(self).unwrap()
     }
 
     #[allow(unused)]
-    pub fn deserialize(data: &Vec<u8>) -> Self {
-        decode_one(&data).unwrap()
+    pub fn deserialize(data: &[u8]) -> Self {
+        decode_one(data).unwrap()
     }
 }
 

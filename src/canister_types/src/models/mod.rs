@@ -28,7 +28,7 @@ pub mod invite_type;
 pub mod member;
 pub mod profile;
 pub mod report;
-pub mod topics;
+pub mod topic;
 
 pub mod event_collection;
 pub mod http_types;

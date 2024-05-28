@@ -1,6 +1,6 @@
 use canister_types::models::{
     api_error::ApiError,
-    topics::{Topic, TopicKind},
+    topic::{Topic, TopicKind},
     validation::{ValidateField, ValidationType},
 };
 

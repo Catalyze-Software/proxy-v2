@@ -1,6 +1,7 @@
 use super::{
     storage_api::{
-        StaticStorageRef, Storage, StorageQueryable, StorageUpdateable, PROFILES, PROFILES_MEMORY_ID,
+        StaticStorageRef, Storage, StorageQueryable, StorageUpdateable, PROFILES,
+        PROFILES_MEMORY_ID,
     },
     StorageInsertableByKey,
 };

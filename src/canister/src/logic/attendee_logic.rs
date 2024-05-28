@@ -11,7 +11,7 @@ pub struct AttendeeMapper;
 
 impl AttendeeCalls {
     pub fn create_empty_attendee(principal: Principal) -> Result<(Principal, Attendee), ApiError> {
-        if let Ok(_) = AttendeeStore::get(principal) {
+        if AttendeeStore::get(principal).is_ok() {
             return Err(ApiError::duplicate()
                 .add_method_name("create_empty_attendee")
                 .add_message("Attendee already exists"));

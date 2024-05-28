@@ -417,7 +417,7 @@ pub fn get_member_roles(
     member_roles
 }
 
-pub fn leave_group(group_identifier: Principal) -> () {
+pub fn leave_group(group_identifier: Principal) {
     update_candid_as::<(Principal,), (Result<(), ApiError>,)>(
         &ENV.pic,
         ENV.canister_id,
@@ -430,7 +430,7 @@ pub fn leave_group(group_identifier: Principal) -> () {
     .expect("Failed to leave group");
 }
 
-pub fn remove_invite(group_identifier: Principal) -> () {
+pub fn remove_invite(group_identifier: Principal) {
     update_candid_as::<(Principal,), (Result<(), ApiError>,)>(
         &ENV.pic,
         ENV.canister_id,
@@ -443,7 +443,7 @@ pub fn remove_invite(group_identifier: Principal) -> () {
     .expect("Failed to remove invite");
 }
 
-pub fn remove_member_from_group(principal: Principal, group_identifier: Principal) -> () {
+pub fn remove_member_from_group(principal: Principal, group_identifier: Principal) {
     update_candid_as::<(Principal, Principal), (Result<(), ApiError>,)>(
         &ENV.pic,
         ENV.canister_id,
@@ -456,7 +456,7 @@ pub fn remove_member_from_group(principal: Principal, group_identifier: Principa
     .expect("Failed to remove member from group");
 }
 
-pub fn remove_member_invite_from_group(principal: Principal, group_identifier: Principal) -> () {
+pub fn remove_member_invite_from_group(principal: Principal, group_identifier: Principal) {
     update_candid_as::<(Principal, Principal), (Result<(), ApiError>,)>(
         &ENV.pic,
         ENV.canister_id,

@@ -51,7 +51,7 @@ impl ReportCalls {
         for filter in filters {
             for (id, report) in &reports.clone() {
                 if !filter.is_match(id, report) {
-                    reports.remove(&id);
+                    reports.remove(id);
                 }
             }
         }

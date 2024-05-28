@@ -142,7 +142,7 @@ pub fn delete_event(
     identifier: Principal,
     group_identifier: Principal,
     member_identifier: Principal,
-) -> () {
+) {
     update_candid_as::<(Principal, Principal, Principal), (Result<(), ApiError>,)>(
         &ENV.pic,
         ENV.canister_id,
@@ -160,7 +160,7 @@ pub fn cancel_event(
     reason: String,
     group_identifier: Principal,
     member_identifier: Principal,
-) -> () {
+) {
     update_candid_as::<(Principal, String, Principal, Principal), (Result<(), ApiError>,)>(
         &ENV.pic,
         ENV.canister_id,
@@ -306,7 +306,7 @@ pub fn get_attending_from_principal(principal: Principal) -> Vec<JoinedAttendeeR
     .expect("Failed to call get_attending_from_principal")
 }
 
-pub fn leave_event(event_identifier: Principal) -> () {
+pub fn leave_event(event_identifier: Principal) {
     update_candid_as::<(Principal,), (Result<(), ApiError>,)>(
         &ENV.pic,
         ENV.canister_id,
@@ -319,7 +319,7 @@ pub fn leave_event(event_identifier: Principal) -> () {
     .expect("Failed to call leave_event");
 }
 
-pub fn remove_event_invite(event_identifier: Principal) -> () {
+pub fn remove_event_invite(event_identifier: Principal) {
     update_candid_as::<(Principal,), (Result<(), ApiError>,)>(
         &ENV.pic,
         ENV.canister_id,
@@ -337,7 +337,7 @@ pub fn remove_attendee_from_event(
     event_identifier: Principal,
     group_identifier: Principal,
     member_identifier: Principal,
-) -> () {
+) {
     update_candid_as::<(Principal, Principal, Principal, Principal), (Result<(), ApiError>,)>(
         &ENV.pic,
         ENV.canister_id,
@@ -360,7 +360,7 @@ pub fn remove_attendee_invite_from_event(
     event_identifier: Principal,
     group_identifier: Principal,
     member_identifier: Principal,
-) -> () {
+) {
     update_candid_as::<(Principal, Principal, Principal, Principal), (Result<(), ApiError>,)>(
         &ENV.pic,
         ENV.canister_id,

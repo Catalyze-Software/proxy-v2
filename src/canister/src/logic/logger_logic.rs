@@ -5,7 +5,7 @@ use ic_cdk::{api::time, caller};
 pub struct LoginEvent;
 
 impl LoginEvent {
-    pub fn new() -> Result<(u64, Logger), ApiError> {
+    pub fn log_event() -> Result<(u64, Logger), ApiError> {
         // check log store for recent logins
         if LoggerStore::logged_in_past_5_minutes() {
             return Err(ApiError::duplicate());

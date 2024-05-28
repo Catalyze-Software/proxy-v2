@@ -78,19 +78,19 @@ pub fn has_permission(
     let has_access = found_roles.iter().any(|v| {
         use PermissionActionType::*;
         v.permissions.iter().any(|p| {
-            &p.name() == &permission.to_string()
+            p.name() == permission.to_string()
                 && match permission_action {
-                    Write => p.actions().write() == true,
-                    Read => p.actions().read() == true,
-                    Edit => p.actions().edit() == true,
-                    Delete => p.actions().delete() == true,
+                    Write => p.actions().write(),
+                    Read => p.actions().read(),
+                    Edit => p.actions().edit(),
+                    Delete => p.actions().delete(),
                 }
         })
     });
 
     if has_access {
         return Ok(());
-    } else {
-        return Err(ApiError::unauthorized());
     }
+
+    Err(ApiError::unauthorized())
 }
