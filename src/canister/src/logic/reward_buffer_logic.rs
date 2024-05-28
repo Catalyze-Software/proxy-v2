@@ -6,7 +6,10 @@ use crate::storage::{
     REWARD_CANISTER_ID,
 };
 use candid::Principal;
-use canister_types::models::reward::{RewardData, RewardDataPackage, RewardableActivity};
+use canister_types::models::{
+    member_collection::MemberCollection,
+    reward::{RewardData, RewardDataPackage, RewardableActivity},
+};
 use ic_cdk::{call, trap};
 
 pub fn process_buffer() -> RewardDataPackage {
@@ -28,7 +31,7 @@ pub fn process_buffer() -> RewardDataPackage {
                 // collect owner, group id and member count
                 let owner = GroupStore::get(id).expect("Group should exist").1.owner;
                 let member_count = GroupMemberStore::get(id)
-                    .expect("Group should exist")
+                    .unwrap_or_else(|_| (0, MemberCollection::new()))
                     .1
                     .get_member_count() as u64;
 
@@ -88,7 +91,7 @@ pub fn process_buffer() -> RewardDataPackage {
                 .1
                 .owner;
             let attendees = EventAttendeeStore::get(event_id)
-                .expect("Event should exist")
+                .unwrap_or_else(|_| (0, MemberCollection::new()))
                 .1
                 .get_member_count() as u64;
 

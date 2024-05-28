@@ -1,16 +1,16 @@
 use crate::{
-    helpers::guards::is_developer,
-    storage::{RewardBufferStore, RewardTimerStore},
+    helpers::guards::{is_developer, is_monitor},
+    storage::{EventStore, GroupStore, RewardBufferStore, RewardTimerStore, StorageQueryable},
 };
 use canister_types::models::reward::RewardableActivity;
 use ic_cdk::{query, update};
 
-#[query(guard = "is_developer")]
+#[query(guard = "is_monitor")]
 fn reward_timer_next_trigger() -> Option<u64> {
     RewardTimerStore::next_trigger()
 }
 
-#[query(guard = "is_developer")]
+#[query(guard = "is_monitor")]
 fn read_reward_buffer() -> Vec<RewardableActivity> {
     RewardBufferStore::get_all()
         .into_iter()
@@ -21,13 +21,25 @@ fn read_reward_buffer() -> Vec<RewardableActivity> {
 // testers
 #[update(guard = "is_developer")]
 fn fill_buffer() {
-    for i in 1..=3 {
-        RewardBufferStore::notify_group_count_changed(i);
+    let group_ids = GroupStore::get_all()
+        .into_iter()
+        .map(|(id, _)| id)
+        .collect::<Vec<u64>>();
+
+    for i in &group_ids {
+        RewardBufferStore::notify_group_count_changed(*i);
     }
-    for i in 1..=3 {
-        RewardBufferStore::notify_group_is_active(i);
+
+    for i in &group_ids {
+        RewardBufferStore::notify_group_is_active(*i);
     }
-    for i in 1..=3 {
+
+    let event_ids = EventStore::get_all()
+        .into_iter()
+        .map(|(id, _)| id)
+        .collect::<Vec<u64>>();
+
+    for i in event_ids {
         RewardBufferStore::notify_event_attendance(i);
     }
 }
