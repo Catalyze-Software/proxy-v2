@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.9]
+
+### Added
+
+- methods to the `DateRange` implementation
+- `Event` date check to see if an event is ongoing, if so the `StartDate` filter gets ignored
+
+### Removed
+
+- testing folder
+- `get_event_count` guard
+
+### Fixed
+
+- `get_boosted_events` was fetching data by the wrong `id`
+- `get_boosted_groups` was fetching data by the wrong `id`
+
 ## [0.1.8]
 
 ### Added
@@ -245,7 +262,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Missing `notification_id` on migration models
 
-[Unreleased]: https://github.com/Catalyze-Software/proxy/compare/0.1.7...HEAD
+[Unreleased]: https://github.com/Catalyze-Software/proxy/compare/0.1.8...HEAD
+[0.1.9]: https://github.com/Catalyze-Software/proxy/compare/0.1.8...0.1.9
+[0.1.8]: https://github.com/Catalyze-Software/proxy/compare/0.1.7...0.1.8
 [0.1.7]: https://github.com/Catalyze-Software/proxy/compare/0.1.6...0.1.7
 [0.1.6]: https://github.com/Catalyze-Software/proxy/compare/0.1.5...0.1.6
 [0.1.5]: https://github.com/Catalyze-Software/proxy/compare/0.1.4...0.1.5

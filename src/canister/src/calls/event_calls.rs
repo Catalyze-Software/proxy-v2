@@ -78,9 +78,10 @@ fn get_events(
 /// Get events count - [`[query]`](query)
 /// # Arguments
 /// * `group_ids` - Optional group ids to filter the events count
+/// * `query` - Optional query to filter the events
 /// # Returns
 /// * `EventsCount` - The events in a paged response
-#[query(guard = "has_access")]
+#[query]
 fn get_event_count(group_ids: Option<Vec<u64>>, query: Option<String>) -> EventsCount {
     EventCalls::get_events_count(group_ids, query)
 }

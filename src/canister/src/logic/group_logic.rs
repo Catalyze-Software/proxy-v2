@@ -172,7 +172,7 @@ impl GroupCalls {
     pub fn get_boosted_groups() -> Vec<GroupResponse> {
         BoostCalls::get_boosts_by_subject(SubjectType::Group)
             .into_iter()
-            .map(|(id, _)| Self::get_group(id).unwrap())
+            .map(|(_, boost)| Self::get_group(*boost.subject.get_id()).unwrap())
             .collect()
     }
 

@@ -394,14 +394,14 @@ impl GroupFilter {
                 if range.end_date() > 0 {
                     range.is_within(group.updated_on)
                 } else {
-                    range.is_after(group.updated_on)
+                    range.is_after_start_date(group.updated_on)
                 }
             }
             GroupFilter::CreatedOn(range) => {
                 if range.end_date() > 0 {
                     range.is_within(group.updated_on)
                 } else {
-                    range.is_after(group.updated_on)
+                    range.is_after_start_date(group.updated_on)
                 }
             }
         }
