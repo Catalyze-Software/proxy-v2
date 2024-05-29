@@ -874,6 +874,7 @@ service : () -> {
   remove_wallet_from_group : (nat64, principal) -> (Result_7);
   remove_wallet_from_profile : (principal) -> (Result_8);
   set_wallet_as_primary : (principal) -> (Result_8);
+  store_stats : () -> (vec text) query;
   test_log : () -> ();
   unblock_user : (principal) -> (Result_8);
   ws_close : (CanisterWsCloseArguments) -> (Result_35);
