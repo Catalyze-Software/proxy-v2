@@ -12,8 +12,7 @@ const INTERVAL: Duration = Duration::from_secs(24 * 60 * 60); // 1 day
 
 // timer to periodically process the reward buffer
 thread_local! {
-    // add time till next trigger ?
-   pub static REWARD_TIMER: RefCell<Option<u64>> = RefCell::new(None);
+   pub static REWARD_TIMER: RefCell<Option<u64>> = const { RefCell::new(None) };
 }
 
 pub struct RewardTimerStore;
