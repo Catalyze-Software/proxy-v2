@@ -334,7 +334,7 @@ impl GroupSort {
             CreatedOn(Desc) => groups.sort_by(|(_, a), (_, b)| b.created_on.cmp(&a.created_on)),
             UpdatedOn(Asc) => groups.sort_by(|(_, a), (_, b)| a.updated_on.cmp(&b.updated_on)),
             UpdatedOn(Desc) => groups.sort_by(|(_, a), (_, b)| b.updated_on.cmp(&a.updated_on)),
-            MemberCount(Asc) => groups.sort_by(|(a_id, a), (b_id, b)| {
+            MemberCount(Asc) => groups.sort_by(|(a_id, _), (b_id, _)| {
                 let a_members = group_members
                     .get(a_id)
                     .map(|m| m.get_member_count())
@@ -345,7 +345,7 @@ impl GroupSort {
                     .unwrap_or(0);
                 a_members.cmp(&b_members)
             }),
-            MemberCount(Desc) => groups.sort_by(|(a_id, a), (b_id, b)| {
+            MemberCount(Desc) => groups.sort_by(|(a_id, _), (b_id, _)| {
                 let a_members = group_members
                     .get(a_id)
                     .map(|m| m.get_member_count())
