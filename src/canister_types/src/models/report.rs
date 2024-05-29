@@ -152,7 +152,7 @@ pub enum ReportFilter {
 }
 
 impl ReportFilter {
-    pub fn is_match(&self, id: &u64, report: &Report) -> bool {
+    pub fn is_match(&self, _id: &u64, report: &Report) -> bool {
         use crate::models::subject::Subject;
         use crate::models::subject::SubjectType;
         use ReportFilter::*;
