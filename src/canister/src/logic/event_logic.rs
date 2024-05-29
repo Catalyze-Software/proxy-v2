@@ -159,7 +159,7 @@ impl EventCalls {
     pub fn get_boosted_events() -> Vec<EventResponse> {
         BoostCalls::get_boosts_by_subject(SubjectType::Event)
             .into_iter()
-            .map(|(id, _)| Self::get_event(id).unwrap())
+            .map(|(_, boost)| Self::get_event(*boost.subject.get_id()).unwrap())
             .collect()
     }
 
@@ -172,7 +172,7 @@ impl EventCalls {
                         None => true,
                     }
             }),
-            None => EventStore::filter(|_, _| true),
+            None => EventStore::get_all(),
         };
 
         let (attending, invited) = match AttendeeStore::get(caller()) {
@@ -190,12 +190,12 @@ impl EventCalls {
 
         let future = events
             .iter()
-            .filter(|(_, event)| event.date.is_after(time()))
+            .filter(|(_, event)| event.date.is_after_start_date(time()))
             .count() as u64;
 
         let past = events
             .iter()
-            .filter(|(_, event)| event.date.is_before(time()))
+            .filter(|(_, event)| event.date.is_before_start_date(time()))
             .count() as u64;
 
         let starred = ProfileCalls::get_starred_by_subject(SubjectType::Event).len() as u64;
