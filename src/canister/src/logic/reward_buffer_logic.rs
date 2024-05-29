@@ -33,7 +33,7 @@ pub fn process_buffer() -> RewardDataPackage {
                 let member_count = GroupMemberStore::get(id)
                     .unwrap_or_else(|_| (0, MemberCollection::new()))
                     .1
-                    .get_member_count() as u64;
+                    .get_member_count();
 
                 group_member_counts.push(RewardData {
                     owner,
@@ -93,7 +93,7 @@ pub fn process_buffer() -> RewardDataPackage {
             let attendees = EventAttendeeStore::get(event_id)
                 .unwrap_or_else(|_| (0, MemberCollection::new()))
                 .1
-                .get_member_count() as u64;
+                .get_member_count();
 
             event_attendee_counts.push(RewardData {
                 owner,
