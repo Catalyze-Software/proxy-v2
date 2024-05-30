@@ -1,6 +1,7 @@
 use super::storage_api::REWARD_BUFFER;
 use crate::logic::reward_buffer_logic::send_reward_data;
-use canister_types::models::reward::RewardableActivity;
+use canister_types::models::reward::{Activity, RewardableActivity};
+use ic_cdk::{api::time, spawn};
 use ic_cdk_timers::set_timer_interval;
 use std::{cell::RefCell, time::Duration};
 
@@ -19,9 +20,11 @@ pub struct RewardTimerStore;
 
 impl RewardTimerStore {
     pub fn start_reward_timer() {
-        let _ = set_timer_interval(INTERVAL, move || ic_cdk::spawn(send_reward_data()));
+        let _ = set_timer_interval(INTERVAL, move || {
+            spawn(send_reward_data());
+        });
 
-        let next_trigger = ic_cdk::api::time() + INTERVAL.as_nanos() as u64;
+        let next_trigger = time() + INTERVAL.as_nanos() as u64;
 
         REWARD_TIMER.with(|t| *t.borrow_mut() = Some(next_trigger));
     }
@@ -32,38 +35,27 @@ impl RewardTimerStore {
 
     pub fn set_next_trigger() {
         REWARD_TIMER.with(|t| {
-            let next_trigger = ic_cdk::api::time() + INTERVAL.as_nanos() as u64;
+            let next_trigger = time() + INTERVAL.as_nanos() as u64;
             *t.borrow_mut() = Some(next_trigger);
         });
     }
 }
-
-// Rewardable Activities
-pub const GROUP_COUNT: &str = "group_count";
-pub const GROUP_ACTIVITY: &str = "group_activity";
-pub const EVENT_ATTENDANCE: &str = "event_attendance";
 
 pub struct RewardBufferStore;
 
 impl RewardBufferStore {
     fn new_index() -> u64 {
         REWARD_BUFFER.with(|tree| {
-            let index = tree
-                .borrow()
+            tree.borrow()
                 .last_key_value()
                 .map(|(k, _)| k + 1)
-                .unwrap_or(0);
-            index
+                .unwrap_or(0)
         })
     }
 
     pub fn notify_group_count_changed(group_id: u64) {
         let index = Self::new_index();
-        let activity = RewardableActivity {
-            timestamp: ic_cdk::api::time(),
-            id: group_id,
-            activity: GROUP_COUNT.to_string(),
-        };
+        let activity = RewardableActivity::new(Activity::GroupCount(group_id));
         REWARD_BUFFER.with(|tree| {
             tree.borrow_mut().insert(index, activity);
         });
@@ -71,11 +63,7 @@ impl RewardBufferStore {
 
     pub fn notify_group_is_active(group_id: u64) {
         let index = Self::new_index();
-        let activity = RewardableActivity {
-            timestamp: ic_cdk::api::time(),
-            id: group_id,
-            activity: GROUP_ACTIVITY.to_string(),
-        };
+        let activity = RewardableActivity::new(Activity::GroupActivity(group_id));
         REWARD_BUFFER.with(|tree| {
             tree.borrow_mut().insert(index, activity);
         });
@@ -83,11 +71,7 @@ impl RewardBufferStore {
 
     pub fn notify_event_attendance(event_id: u64) {
         let index = Self::new_index();
-        let activity = RewardableActivity {
-            timestamp: ic_cdk::api::time(),
-            id: event_id,
-            activity: EVENT_ATTENDANCE.to_string(),
-        };
+        let activity = RewardableActivity::new(Activity::EventAttendance(event_id));
         REWARD_BUFFER.with(|tree| {
             tree.borrow_mut().insert(index, activity);
         });

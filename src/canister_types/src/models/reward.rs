@@ -1,26 +1,72 @@
-use candid::{CandidType, Decode, Encode, Principal};
-use ic_stable_structures::{storable::Bound, Storable};
-use serde::Deserialize;
-use std::borrow::Cow;
+use candid::{CandidType, Principal};
+use ic_cdk::api::time;
+use serde::{Deserialize, Serialize};
 
-#[derive(CandidType, Deserialize, Clone)]
+use crate::impl_storable_for;
+
+impl_storable_for!(RewardableActivity);
+
+#[derive(Clone, Default, Debug, CandidType, Deserialize, Serialize)]
 pub struct RewardableActivity {
-    pub timestamp: u64,
-    // group or event id
-    pub id: u64,
-    pub activity: String,
+    id: u64,
+    activity: String,
+    timestamp: u64,
 }
 
-impl Storable for RewardableActivity {
-    fn to_bytes(&self) -> Cow<[u8]> {
-        Cow::Owned(Encode!(&self).expect("Failed to encode RewardableActivity"))
+impl RewardableActivity {
+    pub fn new(activity: Activity) -> Self {
+        Self {
+            id: activity.id(),
+            activity: activity.as_string(),
+            timestamp: time(),
+        }
     }
 
-    fn from_bytes(bytes: Cow<[u8]>) -> Self {
-        Decode!(&bytes, RewardableActivity).expect("Failed to decode RewardableActivity")
+    pub fn get_id(&self) -> u64 {
+        self.id
     }
 
-    const BOUND: Bound = Bound::Unbounded;
+    pub fn get_activity(&self) -> Activity {
+        Activity::from_string(&self.activity, self.id)
+    }
+
+    pub fn before(&self, days: u64) -> bool {
+        self.timestamp < time() - days * 24 * 60 * 60
+    }
+}
+
+#[derive(Clone, Debug, CandidType)]
+pub enum Activity {
+    GroupCount(u64),
+    GroupActivity(u64),
+    EventAttendance(u64),
+}
+
+impl Activity {
+    pub fn as_string(&self) -> String {
+        match self {
+            Activity::GroupCount(_) => "group_count".to_string(),
+            Activity::GroupActivity(_) => "group_activity".to_string(),
+            Activity::EventAttendance(_) => "event_attendance".to_string(),
+        }
+    }
+
+    pub fn from_string(s: &str, id: u64) -> Self {
+        match s {
+            "group_count" => Activity::GroupCount(id),
+            "group_activity" => Activity::GroupActivity(id),
+            "event_attendance" => Activity::EventAttendance(id),
+            _ => panic!("Unknown activity: {}", s),
+        }
+    }
+
+    pub fn id(&self) -> u64 {
+        match self {
+            Activity::GroupCount(v) => *v,
+            Activity::GroupActivity(v) => *v,
+            Activity::EventAttendance(v) => *v,
+        }
+    }
 }
 
 #[derive(Deserialize, CandidType, Clone)]
@@ -31,6 +77,12 @@ pub struct RewardData {
     pub id: u64,
     // count, activity score, or attendance count
     pub count: u64,
+}
+
+impl RewardData {
+    pub fn new(owner: Principal, id: u64, count: u64) -> Self {
+        Self { owner, id, count }
+    }
 }
 
 #[derive(CandidType, Deserialize, Clone)]

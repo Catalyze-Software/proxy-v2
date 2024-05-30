@@ -41,4 +41,4 @@ pub use reward_storage::{RewardBufferStore, RewardTimerStore};
 // Re-export constants
 pub use logger_storage::LOGIN_EVENT;
 
-pub use reward_storage::{EVENT_ATTENDANCE, GROUP_ACTIVITY, GROUP_COUNT, REWARD_CANISTER_ID};
+pub use reward_storage::REWARD_CANISTER_ID;

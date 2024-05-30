@@ -751,6 +751,7 @@ service : () -> {
       record { text; bool },
     ) query;
   _dev_create_canister : (vec principal) -> (Result);
+  _dev_send_reward_data : () -> ();
   _expose : () -> (opt WSMessage) query;
   accept_friend_request : (nat64) -> (Result_1);
   accept_owner_request_event_invite : (nat64) -> (Result_2);
@@ -881,7 +882,6 @@ service : () -> {
   remove_wallet_from_group : (nat64, principal) -> (Result_7);
   remove_wallet_from_profile : (principal) -> (Result_8);
   reward_timer_next_trigger : () -> (opt nat64) query;
-  send_reward_data : () -> ();
   set_wallet_as_primary : (principal) -> (Result_8);
   store_stats : () -> (vec text) query;
   test_log : () -> ();

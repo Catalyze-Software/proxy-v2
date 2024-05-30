@@ -1,5 +1,6 @@
 use crate::{
     helpers::guards::{is_developer, is_monitor},
+    logic::reward_buffer_logic::send_reward_data,
     storage::{EventStore, GroupStore, RewardBufferStore, RewardTimerStore, StorageQueryable},
 };
 use canister_types::models::reward::RewardableActivity;
@@ -45,6 +46,6 @@ fn fill_buffer() {
 }
 
 #[update(guard = "is_developer")]
-async fn send_reward_data() {
-    crate::logic::reward_buffer_logic::send_reward_data().await
+async fn _dev_send_reward_data() {
+    send_reward_data().await
 }
