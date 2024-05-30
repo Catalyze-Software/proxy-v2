@@ -36,10 +36,9 @@ impl Websocket {
 
         let (_, notification_ids) = UserNotificationStore::get(args.client_principal)
             .unwrap_or((args.client_principal, UserNotifications::new()));
-        // ::get_unread_notifications(&args.client_principal).len() as u64;
         Self::send_message(
             args.client_principal,
-            WSMessage::UnreadCount(notification_ids.len() as u64),
+            WSMessage::UnreadCount(notification_ids.get_unread_ids().len() as u64),
         );
     }
 
