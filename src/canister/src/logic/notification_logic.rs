@@ -5,8 +5,9 @@ use canister_types::models::{
     friend_request::{FriendRequest, FriendRequestResponse},
     member::{InviteMemberResponse, JoinedMemberResponse, MemberInvite},
     notification::{
-        EventNotificationType, GroupNotificationType, Notification, NotificationResponse,
-        NotificationType, RelationNotificationType, TransactionNotificationType,
+        EventNotificationType, GroupNotificationType, MultisigNotificationType, Notification,
+        NotificationResponse, NotificationType, RelationNotificationType,
+        TransactionNotificationType,
     },
     transaction_data::{TransactionCompleteData, TransactionData},
     user_notifications::{UserNotificationData, UserNotifications},
@@ -14,9 +15,12 @@ use canister_types::models::{
 };
 use ic_cdk::caller;
 
-use crate::storage::{
-    NotificationStore, StorageInsertable, StorageInsertableByKey, StorageQueryable,
-    StorageUpdateable, UserNotificationStore,
+use crate::{
+    storage::{
+        NotificationStore, StorageInsertable, StorageInsertableByKey, StorageQueryable,
+        StorageUpdateable, UserNotificationStore,
+    },
+    MULTISIG_INDEX,
 };
 
 use super::websocket_logic::Websocket;
@@ -572,6 +576,22 @@ impl NotificationCalls {
         let _ = Self::add_and_send_notification_without_caller(
             vec![data.sender],
             NotificationType::Transaction(TransactionNotificationType::TransactionsComplete(data)),
+            false,
+        );
+        true
+    }
+
+    pub fn notification_add_multisig(
+        receivers: Vec<Principal>,
+        notification: MultisigNotificationType,
+    ) -> bool {
+        // Only the multisig can call this function
+        if caller().to_string() != MULTISIG_INDEX {
+            return false;
+        }
+        let _ = Self::add_and_send_notification_without_caller(
+            receivers,
+            NotificationType::Multisig(notification),
             false,
         );
         true

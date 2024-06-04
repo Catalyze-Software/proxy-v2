@@ -1,6 +1,7 @@
+use candid::Principal;
 use canister_types::models::{
     api_error::ApiError,
-    notification::NotificationResponse,
+    notification::{MultisigNotificationType, NotificationResponse},
     transaction_data::{TransactionCompleteData, TransactionData},
     user_notifications::UserNotificationData,
 };
@@ -47,4 +48,61 @@ fn add_transactions_complete_notification(data: TransactionCompleteData) -> bool
     }
 
     NotificationCalls::notification_add_complete_transaction(data)
+}
+
+#[update]
+pub fn multisig_whitelist_notice_notification(
+    receivers: Vec<Principal>,
+    multisig_wallet_canister: Principal,
+) -> bool {
+    NotificationCalls::notification_add_multisig(
+        receivers,
+        MultisigNotificationType::WhitelistNotice(multisig_wallet_canister),
+    )
+}
+
+#[update]
+pub fn multisig_proposal_accept_notification(
+    receivers: Vec<Principal>,
+    multisig_wallet_canister: Principal,
+    proposal_id: u64,
+) -> bool {
+    NotificationCalls::notification_add_multisig(
+        receivers,
+        MultisigNotificationType::ProposalAccept((multisig_wallet_canister, proposal_id)),
+    )
+}
+
+#[update]
+pub fn multisig_proposal_decline_notification(
+    receivers: Vec<Principal>,
+    multisig_wallet_canister: Principal,
+    proposal_id: u64,
+) -> bool {
+    NotificationCalls::notification_add_multisig(
+        receivers,
+        MultisigNotificationType::ProposalDecline((multisig_wallet_canister, proposal_id)),
+    )
+}
+#[update]
+pub fn multisig_proposal_status_update_notification(
+    receivers: Vec<Principal>,
+    multisig_wallet_canister: Principal,
+    proposal_id: u64,
+) -> bool {
+    NotificationCalls::notification_add_multisig(
+        receivers,
+        MultisigNotificationType::ProposalStatusUpdate((multisig_wallet_canister, proposal_id)),
+    )
+}
+#[update]
+pub fn multisig_new_proposal_notification(
+    receivers: Vec<Principal>,
+    multisig_wallet_canister: Principal,
+    proposal_id: u64,
+) -> bool {
+    NotificationCalls::notification_add_multisig(
+        receivers,
+        MultisigNotificationType::NewProposal((multisig_wallet_canister, proposal_id)),
+    )
 }

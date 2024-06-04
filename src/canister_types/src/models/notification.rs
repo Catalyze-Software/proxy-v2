@@ -69,12 +69,22 @@ pub enum NotificationType {
     Group(GroupNotificationType),
     Event(EventNotificationType),
     Transaction(TransactionNotificationType),
+    Multisig(MultisigNotificationType),
 }
 
 #[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
 pub enum TransactionNotificationType {
     SingleTransaction(TransactionData),
     TransactionsComplete(TransactionCompleteData),
+}
+
+#[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
+pub enum MultisigNotificationType {
+    WhitelistNotice(Principal),
+    NewProposal((Principal, u64)),
+    ProposalAccept((Principal, u64)),
+    ProposalDecline((Principal, u64)),
+    ProposalStatusUpdate((Principal, u64)),
 }
 
 #[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
