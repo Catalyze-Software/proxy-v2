@@ -820,6 +820,7 @@ service : () -> {
   get_groups_by_id : (vec nat64) -> (vec GroupResponse) query;
   get_groups_count : (opt text) -> (GroupsCount) query;
   get_groups_for_members : (vec principal) -> (vec JoinedMemberResponse) query;
+  get_history_point : () -> (Result_13) query;
   get_incoming_friend_requests : () -> (vec FriendRequestResponse) query;
   get_incoming_friend_requests_with_profile : () -> (
       vec record { FriendRequestResponse; ProfileResponse },
