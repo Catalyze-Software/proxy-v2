@@ -45,6 +45,7 @@ pub static INTERESTS_MEMORY_ID: MemoryId = MemoryId::new(15);
 pub static SKILLS_MEMORY_ID: MemoryId = MemoryId::new(16);
 
 pub static HISTORY_POINT_MEMORY_ID: MemoryId = MemoryId::new(17);
+pub static HISTORY_CANISTER_MEMORY_ID: MemoryId = MemoryId::new(18);
 
 /// A reference to a `StableBTreeMap` that is wrapped in a `RefCell`.
 ///# Generics
@@ -329,6 +330,11 @@ thread_local! {
    pub static HISTORY_POINT: RefCell<Cell<Option<u64>, Memory>> = RefCell::new(
         Cell::init(MEMORY_MANAGER.with(|p| p.borrow().get(HISTORY_POINT_MEMORY_ID)), Some(1))
             .expect("Failed to initialize history point")
+    );
+
+       pub static HISTORY_CANISTER: RefCell<Cell<Option<Principal>, Memory>> = RefCell::new(
+        Cell::init(MEMORY_MANAGER.with(|p| p.borrow().get(HISTORY_CANISTER_MEMORY_ID)), None)
+            .expect("Failed to initialize history canister id")
     );
 
 }

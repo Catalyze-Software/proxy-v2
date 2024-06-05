@@ -14,6 +14,8 @@ pub mod storage;
 pub mod validation;
 pub mod wallet;
 
+pub mod history_event;
+
 pub mod document_details;
 pub mod identifier;
 pub mod permission;
