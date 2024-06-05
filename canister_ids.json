@@ -1,7 +1,8 @@
 {
   "canister": {
     "development": "bwm3m-wyaaa-aaaag-qdiua-cai",
-    "staging": "24swh-4iaaa-aaaap-ahevq-cai",
-    "ic": "2jvhk-5aaaa-aaaap-ahewa-cai"
+    "ic": "2jvhk-5aaaa-aaaap-ahewa-cai",
+    "marketing": "zvef6-taaaa-aaaap-ahita-cai",
+    "staging": "24swh-4iaaa-aaaap-ahevq-cai"
   }
 }
