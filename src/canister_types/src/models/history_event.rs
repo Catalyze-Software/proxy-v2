@@ -30,7 +30,7 @@ pub struct GroupRoleChanged {
     pub group_id: u64,
     pub principal: Principal,
     pub username: String,
-    pub roles: Vec<String>, // TODO: Change me to enum
+    pub roles: Vec<String>,
     pub kind: GroupRoleChangeKind,
 }
 

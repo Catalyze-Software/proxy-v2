@@ -51,8 +51,8 @@ pub enum SendHistoryEventResult {
 }
 
 async fn send_event(
-    proxy_id: Principal,
+    history_canister_id: Principal,
     event: HistoryEvent,
 ) -> CallResult<(SendHistoryEventResult,)> {
-    ic_cdk::call(proxy_id, "add_event", (event,)).await
+    ic_cdk::call(history_canister_id, "add_event", (event,)).await
 }
