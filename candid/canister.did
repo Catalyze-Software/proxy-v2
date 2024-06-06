@@ -604,8 +604,9 @@ type Result_34 = variant {
   Ok : vec record { nat64; UserNotificationData };
   Err : ApiError;
 };
-type Result_35 = variant { Ok; Err : text };
-type Result_36 = variant { Ok : CanisterOutputCertifiedMessages; Err : text };
+type Result_35 = variant { Ok : principal; Err : ApiError };
+type Result_36 = variant { Ok; Err : text };
+type Result_37 = variant { Ok : CanisterOutputCertifiedMessages; Err : text };
 type Result_4 = variant { Ok : JoinedAttendeeResponse; Err : ApiError };
 type Result_5 = variant { Ok : EventResponse; Err : ApiError };
 type Result_6 = variant { Ok : FriendRequestResponse; Err : ApiError };
@@ -812,6 +813,7 @@ service : () -> {
   get_groups_by_id : (vec nat64) -> (vec GroupResponse) query;
   get_groups_count : (opt text) -> (GroupsCount) query;
   get_groups_for_members : (vec principal) -> (vec JoinedMemberResponse) query;
+  get_history_point : () -> (Result_13) query;
   get_incoming_friend_requests : () -> (vec FriendRequestResponse) query;
   get_incoming_friend_requests_with_profile : () -> (
       vec record { FriendRequestResponse; ProfileResponse },
@@ -873,12 +875,13 @@ service : () -> {
   remove_starred : (Subject) -> (Result_8);
   remove_wallet_from_group : (nat64, principal) -> (Result_7);
   remove_wallet_from_profile : (principal) -> (Result_8);
+  set_history_canister : (principal) -> (Result_35);
   set_wallet_as_primary : (principal) -> (Result_8);
   store_stats : () -> (vec text) query;
   test_log : () -> ();
   unblock_user : (principal) -> (Result_8);
-  ws_close : (CanisterWsCloseArguments) -> (Result_35);
-  ws_get_messages : (CanisterWsGetMessagesArguments) -> (Result_36) query;
-  ws_message : (CanisterWsMessageArguments, opt WSMessage) -> (Result_35);
-  ws_open : (CanisterWsOpenArguments) -> (Result_35);
+  ws_close : (CanisterWsCloseArguments) -> (Result_36);
+  ws_get_messages : (CanisterWsGetMessagesArguments) -> (Result_37) query;
+  ws_message : (CanisterWsMessageArguments, opt WSMessage) -> (Result_36);
+  ws_open : (CanisterWsOpenArguments) -> (Result_36);
 }
