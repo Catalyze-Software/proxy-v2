@@ -80,11 +80,11 @@ pub enum TransactionNotificationType {
 
 #[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
 pub enum MultisigNotificationType {
-    WhitelistNotice(Principal),
-    NewProposal((Principal, u64)),
-    ProposalAccept((Principal, u64)),
-    ProposalDecline((Principal, u64)),
-    ProposalStatusUpdate((Principal, u64)),
+    WhitelistNotice((Principal, u64)),
+    NewProposal((Principal, u64, u64)),
+    ProposalAccept((Principal, u64, u64)),
+    ProposalDecline((Principal, u64, u64)),
+    ProposalStatusUpdate((Principal, u64, u64)),
 }
 
 #[derive(CandidType, Deserialize, Serialize, Clone, Debug)]

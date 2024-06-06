@@ -597,6 +597,25 @@ impl NotificationCalls {
         true
     }
 
+    pub fn notification_add_multisig_silent(
+        receivers: Vec<Principal>,
+        notification: MultisigNotificationType,
+    ) -> bool {
+        // Only the multisig can call this function
+        if caller().to_string() != MULTISIG_INDEX {
+            return false;
+        }
+
+        for r in receivers {
+            Self::send_notification(
+                None,
+                Notification::new(NotificationType::Multisig(notification.clone()), false),
+                r,
+            );
+        }
+        true
+    }
+
     // sends notification
     pub fn get_user_unread_notifications(principal: Principal) -> Vec<NotificationResponse> {
         let user_notifications = Self::get_user_notification_ids(principal);

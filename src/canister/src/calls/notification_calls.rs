@@ -54,10 +54,11 @@ fn add_transactions_complete_notification(data: TransactionCompleteData) -> bool
 pub fn multisig_whitelist_notice_notification(
     receivers: Vec<Principal>,
     multisig_wallet_canister: Principal,
+    group_id: u64,
 ) -> bool {
     NotificationCalls::notification_add_multisig(
         receivers,
-        MultisigNotificationType::WhitelistNotice(multisig_wallet_canister),
+        MultisigNotificationType::WhitelistNotice((multisig_wallet_canister, group_id)),
     )
 }
 
@@ -66,10 +67,11 @@ pub fn multisig_proposal_accept_notification(
     receivers: Vec<Principal>,
     multisig_wallet_canister: Principal,
     proposal_id: u64,
+    group_id: u64,
 ) -> bool {
     NotificationCalls::notification_add_multisig(
         receivers,
-        MultisigNotificationType::ProposalAccept((multisig_wallet_canister, proposal_id)),
+        MultisigNotificationType::ProposalAccept((multisig_wallet_canister, proposal_id, group_id)),
     )
 }
 
@@ -78,10 +80,15 @@ pub fn multisig_proposal_decline_notification(
     receivers: Vec<Principal>,
     multisig_wallet_canister: Principal,
     proposal_id: u64,
+    group_id: u64,
 ) -> bool {
     NotificationCalls::notification_add_multisig(
         receivers,
-        MultisigNotificationType::ProposalDecline((multisig_wallet_canister, proposal_id)),
+        MultisigNotificationType::ProposalDecline((
+            multisig_wallet_canister,
+            proposal_id,
+            group_id,
+        )),
     )
 }
 #[update]
@@ -89,10 +96,15 @@ pub fn multisig_proposal_status_update_notification(
     receivers: Vec<Principal>,
     multisig_wallet_canister: Principal,
     proposal_id: u64,
+    group_id: u64,
 ) -> bool {
-    NotificationCalls::notification_add_multisig(
+    NotificationCalls::notification_add_multisig_silent(
         receivers,
-        MultisigNotificationType::ProposalStatusUpdate((multisig_wallet_canister, proposal_id)),
+        MultisigNotificationType::ProposalStatusUpdate((
+            multisig_wallet_canister,
+            proposal_id,
+            group_id,
+        )),
     )
 }
 #[update]
@@ -100,9 +112,10 @@ pub fn multisig_new_proposal_notification(
     receivers: Vec<Principal>,
     multisig_wallet_canister: Principal,
     proposal_id: u64,
+    group_id: u64,
 ) -> bool {
     NotificationCalls::notification_add_multisig(
         receivers,
-        MultisigNotificationType::NewProposal((multisig_wallet_canister, proposal_id)),
+        MultisigNotificationType::NewProposal((multisig_wallet_canister, proposal_id, group_id)),
     )
 }
