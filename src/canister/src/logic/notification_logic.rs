@@ -672,6 +672,14 @@ impl NotificationCalls {
         user_notifications.to_vec()
     }
 
+    pub fn remove_all_user_notifications(principal: Principal) -> Vec<(u64, UserNotificationData)> {
+        let (_, mut user_notifications) =
+            UserNotificationStore::get(principal).unwrap_or((principal, UserNotifications::new()));
+        user_notifications.clear();
+        let _ = UserNotificationStore::update(principal, user_notifications.clone());
+        user_notifications.to_vec()
+    }
+
     pub fn add_notification(
         receivers: Vec<Principal>,
         notification_type: NotificationType,

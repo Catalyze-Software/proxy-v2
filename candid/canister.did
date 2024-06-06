@@ -893,6 +893,7 @@ service : () -> {
       principal,
       nat64,
     ) -> (bool);
+  remove_all_notifications : () -> (vec record { nat64; UserNotificationData });
   remove_attendee_from_event : (nat64, nat64, principal) -> (Result_12);
   remove_attendee_invite_from_event : (nat64, nat64, principal) -> (Result_12);
   remove_ban_from_group_member : (nat64, principal) -> (Result_12);

@@ -33,6 +33,11 @@ fn remove_notifications(ids: Vec<u64>) -> Vec<(u64, UserNotificationData)> {
 }
 
 #[update]
+fn remove_all_notifications() -> Vec<(u64, UserNotificationData)> {
+    NotificationCalls::remove_all_user_notifications(caller())
+}
+
+#[update]
 fn add_transaction_notification(transaction: TransactionData) -> bool {
     if caller().to_string() != "4bli7-7iaaa-aaaap-ahd4a-cai" {
         return false;
