@@ -1,7 +1,7 @@
 use candid::{CandidType, Principal};
 use canister_types::models::{
     api_error::ApiError,
-    history_event::{GroupRoleChangeKind, GroupRoleChanged, HistoryEvent, HistoryEventPayload},
+    history_event::{GroupRoleChangeKind, GroupRoleChanged, HistoryEvent},
 };
 use ic_cdk::api::call::CallResult;
 use serde::Deserialize;
@@ -25,19 +25,15 @@ impl HistoryEventLogic {
 
         let (_, profile) = ProfileStore::get(principal)?;
 
-        let payload = HistoryEventPayload::GroupRoleChanged(GroupRoleChanged {
-            group_id,
-            principal,
-            username: profile.username,
-            roles,
-            kind,
-        });
+        let event = GroupRoleChanged::new(group_id, principal, profile.username, roles, kind)
+            .try_into()
+            .map_err(|e: candid::Error| ApiError::unexpected().add_message(&e.to_string()))?;
 
-        let event = HistoryEvent::new(HistoryPointStorage::get_next()?, payload);
         let history_canister_id = HistoryCanisterStorage::get()?;
+        let history_point = HistoryPointStorage::get_next()?;
 
         ic_cdk::spawn(async move {
-            let _ = send_event(history_canister_id, event).await;
+            let _ = send_event(history_canister_id, history_point, event).await;
         });
 
         Ok(())
@@ -52,7 +48,8 @@ pub enum SendHistoryEventResult {
 
 async fn send_event(
     history_canister_id: Principal,
+    history_point: u64,
     event: HistoryEvent,
 ) -> CallResult<(SendHistoryEventResult,)> {
-    ic_cdk::call(history_canister_id, "add_event", (event,)).await
+    ic_cdk::call(history_canister_id, "add_event", (history_point, event)).await
 }
