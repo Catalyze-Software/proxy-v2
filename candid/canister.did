@@ -346,6 +346,13 @@ type MetadataValue = variant {
   Text : text;
 };
 type MultiLocation = record { physical : PhysicalLocation; digital : text };
+type MultisigNotificationType = variant {
+  ProposalDecline : record { principal; nat64; nat64 };
+  ProposalAccept : record { principal; nat64; nat64 };
+  WhitelistNotice : record { principal; nat64 };
+  ProposalStatusUpdate : record { principal; nat64; nat64 };
+  NewProposal : record { principal; nat64; nat64 };
+};
 type NeuronGated = record {
   governance_canister : principal;
   name : text;
@@ -379,6 +386,7 @@ type NotificationType = variant {
   Relation : RelationNotificationType;
   Group : GroupNotificationType;
   Transaction : TransactionNotificationType;
+  Multisig : MultisigNotificationType;
 };
 type PagedResponse = record {
   total : nat64;
@@ -857,6 +865,36 @@ service : () -> {
   log_with_caller : (PostLog) -> (Result_33);
   mark_notifications_as_read : (vec nat64, bool) -> (Result_34);
   migrate : () -> (vec vec text);
+  multisig_new_proposal_notification : (
+      vec principal,
+      principal,
+      nat64,
+      nat64,
+    ) -> (bool);
+  multisig_proposal_accept_notification : (
+      vec principal,
+      principal,
+      nat64,
+      nat64,
+    ) -> (bool);
+  multisig_proposal_decline_notification : (
+      vec principal,
+      principal,
+      nat64,
+      nat64,
+    ) -> (bool);
+  multisig_proposal_status_update_notification : (
+      vec principal,
+      principal,
+      nat64,
+      nat64,
+    ) -> (bool);
+  multisig_whitelist_notice_notification : (
+      vec principal,
+      principal,
+      nat64,
+    ) -> (bool);
+  remove_all_notifications : () -> (vec record { nat64; UserNotificationData });
   remove_attendee_from_event : (nat64, nat64, principal) -> (Result_12);
   remove_attendee_invite_from_event : (nat64, nat64, principal) -> (Result_12);
   remove_ban_from_group_member : (nat64, principal) -> (Result_12);
