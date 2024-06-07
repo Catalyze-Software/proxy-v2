@@ -1,5 +1,6 @@
 use super::{
-    boost_logic::BoostCalls, notification_logic::NotificationCalls, profile_logic::ProfileCalls,
+    boost_logic::BoostCalls, history_event_logic::HistoryEventLogic,
+    notification_logic::NotificationCalls, profile_logic::ProfileCalls,
 };
 use crate::{
     helpers::{
@@ -28,6 +29,7 @@ use canister_types::{
             Group, GroupCallerData, GroupFilter, GroupResponse, GroupSort, GroupsCount, PostGroup,
             UpdateGroup,
         },
+        history_event::GroupRoleChangeKind,
         invite_type::InviteType,
         member::{InviteMemberResponse, JoinedMemberResponse, Member},
         member_collection::MemberCollection,
@@ -328,10 +330,27 @@ impl GroupCalls {
                 .into_iter()
                 .try_for_each(|(principal, mut member)| {
                     if member.get_roles(group_id).is_empty() {
-                        member.add_group_role(&group_id, "member");
+                        let role = "member";
+                        member.add_group_role(&group_id, role);
+
+                        HistoryEventLogic::send(
+                            group_id,
+                            principal,
+                            vec![role.to_string()],
+                            GroupRoleChangeKind::Add,
+                        )?;
                     }
+                    let roles = vec![role_name.clone()];
+
                     member.remove_group_role(&group_id, &role_name);
                     MemberStore::update(principal, member)?;
+
+                    HistoryEventLogic::send(
+                        group_id,
+                        principal,
+                        roles,
+                        GroupRoleChangeKind::Remove,
+                    )?;
 
                     Ok(())
                 })?;
@@ -530,9 +549,16 @@ impl GroupCalls {
 
         let (_, mut member) = MemberStore::get(member_principal)?;
         // Add the role to the member
-        member.replace_roles(&group_id, vec![role]);
+        member.replace_roles(&group_id, vec![role.clone()]);
 
         let (principal, member) = MemberStore::update(member_principal, member.clone())?;
+
+        HistoryEventLogic::send(
+            group_id,
+            member_principal,
+            vec![role],
+            GroupRoleChangeKind::Replace,
+        )?;
 
         NotificationCalls::notification_change_group_member_role(
             JoinedMemberResponse::new(principal, member.clone(), group_id),
@@ -559,10 +585,19 @@ impl GroupCalls {
         }
 
         let (_, mut member) = MemberStore::get(member_principal)?;
+
+        let roles = vec![role.clone()];
         // Remove the role from the member
         member.remove_group_role(&group_id, &role);
 
         MemberStore::update(member_principal, member.clone())?;
+
+        HistoryEventLogic::send(
+            group_id,
+            member_principal,
+            roles,
+            GroupRoleChangeKind::Remove,
+        )?;
 
         Ok(member)
     }

@@ -11,6 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - History point storage and query call
 - method to clear all user notification
+- History canister integration
+
+### Changed
+
+- History event implementation
 
 ### Fixed
 

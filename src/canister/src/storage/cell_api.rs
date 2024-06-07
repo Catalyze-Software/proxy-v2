@@ -30,4 +30,8 @@ pub trait CellStorage<V: Storable + Clone + 'static> {
             })?;
         Ok(value)
     }
+
+    fn is_empty() -> bool {
+        Self::storage().with(|data| data.borrow().get().is_none())
+    }
 }
