@@ -8,7 +8,7 @@ use canister_types::models::{
 };
 use ic_stable_structures::{
     memory_manager::{MemoryId, MemoryManager, VirtualMemory},
-    DefaultMemoryImpl, StableBTreeMap, Storable,
+    Cell, DefaultMemoryImpl, StableBTreeMap, Storable,
 };
 use std::{cell::RefCell, thread::LocalKey};
 
@@ -45,7 +45,10 @@ pub static TAGS_MEMORY_ID: MemoryId = MemoryId::new(14);
 pub static INTERESTS_MEMORY_ID: MemoryId = MemoryId::new(15);
 pub static SKILLS_MEMORY_ID: MemoryId = MemoryId::new(16);
 
-pub static REWARD_BUFFER_MEMORY_ID: MemoryId = MemoryId::new(17);
+pub static HISTORY_POINT_MEMORY_ID: MemoryId = MemoryId::new(17);
+pub static HISTORY_CANISTER_MEMORY_ID: MemoryId = MemoryId::new(18);
+
+pub static REWARD_BUFFER_MEMORY_ID: MemoryId = MemoryId::new(19);
 
 /// A reference to a `StableBTreeMap` that is wrapped in a `RefCell`.
 ///# Generics
@@ -329,6 +332,16 @@ thread_local! {
 
     pub static SKILLS: StorageRef<u64, String> = RefCell::new(
         StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.borrow().get(SKILLS_MEMORY_ID)))
+    );
+
+   pub static HISTORY_POINT: RefCell<Cell<Option<u64>, Memory>> = RefCell::new(
+        Cell::init(MEMORY_MANAGER.with(|p| p.borrow().get(HISTORY_POINT_MEMORY_ID)), Some(1))
+            .expect("Failed to initialize history point")
+    );
+
+       pub static HISTORY_CANISTER: RefCell<Cell<Option<Principal>, Memory>> = RefCell::new(
+        Cell::init(MEMORY_MANAGER.with(|p| p.borrow().get(HISTORY_CANISTER_MEMORY_ID)), None)
+            .expect("Failed to initialize history canister id")
     );
 
 }

@@ -25,6 +25,12 @@
       ],
       "type": "persistent"
     },
+    "marketing": {
+      "providers": [
+        "https://icp0.io"
+      ],
+      "type": "persistent"
+    },
     "staging": {
       "providers": [
         "https://icp0.io"

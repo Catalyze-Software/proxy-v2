@@ -346,6 +346,13 @@ type MetadataValue = variant {
   Text : text;
 };
 type MultiLocation = record { physical : PhysicalLocation; digital : text };
+type MultisigNotificationType = variant {
+  ProposalDecline : record { principal; nat64; nat64 };
+  ProposalAccept : record { principal; nat64; nat64 };
+  WhitelistNotice : record { principal; nat64 };
+  ProposalStatusUpdate : record { principal; nat64; nat64 };
+  NewProposal : record { principal; nat64; nat64 };
+};
 type NeuronGated = record {
   governance_canister : principal;
   name : text;
@@ -379,6 +386,7 @@ type NotificationType = variant {
   Relation : RelationNotificationType;
   Group : GroupNotificationType;
   Transaction : TransactionNotificationType;
+  Multisig : MultisigNotificationType;
 };
 type PagedResponse = record {
   total : nat64;
@@ -604,8 +612,9 @@ type Result_34 = variant {
   Ok : vec record { nat64; UserNotificationData };
   Err : ApiError;
 };
-type Result_35 = variant { Ok; Err : text };
-type Result_36 = variant { Ok : CanisterOutputCertifiedMessages; Err : text };
+type Result_35 = variant { Ok : principal; Err : ApiError };
+type Result_36 = variant { Ok; Err : text };
+type Result_37 = variant { Ok : CanisterOutputCertifiedMessages; Err : text };
 type Result_4 = variant { Ok : JoinedAttendeeResponse; Err : ApiError };
 type Result_5 = variant { Ok : EventResponse; Err : ApiError };
 type Result_6 = variant { Ok : FriendRequestResponse; Err : ApiError };
@@ -819,6 +828,7 @@ service : () -> {
   get_groups_by_id : (vec nat64) -> (vec GroupResponse) query;
   get_groups_count : (opt text) -> (GroupsCount) query;
   get_groups_for_members : (vec principal) -> (vec JoinedMemberResponse) query;
+  get_history_point : () -> (Result_13) query;
   get_incoming_friend_requests : () -> (vec FriendRequestResponse) query;
   get_incoming_friend_requests_with_profile : () -> (
       vec record { FriendRequestResponse; ProfileResponse },
@@ -862,7 +872,37 @@ service : () -> {
   log_with_caller : (PostLog) -> (Result_33);
   mark_notifications_as_read : (vec nat64, bool) -> (Result_34);
   migrate : () -> (vec vec text);
+  multisig_new_proposal_notification : (
+      vec principal,
+      principal,
+      nat64,
+      nat64,
+    ) -> (bool);
+  multisig_proposal_accept_notification : (
+      vec principal,
+      principal,
+      nat64,
+      nat64,
+    ) -> (bool);
+  multisig_proposal_decline_notification : (
+      vec principal,
+      principal,
+      nat64,
+      nat64,
+    ) -> (bool);
+  multisig_proposal_status_update_notification : (
+      vec principal,
+      principal,
+      nat64,
+      nat64,
+    ) -> (bool);
+  multisig_whitelist_notice_notification : (
+      vec principal,
+      principal,
+      nat64,
+    ) -> (bool);
   read_reward_buffer : () -> (vec RewardableActivity) query;
+  remove_all_notifications : () -> (vec record { nat64; UserNotificationData });
   remove_attendee_from_event : (nat64, nat64, principal) -> (Result_12);
   remove_attendee_invite_from_event : (nat64, nat64, principal) -> (Result_12);
   remove_ban_from_group_member : (nat64, principal) -> (Result_12);
@@ -882,12 +922,13 @@ service : () -> {
   remove_wallet_from_group : (nat64, principal) -> (Result_7);
   remove_wallet_from_profile : (principal) -> (Result_8);
   reward_timer_next_trigger : () -> (opt nat64) query;
+  set_history_canister : (principal) -> (Result_35);
   set_wallet_as_primary : (principal) -> (Result_8);
   store_stats : () -> (vec text) query;
   test_log : () -> ();
   unblock_user : (principal) -> (Result_8);
-  ws_close : (CanisterWsCloseArguments) -> (Result_35);
-  ws_get_messages : (CanisterWsGetMessagesArguments) -> (Result_36) query;
-  ws_message : (CanisterWsMessageArguments, opt WSMessage) -> (Result_35);
-  ws_open : (CanisterWsOpenArguments) -> (Result_35);
+  ws_close : (CanisterWsCloseArguments) -> (Result_36);
+  ws_get_messages : (CanisterWsGetMessagesArguments) -> (Result_37) query;
+  ws_message : (CanisterWsMessageArguments, opt WSMessage) -> (Result_36);
+  ws_open : (CanisterWsOpenArguments) -> (Result_36);
 }

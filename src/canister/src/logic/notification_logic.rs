@@ -5,8 +5,9 @@ use canister_types::models::{
     friend_request::{FriendRequest, FriendRequestResponse},
     member::{InviteMemberResponse, JoinedMemberResponse, MemberInvite},
     notification::{
-        EventNotificationType, GroupNotificationType, Notification, NotificationResponse,
-        NotificationType, RelationNotificationType, TransactionNotificationType,
+        EventNotificationType, GroupNotificationType, MultisigNotificationType, Notification,
+        NotificationResponse, NotificationType, RelationNotificationType,
+        TransactionNotificationType,
     },
     transaction_data::{TransactionCompleteData, TransactionData},
     user_notifications::{UserNotificationData, UserNotifications},
@@ -14,9 +15,12 @@ use canister_types::models::{
 };
 use ic_cdk::caller;
 
-use crate::storage::{
-    NotificationStore, StorageInsertable, StorageInsertableByKey, StorageQueryable,
-    StorageUpdateable, UserNotificationStore,
+use crate::{
+    storage::{
+        NotificationStore, StorageInsertable, StorageInsertableByKey, StorageQueryable,
+        StorageUpdateable, UserNotificationStore,
+    },
+    MULTISIG_INDEX,
 };
 
 use super::websocket_logic::Websocket;
@@ -577,6 +581,41 @@ impl NotificationCalls {
         true
     }
 
+    pub fn notification_add_multisig(
+        receivers: Vec<Principal>,
+        notification: MultisigNotificationType,
+    ) -> bool {
+        // Only the multisig can call this function
+        if caller().to_string() != MULTISIG_INDEX {
+            return false;
+        }
+        let _ = Self::add_and_send_notification_without_caller(
+            receivers,
+            NotificationType::Multisig(notification),
+            false,
+        );
+        true
+    }
+
+    pub fn notification_add_multisig_silent(
+        receivers: Vec<Principal>,
+        notification: MultisigNotificationType,
+    ) -> bool {
+        // Only the multisig can call this function
+        if caller().to_string() != MULTISIG_INDEX {
+            return false;
+        }
+
+        for r in receivers {
+            Self::send_notification(
+                None,
+                Notification::new(NotificationType::Multisig(notification.clone()), false),
+                r,
+            );
+        }
+        true
+    }
+
     // sends notification
     pub fn get_user_unread_notifications(principal: Principal) -> Vec<NotificationResponse> {
         let user_notifications = Self::get_user_notification_ids(principal);
@@ -629,6 +668,14 @@ impl NotificationCalls {
         let (_, mut user_notifications) =
             UserNotificationStore::get(principal).unwrap_or((principal, UserNotifications::new()));
         user_notifications.remove_many(ids);
+        let _ = UserNotificationStore::update(principal, user_notifications.clone());
+        user_notifications.to_vec()
+    }
+
+    pub fn remove_all_user_notifications(principal: Principal) -> Vec<(u64, UserNotificationData)> {
+        let (_, mut user_notifications) =
+            UserNotificationStore::get(principal).unwrap_or((principal, UserNotifications::new()));
+        user_notifications.clear();
         let _ = UserNotificationStore::update(principal, user_notifications.clone());
         user_notifications.to_vec()
     }
