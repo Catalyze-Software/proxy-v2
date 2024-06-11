@@ -6,7 +6,9 @@ use canister_types::models::{
 
 use crate::{
     helpers::validator::Validator,
-    storage::{InterestStore, SkillStore, StorageInsertable, StorageQueryable, TagStore},
+    storage::{
+        InterestStore, SkillStore, StorageInsertable, StorageQueryable, StorageUpdateable, TagStore,
+    },
 };
 
 pub struct TopicCalls;
@@ -58,6 +60,14 @@ impl TopicCalls {
         .collect();
 
         Ok(result)
+    }
+
+    pub fn remove(kind: TopicKind, id: u64) -> bool {
+        match kind {
+            TopicKind::Tag => TagStore::remove(id),
+            TopicKind::Interest => InterestStore::remove(id),
+            TopicKind::Skill => SkillStore::remove(id),
+        }
     }
 }
 

@@ -1,4 +1,4 @@
-use crate::{helpers::guards::has_access, logic::topic_logic::TopicCalls};
+use crate::{helpers::guards::is_developer, logic::topic_logic::TopicCalls};
 use canister_types::models::{
     api_error::ApiError,
     topic::{Topic, TopicKind},
@@ -14,10 +14,44 @@ use ic_cdk::{query, update};
 /// # Errors
 /// * `ApiError` - If something went wrong while adding the topic
 /// # Note
-/// This function is guarded by the [`has_access`](has_access) function.
-#[update(guard = "has_access")]
+/// This function is guarded by the [`is_developer`](is_developer) function.
+#[update(guard = "is_developer")]
 pub async fn add_topic(kind: TopicKind, value: String) -> Result<Topic, ApiError> {
     TopicCalls::add(kind, value)
+}
+
+/// Remove a topic from the canister  - [`[update]`](update)
+/// # Arguments
+/// * `kind` - The kind of the topic (Tag, Interest, Skill)
+/// * `id` - The topic id to remove
+/// # Returns
+/// * `bool` - if the removal was successful
+/// # Note
+/// This function is guarded by the [`is_developer`](is_developer) function.
+#[update(guard = "is_developer")]
+pub async fn remove_topic(kind: TopicKind, id: u64) -> bool {
+    TopicCalls::remove(kind, id)
+}
+
+/// Add many topics to the canister  - [`[update]`](update)
+/// # Arguments
+/// * `kind` - The kind of the topic (Tag, Interest, Skill)
+/// * `Vec<value>` - The topics to add
+/// # Returns
+/// * `Result<Topic, ApiError>` - The result for each added topic
+/// # Errors
+/// * `ApiError` - If something went wrong while adding the topic
+/// # Note
+/// This function is guarded by the [`is_developer`](is_developer) function.
+#[update(guard = "is_developer")]
+pub async fn add_many_topics(kind: TopicKind, value: Vec<String>) -> Vec<Result<Topic, ApiError>> {
+    let mut results = vec![];
+
+    for val in value {
+        results.push(TopicCalls::add(kind.clone(), val));
+    }
+
+    results
 }
 
 /// Get a topic - [`[query]`](query)
@@ -28,9 +62,7 @@ pub async fn add_topic(kind: TopicKind, value: String) -> Result<Topic, ApiError
 /// * `Topic` - The topic
 /// # Errors
 /// * `ApiError` - If something went wrong while getting the topic
-/// # Note
-/// This function is guarded by the [`has_access`](has_access) function.
-#[query(guard = "has_access")]
+#[query]
 pub fn get_topic(kind: TopicKind, id: u64) -> Result<Topic, ApiError> {
     TopicCalls::get(kind, id)
 }
@@ -43,7 +75,7 @@ pub fn get_topic(kind: TopicKind, id: u64) -> Result<Topic, ApiError> {
 /// * `Vec<Topic>` - The topics
 /// # Errors
 /// * `ApiError` - If something went wrong while getting the topics
-#[query(guard = "has_access")]
+#[query]
 pub fn get_topics(kind: TopicKind, ids: Vec<u64>) -> Result<Vec<Topic>, ApiError> {
     TopicCalls::get_many(kind, ids)
 }
@@ -55,7 +87,7 @@ pub fn get_topics(kind: TopicKind, ids: Vec<u64>) -> Result<Vec<Topic>, ApiError
 /// * `Vec<Topic>` - The topics
 /// # Errors
 /// * `ApiError` - If something went wrong while getting the topics
-#[query(guard = "has_access")]
+#[query]
 pub fn get_all_topics(kind: TopicKind) -> Result<Vec<Topic>, ApiError> {
     TopicCalls::get_all(kind)
 }
