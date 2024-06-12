@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [unreleased]
+
+### Added
+
+- `is_developer` guard to `add_topic` call
+- `remove_topic` call guarded by `is_developer`
+- `add_many_topics` call guarded by `is_developer`
+
+### Changed
+
+- `Topic` enum value `Interest` to `Category`
+
+### Removed
+
+- `has_access` guard from topic query calls
+
 ## [0.2.0]
 
 ### Added

@@ -19,7 +19,7 @@ fn store_stats() -> Vec<String> {
     let group_events_store_size = GroupEventsStore::size();
     let event_attendees_store_size = EventAttendeeStore::size();
     let tags_store_size = TagStore::size();
-    let interests_store_size = InterestStore::size();
+    let category_store_size = CategoryStore::size();
     let skills_store_size = SkillStore::size();
 
     vec![
@@ -38,7 +38,7 @@ fn store_stats() -> Vec<String> {
         format!("GroupEventsStore: {}", group_events_store_size),
         format!("EventAttendeesStore: {}", event_attendees_store_size),
         format!("TagStore: {}", tags_store_size),
-        format!("InterestStore: {}", interests_store_size),
+        format!("CategoryStore: {}", category_store_size),
         format!("SkillStore: {}", skills_store_size),
     ]
 }

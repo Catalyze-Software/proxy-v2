@@ -6,7 +6,9 @@ use canister_types::models::{
 
 use crate::{
     helpers::validator::Validator,
-    storage::{InterestStore, SkillStore, StorageInsertable, StorageQueryable, TagStore},
+    storage::{
+        CategoryStore, SkillStore, StorageInsertable, StorageQueryable, StorageUpdateable, TagStore,
+    },
 };
 
 pub struct TopicCalls;
@@ -17,7 +19,7 @@ impl TopicCalls {
 
         let raw = match kind {
             TopicKind::Tag => TagStore::insert(topic),
-            TopicKind::Interest => InterestStore::insert(topic),
+            TopicKind::Category => CategoryStore::insert(topic),
             TopicKind::Skill => SkillStore::insert(topic),
         }?;
 
@@ -27,7 +29,7 @@ impl TopicCalls {
     pub fn get_all(kind: TopicKind) -> Result<Vec<Topic>, ApiError> {
         let result = match kind {
             TopicKind::Tag => TagStore::get_all(),
-            TopicKind::Interest => InterestStore::get_all(),
+            TopicKind::Category => CategoryStore::get_all(),
             TopicKind::Skill => SkillStore::get_all(),
         }
         .into_iter()
@@ -40,7 +42,7 @@ impl TopicCalls {
     pub fn get(kind: TopicKind, id: u64) -> Result<Topic, ApiError> {
         let raw = match kind {
             TopicKind::Tag => TagStore::get(id),
-            TopicKind::Interest => InterestStore::get(id),
+            TopicKind::Category => CategoryStore::get(id),
             TopicKind::Skill => SkillStore::get(id),
         }?;
 
@@ -50,7 +52,7 @@ impl TopicCalls {
     pub fn get_many(kind: TopicKind, ids: Vec<u64>) -> Result<Vec<Topic>, ApiError> {
         let result = match kind {
             TopicKind::Tag => TagStore::get_many(ids),
-            TopicKind::Interest => InterestStore::get_many(ids),
+            TopicKind::Category => CategoryStore::get_many(ids),
             TopicKind::Skill => SkillStore::get_many(ids),
         }
         .into_iter()
@@ -58,6 +60,14 @@ impl TopicCalls {
         .collect();
 
         Ok(result)
+    }
+
+    pub fn remove(kind: TopicKind, id: u64) -> bool {
+        match kind {
+            TopicKind::Tag => TagStore::remove(id),
+            TopicKind::Category => CategoryStore::remove(id),
+            TopicKind::Skill => SkillStore::remove(id),
+        }
     }
 }
 
@@ -76,7 +86,7 @@ fn handle_topic(kind: TopicKind, topic: String) -> Result<String, ApiError> {
 
     let existing = match kind {
         TopicKind::Tag => TagStore::find(|_, value| value == topic),
-        TopicKind::Interest => InterestStore::find(|_, value| value == topic),
+        TopicKind::Category => CategoryStore::find(|_, value| value == topic),
         TopicKind::Skill => SkillStore::find(|_, value| value == topic),
     };
 
