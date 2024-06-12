@@ -17,6 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `has_access` guard from topic query calls
 
+### Changed
+
+- `Topic` enum value `Interest` to `Category`
+
 ## [0.2.0]
 
 ### Added

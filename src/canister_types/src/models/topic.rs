@@ -8,7 +8,7 @@ use super::api_error::ApiError;
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, CandidType, Deserialize, Serialize)]
 pub enum TopicKind {
     Tag,
-    Interest,
+    Category,
     Skill,
 }
 
@@ -16,7 +16,7 @@ impl Display for TopicKind {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
             TopicKind::Tag => write!(f, "Tag"),
-            TopicKind::Interest => write!(f, "Interest"),
+            TopicKind::Category => write!(f, "Category"),
             TopicKind::Skill => write!(f, "Skill"),
         }
     }

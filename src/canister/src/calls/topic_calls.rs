@@ -7,7 +7,7 @@ use ic_cdk::{query, update};
 
 /// Add a topic to the canister  - [`[update]`](update)
 /// # Arguments
-/// * `kind` - The kind of the topic (Tag, Interest, Skill)
+/// * `kind` - The kind of the topic (Tag, Category, Skill)
 /// * `value` - The topic to add
 /// # Returns
 /// * `Topic` - The added topic
@@ -22,7 +22,7 @@ pub async fn add_topic(kind: TopicKind, value: String) -> Result<Topic, ApiError
 
 /// Remove a topic from the canister  - [`[update]`](update)
 /// # Arguments
-/// * `kind` - The kind of the topic (Tag, Interest, Skill)
+/// * `kind` - The kind of the topic (Tag, Category, Skill)
 /// * `id` - The topic id to remove
 /// # Returns
 /// * `bool` - if the removal was successful
@@ -35,7 +35,7 @@ pub async fn remove_topic(kind: TopicKind, id: u64) -> bool {
 
 /// Add many topics to the canister  - [`[update]`](update)
 /// # Arguments
-/// * `kind` - The kind of the topic (Tag, Interest, Skill)
+/// * `kind` - The kind of the topic (Tag, Category, Skill)
 /// * `Vec<value>` - The topics to add
 /// # Returns
 /// * `Result<Topic, ApiError>` - The result for each added topic
@@ -53,7 +53,7 @@ pub async fn add_topics(kind: TopicKind, value: Vec<String>) -> Vec<Result<Topic
 
 /// Get a topic - [`[query]`](query)
 /// # Arguments
-/// * `kind` - The kind of the topic (Tag, Interest, Skill)
+/// * `kind` - The kind of the topic (Tag, Category, Skill)
 /// * `id` - The identifier of the topic
 /// # Returns
 /// * `Topic` - The topic
@@ -66,7 +66,7 @@ pub fn get_topic(kind: TopicKind, id: u64) -> Result<Topic, ApiError> {
 
 /// Get topics by their identifiers and kind - [`[query]`](query)
 /// # Arguments
-/// * `kind` - The kind of the topics (Tag, Interest, Skill)
+/// * `kind` - The kind of the topics (Tag, Category, Skill)
 /// * `ids` - The identifiers of the topics
 /// # Returns
 /// * `Vec<Topic>` - The topics
@@ -79,7 +79,7 @@ pub fn get_topics(kind: TopicKind, ids: Vec<u64>) -> Result<Vec<Topic>, ApiError
 
 /// Get all topics by kind - [`[query]`](query)
 /// # Arguments
-/// * `kind` - The kind of the topics (Tag, Interest, Skill)
+/// * `kind` - The kind of the topics (Tag, Category, Skill)
 /// # Returns
 /// * `Vec<Topic>` - The topics
 /// # Errors

@@ -654,7 +654,7 @@ type TokenGated = record {
   standard : text;
 };
 type Topic = record { id : nat64; value : text; kind : TopicKind };
-type TopicKind = variant { Tag; Interest; Skill };
+type TopicKind = variant { Tag; Skill; Category };
 type TransactionCompleteData = record {
   metadata : vec record { text; MetadataValue };
   sender : principal;
