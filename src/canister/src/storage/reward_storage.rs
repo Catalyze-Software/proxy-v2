@@ -1,12 +1,14 @@
-use super::storage_api::REWARD_BUFFER;
+use super::{
+    storage_api::{StaticStorageRef, Storage, REWARD_BUFFER, REWARD_BUFFER_MEMORY_ID},
+    StorageInsertable, StorageQueryable, StorageUpdateable,
+};
 use crate::logic::reward_buffer_logic::send_reward_data;
+use candid::Principal;
 use canister_types::models::reward::{Activity, RewardableActivity};
 use ic_cdk::{api::time, spawn};
 use ic_cdk_timers::set_timer_interval;
+use ic_stable_structures::memory_manager::MemoryId;
 use std::{cell::RefCell, time::Duration};
-
-//  Reward canister principal
-pub const REWARD_CANISTER_ID: &str = "zgfl7-pqaaa-aaaap-accpa-cai";
 
 // Interval for sending reward activities to Reward Canister
 const INTERVAL: Duration = Duration::from_secs(24 * 60 * 60); // 1 day
@@ -43,45 +45,30 @@ impl RewardTimerStore {
 
 pub struct RewardBufferStore;
 
+impl Storage<u64, RewardableActivity> for RewardBufferStore {
+    const NAME: &'static str = "profiles";
+
+    fn storage() -> StaticStorageRef<u64, RewardableActivity> {
+        &REWARD_BUFFER
+    }
+
+    fn memory_id() -> MemoryId {
+        REWARD_BUFFER_MEMORY_ID
+    }
+}
+
+impl StorageQueryable<u64, RewardableActivity> for RewardBufferStore {}
+impl StorageUpdateable<u64, RewardableActivity> for RewardBufferStore {}
+impl StorageInsertable<RewardableActivity> for RewardBufferStore {}
+
 impl RewardBufferStore {
-    fn new_index() -> u64 {
-        REWARD_BUFFER.with(|tree| {
-            tree.borrow()
-                .last_key_value()
-                .map(|(k, _)| k + 1)
-                .unwrap_or(0)
-        })
+    pub fn notify_group_member_count_changed(group_id: u64) {
+        let activity = RewardableActivity::new(Activity::GroupMemberCount(group_id));
+        let _ = Self::insert(activity);
     }
 
-    pub fn notify_group_count_changed(group_id: u64) {
-        let index = Self::new_index();
-        let activity = RewardableActivity::new(Activity::GroupCount(group_id));
-        REWARD_BUFFER.with(|tree| {
-            tree.borrow_mut().insert(index, activity);
-        });
-    }
-
-    pub fn notify_group_is_active(group_id: u64) {
-        let index = Self::new_index();
-        let activity = RewardableActivity::new(Activity::GroupActivity(group_id));
-        REWARD_BUFFER.with(|tree| {
-            tree.borrow_mut().insert(index, activity);
-        });
-    }
-
-    pub fn notify_event_attendance(event_id: u64) {
-        let index = Self::new_index();
-        let activity = RewardableActivity::new(Activity::EventAttendance(event_id));
-        REWARD_BUFFER.with(|tree| {
-            tree.borrow_mut().insert(index, activity);
-        });
-    }
-
-    pub fn get_all() -> Vec<(u64, RewardableActivity)> {
-        REWARD_BUFFER.with(|tree| tree.borrow().iter().collect())
-    }
-
-    pub fn clear() {
-        REWARD_BUFFER.with(|tree| tree.borrow_mut().clear_new());
+    pub fn notify_active_user(principal: Principal) {
+        let activity = RewardableActivity::new(Activity::UserActivity(principal));
+        let _ = Self::insert(activity);
     }
 }

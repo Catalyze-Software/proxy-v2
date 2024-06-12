@@ -14,7 +14,8 @@ use crate::{
     },
     storage::{
         GroupEventsStore, GroupMemberStore, GroupStore, MemberStore, ProfileStore,
-        StorageInsertable, StorageInsertableByKey, StorageQueryable, StorageUpdateable,
+        RewardBufferStore, StorageInsertable, StorageInsertableByKey, StorageQueryable,
+        StorageUpdateable,
     },
 };
 use candid::Principal;
@@ -80,6 +81,9 @@ impl GroupCalls {
 
         // generate and store an group identifier
         member.add_joined(new_group_id, vec!["owner".to_string()]);
+
+        // notify the reward buffer store that the group member count has changed
+        RewardBufferStore::notify_group_member_count_changed(new_group_id);
 
         MemberStore::update(caller(), member)?;
 
@@ -482,6 +486,9 @@ impl GroupCalls {
                 })?;
             }
 
+            // notify the reward buffer store that the group member count has changed
+            RewardBufferStore::notify_group_member_count_changed(group_id);
+
             // Add the group to the member and set the role
             MemberStore::update(principal, member.clone())?;
         }
@@ -525,6 +532,9 @@ impl GroupCalls {
                 members_collection.get_member_principals(),
                 Self::get_higher_role_members(group_id),
             )?;
+
+            // notify the reward buffer store that the group member count has changed
+            RewardBufferStore::notify_group_member_count_changed(group_id);
 
             MemberStore::update(caller(), member.clone())?;
         }
@@ -1249,6 +1259,10 @@ impl GroupValidation {
                     group_member_principals,
                     group_id,
                 );
+
+                // notify the reward buffer store that the group member count has changed
+                RewardBufferStore::notify_group_member_count_changed(group_id);
+
                 Ok(member)
             }
             // If the group is private, add the invite to the member
@@ -1287,6 +1301,10 @@ impl GroupValidation {
                         if is_valid {
                             member.add_joined(group_id, vec!["member".to_string()]);
                             member_collection.add_member(caller);
+
+                            // notify the reward buffer store that the group member count has changed
+                            RewardBufferStore::notify_group_member_count_changed(group_id);
+
                             Ok(member)
                             // If the caller does not own the neuron, throw an error
                         } else {
@@ -1311,6 +1329,10 @@ impl GroupValidation {
                         if is_valid {
                             member.add_joined(group_id, vec!["member".to_string()]);
                             member_collection.add_member(caller);
+
+                            // notify the reward buffer store that the group member count has changed
+                            RewardBufferStore::notify_group_member_count_changed(group_id);
+
                             Ok(member)
                             // If the caller does not own the NFT, throw an error
                         } else {

@@ -1,10 +1,24 @@
 use crate::{
     helpers::guards::{is_developer, is_monitor},
     logic::reward_buffer_logic::send_reward_data,
-    storage::{EventStore, GroupStore, RewardBufferStore, RewardTimerStore, StorageQueryable},
+    storage::{
+        reward_canister_storage::RewardCanisterStorage, CellStorage, GroupStore, RewardBufferStore,
+        RewardTimerStore, StorageQueryable,
+    },
 };
-use canister_types::models::reward::RewardableActivity;
+use candid::Principal;
+use canister_types::models::{api_error::ApiError, reward::RewardableActivity};
 use ic_cdk::{query, update};
+
+#[update(guard = "is_developer")]
+fn set_reward_canister(principal: Principal) -> Result<Principal, ApiError> {
+    RewardCanisterStorage::set(principal)
+}
+
+#[query(guard = "is_developer")]
+fn get_reward_canister() -> Result<Principal, ApiError> {
+    RewardCanisterStorage::get()
+}
 
 #[query(guard = "is_monitor")]
 fn reward_timer_next_trigger() -> Option<u64> {
@@ -28,20 +42,7 @@ fn fill_buffer() {
         .collect::<Vec<u64>>();
 
     for i in &group_ids {
-        RewardBufferStore::notify_group_count_changed(*i);
-    }
-
-    for i in &group_ids {
-        RewardBufferStore::notify_group_is_active(*i);
-    }
-
-    let event_ids = EventStore::get_all()
-        .into_iter()
-        .map(|(id, _)| id)
-        .collect::<Vec<u64>>();
-
-    for i in event_ids {
-        RewardBufferStore::notify_event_attendance(i);
+        RewardBufferStore::notify_group_member_count_changed(*i);
     }
 }
 

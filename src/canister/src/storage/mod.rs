@@ -14,12 +14,14 @@ mod member_storage;
 mod notification_storage;
 mod profile_storage;
 mod report_storage;
-mod reward_storage;
+pub mod reward_canister_storage;
+pub mod reward_storage;
 pub mod storage_api;
 mod topic_storage;
 mod user_notification_storage;
 
 // Re-export stores
+
 pub use attendee_storage::AttendeeStore;
 pub use boosted_storage::BoostedStore;
 pub use cell_api::{CellStorage, CellStorageRef};
@@ -46,5 +48,3 @@ pub use reward_storage::{RewardBufferStore, RewardTimerStore};
 
 // Re-export constants
 pub use logger_storage::LOGIN_EVENT;
-
-pub use reward_storage::REWARD_CANISTER_ID;
