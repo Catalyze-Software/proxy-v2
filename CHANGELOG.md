@@ -13,9 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `remove_topic` call guarded by `is_developer`
 - `add_many_topics` call guarded by `is_developer`
 
-### Changed
+### Removed
 
-- Removed `has_access` guard from topic query calls
+- `has_access` guard from topic query calls
 
 ## [0.2.0]
 
