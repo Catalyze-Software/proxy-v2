@@ -13,13 +13,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `remove_topic` call guarded by `is_developer`
 - `add_many_topics` call guarded by `is_developer`
 
-### Removed
-
-- `has_access` guard from topic query calls
-
 ### Changed
 
 - `Topic` enum value `Interest` to `Category`
+
+### Removed
+
+- `has_access` guard from topic query calls
 
 ## [0.2.0]
 
