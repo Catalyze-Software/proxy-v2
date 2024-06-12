@@ -2,14 +2,14 @@ use ic_stable_structures::memory_manager::MemoryId;
 
 use super::{
     storage_api::{
-        StaticStorageRef, Storage, StorageQueryable, StorageUpdateable, INTERESTS,
-        INTERESTS_MEMORY_ID, SKILLS, SKILLS_MEMORY_ID, TAGS, TAGS_MEMORY_ID,
+        StaticStorageRef, Storage, StorageQueryable, StorageUpdateable, CATEGORIES,
+        CATEGORIES_MEMORY_ID, SKILLS, SKILLS_MEMORY_ID, TAGS, TAGS_MEMORY_ID,
     },
     StorageInsertable,
 };
 
 pub struct TagStore;
-pub struct InterestStore;
+pub struct CategoryStore;
 pub struct SkillStore;
 
 impl Storage<u64, String> for TagStore {
@@ -24,15 +24,15 @@ impl Storage<u64, String> for TagStore {
     }
 }
 
-impl Storage<u64, String> for InterestStore {
-    const NAME: &'static str = "interests";
+impl Storage<u64, String> for CategoryStore {
+    const NAME: &'static str = "categories";
 
     fn storage() -> StaticStorageRef<u64, String> {
-        &INTERESTS
+        &CATEGORIES
     }
 
     fn memory_id() -> MemoryId {
-        INTERESTS_MEMORY_ID
+        CATEGORIES_MEMORY_ID
     }
 }
 

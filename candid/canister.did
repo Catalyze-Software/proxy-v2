@@ -659,7 +659,7 @@ type TokenGated = record {
   standard : text;
 };
 type Topic = record { id : nat64; value : text; kind : TopicKind };
-type TopicKind = variant { Tag; Interest; Skill };
+type TopicKind = variant { Tag; Skill; Category };
 type TransactionCompleteData = record {
   metadata : vec record { text; MetadataValue };
   sender : principal;
@@ -776,6 +776,7 @@ service : () -> {
   add_role_to_group : (nat64, text, text, nat64) -> (Result_10);
   add_starred : (Subject) -> (Result_8);
   add_topic : (TopicKind, text) -> (Result_11);
+  add_topics : (TopicKind, vec text) -> (vec Result_11);
   add_transaction_notification : (TransactionData) -> (bool);
   add_transactions_complete_notification : (TransactionCompleteData) -> (bool);
   add_wallet_to_group : (nat64, principal, text) -> (Result_7);
@@ -919,6 +920,7 @@ service : () -> {
     );
   remove_pinned : (Subject) -> (Result_8);
   remove_starred : (Subject) -> (Result_8);
+  remove_topic : (TopicKind, nat64) -> (bool);
   remove_wallet_from_group : (nat64, principal) -> (Result_7);
   remove_wallet_from_profile : (principal) -> (Result_8);
   reward_timer_next_trigger : () -> (opt nat64) query;
