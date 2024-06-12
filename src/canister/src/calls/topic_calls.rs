@@ -45,7 +45,10 @@ pub async fn remove_topic(kind: TopicKind, id: u64) -> bool {
 /// This function is guarded by the [`is_developer`](is_developer) function.
 #[update(guard = "is_developer")]
 pub async fn add_topics(kind: TopicKind, value: Vec<String>) -> Vec<Result<Topic, ApiError>> {
-    value.into_iter().map(|v| TopicCalls::add(kind.clone(), val)).collect()
+    value
+        .into_iter()
+        .map(|v| TopicCalls::add(kind.clone(), v))
+        .collect()
 }
 
 /// Get a topic - [`[query]`](query)

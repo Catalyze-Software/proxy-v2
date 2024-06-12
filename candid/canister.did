@@ -567,8 +567,8 @@ type ReportSort = variant {
 };
 type Result = variant { Ok : principal; Err : text };
 type Result_1 = variant { Ok : bool; Err : ApiError };
-type Result_10 = variant { Ok : ReportResponse; Err : ApiError };
-type Result_11 = variant { Ok : Role; Err : ApiError };
+type Result_10 = variant { Ok : Role; Err : ApiError };
+type Result_11 = variant { Ok : Topic; Err : ApiError };
 type Result_12 = variant { Ok; Err : ApiError };
 type Result_13 = variant { Ok : nat64; Err : ApiError };
 type Result_14 = variant { Ok : record { bool; bool; bool }; Err : ApiError };
@@ -619,8 +619,8 @@ type Result_4 = variant { Ok : JoinedAttendeeResponse; Err : ApiError };
 type Result_5 = variant { Ok : EventResponse; Err : ApiError };
 type Result_6 = variant { Ok : FriendRequestResponse; Err : ApiError };
 type Result_7 = variant { Ok : GroupResponse; Err : ApiError };
-type Result_8 = variant { Ok : Topic; Err : ApiError };
-type Result_9 = variant { Ok : ProfileResponse; Err : ApiError };
+type Result_8 = variant { Ok : ProfileResponse; Err : ApiError };
+type Result_9 = variant { Ok : ReportResponse; Err : ApiError };
 type Role = record {
   permissions : vec Permission;
   name : text;
@@ -764,23 +764,23 @@ service : () -> {
   add_event : (PostEvent) -> (Result_5);
   add_friend_request : (principal, text) -> (Result_6);
   add_group : (PostGroup, opt text) -> (Result_7);
-  add_many_topics : (TopicKind, vec text) -> (vec Result_8);
-  add_pinned : (Subject) -> (Result_9);
-  add_profile : (PostProfile) -> (Result_9);
-  add_report : (PostReport) -> (Result_10);
-  add_role_to_group : (nat64, text, text, nat64) -> (Result_11);
-  add_starred : (Subject) -> (Result_9);
-  add_topic : (TopicKind, text) -> (Result_8);
+  add_pinned : (Subject) -> (Result_8);
+  add_profile : (PostProfile) -> (Result_8);
+  add_report : (PostReport) -> (Result_9);
+  add_role_to_group : (nat64, text, text, nat64) -> (Result_10);
+  add_starred : (Subject) -> (Result_8);
+  add_topic : (TopicKind, text) -> (Result_11);
+  add_topics : (TopicKind, vec text) -> (vec Result_11);
   add_transaction_notification : (TransactionData) -> (bool);
   add_transactions_complete_notification : (TransactionCompleteData) -> (bool);
   add_wallet_to_group : (nat64, principal, text) -> (Result_7);
-  add_wallet_to_profile : (PostWallet) -> (Result_9);
+  add_wallet_to_profile : (PostWallet) -> (Result_8);
   approve_code_of_conduct : (nat64) -> (Result_1);
   approve_privacy_policy : (nat64) -> (Result_1);
   approve_terms_of_service : (nat64) -> (Result_1);
   assign_role : (nat64, text, principal) -> (Result_3);
   ban_group_member : (nat64, principal) -> (Result_12);
-  block_user : (principal) -> (Result_9);
+  block_user : (principal) -> (Result_8);
   boost : (Subject, nat64) -> (Result_13);
   cancel_event : (nat64, nat64, text) -> (Result_12);
   check_new_stores : () -> (vec text) query;
@@ -793,7 +793,7 @@ service : () -> {
   delete_group : (nat64) -> (Result_14);
   edit_event : (nat64, nat64, UpdateEvent) -> (Result_5);
   edit_group : (nat64, UpdateGroup) -> (Result_7);
-  edit_profile : (UpdateProfile) -> (Result_9);
+  edit_profile : (UpdateProfile) -> (Result_8);
   edit_role_permissions : (nat64, text, vec PostPermission) -> (Result_1);
   get_all_topics : (TopicKind) -> (Result_15) query;
   get_attending_from_principal : (principal) -> (Result_16) query;
@@ -835,13 +835,13 @@ service : () -> {
       vec record { FriendRequestResponse; ProfileResponse },
     ) query;
   get_pinned_by_subject_type : (SubjectType) -> (vec SubjectResponse) query;
-  get_profile : (principal) -> (Result_9) query;
+  get_profile : (principal) -> (Result_8) query;
   get_profiles : (vec principal) -> (vec ProfileResponse) query;
   get_relations : (RelationType) -> (vec principal) query;
   get_relations_count : (RelationType) -> (nat64) query;
   get_relations_with_profiles : (RelationType) -> (vec ProfileResponse) query;
   get_remaining_boost_time_in_seconds : (Subject) -> (Result_13) query;
-  get_report : (nat64, nat64) -> (Result_10) query;
+  get_report : (nat64, nat64) -> (Result_9) query;
   get_reports : (nat64, nat64, ReportSort, vec ReportFilter, nat64) -> (
       Result_31,
     ) query;
@@ -850,7 +850,7 @@ service : () -> {
   get_self_groups : () -> (vec GroupResponse) query;
   get_self_member : () -> (Result_3) query;
   get_starred_by_subject_type : (SubjectType) -> (vec nat64) query;
-  get_topic : (TopicKind, nat64) -> (Result_8) query;
+  get_topic : (TopicKind, nat64) -> (Result_11) query;
   get_topics : (TopicKind, vec nat64) -> (Result_15) query;
   get_unread_notifications : () -> (vec NotificationResponse) query;
   http_request : (HttpRequest) -> (HttpResponse) query;
@@ -900,7 +900,7 @@ service : () -> {
   remove_attendee_invite_from_event : (nat64, nat64, principal) -> (Result_12);
   remove_ban_from_group_member : (nat64, principal) -> (Result_12);
   remove_event_invite : (nat64) -> (Result_12);
-  remove_friend : (principal) -> (Result_9);
+  remove_friend : (principal) -> (Result_8);
   remove_friend_request : (nat64) -> (Result_1);
   remove_group_role : (nat64, text) -> (Result_1);
   remove_invite : (nat64) -> (Result_12);
@@ -910,16 +910,16 @@ service : () -> {
   remove_notifications : (vec nat64) -> (
       vec record { nat64; UserNotificationData },
     );
-  remove_pinned : (Subject) -> (Result_9);
-  remove_starred : (Subject) -> (Result_9);
+  remove_pinned : (Subject) -> (Result_8);
+  remove_starred : (Subject) -> (Result_8);
   remove_topic : (TopicKind, nat64) -> (bool);
   remove_wallet_from_group : (nat64, principal) -> (Result_7);
-  remove_wallet_from_profile : (principal) -> (Result_9);
+  remove_wallet_from_profile : (principal) -> (Result_8);
   set_history_canister : (principal) -> (Result_35);
-  set_wallet_as_primary : (principal) -> (Result_9);
+  set_wallet_as_primary : (principal) -> (Result_8);
   store_stats : () -> (vec text) query;
   test_log : () -> ();
-  unblock_user : (principal) -> (Result_9);
+  unblock_user : (principal) -> (Result_8);
   ws_close : (CanisterWsCloseArguments) -> (Result_36);
   ws_get_messages : (CanisterWsGetMessagesArguments) -> (Result_37) query;
   ws_message : (CanisterWsMessageArguments, opt WSMessage) -> (Result_36);
