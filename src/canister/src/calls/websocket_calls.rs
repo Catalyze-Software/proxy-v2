@@ -33,11 +33,6 @@ fn ws_get_messages(args: CanisterWsGetMessagesArguments) -> CanisterWsGetMessage
 }
 
 #[query]
-fn _expose() -> Option<WSMessage> {
-    None
-}
-
-#[query]
 fn get_connected_clients() -> Vec<Principal> {
     Websocket::get_connected_clients()
 }

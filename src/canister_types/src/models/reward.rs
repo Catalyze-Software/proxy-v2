@@ -24,6 +24,10 @@ impl RewardableActivity {
         Activity::decode(self.activity.clone())
     }
 
+    pub fn get_timestamp(&self) -> u64 {
+        self.timestamp
+    }
+
     pub fn before(&self, days: u64) -> bool {
         self.timestamp < time() - days * 24 * 60 * 60
     }
@@ -66,23 +70,36 @@ impl Activity {
 }
 
 #[derive(Deserialize, CandidType, Clone)]
-pub struct RewardData {
-    // group or event owner
+pub struct GroupRewardData {
     pub owner: Principal,
-    // group or event id
-    pub id: u64,
-    // count, activity score, or attendance count
-    pub count: u64,
+    pub group_id: u64,
+    pub group_member_count: u64,
 }
 
-impl RewardData {
+impl GroupRewardData {
     pub fn new(owner: Principal, id: u64, count: u64) -> Self {
-        Self { owner, id, count }
+        Self {
+            owner,
+            group_id: id,
+            group_member_count: count,
+        }
+    }
+}
+
+#[derive(Deserialize, CandidType, Clone)]
+pub struct UserActivityData {
+    pub owner: Principal,
+    pub timestamp: u64,
+}
+
+impl UserActivityData {
+    pub fn new(owner: Principal, timestamp: u64) -> Self {
+        Self { owner, timestamp }
     }
 }
 
 #[derive(CandidType, Deserialize, Clone)]
 pub struct RewardDataPackage {
-    pub group_member_counts: Vec<RewardData>,
-    pub user_activity: Vec<RewardData>,
+    pub group_member_counts: Vec<GroupRewardData>,
+    pub user_activity: Vec<UserActivityData>,
 }

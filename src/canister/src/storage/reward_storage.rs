@@ -46,7 +46,7 @@ impl RewardTimerStore {
 pub struct RewardBufferStore;
 
 impl Storage<u64, RewardableActivity> for RewardBufferStore {
-    const NAME: &'static str = "profiles";
+    const NAME: &'static str = "rewards_buffer";
 
     fn storage() -> StaticStorageRef<u64, RewardableActivity> {
         &REWARD_BUFFER
@@ -64,11 +64,11 @@ impl StorageInsertable<RewardableActivity> for RewardBufferStore {}
 impl RewardBufferStore {
     pub fn notify_group_member_count_changed(group_id: u64) {
         let activity = RewardableActivity::new(Activity::GroupMemberCount(group_id));
-        let _ = Self::insert(activity);
+        let _ = RewardBufferStore::insert(activity);
     }
 
     pub fn notify_active_user(principal: Principal) {
         let activity = RewardableActivity::new(Activity::UserActivity(principal));
-        let _ = Self::insert(activity);
+        let _ = RewardBufferStore::insert(activity);
     }
 }
