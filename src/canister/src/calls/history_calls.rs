@@ -13,11 +13,11 @@ fn get_history_point() -> Result<u64, ApiError> {
 }
 
 #[update(guard = "is_developer")]
-fn set_history_canister(principal: Principal) -> Result<Principal, ApiError> {
+fn _dev_set_history_canister(principal: Principal) -> Result<Principal, ApiError> {
     HistoryCanisterStorage::set(principal)
 }
 
 #[query(guard = "is_developer")]
-fn get_history_canister() -> Result<Principal, ApiError> {
+fn _dev_get_history_canister() -> Result<Principal, ApiError> {
     HistoryCanisterStorage::get()
 }

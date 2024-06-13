@@ -27,6 +27,19 @@ impl RewardableActivity {
     pub fn before(&self, days: u64) -> bool {
         self.timestamp < time() - days * 24 * 60 * 60
     }
+
+    pub fn into(self) -> RewardableActivityResponse {
+        RewardableActivityResponse {
+            activity: self.get_activity(),
+            timestamp: self.timestamp,
+        }
+    }
+}
+
+#[derive(CandidType, Deserialize, Serialize)]
+pub struct RewardableActivityResponse {
+    pub activity: Activity,
+    pub timestamp: u64,
 }
 
 #[derive(Clone, Debug, CandidType, Deserialize, Serialize)]

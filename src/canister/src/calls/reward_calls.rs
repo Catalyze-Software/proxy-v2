@@ -1,5 +1,5 @@
 use crate::{
-    helpers::guards::{is_developer, is_monitor},
+    helpers::guards::is_developer,
     logic::reward_buffer_logic::send_reward_data,
     storage::{
         reward_canister_storage::RewardCanisterStorage, CellStorage, GroupStore, RewardBufferStore,
@@ -7,29 +7,29 @@ use crate::{
     },
 };
 use candid::Principal;
-use canister_types::models::{api_error::ApiError, reward::RewardableActivity};
+use canister_types::models::{api_error::ApiError, reward::RewardableActivityResponse};
 use ic_cdk::{query, update};
 
 #[update(guard = "is_developer")]
-fn set_reward_canister(principal: Principal) -> Result<Principal, ApiError> {
+fn _dev_set_reward_canister(principal: Principal) -> Result<Principal, ApiError> {
     RewardCanisterStorage::set(principal)
 }
 
 #[query(guard = "is_developer")]
-fn get_reward_canister() -> Result<Principal, ApiError> {
+fn _dev_get_reward_canister() -> Result<Principal, ApiError> {
     RewardCanisterStorage::get()
 }
 
-#[query(guard = "is_monitor")]
+#[query]
 fn reward_timer_next_trigger() -> Option<u64> {
     RewardTimerStore::next_trigger()
 }
 
-#[query(guard = "is_monitor")]
-fn read_reward_buffer() -> Vec<RewardableActivity> {
+#[query]
+fn read_reward_buffer() -> Vec<RewardableActivityResponse> {
     RewardBufferStore::get_all()
         .into_iter()
-        .map(|(_, v)| v)
+        .map(|(_, v)| v.into())
         .collect()
 }
 
