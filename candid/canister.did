@@ -765,7 +765,6 @@ service : () -> {
   _dev_send_reward_data : () -> ();
   _dev_set_history_canister : (principal) -> (Result_1);
   _dev_set_reward_canister : (principal) -> (Result_1);
-  _expose : () -> (opt WSMessage) query;
   accept_friend_request : (nat64) -> (Result_2);
   accept_owner_request_event_invite : (nat64) -> (Result_3);
   accept_owner_request_group_invite : (nat64) -> (Result_4);

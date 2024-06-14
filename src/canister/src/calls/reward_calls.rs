@@ -2,8 +2,8 @@ use crate::{
     helpers::guards::is_developer,
     logic::reward_buffer_logic::send_reward_data,
     storage::{
-        reward_canister_storage::RewardCanisterStorage, CellStorage, GroupStore, RewardBufferStore,
-        RewardTimerStore, StorageQueryable,
+        reward_canister_storage::RewardCanisterStorage, CellStorage, GroupStore, ProfileStore,
+        RewardBufferStore, RewardTimerStore, StorageQueryable,
     },
 };
 use candid::Principal;
@@ -36,13 +36,12 @@ fn read_reward_buffer() -> Vec<RewardableActivityResponse> {
 // testers
 #[update(guard = "is_developer")]
 fn fill_buffer() {
-    let group_ids = GroupStore::get_all()
-        .into_iter()
-        .map(|(id, _)| id)
-        .collect::<Vec<u64>>();
+    for (id, _) in GroupStore::get_all() {
+        RewardBufferStore::notify_group_member_count_changed(id);
+    }
 
-    for i in &group_ids {
-        RewardBufferStore::notify_group_member_count_changed(*i);
+    for (id, _) in ProfileStore::get_all() {
+        RewardBufferStore::notify_active_user(id);
     }
 }
 
