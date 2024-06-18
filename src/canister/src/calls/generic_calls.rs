@@ -3,7 +3,7 @@ use crate::{
     logic::{boost_logic::BoostCalls, websocket_logic::Websocket},
     storage::{
         storage_api::StorageQueryable, AttendeeStore, EventStore, GroupEventsStore,
-        GroupMemberStore, MemberStore,
+        GroupMemberStore, MemberStore, NotificationStore, StorageUpdateable, UserNotificationStore,
     },
 };
 use candid::Principal;
@@ -18,8 +18,8 @@ use ic_cdk::{
 
 #[post_upgrade]
 pub fn post_upgrade() {
-    let _ = BoostCalls::start_timers_after_upgrade();
     Websocket::init();
+    let _ = BoostCalls::start_timers_after_upgrade();
 }
 
 #[pre_upgrade]
@@ -79,6 +79,12 @@ pub fn _dev_check_events_sync(event_id: u64, group_id: u64) -> ((String, bool), 
     };
 
     (event_store_check, group_event_store_check)
+}
+
+#[update(guard = "is_developer")]
+pub fn _dev_clear_notifications() {
+    UserNotificationStore::clear();
+    NotificationStore::clear();
 }
 
 #[update(guard = "is_prod_developer")]
