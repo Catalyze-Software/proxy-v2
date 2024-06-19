@@ -28,7 +28,7 @@ impl fmt::Display for ApplicationRole {
             Moderator => write!(f, "Moderator"),
             Leader => write!(f, "Leader"),
             Member => write!(f, "Member"),
-            Watcher => write!(f, "OwneWatcherr"),
+            Watcher => write!(f, "OwnerWatcher"),
             Guest => write!(f, "Guest"),
             Blocked => write!(f, "Blocked"),
             Banned => write!(f, "Banned"),
