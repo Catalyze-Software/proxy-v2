@@ -7,7 +7,7 @@ use ic_websocket_cdk::{
     CanisterWsOpenArguments, CanisterWsOpenResult,
 };
 
-use crate::logic::websocket_logic::Websocket;
+use crate::{helpers::guards::is_developer, logic::websocket_logic::Websocket};
 
 #[update]
 fn ws_open(args: CanisterWsOpenArguments) -> CanisterWsOpenResult {
@@ -35,4 +35,19 @@ fn ws_get_messages(args: CanisterWsGetMessagesArguments) -> CanisterWsGetMessage
 #[query]
 fn get_connected_clients() -> Vec<Principal> {
     Websocket::get_connected_clients()
+}
+
+#[query]
+fn get_ws_errors() -> Vec<(u64, String)> {
+    Websocket::get_ws_errors()
+}
+
+#[query]
+fn get_ws_url() -> String {
+    Websocket::get_ws_url()
+}
+
+#[update(guard = "is_developer")]
+fn set_ws_url(url: String) {
+    Websocket::set_ws_url(url)
 }

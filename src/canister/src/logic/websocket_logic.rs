@@ -10,11 +10,10 @@ use ic_websocket_cdk::{
 
 use crate::storage::{RewardBufferStore, StorageQueryable, UserNotificationStore};
 
-// type TimeInNanos = u64;
-
 thread_local! {
    pub static CONNECTED_CLIENTS: RefCell<HashMap<Principal, u64>> = RefCell::new(HashMap::new());
    pub static WS_ERRORS: RefCell<HashMap<u64, (u64, String)>> = RefCell::new(HashMap::new());
+   pub static WS_URL: RefCell<String> = RefCell::new("wss://ctz-ws.rem.codes".to_string());
 }
 
 pub struct Websocket;
@@ -84,6 +83,16 @@ impl Websocket {
         CONNECTED_CLIENTS.with(|c| c.borrow().keys().cloned().collect())
     }
 
+    pub fn set_ws_url(url: String) {
+        WS_URL.with(|url_ref| {
+            *url_ref.borrow_mut() = url;
+        });
+    }
+
+    pub fn get_ws_url() -> String {
+        WS_URL.with(|url| url.borrow().clone())
+    }
+
     pub fn log_error(error: String) {
         const MAX_LOGS: usize = 500;
 
@@ -99,5 +108,9 @@ impl Websocket {
                 errors.remove(&oldest_log_id);
             }
         });
+    }
+
+    pub fn get_ws_errors() -> Vec<(u64, String)> {
+        WS_ERRORS.with(|errors| errors.borrow().values().cloned().collect())
     }
 }
