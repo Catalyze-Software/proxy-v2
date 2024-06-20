@@ -220,11 +220,42 @@ impl EventCalls {
 
         let _ = EventStore::remove(event_id);
 
+        let event_attendees =
+            EventAttendeeStore::get(event_id).map_or(MemberCollection::new(), |(_, m)| m);
+
+        // remove all groups from the members
+        for member in event_attendees.get_member_principals() {
+            // remove all pinned and starred from the profiles
+            if let Ok((_, mut profile)) = ProfileStore::get(member) {
+                let subject = Subject::Event(event_id);
+
+                if profile.is_starred(&subject) || profile.is_pinned(&subject) {
+                    profile.remove_starred(&subject);
+                    profile.remove_pinned(&subject);
+                    ProfileStore::update(member, profile).unwrap();
+                }
+            }
+
+            if let Ok((principal, mut attendee)) = AttendeeStore::get(member) {
+                attendee.remove_joined(group_id);
+                AttendeeStore::update(principal, attendee).unwrap();
+            }
+        }
+
+        // remove all invites from the members
+        for member in event_attendees.get_invite_principals() {
+            if let Ok((principal, mut attendee)) = AttendeeStore::get(member) {
+                attendee.remove_invite(group_id);
+                AttendeeStore::update(principal, attendee).unwrap();
+            }
+        }
+
         // remove attendees from the event
         EventAttendeeStore::remove(event_id);
 
         // remove event from group events
-        let mut group_events = EventCollection::new();
+        let mut group_events =
+            GroupEventsStore::get(group_id).map_or(EventCollection::new(), |(_, m)| m);
         group_events.remove_event(&event_id);
         GroupEventsStore::update(group_id, group_events)?;
         Ok(())

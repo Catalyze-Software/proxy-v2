@@ -1,6 +1,9 @@
 use super::{
-    boost_logic::BoostCalls, history_event_logic::HistoryEventLogic,
-    notification_logic::NotificationCalls, profile_logic::ProfileCalls,
+    boost_logic::BoostCalls,
+    event_logic::EventCalls,
+    history_event_logic::HistoryEventLogic,
+    notification_logic::NotificationCalls,
+    profile_logic::{self, ProfileCalls},
 };
 use crate::{
     helpers::{
@@ -244,9 +247,43 @@ impl GroupCalls {
             .collect()
     }
 
-    // TODO: check if we need to hard delete it after a period of time
-    // TODO: check if we need to remove the group from the members
     pub fn delete_group(group_id: u64) -> (bool, bool, bool) {
+        let members = GroupMemberStore::get(group_id).map_or(MemberCollection::new(), |(_, m)| m);
+        let events = GroupEventsStore::get(group_id).map_or(EventCollection::new(), |(_, m)| m);
+
+        for member in members.get_member_principals() {
+            // remove all pinned and starred from the profiles
+            if let Ok((_, mut profile)) = ProfileStore::get(member) {
+                let subject = Subject::Group(group_id);
+
+                if profile.is_starred(&subject) || profile.is_pinned(&subject) {
+                    profile.remove_starred(&subject);
+                    profile.remove_pinned(&subject);
+                    ProfileStore::update(member, profile).unwrap();
+                }
+            }
+
+            // remove all groups from the members
+            if let Ok((principal, mut member)) = MemberStore::get(member) {
+                member.remove_joined(group_id);
+                MemberStore::update(principal, member).unwrap();
+            }
+        }
+
+        // remove all invites from the members
+        for member in members.get_invite_principals() {
+            if let Ok((principal, mut member)) = MemberStore::get(member) {
+                member.remove_invite(group_id);
+                MemberStore::update(principal, member).unwrap();
+            }
+        }
+
+        // remove all events from group
+        for event_id in events.events {
+            let _ = EventCalls::delete_event(event_id, group_id);
+        }
+
+        // remove all references to the group
         (
             GroupStore::remove(group_id),
             GroupMemberStore::remove(group_id),
