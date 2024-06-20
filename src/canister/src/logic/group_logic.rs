@@ -1,9 +1,6 @@
 use super::{
-    boost_logic::BoostCalls,
-    event_logic::EventCalls,
-    history_event_logic::HistoryEventLogic,
-    notification_logic::NotificationCalls,
-    profile_logic::{self, ProfileCalls},
+    boost_logic::BoostCalls, event_logic::EventCalls, history_event_logic::HistoryEventLogic,
+    notification_logic::NotificationCalls, profile_logic::ProfileCalls,
 };
 use crate::{
     helpers::{
