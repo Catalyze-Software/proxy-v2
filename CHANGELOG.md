@@ -12,10 +12,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `is_developer` guard to `add_topic` call
 - `remove_topic` call guarded by `is_developer`
 - `add_many_topics` call guarded by `is_developer`
+- check to only be able to star or pin joined group or events
 
 ### Changed
 
 - `Topic` enum value `Interest` to `Category`
+- remove all reference when deleting a group or event
 
 ### Removed
 
