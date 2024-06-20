@@ -1,8 +1,9 @@
 use crate::{
     helpers::time_helper::hours_to_nanoseconds,
     storage::{
-        AttendeeStore, EventAttendeeStore, EventStore, GroupEventsStore, MemberStore, ProfileStore,
-        StorageInsertable, StorageInsertableByKey, StorageQueryable, StorageUpdateable,
+        AttendeeStore, BoostedStore, EventAttendeeStore, EventStore, GroupEventsStore, MemberStore,
+        ProfileStore, StorageInsertable, StorageInsertableByKey, StorageQueryable,
+        StorageUpdateable,
     },
 };
 
@@ -222,6 +223,12 @@ impl EventCalls {
 
         let event_attendees =
             EventAttendeeStore::get(event_id).map_or(MemberCollection::new(), |(_, m)| m);
+
+        if let Some((boost_id, _)) =
+            BoostedStore::find(|_, b| b.subject == Subject::Event(event_id))
+        {
+            BoostedStore::remove(boost_id);
+        }
 
         // remove all groups from the members
         for member in event_attendees.get_member_principals() {

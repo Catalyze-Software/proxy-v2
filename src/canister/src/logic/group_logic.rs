@@ -13,7 +13,7 @@ use crate::{
         validator::Validator,
     },
     storage::{
-        GroupEventsStore, GroupMemberStore, GroupStore, MemberStore, ProfileStore,
+        BoostedStore, GroupEventsStore, GroupMemberStore, GroupStore, MemberStore, ProfileStore,
         StorageInsertable, StorageInsertableByKey, StorageQueryable, StorageUpdateable,
     },
 };
@@ -247,6 +247,12 @@ impl GroupCalls {
     pub fn delete_group(group_id: u64) -> (bool, bool, bool) {
         let members = GroupMemberStore::get(group_id).map_or(MemberCollection::new(), |(_, m)| m);
         let events = GroupEventsStore::get(group_id).map_or(EventCollection::new(), |(_, m)| m);
+
+        if let Some((boost_id, _)) =
+            BoostedStore::find(|_, b| b.subject == Subject::Group(group_id))
+        {
+            BoostedStore::remove(boost_id);
+        }
 
         for member in members.get_member_principals() {
             // remove all pinned and starred from the profiles
