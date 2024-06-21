@@ -34,6 +34,16 @@ pub fn init() {
     crate::storage::RewardTimerStore::start_reward_timer();
 }
 
+#[query]
+fn icts_name() -> String {
+    env!("CARGO_PKG_NAME").to_string()
+}
+
+#[query]
+fn icts_version() -> String {
+    env!("CARGO_PKG_VERSION").to_string()
+}
+
 #[query(guard = "is_developer")]
 pub fn _dev_check_member_sync(
     principal: Principal,

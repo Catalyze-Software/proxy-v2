@@ -49,7 +49,7 @@ pub async fn send_reward_data() {
 
     let _ = call::<(Vec<GroupRewardData>, Vec<UserActivityData>), ()>(
         reward_canister,
-        "add_and_process_proxy_buffer",
+        "process_buffer",
         (reward_data.group_member_counts, reward_data.user_activity),
     )
     .await;
