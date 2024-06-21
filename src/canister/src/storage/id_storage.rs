@@ -104,6 +104,7 @@ impl IDStore {
         Self::storage().with(|data| data.borrow().iter().collect())
     }
 
+    // Use the old id if the id store is empty (only needed for existing data)
     fn increment(k: IDKind) -> Result<u64, ApiError> {
         let id = Self::get(k.clone()).unwrap_or_else(|| Self::get_last(k.clone())) + 1;
 
