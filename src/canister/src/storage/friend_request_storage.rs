@@ -1,6 +1,9 @@
-use super::storage_api::{
-    StaticStorageRef, Storage, StorageInsertable, StorageQueryable, StorageUpdateable,
-    FRIEND_REQUEST, FRIEND_REQUESTS_MEMORY_ID,
+use super::{
+    storage_api::{
+        StaticStorageRef, Storage, StorageInsertable, StorageQueryable, StorageUpdateable,
+        FRIEND_REQUEST, FRIEND_REQUESTS_MEMORY_ID,
+    },
+    ID_KIND_FRIEND_REQUESTS,
 };
 use canister_types::models::friend_request::FriendRequest;
 use ic_stable_structures::memory_manager::MemoryId;
@@ -8,7 +11,7 @@ use ic_stable_structures::memory_manager::MemoryId;
 pub struct FriendRequestStore;
 
 impl Storage<u64, FriendRequest> for FriendRequestStore {
-    const NAME: &'static str = "friend_requests";
+    const NAME: &'static str = ID_KIND_FRIEND_REQUESTS;
 
     fn storage() -> StaticStorageRef<u64, FriendRequest> {
         &FRIEND_REQUEST

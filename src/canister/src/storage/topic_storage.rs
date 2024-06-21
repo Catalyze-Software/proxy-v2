@@ -5,7 +5,7 @@ use super::{
         StaticStorageRef, Storage, StorageQueryable, StorageUpdateable, CATEGORIES,
         CATEGORIES_MEMORY_ID, SKILLS, SKILLS_MEMORY_ID, TAGS, TAGS_MEMORY_ID,
     },
-    StorageInsertable,
+    StorageInsertable, ID_KIND_CATEGORIES, ID_KIND_SKILLS, ID_KIND_TAGS,
 };
 
 pub struct TagStore;
@@ -13,7 +13,7 @@ pub struct CategoryStore;
 pub struct SkillStore;
 
 impl Storage<u64, String> for TagStore {
-    const NAME: &'static str = "tags";
+    const NAME: &'static str = ID_KIND_TAGS;
 
     fn storage() -> StaticStorageRef<u64, String> {
         &TAGS
@@ -25,7 +25,7 @@ impl Storage<u64, String> for TagStore {
 }
 
 impl Storage<u64, String> for CategoryStore {
-    const NAME: &'static str = "categories";
+    const NAME: &'static str = ID_KIND_CATEGORIES;
 
     fn storage() -> StaticStorageRef<u64, String> {
         &CATEGORIES
@@ -37,7 +37,7 @@ impl Storage<u64, String> for CategoryStore {
 }
 
 impl Storage<u64, String> for SkillStore {
-    const NAME: &'static str = "skills";
+    const NAME: &'static str = ID_KIND_SKILLS;
 
     fn storage() -> StaticStorageRef<u64, String> {
         &SKILLS
