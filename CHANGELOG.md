@@ -23,6 +23,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `_dev_get_history_canister` to check if the caniste is set correctly
 - `RewardableActivity` struct for the `RewardBufferStore`
 - `Activity` struct for the tracking specific activities
+- check to only be able to star or pin joined group or events
+- `_dev_get_all_ids` call to get all incrementable ids from a store for the testing purposes
 
 ### Changed
 
@@ -31,10 +33,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `DateRange::end_date` to `DateRange::end`
 - `start_timers_after_upgrade` response type
 -
+- remove all reference when deleting a group or event
 
 ### Removed
 
 - `has_access` guard from topic query calls
+
+### Fixed
+
+- all storages that use the `u64` ID kind now use `IDStore` to avoid collisions
 
 ## [0.2.0]
 

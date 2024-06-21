@@ -56,6 +56,14 @@ pub struct Profile {
 }
 
 impl Profile {
+    pub fn remove_pinned(&mut self, subject: &Subject) {
+        self.pinned.retain(|s| s != subject);
+    }
+
+    pub fn remove_starred(&mut self, subject: &Subject) {
+        self.starred.retain(|s| s != subject);
+    }
+
     pub fn update(self, profile: UpdateProfile) -> Self {
         Self {
             username: self.username,
@@ -103,7 +111,7 @@ impl Profile {
     }
 
     pub fn is_pinned(&self, subject: &Subject) -> bool {
-        self.starred.contains(subject)
+        self.pinned.contains(subject)
     }
 }
 

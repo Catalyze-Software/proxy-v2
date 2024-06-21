@@ -9,6 +9,7 @@ mod group_members_storage;
 mod group_storage;
 mod history_canister_storage;
 mod history_point_storage;
+mod id_storage;
 mod logger_storage;
 mod member_storage;
 mod notification_storage;
@@ -43,6 +44,7 @@ pub use storage_api::{
 pub use topic_storage::{CategoryStore, SkillStore, TagStore};
 pub use user_notification_storage::UserNotificationStore;
 
+pub use id_storage::*;
 pub use logger_storage::LoggerStore;
 pub use reward_storage::{RewardBufferStore, RewardTimerStore};
 

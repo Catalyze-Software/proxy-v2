@@ -4,14 +4,16 @@ use super::{
 use crate::{
     helpers::validator::Validator,
     storage::{
-        AttendeeStore, EventStore, GroupStore, MemberStore, ProfileStore, StorageInsertableByKey,
-        StorageQueryable, StorageUpdateable, UserNotificationStore,
+        AttendeeStore, EventAttendeeStore, EventStore, GroupMemberStore, GroupStore, MemberStore,
+        ProfileStore, StorageInsertableByKey, StorageQueryable, StorageUpdateable,
+        UserNotificationStore,
     },
 };
 use candid::Principal;
 use canister_types::models::{
     api_error::ApiError,
     document_details::DocumentDetails,
+    member_collection::MemberCollection,
     profile::{PostProfile, Profile, ProfileResponse, UpdateProfile},
     relation_type::RelationType,
     subject::{Subject, SubjectResponse, SubjectType},
@@ -135,6 +137,28 @@ impl ProfileCalls {
             return Err(ApiError::duplicate().add_message("already starred"));
         }
 
+        match subject {
+            Subject::Group(id) => {
+                let group_members = GroupMemberStore::get(id)
+                    .map_or(MemberCollection::new(), |(_, members)| members);
+                if !group_members.is_member(&caller()) {
+                    return Err(
+                        ApiError::unauthorized().add_message("You can only star joined groups")
+                    );
+                }
+            }
+            Subject::Event(id) => {
+                let event_attendees = EventAttendeeStore::get(id)
+                    .map_or(MemberCollection::new(), |(_, members)| members);
+                if !event_attendees.is_member(&caller()) {
+                    return Err(
+                        ApiError::unauthorized().add_message("You can only star joined events")
+                    );
+                }
+            }
+            _ => return Err(ApiError::not_implemented().add_message("Subject type not supported")),
+        };
+
         existing_profile.starred.push(subject);
 
         let updated_profile = ProfileStore::update(caller(), existing_profile);
@@ -174,6 +198,28 @@ impl ProfileCalls {
         if existing_profile.pinned.contains(&subject) {
             return Err(ApiError::duplicate().add_message("already pinned"));
         }
+
+        match subject {
+            Subject::Group(id) => {
+                let group_members = GroupMemberStore::get(id)
+                    .map_or(MemberCollection::new(), |(_, members)| members);
+                if !group_members.is_member(&caller()) {
+                    return Err(
+                        ApiError::unauthorized().add_message("You can only pin joined groups")
+                    );
+                }
+            }
+            Subject::Event(id) => {
+                let event_attendees = EventAttendeeStore::get(id)
+                    .map_or(MemberCollection::new(), |(_, members)| members);
+                if !event_attendees.is_member(&caller()) {
+                    return Err(
+                        ApiError::unauthorized().add_message("You can only pin joined events")
+                    );
+                }
+            }
+            _ => return Err(ApiError::not_implemented().add_message("Subject type not supported")),
+        };
 
         existing_profile.pinned.push(subject);
 

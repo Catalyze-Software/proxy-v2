@@ -1,6 +1,6 @@
 use crate::{
     helpers::guards::{is_developer, is_prod_developer},
-    logic::{boost_logic::BoostCalls, websocket_logic::Websocket},
+    logic::{boost_logic::BoostCalls, id_logic::IDLogic, websocket_logic::Websocket},
     storage::{
         storage_api::StorageQueryable, AttendeeStore, EventStore, GroupEventsStore,
         GroupMemberStore, MemberStore, NotificationStore, RewardTimerStore, StorageUpdateable,
@@ -125,6 +125,11 @@ async fn _dev_create_canister(controllers: Vec<Principal>) -> Result<Principal, 
         Ok((canister,)) => Ok(canister.canister_id),
         Err((_, err)) => Err(err),
     }
+}
+
+#[query(guard = "is_developer")]
+fn _dev_get_all_ids() -> Vec<(String, u64)> {
+    IDLogic::get_all()
 }
 
 #[query]
