@@ -388,7 +388,7 @@ impl EventCalls {
         let (attendee_principal, mut attendee) = AttendeeStore::get(attendee_principal)?;
 
         if !attendee.has_pending_join_request(event_id) {
-            return Err(ApiError::not_found().add_message("mfer"));
+            return Err(ApiError::not_found());
         }
 
         let (_, mut attendees) = EventAttendeeStore::get(event_id)?;
