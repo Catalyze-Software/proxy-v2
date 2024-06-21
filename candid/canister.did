@@ -756,6 +756,7 @@ service : () -> {
     ) query;
   _dev_clear_notifications : () -> ();
   _dev_create_canister : (vec principal) -> (Result);
+  _dev_get_all_ids : () -> (vec record { text; nat64 }) query;
   _dev_get_history_canister : () -> (Result_1) query;
   _dev_get_reward_canister : () -> (Result_1) query;
   _dev_send_reward_data : () -> ();
@@ -800,7 +801,6 @@ service : () -> {
   edit_group : (nat64, UpdateGroup) -> (Result_8);
   edit_profile : (UpdateProfile) -> (Result_9);
   edit_role_permissions : (nat64, text, vec PostPermission) -> (Result_2);
-  fill_buffer : () -> ();
   get_all_topics : (TopicKind) -> (Result_16) query;
   get_attending_from_principal : (principal) -> (Result_17) query;
   get_banned_group_members : (nat64) -> (Result_18) query;

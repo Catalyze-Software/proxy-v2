@@ -14,7 +14,8 @@ use crate::{
     },
     storage::{
         BoostedStore, GroupEventsStore, GroupMemberStore, GroupStore, MemberStore, ProfileStore,
-        StorageInsertable, StorageInsertableByKey, StorageQueryable, StorageUpdateable,
+        RewardBufferStore, StorageInsertable, StorageInsertableByKey, StorageQueryable,
+        StorageUpdateable,
     },
 };
 use candid::Principal;
