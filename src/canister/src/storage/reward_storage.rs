@@ -11,7 +11,7 @@ use ic_stable_structures::memory_manager::MemoryId;
 use std::{cell::RefCell, time::Duration};
 
 // Interval for sending reward activities to Reward Canister
-const INTERVAL: Duration = Duration::from_secs(24 * 60 * 60); // 1 day
+pub const DAY_IN_NANOS: u64 = 86400 * 1_000_000_000;
 
 // timer to periodically process the reward buffer
 thread_local! {
@@ -22,11 +22,11 @@ pub struct RewardTimerStore;
 
 impl RewardTimerStore {
     pub fn start() {
-        let _ = set_timer_interval(INTERVAL, move || {
+        let _ = set_timer_interval(Duration::from_nanos(DAY_IN_NANOS), move || {
             spawn(send_reward_data());
         });
 
-        let next_trigger = time() + INTERVAL.as_nanos() as u64;
+        let next_trigger = time() + DAY_IN_NANOS;
 
         REWARD_TIMER.with(|t| *t.borrow_mut() = Some(next_trigger));
     }
@@ -37,7 +37,7 @@ impl RewardTimerStore {
 
     pub fn set_next_trigger() {
         REWARD_TIMER.with(|t| {
-            let next_trigger = time() + INTERVAL.as_nanos() as u64;
+            let next_trigger = time() + DAY_IN_NANOS;
             *t.borrow_mut() = Some(next_trigger);
         });
     }
