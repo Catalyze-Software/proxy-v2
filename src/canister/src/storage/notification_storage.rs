@@ -3,7 +3,7 @@ use super::{
         StaticStorageRef, Storage, StorageQueryable, StorageUpdateable, NOTIFICATIONS,
         NOTIFICATIONS_MEMORY_ID,
     },
-    StorageInsertable,
+    StorageInsertable, ID_KIND_NOTIFICATIONS,
 };
 use canister_types::models::notification::Notification;
 use ic_stable_structures::memory_manager::MemoryId;
@@ -11,7 +11,7 @@ use ic_stable_structures::memory_manager::MemoryId;
 pub struct NotificationStore;
 
 impl Storage<u64, Notification> for NotificationStore {
-    const NAME: &'static str = "notifications";
+    const NAME: &'static str = ID_KIND_NOTIFICATIONS;
 
     fn storage() -> StaticStorageRef<u64, Notification> {
         &NOTIFICATIONS

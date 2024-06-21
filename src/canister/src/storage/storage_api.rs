@@ -11,6 +11,8 @@ use ic_stable_structures::{
 };
 use std::{cell::RefCell, thread::LocalKey};
 
+use super::IDStore;
+
 pub type Memory = VirtualMemory<DefaultMemoryImpl>;
 
 /// The memory IDs for the different stores.
@@ -46,6 +48,8 @@ pub static SKILLS_MEMORY_ID: MemoryId = MemoryId::new(16);
 
 pub static HISTORY_POINT_MEMORY_ID: MemoryId = MemoryId::new(17);
 pub static HISTORY_CANISTER_MEMORY_ID: MemoryId = MemoryId::new(18);
+
+pub static IDS_MEMORY_ID: MemoryId = MemoryId::new(19);
 
 /// A reference to a `StableBTreeMap` that is wrapped in a `RefCell`.
 ///# Generics
@@ -153,13 +157,9 @@ pub trait StorageInsertable<V: 'static + Storable + Clone>: Storage<u64, V> {
     /// # Note
     /// Does check if a entity with the same key already exists, if so returns an error
     fn insert(value: V) -> Result<(u64, V), ApiError> {
-        Self::storage().with(|data| {
-            let key = data
-                .borrow()
-                .last_key_value()
-                .map(|(k, _)| k + 1)
-                .unwrap_or_else(|| 1);
+        let key = IDStore::next(Self::NAME)?;
 
+        Self::storage().with(|data| {
             if data.borrow().contains_key(&key) {
                 return Err(ApiError::duplicate()
                     .add_method_name("insert")
@@ -327,14 +327,18 @@ thread_local! {
         StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.borrow().get(SKILLS_MEMORY_ID)))
     );
 
-   pub static HISTORY_POINT: RefCell<Cell<Option<u64>, Memory>> = RefCell::new(
+    pub static HISTORY_POINT: RefCell<Cell<Option<u64>, Memory>> = RefCell::new(
         Cell::init(MEMORY_MANAGER.with(|p| p.borrow().get(HISTORY_POINT_MEMORY_ID)), Some(1))
             .expect("Failed to initialize history point")
     );
 
-       pub static HISTORY_CANISTER: RefCell<Cell<Option<Principal>, Memory>> = RefCell::new(
+    pub static HISTORY_CANISTER: RefCell<Cell<Option<Principal>, Memory>> = RefCell::new(
         Cell::init(MEMORY_MANAGER.with(|p| p.borrow().get(HISTORY_CANISTER_MEMORY_ID)), None)
             .expect("Failed to initialize history canister id")
+    );
+
+    pub static IDS: StorageRef<String, u64> = RefCell::new(
+        StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.borrow().get(IDS_MEMORY_ID)))
     );
 
 }

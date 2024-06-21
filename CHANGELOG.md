@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `remove_topic` call guarded by `is_developer`
 - `add_many_topics` call guarded by `is_developer`
 - check to only be able to star or pin joined group or events
+- `_dev_get_all_ids` call to get all incrementable ids from a store for the testing purposes
 
 ### Changed
 
@@ -22,6 +23,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 - `has_access` guard from topic query calls
+
+### Fixed
+
+- all storages that use the `u64` ID kind now use `IDStore` to avoid collisions
 
 ## [0.2.0]
 
