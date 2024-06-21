@@ -159,7 +159,7 @@ impl BoostCalls {
             .collect()
     }
 
-    pub fn start_timers_after_upgrade() -> Result<(), ApiError> {
+    pub fn start_timers_after_upgrade() {
         BoostedStore::get_all()
             .into_iter()
             .for_each(|(boost_id, _)| {
@@ -170,7 +170,5 @@ impl BoostCalls {
 
                 Self::set_timer_id(boost_id, timer_id);
             });
-
-        Ok(())
     }
 }

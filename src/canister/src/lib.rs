@@ -33,6 +33,7 @@ pub fn __export_did_tmp_() -> String {
     use canister_types::models::profile::*;
     use canister_types::models::relation_type::*;
     use canister_types::models::report::*;
+    use canister_types::models::reward::*;
     use canister_types::models::role::*;
     use canister_types::models::subject::*;
     use canister_types::models::topic::*;

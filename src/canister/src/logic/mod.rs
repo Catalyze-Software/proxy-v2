@@ -11,5 +11,6 @@ pub mod member_logic;
 pub mod notification_logic;
 pub mod profile_logic;
 pub mod report_logic;
+pub mod reward_buffer_logic;
 pub mod topic_logic;
 pub mod websocket_logic;

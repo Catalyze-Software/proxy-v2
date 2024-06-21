@@ -3,7 +3,8 @@ use canister_types::models::{
     api_error::ApiError, attendee::Attendee, boosted::Boost, event::Event,
     event_collection::EventCollection, friend_request::FriendRequest, group::Group, log::Logger,
     member::Member, member_collection::MemberCollection, notification::Notification,
-    profile::Profile, report::Report, user_notifications::UserNotifications,
+    profile::Profile, report::Report, reward::RewardableActivity,
+    user_notifications::UserNotifications,
 };
 use ic_stable_structures::{
     memory_manager::{MemoryId, MemoryManager, VirtualMemory},
@@ -50,6 +51,9 @@ pub static HISTORY_POINT_MEMORY_ID: MemoryId = MemoryId::new(17);
 pub static HISTORY_CANISTER_MEMORY_ID: MemoryId = MemoryId::new(18);
 
 pub static IDS_MEMORY_ID: MemoryId = MemoryId::new(19);
+
+pub static REWARD_BUFFER_MEMORY_ID: MemoryId = MemoryId::new(20);
+pub static REWARD_CANISTER_MEMORY_ID: MemoryId = MemoryId::new(21);
 
 /// A reference to a `StableBTreeMap` that is wrapped in a `RefCell`.
 ///# Generics
@@ -302,6 +306,10 @@ thread_local! {
         StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.borrow().get(LOGS_MEMORY_ID)))
     );
 
+    pub static REWARD_BUFFER: StorageRef<u64, RewardableActivity> = RefCell::new(
+        StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.borrow().get(REWARD_BUFFER_MEMORY_ID)))
+    );
+
     // Collections for more performant lookup
     pub static GROUP_MEMBERS: StorageRef<u64, MemberCollection> = RefCell::new(
         StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.borrow().get(GROUP_MEMBERS_MEMORY_ID)))
@@ -335,6 +343,11 @@ thread_local! {
     pub static HISTORY_CANISTER: RefCell<Cell<Option<Principal>, Memory>> = RefCell::new(
         Cell::init(MEMORY_MANAGER.with(|p| p.borrow().get(HISTORY_CANISTER_MEMORY_ID)), None)
             .expect("Failed to initialize history canister id")
+    );
+
+    pub static REWARD_CANISTER: RefCell<Cell<Option<Principal>, Memory>> = RefCell::new(
+        Cell::init(MEMORY_MANAGER.with(|p| p.borrow().get(REWARD_CANISTER_MEMORY_ID)), None)
+            .expect("Failed to initialize reward canister id")
     );
 
     pub static IDS: StorageRef<String, u64> = RefCell::new(

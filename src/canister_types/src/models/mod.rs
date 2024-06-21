@@ -42,3 +42,4 @@ pub mod user_notifications;
 pub mod websocket_message;
 
 pub mod log;
+pub mod reward;

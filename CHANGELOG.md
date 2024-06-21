@@ -12,12 +12,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `is_developer` guard to `add_topic` call
 - `remove_topic` call guarded by `is_developer`
 - `add_many_topics` call guarded by `is_developer`
+- `RewardBufferStore` to store rewardable data from hooks
+- hook `notify_group_member_count_changed` to store rewardable events
+- hook `notify_active_user` to store rewardable events
+- `reward` buffer preperation logic to get rewardable data
+- `reward` buffer inter canister call send logic to reward canister
+- `RewardCanisterStorage` to store the reward canister
+- `RewardTimerStore` to send data with intervals to the reward canister
+- `_dev_set_history_canister` to set the canister for processing the data
+- `_dev_get_history_canister` to check if the caniste is set correctly
+- `RewardableActivity` struct for the `RewardBufferStore`
+- `Activity` struct for the tracking specific activities
 - check to only be able to star or pin joined group or events
 - `_dev_get_all_ids` call to get all incrementable ids from a store for the testing purposes
 
 ### Changed
 
 - `Topic` enum value `Interest` to `Category`
+- `DateRange::start_date` to `DateRange::start`
+- `DateRange::end_date` to `DateRange::end`
+- `start_timers_after_upgrade` response type
+-
 - remove all reference when deleting a group or event
 
 ### Removed

@@ -3,7 +3,8 @@ use crate::{
     logic::{boost_logic::BoostCalls, id_logic::IDLogic, websocket_logic::Websocket},
     storage::{
         storage_api::StorageQueryable, AttendeeStore, EventStore, GroupEventsStore,
-        GroupMemberStore, MemberStore, NotificationStore, StorageUpdateable, UserNotificationStore,
+        GroupMemberStore, MemberStore, NotificationStore, RewardTimerStore, StorageUpdateable,
+        UserNotificationStore,
     },
 };
 use candid::Principal;
@@ -19,7 +20,8 @@ use ic_cdk::{
 #[post_upgrade]
 pub fn post_upgrade() {
     Websocket::init();
-    let _ = BoostCalls::start_timers_after_upgrade();
+    RewardTimerStore::start();
+    BoostCalls::start_timers_after_upgrade();
 }
 
 #[pre_upgrade]
@@ -28,6 +30,18 @@ pub fn pre_upgrade() {}
 #[init]
 pub fn init() {
     Websocket::init();
+
+    crate::storage::RewardTimerStore::start();
+}
+
+#[query]
+fn icts_name() -> String {
+    env!("CARGO_PKG_NAME").to_string()
+}
+
+#[query]
+fn icts_version() -> String {
+    env!("CARGO_PKG_VERSION").to_string()
 }
 
 #[query(guard = "is_developer")]
