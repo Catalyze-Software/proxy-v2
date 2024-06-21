@@ -1,3 +1,5 @@
+use std::fmt;
+
 use candid::{CandidType, Decode, Encode, Principal};
 use ic_cdk::api::time;
 use serde::{Deserialize, Serialize};
@@ -62,11 +64,13 @@ impl Activity {
     pub fn decode(bytes: Vec<u8>) -> Self {
         Decode!(&bytes, Activity).unwrap()
     }
+}
 
-    pub fn as_string(&self) -> String {
+impl fmt::Display for Activity {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Activity::GroupMemberCount(_) => "group_count".to_string(),
-            Activity::UserActivity(_) => "user_activity".to_string(),
+            Activity::GroupMemberCount(_) => write!(f, "group_member_count"),
+            Activity::UserActivity(_) => write!(f, "user_activity"),
         }
     }
 }
