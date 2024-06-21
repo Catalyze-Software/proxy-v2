@@ -1,4 +1,4 @@
-#Proxy canister
+# Proxy canister
 
 ## Reward mechanism
 
