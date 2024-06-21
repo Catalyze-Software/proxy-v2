@@ -70,13 +70,13 @@ impl Activity {
 }
 
 #[derive(Deserialize, CandidType, Clone)]
-pub struct GroupRewardData {
+pub struct GroupReward {
     pub owner: Principal,
     pub group_id: u64,
     pub group_member_count: u64,
 }
 
-impl GroupRewardData {
+impl GroupReward {
     pub fn new(owner: Principal, id: u64, count: u64) -> Self {
         Self {
             owner,
@@ -87,12 +87,12 @@ impl GroupRewardData {
 }
 
 #[derive(Deserialize, CandidType, Clone)]
-pub struct UserActivityData {
+pub struct UserActivity {
     pub owner: Principal,
     pub timestamp: u64,
 }
 
-impl UserActivityData {
+impl UserActivity {
     pub fn new(owner: Principal, timestamp: u64) -> Self {
         Self { owner, timestamp }
     }
@@ -100,6 +100,6 @@ impl UserActivityData {
 
 #[derive(CandidType, Deserialize, Clone)]
 pub struct RewardDataPackage {
-    pub group_member_counts: Vec<GroupRewardData>,
-    pub user_activity: Vec<UserActivityData>,
+    pub group_member_counts: Vec<GroupReward>,
+    pub user_activity: Vec<UserActivity>,
 }

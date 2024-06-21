@@ -3,16 +3,14 @@ use crate::storage::{
     RewardBufferStore, RewardTimerStore, StorageQueryable, StorageUpdateable,
 };
 
-use canister_types::models::reward::{
-    Activity, GroupRewardData, RewardDataPackage, UserActivityData,
-};
+use canister_types::models::reward::{Activity, GroupReward, RewardDataPackage, UserActivity};
 use ic_cdk::call;
 
 pub fn process_buffer() -> RewardDataPackage {
     let rewardables = RewardBufferStore::get_all();
 
-    let mut group_member_counts: Vec<GroupRewardData> = Vec::new();
-    let mut user_activity: Vec<UserActivityData> = Vec::new();
+    let mut group_member_counts: Vec<GroupReward> = Vec::new();
+    let mut user_activity: Vec<UserActivity> = Vec::new();
 
     for (_, rewardable) in rewardables.iter() {
         match rewardable.get_activity() {
@@ -21,7 +19,7 @@ pub fn process_buffer() -> RewardDataPackage {
                 if let Ok((_, group)) = GroupStore::get(id) {
                     let (_, members) = GroupMemberStore::get(id).unwrap_or((0, Default::default()));
 
-                    group_member_counts.push(GroupRewardData::new(
+                    group_member_counts.push(GroupReward::new(
                         group.owner,
                         id,
                         members.get_member_count(),
@@ -29,7 +27,7 @@ pub fn process_buffer() -> RewardDataPackage {
                 }
             }
             Activity::UserActivity(principal) => {
-                user_activity.push(UserActivityData::new(principal, rewardable.get_timestamp()));
+                user_activity.push(UserActivity::new(principal, rewardable.get_timestamp()));
             }
         }
     }
@@ -47,7 +45,7 @@ pub async fn send_reward_data() {
 
     let reward_data = process_buffer();
 
-    let _ = call::<(Vec<GroupRewardData>, Vec<UserActivityData>), ()>(
+    let _ = call::<(Vec<GroupReward>, Vec<UserActivity>), ()>(
         reward_canister,
         "process_buffer",
         (reward_data.group_member_counts, reward_data.user_activity),
