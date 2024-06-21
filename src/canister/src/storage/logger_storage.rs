@@ -1,6 +1,9 @@
-use super::storage_api::{
-    StaticStorageRef, Storage, StorageInsertable, StorageQueryable, StorageUpdateable, LOGS,
-    LOGS_MEMORY_ID,
+use super::{
+    storage_api::{
+        StaticStorageRef, Storage, StorageInsertable, StorageQueryable, StorageUpdateable, LOGS,
+        LOGS_MEMORY_ID,
+    },
+    ID_KIND_LOGS,
 };
 use canister_types::models::{
     api_error::ApiError,
@@ -16,7 +19,7 @@ pub const MAX_LOGS: u64 = 10_000;
 pub const LOGIN_EVENT: &str = "LoginEvent";
 
 impl Storage<u64, Logger> for LoggerStore {
-    const NAME: &'static str = "logs";
+    const NAME: &'static str = ID_KIND_LOGS;
 
     fn storage() -> StaticStorageRef<u64, Logger> {
         &LOGS

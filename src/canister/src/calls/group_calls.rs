@@ -486,7 +486,7 @@ pub fn get_group_members_with_profiles(
 
 /// Get the caller member entry - [`[query]`](query)
 /// # Change
-/// * was `get_self_member` but due to conflict with other methods it was renamed
+/// * was `get_self` but due to conflict with other methods it was renamed
 /// # Returns
 /// * `Member` - The member entry
 /// # Errors

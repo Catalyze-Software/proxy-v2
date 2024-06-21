@@ -1,6 +1,9 @@
-use super::storage_api::{
-    StaticStorageRef, Storage, StorageInsertable, StorageQueryable, StorageUpdateable, EVENTS,
-    EVENTS_MEMORY_ID,
+use super::{
+    storage_api::{
+        StaticStorageRef, Storage, StorageInsertable, StorageQueryable, StorageUpdateable, EVENTS,
+        EVENTS_MEMORY_ID,
+    },
+    ID_KIND_EVENTS,
 };
 use canister_types::models::event::Event;
 use ic_stable_structures::memory_manager::MemoryId;
@@ -8,7 +11,7 @@ use ic_stable_structures::memory_manager::MemoryId;
 pub struct EventStore;
 
 impl Storage<u64, Event> for EventStore {
-    const NAME: &'static str = "events";
+    const NAME: &'static str = ID_KIND_EVENTS;
 
     fn storage() -> StaticStorageRef<u64, Event> {
         &EVENTS
