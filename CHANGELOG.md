@@ -29,12 +29,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Topic` enum value `Interest` to `Category`
 - `DateRange::start_date` to `DateRange::start`
 - `DateRange::end_date` to `DateRange::end`
+- `start_timers_after_upgrade` response type
+-
 
 ### Removed
 
 - `has_access` guard from topic query calls
-- `start_timers_after_upgrade` response type
--
 
 ## [0.2.0]
 
