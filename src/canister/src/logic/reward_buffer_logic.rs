@@ -17,7 +17,7 @@ pub fn process_buffer() -> RewardDataPackage {
             Activity::GroupMemberCount(id) => {
                 // collect owner, group id and member count
                 if let Ok((_, group)) = GroupStore::get(id) {
-                    let (_, members) = GroupMemberStore::get(id).unwrap_or((0, Default::default()));
+                    let (_, members) = GroupMemberStore::get(id).unwrap_or_default();
 
                     group_member_counts.push(GroupReward::new(
                         group.owner,

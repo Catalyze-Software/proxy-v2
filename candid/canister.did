@@ -91,7 +91,7 @@ type ChunkData = record {
   index : nat64;
 };
 type ClientKey = record { client_principal : principal; client_nonce : nat64 };
-type DateRange = record { end_date : nat64; start_date : nat64 };
+type DateRange = record { end_date : nat64; start : nat64 };
 type DocumentDetails = record {
   approved_date : nat64;
   approved_version : nat64;
@@ -862,6 +862,8 @@ service : () -> {
   get_ws_errors : () -> (vec record { nat64; text }) query;
   get_ws_url : () -> (text) query;
   http_request : (HttpRequest) -> (HttpResponse) query;
+  icts_name : () -> (text) query;
+  icts_version : () -> (text) query;
   invite_to_event : (nat64, nat64, principal) -> (Result_33);
   invite_to_group : (nat64, principal) -> (Result_4);
   join_event : (nat64) -> (Result_5);

@@ -341,13 +341,13 @@ thread_local! {
     );
 
     pub static HISTORY_CANISTER: RefCell<Cell<Option<Principal>, Memory>> = RefCell::new(
-    Cell::init(MEMORY_MANAGER.with(|p| p.borrow().get(HISTORY_CANISTER_MEMORY_ID)), None)
-        .expect("Failed to initialize history canister id")
+        Cell::init(MEMORY_MANAGER.with(|p| p.borrow().get(HISTORY_CANISTER_MEMORY_ID)), None)
+            .expect("Failed to initialize history canister id")
     );
 
     pub static REWARD_CANISTER: RefCell<Cell<Option<Principal>, Memory>> = RefCell::new(
-    Cell::init(MEMORY_MANAGER.with(|p| p.borrow().get(REWARD_CANISTER_MEMORY_ID)), None)
-        .expect("Failed to initialize reward canister id")
+        Cell::init(MEMORY_MANAGER.with(|p| p.borrow().get(REWARD_CANISTER_MEMORY_ID)), None)
+            .expect("Failed to initialize reward canister id")
     );
 
 }

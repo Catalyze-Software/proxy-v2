@@ -31,11 +31,13 @@ impl RewardableActivity {
     pub fn before(&self, days: u64) -> bool {
         self.timestamp < time() - days * 24 * 60 * 60
     }
+}
 
-    pub fn into(self) -> RewardableActivityResponse {
+impl From<RewardableActivity> for RewardableActivityResponse {
+    fn from(val: RewardableActivity) -> Self {
         RewardableActivityResponse {
-            activity: self.get_activity(),
-            timestamp: self.timestamp,
+            activity: val.get_activity(),
+            timestamp: val.timestamp,
         }
     }
 }

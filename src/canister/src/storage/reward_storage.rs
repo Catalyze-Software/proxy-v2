@@ -21,7 +21,7 @@ thread_local! {
 pub struct RewardTimerStore;
 
 impl RewardTimerStore {
-    pub fn start_reward_timer() {
+    pub fn start() {
         let _ = set_timer_interval(INTERVAL, move || {
             spawn(send_reward_data());
         });
