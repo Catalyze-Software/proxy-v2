@@ -91,7 +91,7 @@ type ChunkData = record {
   index : nat64;
 };
 type ClientKey = record { client_principal : principal; client_nonce : nat64 };
-type DateRange = record { end_date : nat64; start : nat64 };
+type DateRange = record { end_date : nat64; start_date : nat64 };
 type DocumentDetails = record {
   approved_date : nat64;
   approved_version : nat64;
