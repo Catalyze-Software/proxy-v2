@@ -27,6 +27,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Activity` struct for the tracking specific activities
 - check to only be able to star or pin joined group or events
 - `_dev_get_all_ids` call to get all incrementable ids from a store for the testing purposes
+- `_dev_clear` to clear all stores
+- `_dev_prod_init` to init all production canisters
 
 ### Changed
 
