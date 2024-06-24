@@ -2,19 +2,24 @@ use crate::{
     helpers::guards::{is_developer, is_prod_developer},
     logic::{boost_logic::BoostCalls, id_logic::IDLogic, websocket_logic::Websocket},
     storage::{
-        storage_api::StorageQueryable, AttendeeStore, EventStore, GroupEventsStore,
-        GroupMemberStore, MemberStore, NotificationStore, RewardTimerStore, StorageUpdateable,
-        UserNotificationStore,
+        reward_canister_storage::RewardCanisterStorage, storage_api::StorageQueryable,
+        AttendeeStore, BoostedStore, CellStorage, EventAttendeeStore, EventStore,
+        FriendRequestStore, GroupEventsStore, GroupMemberStore, GroupStore, HistoryCanisterStorage,
+        LoggerStore, MemberStore, NotificationStore, ProfileStore, ReportStore, RewardBufferStore,
+        RewardTimerStore, StorageUpdateable, UserNotificationStore,
     },
 };
 use candid::Principal;
-use canister_types::models::http_types::{HttpRequest, HttpResponse};
+use canister_types::models::{
+    api_error::ApiError,
+    http_types::{HttpRequest, HttpResponse},
+};
 use ic_cdk::{
     api::{
         canister_balance128,
         management_canister::main::{create_canister, CanisterSettings, CreateCanisterArgument},
     },
-    init, post_upgrade, pre_upgrade, query, update,
+    id, init, post_upgrade, pre_upgrade, query, update,
 };
 
 #[post_upgrade]
@@ -30,8 +35,7 @@ pub fn pre_upgrade() {}
 #[init]
 pub fn init() {
     Websocket::init();
-
-    crate::storage::RewardTimerStore::start();
+    RewardTimerStore::start();
 }
 
 #[query]
@@ -130,6 +134,40 @@ async fn _dev_create_canister(controllers: Vec<Principal>) -> Result<Principal, 
 #[query(guard = "is_developer")]
 fn _dev_get_all_ids() -> Vec<(String, u64)> {
     IDLogic::get_all()
+}
+
+#[query(guard = "is_prod_developer")]
+fn _dev_prod_init() -> Result<(), ApiError> {
+    if id().to_string() != "2jvhk-5aaaa-aaaap-ahewa-cai" {
+        return Err(
+            ApiError::unsupported().add_message("This canister is not the production canister")
+        );
+    }
+
+    let _ =
+        HistoryCanisterStorage::set(Principal::from_text("inc34-eqaaa-aaaap-ahl2a-cai").unwrap());
+    let _ =
+        RewardCanisterStorage::set(Principal::from_text("zgfl7-pqaaa-aaaap-accpa-cai").unwrap());
+    Ok(())
+}
+
+#[query(guard = "is_prod_developer")]
+fn _dev_clear() {
+    ProfileStore::clear();
+    FriendRequestStore::clear();
+    GroupStore::clear();
+    MemberStore::clear();
+    EventStore::clear();
+    AttendeeStore::clear();
+    ReportStore::clear();
+    BoostedStore::clear();
+    NotificationStore::clear();
+    UserNotificationStore::clear();
+    LoggerStore::clear();
+    RewardBufferStore::clear();
+    GroupMemberStore::clear();
+    GroupEventsStore::clear();
+    EventAttendeeStore::clear();
 }
 
 #[query]
