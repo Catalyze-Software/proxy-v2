@@ -136,7 +136,7 @@ fn _dev_get_all_ids() -> Vec<(String, u64)> {
     IDLogic::get_all()
 }
 
-#[query(guard = "is_prod_developer")]
+#[update(guard = "is_prod_developer")]
 fn _dev_prod_init() -> Result<(), ApiError> {
     if id().to_string() != "2jvhk-5aaaa-aaaap-ahewa-cai" {
         return Err(
@@ -151,7 +151,7 @@ fn _dev_prod_init() -> Result<(), ApiError> {
     Ok(())
 }
 
-#[query(guard = "is_prod_developer")]
+#[update(guard = "is_prod_developer")]
 fn _dev_clear() {
     ProfileStore::clear();
     FriendRequestStore::clear();
