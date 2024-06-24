@@ -36,7 +36,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `DateRange::start_date` to `DateRange::start`
 - `DateRange::end_date` to `DateRange::end`
 - `start_timers_after_upgrade` response type
--
 - remove all reference when deleting a group or event
 
 ### Removed

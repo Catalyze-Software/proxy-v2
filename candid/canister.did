@@ -91,7 +91,7 @@ type ChunkData = record {
   index : nat64;
 };
 type ClientKey = record { client_principal : principal; client_nonce : nat64 };
-type DateRange = record { end_date : nat64; start : nat64 };
+type DateRange = record { end_date : nat64; start_date : nat64 };
 type DocumentDetails = record {
   approved_date : nat64;
   approved_version : nat64;
@@ -754,13 +754,13 @@ service : () -> {
       record { text; bool },
       record { text; bool },
     ) query;
-  _dev_clear : () -> () query;
+  _dev_clear : () -> ();
   _dev_clear_notifications : () -> ();
   _dev_create_canister : (vec principal) -> (Result);
   _dev_get_all_ids : () -> (vec record { text; nat64 }) query;
   _dev_get_history_canister : () -> (Result_1) query;
   _dev_get_reward_canister : () -> (Result_1) query;
-  _dev_prod_init : () -> (Result_2) query;
+  _dev_prod_init : () -> (Result_2);
   _dev_send_reward_data : () -> ();
   _dev_set_history_canister : (principal) -> (Result_1);
   _dev_set_reward_canister : (principal) -> (Result_1);
