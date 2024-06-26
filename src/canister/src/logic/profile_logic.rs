@@ -30,6 +30,10 @@ impl ProfileCalls {
     pub fn add_profile(post_profile: PostProfile) -> Result<ProfileResponse, ApiError> {
         ProfileValidation::validate_post_profile(&post_profile)?;
 
+        if ProfileStore::find(|_, p| p.username == post_profile.username).is_some() {
+            return Err(ApiError::duplicate().add_message("Username already exists"));
+        }
+
         let new_profile = Profile::from(post_profile);
         let stored_profile = ProfileStore::insert_by_key(caller(), new_profile);
 

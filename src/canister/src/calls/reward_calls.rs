@@ -20,12 +20,12 @@ fn _dev_get_reward_canister() -> Result<Principal, ApiError> {
     RewardCanisterStorage::get()
 }
 
-#[query(guard = "is_developer")]
+#[query]
 fn reward_timer_next_trigger() -> Option<u64> {
     RewardTimerStore::next_trigger()
 }
 
-#[query(guard = "is_developer")]
+#[query]
 fn read_reward_buffer() -> Vec<RewardableActivityResponse> {
     RewardBufferStore::get_all()
         .into_iter()

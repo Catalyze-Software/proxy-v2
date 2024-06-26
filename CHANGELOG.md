@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [unreleased]
 
+### Added
+
+- limit of 10 groups per user
+
+### Removed
+
+- `is_developer` check from reward calls
+
 ## [0.2.1]
 
 ### Added
