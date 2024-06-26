@@ -1,13 +1,13 @@
 # Build script proxy canister
 
 # Generate candid
-cargo test candid -p canister
+cargo test candid -p proxy
 
 # Build wasm
-cargo build -p canister --release --target wasm32-unknown-unknown
+cargo build -p proxy --release --target wasm32-unknown-unknown
 
 # Gzip wasm
-gzip -c target/wasm32-unknown-unknown/release/canister.wasm > target/wasm32-unknown-unknown/release/canister.wasm.gz
+gzip -c target/wasm32-unknown-unknown/release/proxy.wasm > target/wasm32-unknown-unknown/release/proxy.wasm.gz
 
 # Copy wasm
-cp target/wasm32-unknown-unknown/release/canister.wasm.gz wasm/canister.wasm.gz
+cp target/wasm32-unknown-unknown/release/proxy.wasm.gz wasm/proxy.wasm.gz
