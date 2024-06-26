@@ -93,7 +93,7 @@ jobs:
             --summary "${{ env.CHANGES }}" \
             --pem-file "catalyze.pem" \
             --url "https://github.com/${{ github.repository }}/releases/tag/${{ env.VERSION }}" \
-            --title "Upgrade ${{ env.CANISTER_NAME }} proxy to version ${{ env.VERSION }}" \
+            --title "Upgrade ${{ env.CANISTER_NAME }} canister to version ${{ env.VERSION }}" \
             "${{ env.DEVELOPER_NEURON_ID }}" > msg.json
 
       - name: Send Proposal
