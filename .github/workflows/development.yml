@@ -55,6 +55,6 @@ jobs:
         uses: ./.github/actions/deploy
         with:
           identity: ${{ secrets.CATALYZE_DEVELOPMENT }}
-          canister_name: canister
+          canister_name: proxy
           network: development
           wasm_file: wasm/${{ env.PACKAGE }}_${{ env.VERSION }}.wasm.gz
