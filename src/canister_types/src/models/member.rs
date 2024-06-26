@@ -38,6 +38,14 @@ impl Member {
         self.joined.get(group_id).cloned()
     }
 
+    pub fn get_owned(&self) -> Vec<u64> {
+        self.joined
+            .iter()
+            .filter(|(_, v)| v.roles.contains(&"owner".to_string()))
+            .map(|(k, _)| *k)
+            .collect()
+    }
+
     pub fn get_multiple_joined(&self) -> Vec<(u64, Join)> {
         self.joined.iter().map(|(k, v)| (*k, v.clone())).collect()
     }

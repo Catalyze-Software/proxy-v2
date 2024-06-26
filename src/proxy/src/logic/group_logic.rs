@@ -17,6 +17,7 @@ use crate::{
         RewardBufferStore, StorageInsertable, StorageInsertableByKey, StorageQueryable,
         StorageUpdateable,
     },
+    MAX_GROUPS_PER_USER,
 };
 use candid::Principal;
 use canister_types::{
@@ -75,6 +76,11 @@ impl GroupCalls {
 
         // Get the member and add the group to the member
         let (_, mut member) = MemberStore::get(caller())?;
+
+        if member.get_owned().len() >= MAX_GROUPS_PER_USER {
+            return Err(ApiError::bad_request()
+                .add_message(format!("You can only own {} groups", MAX_GROUPS_PER_USER).as_str()));
+        }
 
         // Create and store the group
         let (new_group_id, new_group) = GroupStore::insert(Group::from(post_group))?;

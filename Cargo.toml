@@ -1,5 +1,5 @@
 [workspace]
-members = ["src/canister", "src/canister_types"]
+members = ["src/proxy", "src/canister_types"]
 resolver = "2"
 
 [workspace.dependencies]

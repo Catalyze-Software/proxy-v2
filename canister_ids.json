@@ -1,5 +1,5 @@
 {
-  "canister": {
+  "proxy": {
     "development": "bwm3m-wyaaa-aaaag-qdiua-cai",
     "ic": "2jvhk-5aaaa-aaaap-ahewa-cai",
     "marketing": "zvef6-taaaa-aaaap-ahita-cai",

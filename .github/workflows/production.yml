@@ -2,10 +2,10 @@ name: Build, Create Release and SNS Proposal for Production
 
 on:
   push:
-    tags: 
+    tags:
       - "[0-9]+.[0-9]+.[0-9]+"
 
-concurrency: 
+concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
@@ -15,9 +15,9 @@ permissions:
 
 env:
   VERSION: ${{ github.ref_name }}
-  PACKAGE: 'canister'
-  CANISTER_NAME: 'canister'
-  UPGRADE_CANISTER_ID: '2jvhk-5aaaa-aaaap-ahewa-cai'
+  PACKAGE: "proxy"
+  CANISTER_NAME: "proxy"
+  UPGRADE_CANISTER_ID: "2jvhk-5aaaa-aaaap-ahewa-cai"
   DEVELOPER_NEURON_ID: ${{ secrets.PROPOSAL_NEURON_ID }}
 
 jobs:
@@ -26,18 +26,18 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      
+
       - name: Build
         uses: ./.github/actions/build
         with:
-          lint: 'true'
+          lint: "true"
           # TODO: Enable tests once they are implemented
-          test: 'false'
-          gzip: 'true'
+          test: "false"
+          gzip: "true"
           version: ${{ env.VERSION }}
           package: ${{ env.PACKAGE }}
-          build_args: '--release'
-      
+          build_args: "--release"
+
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
@@ -71,7 +71,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           body: ${{ env.CHANGES }}
-          make_latest: 'true'
+          make_latest: "true"
           files: |
             wasm/${{ env.PACKAGE }}_${{ env.VERSION }}.wasm.gz
             wasm/${{ env.PACKAGE }}_${{ env.VERSION }}.wasm

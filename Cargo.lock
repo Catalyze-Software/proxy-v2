@@ -106,23 +106,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "canister"
-version = "0.2.1"
-dependencies = [
- "candid",
- "canister_types",
- "email_address",
- "ic-cdk 0.14.0",
- "ic-cdk-timers",
- "ic-ledger-types",
- "ic-stable-structures",
- "ic-websocket-cdk",
- "serde",
- "serde_json",
- "unicode-segmentation",
-]
-
-[[package]]
 name = "canister_types"
 version = "0.1.0"
 dependencies = [
@@ -575,6 +558,23 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "22244ce15aa966053a896d1accb3a6e68469b97c7f33f284b99f0d576879fc23"
 dependencies = [
  "unicode-ident",
+]
+
+[[package]]
+name = "proxy"
+version = "0.2.2"
+dependencies = [
+ "candid",
+ "canister_types",
+ "email_address",
+ "ic-cdk 0.14.0",
+ "ic-cdk-timers",
+ "ic-ledger-types",
+ "ic-stable-structures",
+ "ic-websocket-cdk",
+ "serde",
+ "serde_json",
+ "unicode-segmentation",
 ]
 
 [[package]]

@@ -7,6 +7,7 @@ use ic_cdk::query;
 pub static CATALYZE_MULTI_SIG: &str = "fcygz-gqaaa-aaaap-abpaa-cai";
 pub static MULTISIG_INDEX: &str = "o7ouu-niaaa-aaaap-ahhdq-cai";
 pub static E8S_PER_DAY_BOOST_COST: u64 = 3500000;
+pub static MAX_GROUPS_PER_USER: usize = 10;
 
 pub mod calls;
 pub mod helpers;
@@ -57,5 +58,5 @@ pub fn candid() {
 
     let dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
     let dir = dir.parent().unwrap().parent().unwrap().join("candid");
-    write(dir.join("canister.did"), __export_did_tmp_()).expect("Write failed.");
+    write(dir.join("proxy.did"), __export_did_tmp_()).expect("Write failed.");
 }

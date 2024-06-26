@@ -18,11 +18,11 @@ inputs:
   package:
     description: Rust package name to build
     required: false
-    default: 'canister'
+    default: "proxy"
   build_args:
     description: Arguments to pass to cargo build
     required: false
-    default: ''
+    default: ""
 
 runs:
   using: composite
@@ -44,7 +44,7 @@ runs:
         CARGO_TERM_COLOR: always
         RUSTFLAGS: "-D warnings"
       run: cargo fmt -- --check
-    
+
     - name: clippy
       shell: bash
       if: ${{ inputs.lint == 'true' }}
