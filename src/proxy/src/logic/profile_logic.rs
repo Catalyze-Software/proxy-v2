@@ -30,7 +30,11 @@ impl ProfileCalls {
     pub fn add_profile(post_profile: PostProfile) -> Result<ProfileResponse, ApiError> {
         ProfileValidation::validate_post_profile(&post_profile)?;
 
-        if ProfileStore::find(|_, p| p.username == post_profile.username).is_some() {
+        if ProfileStore::find(|_, p| {
+            p.username.to_lowercase() == post_profile.username.to_lowercase()
+        })
+        .is_some()
+        {
             return Err(ApiError::duplicate().add_message("Username already exists"));
         }
 
