@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- "bad_request" error to "duplicate" error
+- "bad_request" error to "duplicate" error for creating a new group
 - websocket url
 
 ## [0.2.2]
