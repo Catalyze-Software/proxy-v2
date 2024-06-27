@@ -13,7 +13,7 @@ use crate::storage::{RewardBufferStore, StorageQueryable, UserNotificationStore}
 thread_local! {
    pub static CONNECTED_CLIENTS: RefCell<HashMap<Principal, u64>> = RefCell::new(HashMap::new());
    pub static WS_ERRORS: RefCell<HashMap<u64, (u64, String)>> = RefCell::new(HashMap::new());
-   pub static WS_URL: RefCell<String> = RefCell::new("wss://ctz-ws.rem.codes".to_string());
+   pub static WS_URL: RefCell<String> = RefCell::new("wss://ws.ic.catalyze.chat".to_string());
 }
 
 pub struct Websocket;
