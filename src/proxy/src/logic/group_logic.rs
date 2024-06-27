@@ -65,10 +65,9 @@ impl GroupCalls {
         GroupValidation::validate_post_group(post_group.clone())?;
 
         // Check if the group name already exists
-        if GroupStore::find(|_, group| group.name.to_lowercase() == post_group.name.to_lowercase())
-            .is_some()
-        {
-            return Err(ApiError::bad_request().add_message("Group name already exists"));
+        let post_group_name = post_group.name.to_lowercase();
+        if GroupStore::find(|_, group| group.name.to_lowercase() == post_group_name).is_some() {
+            return Err(ApiError::duplicate().add_message("Group name already exists"));
         }
 
         // Check if the caller has permission to create the group
