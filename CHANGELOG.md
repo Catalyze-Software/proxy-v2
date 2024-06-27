@@ -15,12 +15,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - "bad_request" error to "duplicate" error for creating a new group
 - websocket url
+- MAX_GROUPS_PER_USER to USER_GROUP_CREATION_LIMIT
 
 ## [0.2.2]
 
 ### Added
 
-- limit of 10 groups per user
+- limit creating groups to 10 groups per user
 
 ### Changed
 
