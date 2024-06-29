@@ -38,7 +38,7 @@ fn test_log() {
 }
 
 // Query functions
-#[query(guard = "is_monitor")]
+#[query(guard = "is_developer")]
 fn get_latest_logs(count: u64) -> Vec<Logger> {
     LoggerStore::get_latest_logs(count)
 }

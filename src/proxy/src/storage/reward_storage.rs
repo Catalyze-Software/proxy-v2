@@ -1,6 +1,6 @@
 use super::{
     storage_api::{StaticStorageRef, Storage, REWARD_BUFFER, REWARD_BUFFER_MEMORY_ID},
-    StorageInsertable, StorageQueryable, StorageUpdateable,
+    StorageInsertable, StorageQueryable, StorageUpdateable, ID_KIND_REWARDS_BUFFER,
 };
 use crate::logic::reward_buffer_logic::send_reward_data;
 use candid::Principal;
@@ -46,7 +46,7 @@ impl RewardTimerStore {
 pub struct RewardBufferStore;
 
 impl Storage<u64, RewardableActivity> for RewardBufferStore {
-    const NAME: &'static str = "rewards_buffer";
+    const NAME: &'static str = ID_KIND_REWARDS_BUFFER;
 
     fn storage() -> StaticStorageRef<u64, RewardableActivity> {
         &REWARD_BUFFER

@@ -122,7 +122,10 @@ impl GroupCalls {
     }
 
     pub fn get_group_by_name(name: String) -> Result<GroupResponse, ApiError> {
-        if let Some((id, _)) = GroupStore::find(|_, g| g.name.to_lowercase() == name.to_lowercase())
+        let _name = &name.to_lowercase().replace(' ', "-");
+
+        if let Some((id, _)) =
+            GroupStore::find(|_, g| &g.name.to_lowercase().replace(' ', "-") == _name)
         {
             return Self::get_group(id);
         };

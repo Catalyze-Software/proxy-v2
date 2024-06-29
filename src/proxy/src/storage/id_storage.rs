@@ -14,6 +14,7 @@ pub const ID_KIND_NOTIFICATIONS: &str = "notifications";
 pub const ID_KIND_REPORTS: &str = "reports";
 pub const ID_KIND_TAGS: &str = "tags";
 pub const ID_KIND_CATEGORIES: &str = "categories";
+pub const ID_KIND_REWARDS_BUFFER: &str = "rewards_buffer";
 pub const ID_KIND_SKILLS: &str = "skills";
 
 #[derive(Debug, Clone)]
@@ -31,6 +32,7 @@ pub enum IDKind {
     Tags,
     Categories,
     Skills,
+    RewardBuffer,
 }
 
 impl std::fmt::Display for IDKind {
@@ -49,6 +51,7 @@ impl std::fmt::Display for IDKind {
             IDKind::Tags => write!(f, "{ID_KIND_TAGS}"),
             IDKind::Categories => write!(f, "{ID_KIND_CATEGORIES}"),
             IDKind::Skills => write!(f, "{ID_KIND_SKILLS}"),
+            IDKind::RewardBuffer => write!(f, "{ID_KIND_REWARDS_BUFFER}"),
         }
     }
 }
@@ -71,6 +74,7 @@ impl std::str::FromStr for IDKind {
             ID_KIND_TAGS => Ok(IDKind::Tags),
             ID_KIND_CATEGORIES => Ok(IDKind::Categories),
             ID_KIND_SKILLS => Ok(IDKind::Skills),
+            ID_KIND_REWARDS_BUFFER => Ok(IDKind::RewardBuffer),
             _ => Err(format!("Unknown IDKind: {s}")),
         }
     }
@@ -133,6 +137,7 @@ impl IDStore {
             IDKind::Tags => super::TagStore::storage().with(last_key),
             IDKind::Categories => super::CategoryStore::storage().with(last_key),
             IDKind::Skills => super::SkillStore::storage().with(last_key),
+            IDKind::RewardBuffer => super::RewardBufferStore::storage().with(last_key),
         }
     }
 }
