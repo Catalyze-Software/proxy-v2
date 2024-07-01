@@ -362,7 +362,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Canister http call to get current version `/version`
 - `#[allow(unused)]` to deprecated migration methods
 
-## Fixed
+### Fixed
 
 - Missing `notification_id` on migration models
 
