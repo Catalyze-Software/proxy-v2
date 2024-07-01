@@ -7,7 +7,7 @@ use crate::{
     },
 };
 use candid::Principal;
-use canister_types::models::{api_error::ApiError, reward::RewardableActivityResponse};
+use catalyze_shared::{api_error::ApiError, reward::RewardableActivityResponse};
 use ic_cdk::{query, update};
 
 #[update(guard = "is_developer")]

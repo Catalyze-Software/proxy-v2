@@ -1,6 +1,3 @@
-// should all be removed after implementation
-#![allow(deprecated)]
-
 use candid::Principal;
 use ic_cdk::query;
 
@@ -21,28 +18,28 @@ pub mod storage;
 pub fn __export_did_tmp_() -> String {
     use candid::export_service;
 
-    use canister_types::models::api_error::*;
-    use canister_types::models::attendee::*;
-    use canister_types::models::event::*;
-    use canister_types::models::friend_request::*;
-    use canister_types::models::group::*;
-    use canister_types::models::http_types::HttpRequest;
-    use canister_types::models::log::*;
-    use canister_types::models::member::*;
-    use canister_types::models::notification::*;
-    use canister_types::models::paged_response::*;
-    use canister_types::models::permission::*;
-    use canister_types::models::profile::*;
-    use canister_types::models::relation_type::*;
-    use canister_types::models::report::*;
-    use canister_types::models::reward::*;
-    use canister_types::models::role::*;
-    use canister_types::models::subject::*;
-    use canister_types::models::topic::*;
-    use canister_types::models::transaction_data::*;
-    use canister_types::models::user_notifications::*;
-    use canister_types::models::wallet::*;
-    use canister_types::models::websocket_message::WSMessage;
+    use catalyze_shared::api_error::*;
+    use catalyze_shared::attendee::*;
+    use catalyze_shared::event::*;
+    use catalyze_shared::friend_request::*;
+    use catalyze_shared::group::*;
+    use catalyze_shared::http_types::HttpRequest;
+    use catalyze_shared::log::*;
+    use catalyze_shared::member::*;
+    use catalyze_shared::notification::*;
+    use catalyze_shared::paged_response::*;
+    use catalyze_shared::permission::*;
+    use catalyze_shared::profile::*;
+    use catalyze_shared::relation_type::*;
+    use catalyze_shared::report::*;
+    use catalyze_shared::reward::*;
+    use catalyze_shared::role::*;
+    use catalyze_shared::subject::*;
+    use catalyze_shared::topic::*;
+    use catalyze_shared::transaction_data::*;
+    use catalyze_shared::user_notifications::*;
+    use catalyze_shared::wallet::*;
+    use catalyze_shared::websocket_message::WSMessage;
     use ic_cdk::api::management_canister::http_request::HttpResponse;
     use ic_websocket_cdk::types::*;
 
@@ -53,11 +50,7 @@ pub fn __export_did_tmp_() -> String {
 // Method used to save the candid interface to a file
 #[test]
 pub fn candid() {
-    use std::env;
-    use std::fs::write;
-    use std::path::PathBuf;
+    use catalyze_shared::candid::save_candid_file;
 
-    let dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
-    let dir = dir.parent().unwrap().parent().unwrap().join("candid");
-    write(dir.join("proxy.did"), __export_did_tmp_()).expect("Write failed.");
+    save_candid_file("proxy.did", __export_did_tmp_())
 }

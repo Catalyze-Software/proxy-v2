@@ -5,7 +5,7 @@ use super::{
     },
     ID_KIND_LOGS,
 };
-use canister_types::models::{
+use catalyze_shared::{
     api_error::ApiError,
     log::{Logger, PostLog},
 };

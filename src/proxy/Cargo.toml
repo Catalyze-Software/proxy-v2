@@ -19,6 +19,4 @@ ic-ledger-types =  {workspace = true}
 
 ic-websocket-cdk = "0.3"
 ic-cdk-timers = "0.6"
-email_address = "0.2"
-unicode-segmentation = "1"
-canister_types = { path = "../canister_types" }
+catalyze-shared = { git = "https://github.com/Catalyze-Software/catalyze-shared" }

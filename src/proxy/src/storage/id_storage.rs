@@ -1,5 +1,5 @@
 use super::storage_api::{StaticStorageRef, Storage, StorageRef, IDS, IDS_MEMORY_ID};
-use canister_types::models::api_error::ApiError;
+use catalyze_shared::api_error::ApiError;
 use ic_stable_structures::{memory_manager::MemoryId, Storable};
 
 pub const ID_KIND_BOOSTED: &str = "boosted";

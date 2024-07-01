@@ -4,7 +4,7 @@ use crate::{
     E8S_PER_DAY_BOOST_COST,
 };
 use candid::Principal;
-use canister_types::models::{
+use catalyze_shared::{
     api_error::ApiError,
     boosted::Boost,
     subject::{Subject, SubjectType},

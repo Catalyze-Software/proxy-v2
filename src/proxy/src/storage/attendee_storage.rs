@@ -3,7 +3,7 @@ use super::storage_api::{
     ATTENDEES, ATTENDEES_MEMORY_ID,
 };
 use candid::Principal;
-use canister_types::models::attendee::Attendee;
+use catalyze_shared::attendee::Attendee;
 
 use ic_stable_structures::memory_manager::MemoryId;
 

@@ -4,7 +4,7 @@ use super::{
     },
     StorageInsertable, ID_KIND_REPORTS,
 };
-use canister_types::models::report::Report;
+use catalyze_shared::report::Report;
 use ic_stable_structures::memory_manager::MemoryId;
 
 pub struct ReportStore;

@@ -1,5 +1,5 @@
 use crate::{
-    helpers::guards::{has_access, is_not_anonymous},
+    helpers::guards::has_access,
     logic::{friend_request_logic::FriendRequestCalls, profile_logic::ProfileCalls},
 };
 /// # Profile methods
@@ -11,9 +11,10 @@ use crate::{
 /// Check the public / private access of these calls? (anon / registered / application role)
 ///
 use candid::Principal;
-use canister_types::models::{
+use catalyze_shared::{
     api_error::ApiError,
     friend_request::FriendRequestResponse,
+    helpers::guards::is_not_anonymous,
     profile::{PostProfile, ProfileResponse, UpdateProfile},
     relation_type::RelationType,
     subject::{Subject, SubjectResponse, SubjectType},

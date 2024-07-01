@@ -106,16 +106,18 @@ dependencies = [
 ]
 
 [[package]]
-name = "canister_types"
+name = "catalyze-shared"
 version = "0.1.0"
+source = "git+https://github.com/Catalyze-Software/catalyze-shared#a1a4118f75e234d28d2f6752f3829b0b555f52b5"
 dependencies = [
  "candid",
+ "email_address",
  "ic-cdk 0.14.0",
- "ic-ledger-types",
  "ic-stable-structures",
  "icrc-ledger-types",
  "serde",
  "serde_json",
+ "unicode-segmentation",
 ]
 
 [[package]]
@@ -565,8 +567,7 @@ name = "proxy"
 version = "0.2.4"
 dependencies = [
  "candid",
- "canister_types",
- "email_address",
+ "catalyze-shared",
  "ic-cdk 0.14.0",
  "ic-cdk-timers",
  "ic-ledger-types",
@@ -574,7 +575,6 @@ dependencies = [
  "ic-websocket-cdk",
  "serde",
  "serde_json",
- "unicode-segmentation",
 ]
 
 [[package]]

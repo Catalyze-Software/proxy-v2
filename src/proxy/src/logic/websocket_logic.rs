@@ -1,10 +1,10 @@
 use std::{cell::RefCell, collections::HashMap};
 
 use candid::Principal;
-use canister_types::models::{user_notifications::UserNotifications, websocket_message::WSMessage};
+use catalyze_shared::{user_notifications::UserNotifications, websocket_message::WSMessage};
 use ic_cdk::api::time;
 use ic_websocket_cdk::{
-    ws_send, OnCloseCallbackArgs, OnMessageCallbackArgs, OnOpenCallbackArgs, WsHandlers,
+    send as ws_send, OnCloseCallbackArgs, OnMessageCallbackArgs, OnOpenCallbackArgs, WsHandlers,
     WsInitParams,
 };
 

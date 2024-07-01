@@ -1,4 +1,4 @@
-use canister_types::models::{
+use catalyze_shared::{
     api_error::ApiError,
     paged_response::PagedResponse,
     report::{PostReport, Report, ReportFilter, ReportResponse, ReportSort},

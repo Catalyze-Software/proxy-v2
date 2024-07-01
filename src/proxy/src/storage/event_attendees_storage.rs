@@ -5,7 +5,7 @@ use super::{
     },
     ID_KIND_EVENT_ATTENDEES,
 };
-use canister_types::models::member_collection::MemberCollection;
+use catalyze_shared::member_collection::MemberCollection;
 use ic_stable_structures::memory_manager::MemoryId;
 
 pub struct EventAttendeeStore;

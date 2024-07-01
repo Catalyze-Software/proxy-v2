@@ -1,5 +1,5 @@
 use candid::Principal;
-use canister_types::models::{
+use catalyze_shared::{
     api_error::ApiError, attendee::Attendee, boosted::Boost, event::Event,
     event_collection::EventCollection, friend_request::FriendRequest, group::Group, log::Logger,
     member::Member, member_collection::MemberCollection, notification::Notification,

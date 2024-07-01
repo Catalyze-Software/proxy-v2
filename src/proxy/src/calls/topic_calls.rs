@@ -1,5 +1,5 @@
 use crate::{helpers::guards::is_developer, logic::topic_logic::TopicCalls};
-use canister_types::models::{
+use catalyze_shared::{
     api_error::ApiError,
     topic::{Topic, TopicKind},
 };

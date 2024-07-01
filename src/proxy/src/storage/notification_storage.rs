@@ -5,7 +5,7 @@ use super::{
     },
     StorageInsertable, ID_KIND_NOTIFICATIONS,
 };
-use canister_types::models::notification::Notification;
+use catalyze_shared::notification::Notification;
 use ic_stable_structures::memory_manager::MemoryId;
 
 pub struct NotificationStore;

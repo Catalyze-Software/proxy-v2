@@ -5,7 +5,7 @@ use super::{
     },
     ID_KIND_FRIEND_REQUESTS,
 };
-use canister_types::models::friend_request::FriendRequest;
+use catalyze_shared::friend_request::FriendRequest;
 use ic_stable_structures::memory_manager::MemoryId;
 
 pub struct FriendRequestStore;
