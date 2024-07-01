@@ -4,15 +4,16 @@
 use candid::Principal;
 use ic_cdk::query;
 
+// canisters used in production, but are not environment dependant
 pub static CATALYZE_MULTI_SIG: &str = "fcygz-gqaaa-aaaap-abpaa-cai";
 pub static MULTISIG_INDEX: &str = "o7ouu-niaaa-aaaap-ahhdq-cai";
+
 pub static E8S_PER_DAY_BOOST_COST: u64 = 3500000;
 pub static USER_GROUP_CREATION_LIMIT: usize = 10;
 
 pub mod calls;
 pub mod helpers;
 pub mod logic;
-mod migration;
 pub mod storage;
 
 // Hacky way to expose the candid interface to the outside world

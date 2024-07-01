@@ -17,7 +17,6 @@ pub mod wallet;
 pub mod history_event;
 
 pub mod document_details;
-pub mod identifier;
 pub mod permission;
 pub mod profile_privacy;
 pub mod relation_type;
