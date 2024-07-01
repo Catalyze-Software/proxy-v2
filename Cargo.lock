@@ -108,7 +108,7 @@ dependencies = [
 [[package]]
 name = "catalyze-shared"
 version = "0.1.0"
-source = "git+https://github.com/Catalyze-Software/catalyze-shared#a1a4118f75e234d28d2f6752f3829b0b555f52b5"
+source = "git+https://github.com/Catalyze-Software/catalyze-shared#c4d04b0e6cb217a2815631770c7ebe7c9f9ae193"
 dependencies = [
  "candid",
  "email_address",
@@ -371,20 +371,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "ic-cdk-timers"
-version = "0.8.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bc4a42e669e47cf58fc18e071898e67922c81aa480edbf930ed1468dd53f44ee"
-dependencies = [
- "futures",
- "ic-cdk 0.14.0",
- "ic0 0.23.0",
- "serde",
- "serde_bytes",
- "slotmap",
-]
-
-[[package]]
 name = "ic-certified-map"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -429,7 +415,7 @@ dependencies = [
  "candid",
  "ic-cdk 0.12.1",
  "ic-cdk-macros 0.8.4",
- "ic-cdk-timers 0.6.0",
+ "ic-cdk-timers",
  "ic-certified-map",
  "serde",
  "serde_bytes",
@@ -583,7 +569,7 @@ dependencies = [
  "candid",
  "catalyze-shared",
  "ic-cdk 0.14.0",
- "ic-cdk-timers 0.8.0",
+ "ic-cdk-timers",
  "ic-ledger-types",
  "ic-stable-structures",
  "ic-websocket-cdk",
