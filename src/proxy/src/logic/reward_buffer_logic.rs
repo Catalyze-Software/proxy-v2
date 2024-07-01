@@ -3,7 +3,7 @@ use crate::storage::{
     RewardBufferStore, RewardTimerStore, StorageQueryable, StorageUpdateable,
 };
 
-use canister_types::models::reward::{Activity, GroupReward, RewardDataPackage, UserActivity};
+use catalyze_shared::reward::{Activity, GroupReward, RewardDataPackage, UserActivity};
 use ic_cdk::call;
 
 pub fn process_buffer() -> RewardDataPackage {

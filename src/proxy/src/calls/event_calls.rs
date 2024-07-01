@@ -15,7 +15,7 @@ use crate::{
 /// And what about the public / private access of these calls?
 ///
 use candid::Principal;
-use canister_types::models::{
+use catalyze_shared::{
     api_error::ApiError,
     attendee::{Attendee, InviteAttendeeResponse, JoinedAttendeeResponse},
     event::{EventFilter, EventResponse, EventSort, EventsCount, PostEvent, UpdateEvent},

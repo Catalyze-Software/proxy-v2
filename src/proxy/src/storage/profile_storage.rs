@@ -6,7 +6,7 @@ use super::{
     StorageInsertableByKey,
 };
 use candid::Principal;
-use canister_types::models::profile::Profile;
+use catalyze_shared::profile::Profile;
 
 use ic_stable_structures::memory_manager::MemoryId;
 

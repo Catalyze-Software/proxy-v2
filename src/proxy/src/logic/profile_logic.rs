@@ -1,18 +1,16 @@
 use super::{
     attendee_logic::AttendeeCalls, member_logic::MemberCalls, notification_logic::NotificationCalls,
 };
-use crate::{
-    helpers::validator::Validator,
-    storage::{
-        AttendeeStore, EventAttendeeStore, EventStore, GroupMemberStore, GroupStore, MemberStore,
-        ProfileStore, StorageInsertableByKey, StorageQueryable, StorageUpdateable,
-        UserNotificationStore,
-    },
+use crate::storage::{
+    AttendeeStore, EventAttendeeStore, EventStore, GroupMemberStore, GroupStore, MemberStore,
+    ProfileStore, StorageInsertableByKey, StorageQueryable, StorageUpdateable,
+    UserNotificationStore,
 };
 use candid::Principal;
-use canister_types::models::{
+use catalyze_shared::{
     api_error::ApiError,
     document_details::DocumentDetails,
+    helpers::validator::Validator,
     member_collection::MemberCollection,
     profile::{PostProfile, Profile, ProfileResponse, UpdateProfile},
     relation_type::RelationType,

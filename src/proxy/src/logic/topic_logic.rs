@@ -1,14 +1,12 @@
-use canister_types::models::{
+use catalyze_shared::{
     api_error::ApiError,
     topic::{Topic, TopicKind},
     validation::{ValidateField, ValidationType},
+    validator::Validator,
 };
 
-use crate::{
-    helpers::validator::Validator,
-    storage::{
-        CategoryStore, SkillStore, StorageInsertable, StorageQueryable, StorageUpdateable, TagStore,
-    },
+use crate::storage::{
+    CategoryStore, SkillStore, StorageInsertable, StorageQueryable, StorageUpdateable, TagStore,
 };
 
 pub struct TopicCalls;

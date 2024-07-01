@@ -14,7 +14,7 @@ use crate::{
     },
     logic::report_logic::ReportCalls,
 };
-use canister_types::models::{
+use catalyze_shared::{
     api_error::ApiError,
     paged_response::PagedResponse,
     permission::PermissionType,

@@ -4,7 +4,7 @@ use super::{
 };
 use crate::logic::reward_buffer_logic::send_reward_data;
 use candid::Principal;
-use canister_types::models::reward::{Activity, RewardableActivity};
+use catalyze_shared::reward::{Activity, RewardableActivity};
 use ic_cdk::{api::time, spawn};
 use ic_cdk_timers::set_timer_interval;
 use ic_stable_structures::memory_manager::MemoryId;

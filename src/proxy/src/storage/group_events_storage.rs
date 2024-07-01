@@ -5,7 +5,7 @@ use super::{
     },
     ID_KIND_GROUP_EVENTS,
 };
-use canister_types::models::event_collection::EventCollection;
+use catalyze_shared::event_collection::EventCollection;
 use ic_stable_structures::memory_manager::MemoryId;
 
 pub struct GroupEventsStore;

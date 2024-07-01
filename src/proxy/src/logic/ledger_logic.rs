@@ -1,6 +1,6 @@
 use crate::CATALYZE_MULTI_SIG;
 use candid::Principal;
-use canister_types::models::api_error::ApiError;
+use catalyze_shared::api_error::ApiError;
 use ic_ledger_types::{
     query_archived_blocks, query_blocks, AccountIdentifier, Block, BlockIndex, GetBlocksArgs,
     Tokens, DEFAULT_SUBACCOUNT, MAINNET_LEDGER_CANISTER_ID,

@@ -5,7 +5,7 @@ use super::{
     },
     ID_KIND_GROUPS,
 };
-use canister_types::models::group::Group;
+use catalyze_shared::group::Group;
 use ic_stable_structures::memory_manager::MemoryId;
 
 pub struct GroupStore;

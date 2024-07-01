@@ -16,7 +16,7 @@ use crate::{
 /// And what about the public / private access of these calls?\
 ///
 use candid::Principal;
-use canister_types::models::{
+use catalyze_shared::{
     api_error::ApiError,
     group::{GroupFilter, GroupResponse, GroupSort, GroupsCount, PostGroup, UpdateGroup},
     member::{InviteMemberResponse, JoinedMemberResponse, Member},

@@ -10,7 +10,7 @@ use crate::{
     },
 };
 use candid::Principal;
-use canister_types::models::{
+use catalyze_shared::{
     api_error::ApiError,
     http_types::{HttpRequest, HttpResponse},
 };

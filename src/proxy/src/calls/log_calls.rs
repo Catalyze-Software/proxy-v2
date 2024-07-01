@@ -3,8 +3,8 @@ use crate::{
     helpers::guards::{has_access, is_developer, is_monitor},
     logic::logger_logic::LoginEvent,
 };
-use canister_types::models::log::LogType;
-use canister_types::models::{
+use catalyze_shared::log::LogType;
+use catalyze_shared::{
     api_error::ApiError,
     log::{Logger, PostLog},
 };

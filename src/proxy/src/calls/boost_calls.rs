@@ -3,7 +3,7 @@ use crate::{
     logic::{boost_logic::BoostCalls, event_logic::EventCalls, group_logic::GroupCalls},
     E8S_PER_DAY_BOOST_COST,
 };
-use canister_types::models::{
+use catalyze_shared::{
     api_error::ApiError, event::EventResponse, group::GroupResponse, subject::Subject,
 };
 use ic_cdk::{query, update};

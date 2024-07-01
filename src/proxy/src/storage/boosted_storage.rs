@@ -5,7 +5,7 @@ use super::{
     },
     ID_KIND_BOOSTED,
 };
-use canister_types::models::boosted::Boost;
+use catalyze_shared::boosted::Boost;
 use ic_stable_structures::memory_manager::MemoryId;
 
 pub struct BoostedStore;

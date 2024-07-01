@@ -1,17 +1,13 @@
-use crate::{
-    helpers::time_helper::hours_to_nanoseconds,
-    storage::{
-        AttendeeStore, BoostedStore, EventAttendeeStore, EventStore, GroupEventsStore, MemberStore,
-        ProfileStore, StorageInsertable, StorageInsertableByKey, StorageQueryable,
-        StorageUpdateable,
-    },
+use crate::storage::{
+    AttendeeStore, BoostedStore, EventAttendeeStore, EventStore, GroupEventsStore, MemberStore,
+    ProfileStore, StorageInsertable, StorageInsertableByKey, StorageQueryable, StorageUpdateable,
 };
 
 use super::{
     boost_logic::BoostCalls, notification_logic::NotificationCalls, profile_logic::ProfileCalls,
 };
 use candid::Principal;
-use canister_types::models::{
+use catalyze_shared::{
     api_error::ApiError,
     attendee::{Attendee, InviteAttendeeResponse, JoinedAttendeeResponse},
     boosted::Boost,
@@ -27,6 +23,7 @@ use canister_types::models::{
     privacy::Privacy,
     profile::ProfileResponse,
     subject::{Subject, SubjectType},
+    time_helper::hours_to_nanoseconds,
 };
 use ic_cdk::{api::time, caller};
 use std::collections::HashMap;

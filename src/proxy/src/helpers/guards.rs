@@ -1,24 +1,10 @@
 use candid::Principal;
-use canister_types::models::{api_error::ApiError, application_role::ApplicationRole};
+use catalyze_shared::{
+    api_error::ApiError, application_role::ApplicationRole, guards::is_not_anonymous,
+};
 use ic_cdk::caller;
 
 use crate::storage::{ProfileStore, StorageQueryable};
-
-/// Checks if the caller is an anonymous principal
-/// # Returns
-/// * `()` if the caller is not anonymous
-/// # Errors
-/// * `String` if the caller is anonymous
-/// # Note
-/// `Result<(), String>` type is required because of the usage as a guard in the `candid` attribute macro
-pub fn is_not_anonymous() -> Result<(), String> {
-    match caller() == Principal::anonymous() {
-        true => Err(ApiError::unauthorized()
-            .add_message("Anonymous principal")
-            .to_string()),
-        false => Ok(()),
-    }
-}
 
 /// Checks if the caller is anonymous, has a profile and is not blocked or banned on the application level
 /// # Returns

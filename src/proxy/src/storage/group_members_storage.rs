@@ -7,7 +7,7 @@ use super::{
     },
     ID_KIND_GROUP_MEMBERS,
 };
-use canister_types::models::member_collection::MemberCollection;
+use catalyze_shared::member_collection::MemberCollection;
 use ic_stable_structures::memory_manager::MemoryId;
 
 pub struct GroupMemberStore;

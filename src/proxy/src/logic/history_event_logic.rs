@@ -1,5 +1,5 @@
 use candid::{CandidType, Principal};
-use canister_types::models::{
+use catalyze_shared::{
     api_error::ApiError,
     history_event::{GroupRoleChangeKind, GroupRoleChanged, HistoryEvent},
 };

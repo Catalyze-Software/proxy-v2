@@ -5,12 +5,10 @@ use super::{
 use crate::{
     helpers::{
         group_permission::has_permission,
-        time_helper::hours_to_nanoseconds,
         token_balance::{
             dip20_balance_of, dip721_balance_of, ext_balance_of, icrc_balance_of,
             legacy_dip721_balance_of,
         },
-        validator::Validator,
     },
     storage::{
         BoostedStore, GroupEventsStore, GroupMemberStore, GroupStore, MemberStore, ProfileStore,
@@ -20,7 +18,7 @@ use crate::{
     USER_GROUP_CREATION_LIMIT,
 };
 use candid::Principal;
-use canister_types::{
+use catalyze_shared::{
     misc::role_misc::{default_roles, read_only_permissions},
     models::{
         api_error::ApiError,
@@ -45,6 +43,8 @@ use canister_types::{
         subject::{Subject, SubjectType},
         validation::{ValidateField, ValidationType},
     },
+    time_helper::hours_to_nanoseconds,
+    validator::Validator,
 };
 use ic_cdk::{
     api::{call, time},

@@ -1,5 +1,5 @@
 use candid::Principal;
-use canister_types::models::api_error::ApiError;
+use catalyze_shared::api_error::ApiError;
 use ic_cdk::{query, update};
 
 use crate::{

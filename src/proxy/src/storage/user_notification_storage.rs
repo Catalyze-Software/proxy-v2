@@ -6,7 +6,7 @@ use super::{
     StorageInsertableByKey,
 };
 use candid::Principal;
-use canister_types::models::user_notifications::UserNotifications;
+use catalyze_shared::user_notifications::UserNotifications;
 use ic_stable_structures::memory_manager::MemoryId;
 
 pub struct UserNotificationStore;

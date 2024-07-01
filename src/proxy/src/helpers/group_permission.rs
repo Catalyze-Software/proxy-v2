@@ -1,5 +1,5 @@
 use candid::Principal;
-use canister_types::models::{
+use catalyze_shared::{
     api_error::ApiError,
     permission::{PermissionActionType, PermissionType},
     role::Role,

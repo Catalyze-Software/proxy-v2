@@ -5,7 +5,7 @@ use super::{
     },
     ID_KIND_EVENTS,
 };
-use canister_types::models::event::Event;
+use catalyze_shared::event::Event;
 use ic_stable_structures::memory_manager::MemoryId;
 
 pub struct EventStore;
