@@ -791,7 +791,6 @@ service : () -> {
   block_user : (principal) -> (Result_10);
   boost : (Subject, nat64) -> (Result_14);
   cancel_event : (nat64, nat64, text) -> (Result_2);
-  check_new_stores : () -> (vec text) query;
   decline_friend_request : (nat64) -> (Result_3);
   decline_owner_request_event_invite : (nat64) -> (Result_4);
   decline_owner_request_group_invite : (nat64) -> (Result_5);
@@ -877,7 +876,6 @@ service : () -> {
   log_size : () -> (nat64) query;
   log_with_caller : (PostLog) -> (Result_34);
   mark_notifications_as_read : (vec nat64, bool) -> (Result_35);
-  migrate : () -> (vec vec text);
   multisig_new_proposal_notification : (
       vec principal,
       principal,
