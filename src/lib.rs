@@ -50,7 +50,5 @@ pub fn __export_did_tmp_() -> String {
 // Method used to save the candid interface to a file
 #[test]
 pub fn candid() {
-    use catalyze_shared::candid::save_candid_file;
-
-    save_candid_file("proxy.did", __export_did_tmp_())
+    catalyze_shared::candid::save_candid_file("./candid/proxy.did", __export_did_tmp_());
 }

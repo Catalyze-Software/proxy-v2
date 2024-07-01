@@ -1,12 +1,22 @@
-[workspace]
-members = ["src/proxy"]
-resolver = "2"
+[package]
+name = "proxy"
+version = "0.2.4"
+edition = "2021"
 
-[workspace.dependencies]
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
 candid = "0.10"
-ic-cdk = "0.14"
-ic-stable-structures = "0.6"
 serde = "1.0"
 serde_json = "1.0"
-ic-ledger-types = "0.11"
 
+ic-cdk = "0.14"
+ic-ledger-types = "0.11"
+ic-stable-structures = "0.6"
+ic-websocket-cdk = "0.3"
+ic-cdk-timers = "0.6" # 0.8 version breaks the build
+
+catalyze-shared = { git = "https://github.com/Catalyze-Software/catalyze-shared" }

@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - crate `canister_types`
 - string, type, validation helpers
+- rust workspace
 
 ## [0.2.4]
 
@@ -362,7 +363,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Canister http call to get current version `/version`
 - `#[allow(unused)]` to deprecated migration methods
 
-## Fixed
+### Fixed
 
 - Missing `notification_id` on migration models
 
