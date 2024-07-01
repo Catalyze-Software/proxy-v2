@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - crate `canister_types`
 - string, type, validation helpers
+- rust workspace
 
 ## [0.2.4]
 
