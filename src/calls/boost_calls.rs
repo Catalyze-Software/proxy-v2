@@ -12,7 +12,7 @@ use ic_cdk::{query, update};
 /// Returns the boosted groups
 /// # Returns
 /// * `Vec<GroupResponse>`
-#[query]
+#[query(composite = true)]
 async fn get_boosted_groups() -> Vec<GroupResponse> {
     GroupCalls::get_boosted_groups().await
 }
@@ -20,7 +20,7 @@ async fn get_boosted_groups() -> Vec<GroupResponse> {
 /// Returns the boosted events
 /// # Returns
 /// * `Vec<EventResponse>`
-#[query]
+#[query(composite = true)]
 async fn get_boosted_events() -> Vec<EventResponse> {
     EventCalls::get_boosted_events().await
 }

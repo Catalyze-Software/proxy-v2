@@ -57,7 +57,7 @@ pub async fn add_group(
 /// * `ApiError` - If something went wrong while getting the group
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[query]
+#[query(composite = true)]
 pub async fn get_group(group_id: u64) -> CanisterResult<GroupResponse> {
     GroupCalls::get_group(group_id).await
 }
@@ -71,7 +71,7 @@ pub async fn get_group(group_id: u64) -> CanisterResult<GroupResponse> {
 /// * `ApiError` - If something went wrong while getting the group
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[query]
+#[query(composite = true)]
 pub async fn get_group_by_name(name: String) -> CanisterResult<GroupResponse> {
     GroupCalls::get_group_by_name(name).await
 }
@@ -86,7 +86,7 @@ pub async fn get_group_by_name(name: String) -> CanisterResult<GroupResponse> {
 /// * `PagedResponse<GroupResponse>` - The groups
 /// # Errors
 /// * `ApiError` - If something went wrong while getting the groups
-#[query]
+#[query(composite = true)]
 pub async fn get_groups(
     limit: usize,
     page: usize,
@@ -99,7 +99,7 @@ pub async fn get_groups(
 /// Get group counts - [`[query]`](query)
 /// # Returns
 /// * `GroupsCount` - The groups count
-#[query]
+#[query(composite = true)]
 pub async fn get_groups_count(query: Option<String>) -> GroupsCount {
     GroupCalls::get_groups_count(query).await
 }
@@ -128,7 +128,7 @@ pub async fn edit_group(group_id: u64, update_group: UpdateGroup) -> CanisterRes
 /// * `Vec<GroupResponse>` - The groups
 /// # Errors
 /// * `ApiError` - If something went wrong while getting the groups
-#[query(guard = "is_not_anonymous")]
+#[query(composite = true, guard = "is_not_anonymous")]
 pub async fn get_groups_by_id(group_ids: Vec<u64>) -> CanisterResult<Vec<GroupResponse>> {
     has_access().await?;
     Ok(GroupCalls::get_groups_by_id(group_ids).await)
@@ -452,7 +452,7 @@ pub fn get_group_member(
 /// * `(JoinedMemberResponse, ProfileResponse)` - The member entry and profile
 /// # Errors
 /// * `ApiError` - If something went wrong while getting the member entry
-#[query]
+#[query(composite = true)]
 pub async fn get_group_member_with_profile(
     group_id: u64,
     member_principal: Principal,
@@ -469,7 +469,7 @@ pub async fn get_group_member_with_profile(
 /// * `ApiError` - If something went wrong while getting the groups for members
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[query(guard = "is_not_anonymous")]
+#[query(composite = true, guard = "is_not_anonymous")]
 pub async fn get_groups_for_members(
     member_principals: Vec<Principal>,
 ) -> CanisterResult<Vec<JoinedMemberResponse>> {
@@ -486,7 +486,7 @@ pub async fn get_groups_for_members(
 /// * `ApiError` - If something went wrong while getting the group members
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[query(guard = "is_not_anonymous")]
+#[query(composite = true, guard = "is_not_anonymous")]
 pub async fn get_group_members(group_id: u64) -> CanisterResult<Vec<JoinedMemberResponse>> {
     has_access().await?;
     // can_read(group_id, PermissionType::Group(None))?;
@@ -502,7 +502,7 @@ pub async fn get_group_members(group_id: u64) -> CanisterResult<Vec<JoinedMember
 /// * `ApiError` - If something went wrong while getting the group members
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[query(guard = "is_not_anonymous")]
+#[query(composite = true, guard = "is_not_anonymous")]
 pub async fn get_group_members_with_profiles(
     group_id: u64,
 ) -> CanisterResult<Vec<(JoinedMemberResponse, ProfileResponse)>> {
@@ -519,7 +519,7 @@ pub async fn get_group_members_with_profiles(
 /// * `ApiError` - If something went wrong while getting the member entry
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[query(guard = "is_not_anonymous")]
+#[query(composite = true, guard = "is_not_anonymous")]
 pub async fn get_self_member() -> CanisterResult<Member> {
     has_access().await?;
     GroupCalls::get_self_member()
@@ -531,7 +531,7 @@ pub async fn get_self_member() -> CanisterResult<Member> {
 /// * `ApiError` - If something went wrong while getting the self groups
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[query(guard = "is_not_anonymous")]
+#[query(composite = true, guard = "is_not_anonymous")]
 pub async fn get_self_groups() -> CanisterResult<Vec<GroupResponse>> {
     has_access().await?;
     Ok(GroupCalls::get_self_groups().await)
@@ -631,7 +631,7 @@ pub async fn remove_member_invite_from_group(
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 /// TODO: This action is guarded by group role based authorization
-#[query(guard = "is_not_anonymous")]
+#[query(composite = true, guard = "is_not_anonymous")]
 pub async fn get_group_invites(group_id: u64) -> CanisterResult<Vec<InviteMemberResponse>> {
     has_access().await?;
     can_read(group_id, PermissionType::Invite(None))?;
@@ -648,7 +648,7 @@ pub async fn get_group_invites(group_id: u64) -> CanisterResult<Vec<InviteMember
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 /// TODO: This action is guarded by group role based authorization
-#[query(guard = "is_not_anonymous")]
+#[query(composite = true, guard = "is_not_anonymous")]
 pub async fn get_group_invites_with_profiles(
     group_id: u64,
 ) -> CanisterResult<Vec<(InviteMemberResponse, ProfileResponse)>> {
@@ -657,7 +657,7 @@ pub async fn get_group_invites_with_profiles(
     GroupCalls::get_group_invites_with_profiles(group_id).await
 }
 
-#[query(guard = "is_not_anonymous")]
+#[query(composite = true, guard = "is_not_anonymous")]
 pub async fn get_banned_group_members(group_id: u64) -> CanisterResult<Vec<Principal>> {
     has_access().await?;
     can_edit(group_id, PermissionType::Member(None))?;

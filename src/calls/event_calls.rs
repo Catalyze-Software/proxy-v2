@@ -50,9 +50,7 @@ pub async fn add_event(post_event: PostEvent) -> CanisterResult<EventResponse> {
 /// * `EventResponse` - The event
 /// # Errors
 /// * `ApiError` - If something went wrong while getting the event
-/// # Note
-/// This function is guarded by the [`has_access`](has_access) function.
-#[query]
+#[query(composite = true)]
 pub async fn get_event(event_id: u64) -> CanisterResult<EventResponse> {
     EventCalls::get_event(event_id).await
 }
@@ -67,7 +65,7 @@ pub async fn get_event(event_id: u64) -> CanisterResult<EventResponse> {
 /// * `PagedResponse<EventResponse>` - The events in a paged response
 /// # Errors
 /// * `ApiError` - If something went wrong while getting the events
-#[query]
+#[query(composite = true)]
 async fn get_events(
     limit: usize,
     page: usize,
@@ -281,7 +279,7 @@ pub async fn decline_owner_request_event_invite(event_id: u64) -> CanisterResult
 /// * `ApiError` - If something went wrong while getting the attendees for the event
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[query(guard = "is_not_anonymous")]
+#[query(composite = true, guard = "is_not_anonymous")]
 pub async fn get_event_attendees(event_id: u64) -> CanisterResult<Vec<JoinedAttendeeResponse>> {
     has_access().await?;
     EventCalls::get_event_attendees(event_id)
@@ -296,7 +294,7 @@ pub async fn get_event_attendees(event_id: u64) -> CanisterResult<Vec<JoinedAtte
 /// * `ApiError` - If something went wrong while getting the attendees for the event
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[query(guard = "is_not_anonymous")]
+#[query(composite = true, guard = "is_not_anonymous")]
 pub async fn get_event_attendees_profiles_and_roles(
     event_id: u64,
 ) -> CanisterResult<Vec<(ProfileResponse, Vec<String>)>> {
@@ -313,7 +311,7 @@ pub async fn get_event_attendees_profiles_and_roles(
 /// * `ApiError` - If something went wrong while getting the attendees for the event
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[query(guard = "is_not_anonymous")]
+#[query(composite = true, guard = "is_not_anonymous")]
 pub async fn get_event_invites_with_profiles(
     event_id: u64,
 ) -> CanisterResult<Vec<(ProfileResponse, InviteAttendeeResponse)>> {
@@ -330,7 +328,7 @@ pub async fn get_event_invites_with_profiles(
 /// * `ApiError` - If something went wrong while getting the attendee
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[query(guard = "is_not_anonymous")]
+#[query(composite = true, guard = "is_not_anonymous")]
 pub async fn get_self_attendee() -> CanisterResult<Attendee> {
     has_access().await?;
     EventCalls::get_self_attendee()
@@ -342,7 +340,7 @@ pub async fn get_self_attendee() -> CanisterResult<Attendee> {
 /// * `ApiError` - If something went wrong while getting the self events
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[query(guard = "is_not_anonymous")]
+#[query(composite = true, guard = "is_not_anonymous")]
 pub async fn get_self_events() -> CanisterResult<Vec<EventResponse>> {
     has_access().await?;
     Ok(EventCalls::get_self_events().await)
@@ -357,7 +355,7 @@ pub async fn get_self_events() -> CanisterResult<Vec<EventResponse>> {
 /// * `ApiError` - If something went wrong while getting the joined events
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[query(guard = "is_not_anonymous")]
+#[query(composite = true, guard = "is_not_anonymous")]
 pub async fn get_attending_from_principal(
     principal: Principal,
 ) -> CanisterResult<Vec<JoinedAttendeeResponse>> {
@@ -452,7 +450,7 @@ pub async fn remove_attendee_invite_from_event(
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 /// TODO: This action is guarded by group role based authorization
-#[query(guard = "is_not_anonymous")]
+#[query(composite = true, guard = "is_not_anonymous")]
 pub async fn get_event_invites(
     event_id: u64,
     group_id: u64,

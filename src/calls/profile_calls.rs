@@ -45,7 +45,7 @@ pub async fn add_profile(post_profile: PostProfile) -> CanisterResult<ProfileRes
 /// * `ApiError` - If something went wrong while getting the profile
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[query(guard = "is_not_anonymous")]
+#[query(composite = true, guard = "is_not_anonymous")]
 pub async fn get_profile(principal: Principal) -> CanisterResult<ProfileResponse> {
     has_access().await?;
     ProfileCalls::get_profile(principal).await
@@ -60,7 +60,7 @@ pub async fn get_profile(principal: Principal) -> CanisterResult<ProfileResponse
 /// * `ApiError` - If something went wrong getting the profile
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[query(guard = "is_not_anonymous")]
+#[query(composite = true, guard = "is_not_anonymous")]
 pub async fn get_profiles(principals: Vec<Principal>) -> CanisterResult<Vec<ProfileResponse>> {
     has_access().await?;
     ProfileCalls::get_profiles(principals).await
@@ -169,7 +169,7 @@ pub async fn remove_starred(subject: Subject) -> CanisterResult<ProfileResponse>
 /// * `Vec<Principal>` - The group identifiers that were found
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[query(guard = "is_not_anonymous")]
+#[query(composite = true, guard = "is_not_anonymous")]
 pub async fn get_starred_by_subject_type(subject_type: SubjectType) -> CanisterResult<Vec<u64>> {
     has_access().await?;
     Ok(ProfileCalls::get_starred_by_subject(subject_type).await)
@@ -214,7 +214,7 @@ pub async fn remove_pinned(subject: Subject) -> CanisterResult<ProfileResponse> 
 /// * `ApiError` - If something went wrong while getting pinned subjects
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[query(guard = "is_not_anonymous")]
+#[query(composite = true, guard = "is_not_anonymous")]
 pub async fn get_pinned_by_subject_type(
     subject_type: SubjectType,
 ) -> CanisterResult<Vec<SubjectResponse>> {
@@ -276,7 +276,7 @@ pub async fn remove_friend_request(friend_request_id: u64) -> CanisterResult<boo
 /// * `Vec<FriendRequestResponse>` - The friend requests that were found
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[query(guard = "is_not_anonymous")]
+#[query(composite = true, guard = "is_not_anonymous")]
 pub async fn get_incoming_friend_requests() -> CanisterResult<Vec<FriendRequestResponse>> {
     has_access().await?;
     Ok(FriendRequestCalls::get_incoming_friend_requests())
@@ -287,7 +287,7 @@ pub async fn get_incoming_friend_requests() -> CanisterResult<Vec<FriendRequestR
 /// * `Vec<(FriendRequestResponse, ProfileResponse)>` - The friend requests that were found
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[query(guard = "is_not_anonymous")]
+#[query(composite = true, guard = "is_not_anonymous")]
 pub async fn get_incoming_friend_requests_with_profile(
 ) -> CanisterResult<Vec<(FriendRequestResponse, ProfileResponse)>> {
     has_access().await?;
@@ -299,7 +299,7 @@ pub async fn get_incoming_friend_requests_with_profile(
 /// * `Vec<FriendRequestResponse>` - The friend requests that were found
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[query(guard = "is_not_anonymous")]
+#[query(composite = true, guard = "is_not_anonymous")]
 pub async fn get_outgoing_friend_requests() -> CanisterResult<Vec<FriendRequestResponse>> {
     has_access().await?;
     Ok(FriendRequestCalls::get_outgoing_friend_requests())
@@ -310,7 +310,7 @@ pub async fn get_outgoing_friend_requests() -> CanisterResult<Vec<FriendRequestR
 /// * `Vec<(FriendRequestResponse, ProfileResponse)>` - The friend requests that were found
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[query(guard = "is_not_anonymous")]
+#[query(composite = true, guard = "is_not_anonymous")]
 pub async fn get_outgoing_friend_requests_with_profile(
 ) -> CanisterResult<Vec<(FriendRequestResponse, ProfileResponse)>> {
     has_access().await?;
@@ -386,7 +386,7 @@ pub async fn unblock_user(principal: Principal) -> CanisterResult<ProfileRespons
 /// * `Vec<Principal>` - The principals of the relations
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[query(guard = "is_not_anonymous")]
+#[query(composite = true, guard = "is_not_anonymous")]
 pub async fn get_relations(relation_type: RelationType) -> CanisterResult<Vec<Principal>> {
     has_access().await?;
     ProfileCalls::get_relations(relation_type).await
@@ -399,7 +399,7 @@ pub async fn get_relations(relation_type: RelationType) -> CanisterResult<Vec<Pr
 /// * `Vec<ProfileResponse>` - The principals of the relations
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[query(guard = "is_not_anonymous")]
+#[query(composite = true, guard = "is_not_anonymous")]
 pub async fn get_relations_with_profiles(
     relation_type: RelationType,
 ) -> CanisterResult<Vec<ProfileResponse>> {
@@ -415,7 +415,7 @@ pub async fn get_relations_with_profiles(
 /// * `u64` - The relation count that was found
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[query(guard = "is_not_anonymous")]
+#[query(composite = true, guard = "is_not_anonymous")]
 pub async fn get_relations_count(relation_type: RelationType) -> CanisterResult<u64> {
     has_access().await?;
     Ok(ProfileCalls::get_relations(relation_type).await?.len() as u64)

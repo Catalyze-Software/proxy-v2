@@ -47,7 +47,7 @@ pub async fn add_report(post_report: PostReport) -> CanisterResult<ReportRespons
 /// * `ApiError` - If something went wrong while getting the report
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[query(guard = "is_not_anonymous")]
+#[query(composite = true, guard = "is_not_anonymous")]
 pub async fn get_report(report_id: u64, group_id: u64) -> CanisterResult<ReportResponse> {
     has_access().await?;
     can_write(group_id, PermissionType::Group(None))?;
@@ -69,7 +69,7 @@ pub async fn get_report(report_id: u64, group_id: u64) -> CanisterResult<ReportR
 /// * `ApiError` - If something went wrong while getting the reports
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[query(guard = "is_not_anonymous")]
+#[query(composite = true, guard = "is_not_anonymous")]
 pub async fn get_reports(
     limit: usize,
     page: usize,

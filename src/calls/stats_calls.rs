@@ -3,7 +3,7 @@ use crate::storage::*;
 use catalyze_shared::{CanisterResult, StorageClient};
 use ic_cdk::query;
 
-#[query(guard = "is_monitor")]
+#[query(composite = true, guard = "is_monitor")]
 async fn store_stats() -> CanisterResult<Vec<String>> {
     let profile_store_size = profiles().size().await?;
     let friend_request_store_size = FriendRequestStore::size();
