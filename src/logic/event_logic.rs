@@ -32,7 +32,7 @@ use std::collections::HashMap;
 pub struct EventCalls;
 
 impl EventCalls {
-    pub async fn add_event(post_event: PostEvent) -> Result<EventResponse, ApiError> {
+    pub async fn add_event(post_event: PostEvent) -> CanisterResult<EventResponse> {
         let (new_event_id, new_event) = EventStore::insert(Event::from(post_event.clone()))?;
 
         let (_, mut attendee) = AttendeeStore::get(caller())?;
@@ -59,7 +59,7 @@ impl EventCalls {
         ))
     }
 
-    pub async fn get_event(event_id: u64) -> Result<EventResponse, ApiError> {
+    pub async fn get_event(event_id: u64) -> CanisterResult<EventResponse> {
         let (_, event) = EventStore::get(event_id)?;
 
         if event.match_privacy(Privacy::InviteOnly) {
@@ -92,7 +92,7 @@ impl EventCalls {
         page: usize,
         sort: EventSort,
         filters: Vec<EventFilter>,
-    ) -> Result<PagedResponse<EventResponse>, ApiError> {
+    ) -> CanisterResult<PagedResponse<EventResponse>> {
         // get all the events and filter them based on the privacy
         // exclude all InviteOnly events that the caller is not a attendee of
         let mut events = EventStore::filter(|event_id, event| {
@@ -138,7 +138,7 @@ impl EventCalls {
         event_id: u64,
         update_event: UpdateEvent,
         group_id: u64,
-    ) -> Result<EventResponse, ApiError> {
+    ) -> CanisterResult<EventResponse> {
         let (_, mut event) = EventStore::get(event_id)?;
 
         if !event.is_from_group(group_id) {
@@ -219,7 +219,7 @@ impl EventCalls {
         }
     }
 
-    pub async fn delete_event(event_id: u64, group_id: u64) -> Result<(), ApiError> {
+    pub async fn delete_event(event_id: u64, group_id: u64) -> CanisterResult<()> {
         let (_, event) = EventStore::get(event_id)?;
 
         if !event.is_from_group(group_id) {
@@ -238,19 +238,25 @@ impl EventCalls {
         }
 
         // remove all groups from the members
-        for member in event_attendees.get_member_principals() {
-            // remove all pinned and starred from the profiles
-            // TODO: update many profiles at once
-            if let Ok((_, mut profile)) = profiles().get(member).await {
+        let profile_list = profiles()
+            .get_many(event_attendees.get_member_principals())
+            .await?
+            .iter_mut()
+            .map(|(id, profile)| {
                 let subject = Subject::Event(event_id);
 
                 if profile.is_starred(&subject) || profile.is_pinned(&subject) {
                     profile.remove_starred(&subject);
                     profile.remove_pinned(&subject);
-                    profiles().update(member, profile).await.unwrap();
                 }
-            }
 
+                (*id, profile.clone())
+            })
+            .collect::<Vec<_>>();
+
+        profiles().update_many(profile_list).await.unwrap();
+
+        for member in event_attendees.get_member_principals() {
             if let Ok((principal, mut attendee)) = AttendeeStore::get(member) {
                 attendee.remove_joined(group_id);
                 AttendeeStore::update(principal, attendee).unwrap();
@@ -276,7 +282,7 @@ impl EventCalls {
         Ok(())
     }
 
-    pub fn cancel_event(event_id: u64, reason: String, group_id: u64) -> Result<(), ApiError> {
+    pub fn cancel_event(event_id: u64, reason: String, group_id: u64) -> CanisterResult<()> {
         let (_, mut event) = EventStore::get(event_id)?;
 
         if !event.is_from_group(group_id) {
@@ -290,7 +296,7 @@ impl EventCalls {
     }
 
     // Attendee methods
-    pub fn join_event(event_id: u64) -> Result<JoinedAttendeeResponse, ApiError> {
+    pub fn join_event(event_id: u64) -> CanisterResult<JoinedAttendeeResponse> {
         let (attendee_principal, mut attendee) = AttendeeStore::get(caller())?;
         let (_, mut attendees) = EventAttendeeStore::get(event_id)?;
         let (_, event) = EventStore::get(event_id)?;
@@ -344,7 +350,7 @@ impl EventCalls {
         event_id: u64,
         attendee_principal: Principal,
         group_id: u64,
-    ) -> Result<InviteAttendeeResponse, ApiError> {
+    ) -> CanisterResult<InviteAttendeeResponse> {
         let (_, event) = EventStore::get(event_id)?;
 
         if !event.is_from_group(group_id) {
@@ -386,7 +392,7 @@ impl EventCalls {
         attendee_principal: Principal,
         group_id: u64,
         accept: bool,
-    ) -> Result<JoinedAttendeeResponse, ApiError> {
+    ) -> CanisterResult<JoinedAttendeeResponse> {
         let (_, event) = EventStore::get(event_id)?;
 
         if !event.is_from_group(group_id) {
@@ -431,7 +437,7 @@ impl EventCalls {
     pub fn accept_or_decline_owner_request_event_invite(
         event_id: u64,
         accept: bool,
-    ) -> Result<Attendee, ApiError> {
+    ) -> CanisterResult<Attendee> {
         let (_, mut attendee) = AttendeeStore::get(caller())?;
 
         if !attendee.has_pending_invite(event_id) {
@@ -464,7 +470,7 @@ impl EventCalls {
         Ok(attendee)
     }
 
-    pub fn get_event_attendees(event_id: u64) -> Result<Vec<JoinedAttendeeResponse>, ApiError> {
+    pub fn get_event_attendees(event_id: u64) -> CanisterResult<Vec<JoinedAttendeeResponse>> {
         let (_, event_attendees) = EventAttendeeStore::get(event_id)?;
         let attendees = AttendeeStore::get_many(event_attendees.get_member_principals());
 
@@ -483,21 +489,23 @@ impl EventCalls {
 
     pub async fn get_event_attendees_profiles_and_roles(
         event_id: u64,
-    ) -> Result<Vec<(ProfileResponse, Vec<String>)>, ApiError> {
+    ) -> CanisterResult<Vec<(ProfileResponse, Vec<String>)>> {
         let (_, event_attendees) = EventAttendeeStore::get(event_id)?;
         let (_, event) = EventStore::get(event_id)?;
 
-        let mut result: Vec<(ProfileResponse, Vec<String>)> = vec![];
+        let profile_list = profiles()
+            .get_many(event_attendees.get_member_principals())
+            .await?;
+        let members = MemberStore::get_many(event_attendees.get_member_principals());
 
-        for principal in event_attendees.get_member_principals() {
-            // TODO: get many profiles at once
-            if let Ok((_, profile)) = profiles().get(principal).await {
-                if let Ok((_, member)) = MemberStore::get(principal) {
-                    let roles = member.get_roles(event.group_id);
-                    result.push((ProfileResponse::new(principal, profile), roles));
-                }
-            }
-        }
+        let result = profile_list
+            .into_iter()
+            .map(|(principal, profile)| {
+                let (_, member) = members.iter().find(|(p, _)| p == &principal).unwrap();
+                let roles = member.get_roles(event.group_id);
+                (ProfileResponse::new(principal, profile), roles)
+            })
+            .collect::<Vec<_>>();
 
         Ok(result)
     }
@@ -505,7 +513,7 @@ impl EventCalls {
     pub fn get_event_invites(
         event_id: u64,
         group_id: u64,
-    ) -> Result<Vec<InviteAttendeeResponse>, ApiError> {
+    ) -> CanisterResult<Vec<InviteAttendeeResponse>> {
         let (_, event_attendees) = EventAttendeeStore::get(event_id)?;
 
         let invites = AttendeeStore::get_many(event_attendees.get_invite_principals())
@@ -551,7 +559,7 @@ impl EventCalls {
         Ok(result)
     }
 
-    pub fn get_self_attendee() -> Result<Attendee, ApiError> {
+    pub fn get_self_attendee() -> CanisterResult<Attendee> {
         let (_, attendee) = AttendeeStore::get(caller())?;
         Ok(attendee)
     }
@@ -586,7 +594,7 @@ impl EventCalls {
 
     pub fn get_attending_from_principal(
         principal: Principal,
-    ) -> Result<Vec<JoinedAttendeeResponse>, ApiError> {
+    ) -> CanisterResult<Vec<JoinedAttendeeResponse>> {
         let (_, attendee) = AttendeeStore::get(principal)?;
         let response = attendee
             .joined
@@ -596,7 +604,7 @@ impl EventCalls {
         Ok(response)
     }
 
-    pub fn leave_event(event_id: u64) -> Result<(), ApiError> {
+    pub fn leave_event(event_id: u64) -> CanisterResult<()> {
         let (_, mut attendee) = AttendeeStore::get(caller())?;
         if !attendee.is_event_joined(&event_id) {
             return Err(ApiError::not_found());
@@ -617,7 +625,7 @@ impl EventCalls {
         Ok(())
     }
 
-    pub fn remove_event_invite(event_id: u64) -> Result<(), ApiError> {
+    pub fn remove_event_invite(event_id: u64) -> CanisterResult<()> {
         let (_, mut attendee) = AttendeeStore::get(caller())?;
         if !attendee.has_pending_invite(event_id) || !attendee.has_pending_join_request(event_id) {
             return Err(ApiError::not_found());
@@ -636,7 +644,7 @@ impl EventCalls {
     pub fn remove_attendee_from_event(
         attendee_principal: Principal,
         event_id: u64,
-    ) -> Result<(), ApiError> {
+    ) -> CanisterResult<()> {
         let (_, mut attendee) = AttendeeStore::get(attendee_principal)?;
         if !attendee.is_event_joined(&event_id) {
             return Err(ApiError::not_found());
@@ -662,7 +670,7 @@ impl EventCalls {
     pub fn remove_attendee_invite_from_event(
         attendee_principal: Principal,
         event_id: u64,
-    ) -> Result<(), ApiError> {
+    ) -> CanisterResult<()> {
         let (_, mut attendee) = AttendeeStore::get(attendee_principal)?;
         if !attendee.is_event_invited(&event_id) {
             return Err(ApiError::bad_request().add_message("Attendee is not invited to the group"));

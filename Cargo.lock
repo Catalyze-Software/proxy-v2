@@ -108,7 +108,7 @@ dependencies = [
 [[package]]
 name = "catalyze-shared"
 version = "0.1.0"
-source = "git+https://github.com/Catalyze-Software/catalyze-shared?branch=feat/profile-storage-int#d3cf263c916be77030cd334ca17df2af045d50b8"
+source = "git+https://github.com/Catalyze-Software/catalyze-shared#42f0256aeb80e18218120b2ccb2f1b0c6cda7dfa"
 dependencies = [
  "candid",
  "email_address",
