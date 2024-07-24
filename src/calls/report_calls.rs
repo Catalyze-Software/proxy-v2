@@ -15,10 +15,11 @@ use crate::{
     logic::report_logic::ReportCalls,
 };
 use catalyze_shared::{
-    api_error::ApiError,
+    guards::is_not_anonymous,
     paged_response::PagedResponse,
     permission::PermissionType,
     report::{PostReport, ReportFilter, ReportResponse, ReportSort},
+    CanisterResult,
 };
 
 /// Add a report
@@ -30,9 +31,10 @@ use catalyze_shared::{
 /// * `ApiError` - If something went wrong while adding the profile
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[update(guard = "has_access")]
-pub fn add_report(post_report: PostReport) -> Result<ReportResponse, ApiError> {
-    ReportCalls::add_report(post_report)
+#[update(guard = "is_not_anonymous")]
+pub async fn add_report(post_report: PostReport) -> CanisterResult<ReportResponse> {
+    has_access().await?;
+    ReportCalls::add_report(post_report).await
 }
 
 /// Get a report
@@ -45,10 +47,11 @@ pub fn add_report(post_report: PostReport) -> Result<ReportResponse, ApiError> {
 /// * `ApiError` - If something went wrong while getting the report
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[query(guard = "has_access")]
-pub fn get_report(report_id: u64, group_id: u64) -> Result<ReportResponse, ApiError> {
+#[query(guard = "is_not_anonymous")]
+pub async fn get_report(report_id: u64, group_id: u64) -> CanisterResult<ReportResponse> {
+    has_access().await?;
     can_write(group_id, PermissionType::Group(None))?;
-    ReportCalls::get_report(report_id)
+    ReportCalls::get_report(report_id).await
 }
 
 /// Get reports
@@ -66,14 +69,15 @@ pub fn get_report(report_id: u64, group_id: u64) -> Result<ReportResponse, ApiEr
 /// * `ApiError` - If something went wrong while getting the reports
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[query(guard = "has_access")]
-pub fn get_reports(
+#[query(guard = "is_not_anonymous")]
+pub async fn get_reports(
     limit: usize,
     page: usize,
     sort: ReportSort,
     filters: Vec<ReportFilter>,
     group_id: u64,
-) -> Result<PagedResponse<ReportResponse>, ApiError> {
+) -> CanisterResult<PagedResponse<ReportResponse>> {
+    has_access().await?;
     can_read(group_id, PermissionType::Group(None))?;
-    ReportCalls::get_reports(limit, page, sort, filters, group_id)
+    ReportCalls::get_reports(limit, page, sort, filters, group_id).await
 }

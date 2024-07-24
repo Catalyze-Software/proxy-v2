@@ -1,5 +1,5 @@
 use candid::Principal;
-use catalyze_shared::api_error::ApiError;
+use catalyze_shared::CanisterResult;
 use ic_cdk::{query, update};
 
 use crate::{
@@ -8,16 +8,16 @@ use crate::{
 };
 
 #[query]
-fn get_history_point() -> Result<u64, ApiError> {
+fn get_history_point() -> CanisterResult<u64> {
     HistoryPointStorage::get()
 }
 
 #[update(guard = "is_developer")]
-fn _dev_set_history_canister(principal: Principal) -> Result<Principal, ApiError> {
+fn _dev_set_history_canister(principal: Principal) -> CanisterResult<Principal> {
     HistoryCanisterStorage::set(principal)
 }
 
 #[query(guard = "is_developer")]
-fn _dev_get_history_canister() -> Result<Principal, ApiError> {
+fn _dev_get_history_canister() -> CanisterResult<Principal> {
     HistoryCanisterStorage::get()
 }

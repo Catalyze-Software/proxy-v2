@@ -7,16 +7,16 @@ use crate::{
     },
 };
 use candid::Principal;
-use catalyze_shared::{api_error::ApiError, reward::RewardableActivityResponse};
+use catalyze_shared::{reward::RewardableActivityResponse, CanisterResult};
 use ic_cdk::{query, update};
 
 #[update(guard = "is_developer")]
-fn _dev_set_reward_canister(principal: Principal) -> Result<Principal, ApiError> {
+fn _dev_set_reward_canister(principal: Principal) -> CanisterResult<Principal> {
     RewardCanisterStorage::set(principal)
 }
 
 #[query(guard = "is_developer")]
-fn _dev_get_reward_canister() -> Result<Principal, ApiError> {
+fn _dev_get_reward_canister() -> CanisterResult<Principal> {
     RewardCanisterStorage::get()
 }
 

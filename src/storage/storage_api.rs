@@ -55,6 +55,8 @@ pub static IDS_MEMORY_ID: MemoryId = MemoryId::new(19);
 pub static REWARD_BUFFER_MEMORY_ID: MemoryId = MemoryId::new(20);
 pub static REWARD_CANISTER_MEMORY_ID: MemoryId = MemoryId::new(21);
 
+pub static PROFILE_CANISTER_MEMORY_ID: MemoryId = MemoryId::new(22);
+
 /// A reference to a `StableBTreeMap` that is wrapped in a `RefCell`.
 ///# Generics
 /// * `K` - The key type of the `StableBTreeMap`.
@@ -352,6 +354,11 @@ thread_local! {
 
     pub static IDS: StorageRef<String, u64> = RefCell::new(
         StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.borrow().get(IDS_MEMORY_ID)))
+    );
+
+    pub static PROFILE_CANISTER: RefCell<Cell<Option<Principal>, Memory>> = RefCell::new(
+        Cell::init(MEMORY_MANAGER.with(|p| p.borrow().get(PROFILE_CANISTER_MEMORY_ID)), None)
+            .expect("Failed to initialize profile canister id")
     );
 
 }

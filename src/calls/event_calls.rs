@@ -16,12 +16,13 @@ use crate::{
 ///
 use candid::Principal;
 use catalyze_shared::{
-    api_error::ApiError,
     attendee::{Attendee, InviteAttendeeResponse, JoinedAttendeeResponse},
     event::{EventFilter, EventResponse, EventSort, EventsCount, PostEvent, UpdateEvent},
+    guards::is_not_anonymous,
     paged_response::PagedResponse,
     permission::PermissionType,
     profile::ProfileResponse,
+    CanisterResult,
 };
 use ic_cdk::{query, update};
 
@@ -34,10 +35,11 @@ use ic_cdk::{query, update};
 /// * `ApiError` - If something went wrong while adding the event
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[update(guard = "has_access")]
-pub fn add_event(post_event: PostEvent) -> Result<EventResponse, ApiError> {
+#[update(guard = "is_not_anonymous")]
+pub async fn add_event(post_event: PostEvent) -> CanisterResult<EventResponse> {
+    has_access().await?;
     can_edit(post_event.group_id, PermissionType::Event(None))?;
-    EventCalls::add_event(post_event)
+    EventCalls::add_event(post_event).await
 }
 
 /// Get an event - [`[query]`](query)
@@ -51,8 +53,8 @@ pub fn add_event(post_event: PostEvent) -> Result<EventResponse, ApiError> {
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 #[query]
-pub fn get_event(event_id: u64) -> Result<EventResponse, ApiError> {
-    EventCalls::get_event(event_id)
+pub async fn get_event(event_id: u64) -> CanisterResult<EventResponse> {
+    EventCalls::get_event(event_id).await
 }
 
 /// Get paged events - [`[query]`](query)
@@ -66,13 +68,13 @@ pub fn get_event(event_id: u64) -> Result<EventResponse, ApiError> {
 /// # Errors
 /// * `ApiError` - If something went wrong while getting the events
 #[query]
-fn get_events(
+async fn get_events(
     limit: usize,
     page: usize,
     sort: EventSort,
     filters: Vec<EventFilter>,
-) -> Result<PagedResponse<EventResponse>, ApiError> {
-    EventCalls::get_events(limit, page, sort, filters)
+) -> CanisterResult<PagedResponse<EventResponse>> {
+    EventCalls::get_events(limit, page, sort, filters).await
 }
 
 /// Get events count - [`[query]`](query)
@@ -82,8 +84,8 @@ fn get_events(
 /// # Returns
 /// * `EventsCount` - The events in a paged response
 #[query]
-fn get_event_count(group_ids: Option<Vec<u64>>, query: Option<String>) -> EventsCount {
-    EventCalls::get_events_count(group_ids, query)
+async fn get_event_count(group_ids: Option<Vec<u64>>, query: Option<String>) -> EventsCount {
+    EventCalls::get_events_count(group_ids, query).await
 }
 
 /// edit an event - [`[update]`](update)
@@ -97,14 +99,15 @@ fn get_event_count(group_ids: Option<Vec<u64>>, query: Option<String>) -> Events
 /// * `ApiError` - If something went wrong while updating the event
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[update(guard = "has_access")]
-pub fn edit_event(
+#[update(guard = "is_not_anonymous")]
+pub async fn edit_event(
     event_id: u64,
     group_id: u64,
     update_event: UpdateEvent,
-) -> Result<EventResponse, ApiError> {
+) -> CanisterResult<EventResponse> {
+    has_access().await?;
     can_edit(group_id, PermissionType::Event(None))?;
-    EventCalls::edit_event(event_id, update_event, group_id)
+    EventCalls::edit_event(event_id, update_event, group_id).await
 }
 
 /// Delete an event - [`[update]`](update)
@@ -117,10 +120,11 @@ pub fn edit_event(
 /// * `ApiError` - If something went wrong while deleting the event
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[update(guard = "has_access")]
-pub fn delete_event(event_id: u64, group_id: u64) -> Result<(), ApiError> {
+#[update(guard = "is_not_anonymous")]
+pub async fn delete_event(event_id: u64, group_id: u64) -> CanisterResult<()> {
+    has_access().await?;
     can_delete(group_id, PermissionType::Event(None))?;
-    EventCalls::delete_event(event_id, group_id)
+    EventCalls::delete_event(event_id, group_id).await
 }
 
 /// Cancel an event - [`[update]`](update)
@@ -134,8 +138,9 @@ pub fn delete_event(event_id: u64, group_id: u64) -> Result<(), ApiError> {
 /// * `ApiError` - If something went wrong while cancelling the event
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[update(guard = "has_access")]
-pub fn cancel_event(event_id: u64, group_id: u64, reason: String) -> Result<(), ApiError> {
+#[update(guard = "is_not_anonymous")]
+pub async fn cancel_event(event_id: u64, group_id: u64, reason: String) -> CanisterResult<()> {
+    has_access().await?;
     can_edit(group_id, PermissionType::Event(None))?;
     EventCalls::cancel_event(event_id, reason, group_id)
 }
@@ -152,8 +157,9 @@ pub fn cancel_event(event_id: u64, group_id: u64, reason: String) -> Result<(), 
 /// * `ApiError` - If something went wrong while joining the event
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[update(guard = "has_access")]
-pub fn join_event(event_id: u64) -> Result<JoinedAttendeeResponse, ApiError> {
+#[update(guard = "is_not_anonymous")]
+pub async fn join_event(event_id: u64) -> CanisterResult<JoinedAttendeeResponse> {
+    has_access().await?;
     EventCalls::join_event(event_id)
 }
 
@@ -169,12 +175,13 @@ pub fn join_event(event_id: u64) -> Result<JoinedAttendeeResponse, ApiError> {
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 /// TODO: This action is guarded by group role based authorization
-#[update(guard = "has_access")]
-pub fn invite_to_event(
+#[update(guard = "is_not_anonymous")]
+pub async fn invite_to_event(
     event_id: u64,
     group_id: u64,
     attendee_principal: Principal,
-) -> Result<InviteAttendeeResponse, ApiError> {
+) -> CanisterResult<InviteAttendeeResponse> {
+    has_access().await?;
     can_edit(group_id, PermissionType::Event(None))?;
     EventCalls::invite_to_event(event_id, attendee_principal, group_id)
 }
@@ -191,12 +198,13 @@ pub fn invite_to_event(
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 /// TODO: This action is guarded by group role based authorization
-#[update(guard = "has_access")]
-pub fn accept_user_request_event_invite(
+#[update(guard = "is_not_anonymous")]
+pub async fn accept_user_request_event_invite(
     event_id: u64,
     group_id: u64,
     attendee_principal: Principal,
-) -> Result<JoinedAttendeeResponse, ApiError> {
+) -> CanisterResult<JoinedAttendeeResponse> {
+    has_access().await?;
     can_edit(group_id, PermissionType::Event(None))?;
     EventCalls::accept_or_decline_user_request_event_invite(
         event_id,
@@ -218,12 +226,13 @@ pub fn accept_user_request_event_invite(
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 /// TODO: This action is guarded by group role based authorization
-#[update(guard = "has_access")]
-pub fn decline_user_request_event_invite(
+#[update(guard = "is_not_anonymous")]
+pub async fn decline_user_request_event_invite(
     event_id: u64,
     group_id: u64,
     attendee_principal: Principal,
-) -> Result<JoinedAttendeeResponse, ApiError> {
+) -> CanisterResult<JoinedAttendeeResponse> {
+    has_access().await?;
     can_edit(group_id, PermissionType::Event(None))?;
     EventCalls::accept_or_decline_user_request_event_invite(
         event_id,
@@ -242,8 +251,9 @@ pub fn decline_user_request_event_invite(
 /// * `ApiError` - If something went wrong while accepting the owner invite to the event
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[update(guard = "has_access")]
-pub fn accept_owner_request_event_invite(event_id: u64) -> Result<Attendee, ApiError> {
+#[update(guard = "is_not_anonymous")]
+pub async fn accept_owner_request_event_invite(event_id: u64) -> CanisterResult<Attendee> {
+    has_access().await?;
     EventCalls::accept_or_decline_owner_request_event_invite(event_id, true)
 }
 
@@ -256,8 +266,9 @@ pub fn accept_owner_request_event_invite(event_id: u64) -> Result<Attendee, ApiE
 /// * `ApiError` - If something went wrong while accepting the owner invite to the event
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[update(guard = "has_access")]
-pub fn decline_owner_request_event_invite(event_id: u64) -> Result<Attendee, ApiError> {
+#[update(guard = "is_not_anonymous")]
+pub async fn decline_owner_request_event_invite(event_id: u64) -> CanisterResult<Attendee> {
+    has_access().await?;
     EventCalls::accept_or_decline_owner_request_event_invite(event_id, false)
 }
 
@@ -270,8 +281,9 @@ pub fn decline_owner_request_event_invite(event_id: u64) -> Result<Attendee, Api
 /// * `ApiError` - If something went wrong while getting the attendees for the event
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[query(guard = "has_access")]
-pub fn get_event_attendees(event_id: u64) -> Result<Vec<JoinedAttendeeResponse>, ApiError> {
+#[query(guard = "is_not_anonymous")]
+pub async fn get_event_attendees(event_id: u64) -> CanisterResult<Vec<JoinedAttendeeResponse>> {
+    has_access().await?;
     EventCalls::get_event_attendees(event_id)
 }
 
@@ -284,11 +296,12 @@ pub fn get_event_attendees(event_id: u64) -> Result<Vec<JoinedAttendeeResponse>,
 /// * `ApiError` - If something went wrong while getting the attendees for the event
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[query(guard = "has_access")]
-pub fn get_event_attendees_profiles_and_roles(
+#[query(guard = "is_not_anonymous")]
+pub async fn get_event_attendees_profiles_and_roles(
     event_id: u64,
-) -> Result<Vec<(ProfileResponse, Vec<String>)>, ApiError> {
-    EventCalls::get_event_attendees_profiles_and_roles(event_id)
+) -> CanisterResult<Vec<(ProfileResponse, Vec<String>)>> {
+    has_access().await?;
+    EventCalls::get_event_attendees_profiles_and_roles(event_id).await
 }
 
 /// Get the attendees for an event with their profiles - [`[query]`](query)
@@ -300,11 +313,12 @@ pub fn get_event_attendees_profiles_and_roles(
 /// * `ApiError` - If something went wrong while getting the attendees for the event
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[query(guard = "has_access")]
-pub fn get_event_invites_with_profiles(
+#[query(guard = "is_not_anonymous")]
+pub async fn get_event_invites_with_profiles(
     event_id: u64,
-) -> Result<Vec<(ProfileResponse, InviteAttendeeResponse)>, ApiError> {
-    EventCalls::get_event_invites_with_profiles(event_id)
+) -> CanisterResult<Vec<(ProfileResponse, InviteAttendeeResponse)>> {
+    has_access().await?;
+    EventCalls::get_event_invites_with_profiles(event_id).await
 }
 
 /// Get the caller attendee entry - [`[query]`](query)
@@ -316,18 +330,22 @@ pub fn get_event_invites_with_profiles(
 /// * `ApiError` - If something went wrong while getting the attendee
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[query(guard = "has_access")]
-pub fn get_self_attendee() -> Result<Attendee, ApiError> {
+#[query(guard = "is_not_anonymous")]
+pub async fn get_self_attendee() -> CanisterResult<Attendee> {
+    has_access().await?;
     EventCalls::get_self_attendee()
 }
 /// Get the caller joined groups - [`[query]`](query)
 /// # Returns
 /// * `Vec<GroupResponse>` - All groups the user is part of
+/// # Errors
+/// * `ApiError` - If something went wrong while getting the self events
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[query(guard = "has_access")]
-pub fn get_self_events() -> Vec<EventResponse> {
-    EventCalls::get_self_events()
+#[query(guard = "is_not_anonymous")]
+pub async fn get_self_events() -> CanisterResult<Vec<EventResponse>> {
+    has_access().await?;
+    Ok(EventCalls::get_self_events().await)
 }
 
 /// Get the joined events from a principal - [`[query]`](query)
@@ -339,10 +357,11 @@ pub fn get_self_events() -> Vec<EventResponse> {
 /// * `ApiError` - If something went wrong while getting the joined events
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[query(guard = "has_access")]
-pub fn get_attending_from_principal(
+#[query(guard = "is_not_anonymous")]
+pub async fn get_attending_from_principal(
     principal: Principal,
-) -> Result<Vec<JoinedAttendeeResponse>, ApiError> {
+) -> CanisterResult<Vec<JoinedAttendeeResponse>> {
+    has_access().await?;
     EventCalls::get_attending_from_principal(principal)
 }
 
@@ -355,8 +374,9 @@ pub fn get_attending_from_principal(
 /// * `ApiError` - If something went wrong while leaving the event
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[update(guard = "has_access")]
-pub fn leave_event(event_id: u64) -> Result<(), ApiError> {
+#[update(guard = "is_not_anonymous")]
+pub async fn leave_event(event_id: u64) -> CanisterResult<()> {
+    has_access().await?;
     EventCalls::leave_event(event_id)
 }
 
@@ -371,8 +391,9 @@ pub fn leave_event(event_id: u64) -> Result<(), ApiError> {
 /// * `ApiError` - If something went wrong while removing the event
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[update(guard = "has_access")]
-pub fn remove_event_invite(event_id: u64) -> Result<(), ApiError> {
+#[update(guard = "is_not_anonymous")]
+pub async fn remove_event_invite(event_id: u64) -> CanisterResult<()> {
+    has_access().await?;
     EventCalls::remove_event_invite(event_id)
 }
 
@@ -387,12 +408,13 @@ pub fn remove_event_invite(event_id: u64) -> Result<(), ApiError> {
 /// * `ApiError` - If something went wrong while removing the event
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[update(guard = "has_access")]
-pub fn remove_attendee_from_event(
+#[update(guard = "is_not_anonymous")]
+pub async fn remove_attendee_from_event(
     event_id: u64,
     group_id: u64,
     attendee_principal: Principal,
-) -> Result<(), ApiError> {
+) -> CanisterResult<()> {
+    has_access().await?;
     can_edit(group_id, PermissionType::Event(None))?;
     EventCalls::remove_attendee_from_event(attendee_principal, event_id)
 }
@@ -408,12 +430,13 @@ pub fn remove_attendee_from_event(
 /// * `ApiError` - If something went wrong while removing the event
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[update(guard = "has_access")]
-pub fn remove_attendee_invite_from_event(
+#[update(guard = "is_not_anonymous")]
+pub async fn remove_attendee_invite_from_event(
     event_id: u64,
     group_id: u64,
     attendee_principal: Principal,
-) -> Result<(), ApiError> {
+) -> CanisterResult<()> {
+    has_access().await?;
     can_edit(group_id, PermissionType::Event(None))?;
     EventCalls::remove_attendee_invite_from_event(attendee_principal, event_id)
 }
@@ -429,10 +452,11 @@ pub fn remove_attendee_invite_from_event(
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 /// TODO: This action is guarded by group role based authorization
-#[query(guard = "has_access")]
-pub fn get_event_invites(
+#[query(guard = "is_not_anonymous")]
+pub async fn get_event_invites(
     event_id: u64,
     group_id: u64,
-) -> Result<Vec<InviteAttendeeResponse>, ApiError> {
+) -> CanisterResult<Vec<InviteAttendeeResponse>> {
+    has_access().await?;
     EventCalls::get_event_invites(event_id, group_id)
 }

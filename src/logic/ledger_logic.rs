@@ -28,7 +28,7 @@ impl Ledger {
                     } = operation
                     {
                         if from != Self::principal_to_account_identifier(principal) {
-                            return Err(ApiError::bad_request().add_message("Invalid from adrress"));
+                            return Err(ApiError::bad_request().add_message("Invalid from address"));
                         }
                         if to
                             != Self::principal_to_account_identifier(
@@ -82,13 +82,13 @@ impl Ledger {
                                 }
                             },
                             Err(err) => {
-                                return Err(ApiError::bad_request().add_message(&err.to_string()))
+                                return Err(ApiError::bad_request().add_message(err.to_string()))
                             }
                         }
                     }
                 }
             }
-            Err((_, err)) => return Err(ApiError::bad_request().add_message(&err)),
+            Err((_, err)) => return Err(ApiError::bad_request().add_message(err)),
         }
         Err(ApiError::bad_request().add_message("No block found"))
     }

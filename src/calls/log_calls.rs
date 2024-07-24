@@ -3,26 +3,29 @@ use crate::{
     helpers::guards::{has_access, is_developer, is_monitor},
     logic::logger_logic::LoginEvent,
 };
-use catalyze_shared::log::LogType;
 use catalyze_shared::{
-    api_error::ApiError,
-    log::{Logger, PostLog},
+    guards::is_not_anonymous,
+    log::{LogType, Logger, PostLog},
+    CanisterResult,
 };
 use ic_cdk::{query, update};
 
 // Update functions
-#[update(guard = "has_access")]
-fn log(post_log: PostLog) -> Result<(u64, Logger), ApiError> {
+#[update(guard = "is_not_anonymous")]
+async fn log(post_log: PostLog) -> CanisterResult<(u64, Logger)> {
+    has_access().await?;
     LoggerStore::new_from_post_log(post_log)
 }
 
-#[update(guard = "has_access")]
-fn log_with_caller(post_log: PostLog) -> Result<(u64, Logger), ApiError> {
+#[update(guard = "is_not_anonymous")]
+async fn log_with_caller(post_log: PostLog) -> CanisterResult<(u64, Logger)> {
+    has_access().await?;
     LoggerStore::new_from_post_log_with_caller(post_log)
 }
 
-#[update(guard = "has_access")]
-fn log_login() -> Result<(u64, Logger), ApiError> {
+#[update(guard = "is_not_anonymous")]
+async fn log_login() -> CanisterResult<(u64, Logger)> {
+    has_access().await?;
     LoginEvent::log_event()
 }
 

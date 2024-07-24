@@ -90,8 +90,8 @@ fn handle_topic(kind: TopicKind, topic: String) -> Result<String, ApiError> {
 
     if let Some(existing) = existing {
         return Err(ApiError::duplicate()
-            .add_tag(&kind.to_string())
-            .add_message(&format!(
+            .add_tag(kind.to_string())
+            .add_message(format!(
                 "{kind} \"{}\" already exists with ID: {}",
                 existing.1, existing.0
             )));

@@ -40,6 +40,7 @@ pub fn __export_did_tmp_() -> String {
     use catalyze_shared::user_notifications::*;
     use catalyze_shared::wallet::*;
     use catalyze_shared::websocket_message::WSMessage;
+    use catalyze_shared::CanisterResult;
     use ic_cdk::api::management_canister::http_request::HttpResponse;
     use ic_websocket_cdk::types::*;
 

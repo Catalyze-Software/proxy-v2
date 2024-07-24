@@ -2,9 +2,8 @@ use super::{
     attendee_logic::AttendeeCalls, member_logic::MemberCalls, notification_logic::NotificationCalls,
 };
 use crate::storage::{
-    AttendeeStore, EventAttendeeStore, EventStore, GroupMemberStore, GroupStore, MemberStore,
-    ProfileStore, StorageInsertableByKey, StorageQueryable, StorageUpdateable,
-    UserNotificationStore,
+    profiles, AttendeeStore, EventAttendeeStore, EventStore, GroupMemberStore, GroupStore,
+    MemberStore, StorageInsertableByKey, StorageQueryable, UserNotificationStore,
 };
 use candid::Principal;
 use catalyze_shared::{
@@ -12,12 +11,13 @@ use catalyze_shared::{
     document_details::DocumentDetails,
     helpers::validator::Validator,
     member_collection::MemberCollection,
-    profile::{PostProfile, Profile, ProfileResponse, UpdateProfile},
+    profile::{PostProfile, Profile, ProfileFilter, ProfileResponse, UpdateProfile},
     relation_type::RelationType,
     subject::{Subject, SubjectResponse, SubjectType},
     user_notifications::UserNotifications,
     validation::{ValidateField, ValidationType},
     wallet::{PostWallet, Wallet},
+    CanisterResult, StorageClient,
 };
 use ic_cdk::{api::time, caller};
 
@@ -25,36 +25,39 @@ pub struct ProfileCalls;
 pub struct ProfileValidation;
 
 impl ProfileCalls {
-    pub fn add_profile(post_profile: PostProfile) -> Result<ProfileResponse, ApiError> {
+    pub async fn add_profile(post_profile: PostProfile) -> CanisterResult<ProfileResponse> {
         ProfileValidation::validate_post_profile(&post_profile)?;
 
-        let post_profile_username = post_profile.username.to_lowercase();
-        if ProfileStore::find(|_, p| p.username.to_lowercase() == post_profile_username).is_some() {
+        let exists = profiles()
+            .find(ProfileFilter::Username(post_profile.username.clone()).into())
+            .await?
+            .is_some();
+
+        if exists {
             return Err(ApiError::duplicate().add_message("Username already exists"));
         }
 
         let new_profile = Profile::from(post_profile);
-        let stored_profile = ProfileStore::insert_by_key(caller(), new_profile);
+        let stored_profile = profiles().insert(caller(), new_profile).await?;
 
         let _ = MemberCalls::create_empty_member(caller());
         let _ = AttendeeCalls::create_empty_attendee(caller());
         let _ = UserNotificationStore::insert_by_key(caller(), UserNotifications::new());
 
-        ProfileResponse::from_result(stored_profile)
+        ProfileResponse::from(stored_profile).to_result()
     }
 
-    pub fn update_profile(update_profile: UpdateProfile) -> Result<ProfileResponse, ApiError> {
+    pub async fn update_profile(update_profile: UpdateProfile) -> CanisterResult<ProfileResponse> {
         ProfileValidation::validate_update_profile(&update_profile)?;
 
-        let (_, existing_profile) = ProfileStore::get(caller())?;
+        let (_, existing_profile) = profiles().get(caller()).await?;
         let updated_profile = existing_profile.update(update_profile);
 
-        let updated_profile_result = ProfileStore::update(caller(), updated_profile);
-        ProfileResponse::from_result(updated_profile_result)
+        ProfileResponse::from(profiles().update(caller(), updated_profile).await?).to_result()
     }
 
-    pub fn add_wallet_to_profile(post_wallet: PostWallet) -> Result<ProfileResponse, ApiError> {
-        let (_, mut existing_profile) = ProfileStore::get(caller())?;
+    pub async fn add_wallet_to_profile(post_wallet: PostWallet) -> CanisterResult<ProfileResponse> {
+        let (_, mut existing_profile) = profiles().get(caller()).await?;
 
         if existing_profile
             .wallets
@@ -71,13 +74,13 @@ impl ProfileCalls {
             },
         );
 
-        let updated_profile = ProfileStore::update(caller(), existing_profile);
-
-        ProfileResponse::from_result(updated_profile)
+        ProfileResponse::from(profiles().update(caller(), existing_profile).await?).to_result()
     }
 
-    pub fn remove_wallet_from_profile(principal: Principal) -> Result<ProfileResponse, ApiError> {
-        let (_, mut existing_profile) = ProfileStore::get(caller())?;
+    pub async fn remove_wallet_from_profile(
+        principal: Principal,
+    ) -> CanisterResult<ProfileResponse> {
+        let (_, mut existing_profile) = profiles().get(caller()).await?;
 
         if !existing_profile.wallets.contains_key(&principal) {
             return Err(ApiError::not_found().add_message("Wallet does not exist"));
@@ -93,13 +96,11 @@ impl ProfileCalls {
 
         existing_profile.wallets.remove(&principal);
 
-        let updated_profile = ProfileStore::update(caller(), existing_profile);
-
-        ProfileResponse::from_result(updated_profile)
+        ProfileResponse::from(profiles().update(caller(), existing_profile).await?).to_result()
     }
 
-    pub fn set_wallet_as_primary(principal: Principal) -> Result<ProfileResponse, ApiError> {
-        let (_, mut existing_profile) = ProfileStore::get(caller())?;
+    pub async fn set_wallet_as_primary(principal: Principal) -> CanisterResult<ProfileResponse> {
+        let (_, mut existing_profile) = profiles().get(caller()).await?;
 
         if !existing_profile.wallets.contains_key(&principal) {
             return Err(ApiError::not_found().add_message("Wallet does not exist"));
@@ -115,26 +116,26 @@ impl ProfileCalls {
             .unwrap()
             .is_primary = true;
 
-        let updated_profile = ProfileStore::update(caller(), existing_profile);
-
-        ProfileResponse::from_result(updated_profile)
+        ProfileResponse::from(profiles().update(caller(), existing_profile).await?).to_result()
     }
 
-    pub fn get_profile(principal: Principal) -> Result<ProfileResponse, ApiError> {
-        let profile_result = ProfileStore::get(principal);
-        ProfileResponse::from_result(profile_result)
+    pub async fn get_profile(principal: Principal) -> CanisterResult<ProfileResponse> {
+        ProfileResponse::from(profiles().get(principal).await?).to_result()
     }
 
-    pub fn get_profiles(principals: Vec<Principal>) -> Vec<ProfileResponse> {
-        let profiles_result = ProfileStore::get_many(principals);
-        profiles_result
+    pub async fn get_profiles(principals: Vec<Principal>) -> CanisterResult<Vec<ProfileResponse>> {
+        let profiles = profiles()
+            .get_many(principals)
+            .await?
             .into_iter()
-            .map(|profile| ProfileResponse::new(profile.0, profile.1))
-            .collect()
+            .map(|profile| profile.into())
+            .collect();
+
+        Ok(profiles)
     }
 
-    pub fn add_starred(subject: Subject) -> Result<ProfileResponse, ApiError> {
-        let (_, mut existing_profile) = ProfileStore::get(caller())?;
+    pub async fn add_starred(subject: Subject) -> CanisterResult<ProfileResponse> {
+        let (_, mut existing_profile) = profiles().get(caller()).await?;
 
         if existing_profile.starred.contains(&subject) {
             return Err(ApiError::duplicate().add_message("already starred"));
@@ -164,13 +165,11 @@ impl ProfileCalls {
 
         existing_profile.starred.push(subject);
 
-        let updated_profile = ProfileStore::update(caller(), existing_profile);
-
-        ProfileResponse::from_result(updated_profile)
+        ProfileResponse::from(profiles().update(caller(), existing_profile).await?).to_result()
     }
 
-    pub fn remove_starred(subject: Subject) -> Result<ProfileResponse, ApiError> {
-        let (_, mut existing_profile) = ProfileStore::get(caller())?;
+    pub async fn remove_starred(subject: Subject) -> CanisterResult<ProfileResponse> {
+        let (_, mut existing_profile) = profiles().get(caller()).await?;
 
         if !existing_profile.starred.contains(&subject) {
             return Err(ApiError::not_found().add_message("not starred"));
@@ -178,13 +177,11 @@ impl ProfileCalls {
 
         existing_profile.starred.retain(|s| s != &subject);
 
-        let updated_profile = ProfileStore::update(caller(), existing_profile);
-
-        ProfileResponse::from_result(updated_profile)
+        ProfileResponse::from(profiles().update(caller(), existing_profile).await?).to_result()
     }
 
-    pub fn get_starred_by_subject(subject: SubjectType) -> Vec<u64> {
-        if let Ok((_, profile)) = ProfileStore::get(caller()) {
+    pub async fn get_starred_by_subject(subject: SubjectType) -> Vec<u64> {
+        if let Ok((_, profile)) = profiles().get(caller()).await {
             return profile
                 .starred
                 .iter()
@@ -195,8 +192,8 @@ impl ProfileCalls {
         vec![]
     }
 
-    pub fn add_pinned(subject: Subject) -> Result<ProfileResponse, ApiError> {
-        let (_, mut existing_profile) = ProfileStore::get(caller())?;
+    pub async fn add_pinned(subject: Subject) -> CanisterResult<ProfileResponse> {
+        let (_, mut existing_profile) = profiles().get(caller()).await?;
 
         if existing_profile.pinned.contains(&subject) {
             return Err(ApiError::duplicate().add_message("already pinned"));
@@ -226,13 +223,11 @@ impl ProfileCalls {
 
         existing_profile.pinned.push(subject);
 
-        let updated_profile = ProfileStore::update(caller(), existing_profile);
-
-        ProfileResponse::from_result(updated_profile)
+        ProfileResponse::from(profiles().update(caller(), existing_profile).await?).to_result()
     }
 
-    pub fn remove_pinned(subject: Subject) -> Result<ProfileResponse, ApiError> {
-        let (_, mut existing_profile) = ProfileStore::get(caller())?;
+    pub async fn remove_pinned(subject: Subject) -> CanisterResult<ProfileResponse> {
+        let (_, mut existing_profile) = profiles().get(caller()).await?;
 
         if !existing_profile.pinned.contains(&subject) {
             return Err(ApiError::not_found().add_message("not pinned"));
@@ -240,35 +235,37 @@ impl ProfileCalls {
 
         existing_profile.pinned.retain(|s| s != &subject);
 
-        let updated_profile = ProfileStore::update(caller(), existing_profile);
-
-        ProfileResponse::from_result(updated_profile)
+        ProfileResponse::from(profiles().update(caller(), existing_profile).await?).to_result()
     }
 
-    pub fn get_pinned_by_subject(subject: SubjectType) -> Vec<SubjectResponse> {
-        if let Ok((_, profile)) = ProfileStore::get(caller()) {
-            return profile
-                .pinned
-                .iter()
-                .filter(|s| s.get_type() == subject)
-                .map(Self::get_subject_response_by_subject)
-                .collect();
+    pub async fn get_pinned_by_subject(
+        subject: SubjectType,
+    ) -> CanisterResult<Vec<SubjectResponse>> {
+        let (_, profile) = profiles().get(caller()).await?;
+
+        let mut subjects = vec![];
+
+        for s in profile.pinned.iter() {
+            if s.get_type() == subject {
+                subjects.push(Self::get_subject_response_by_subject(s).await);
+            }
         }
-        vec![]
+
+        Ok(subjects)
     }
 
-    pub fn remove_friend(principal: Principal) -> Result<ProfileResponse, ApiError> {
+    pub async fn remove_friend(principal: Principal) -> CanisterResult<ProfileResponse> {
         // Remove the friend from the caller profile
-        let (_, mut caller_profile) = ProfileStore::get(caller())?;
+        let (_, mut caller_profile) = profiles().get(caller()).await?;
 
         if !caller_profile.relations.contains_key(&principal) {
             return Err(ApiError::not_found().add_message("Friend does not exist"));
         }
 
         caller_profile.relations.remove(&principal);
-        let updated_caller_profile = ProfileStore::update(caller(), caller_profile);
+        let updated_caller_profile = profiles().update(caller(), caller_profile).await?;
 
-        let (_, mut friend_profile) = ProfileStore::get(principal)?;
+        let (_, mut friend_profile) = profiles().get(principal).await?;
 
         // Remove the caller from the friend profile
         if !friend_profile.relations.contains_key(&caller()) {
@@ -277,34 +274,34 @@ impl ProfileCalls {
 
         friend_profile.relations.remove(&caller());
 
-        let _ = ProfileStore::update(principal, friend_profile);
+        profiles().update(principal, friend_profile).await?;
 
         NotificationCalls::notification_remove_friend(principal, caller());
-        ProfileResponse::from_result(updated_caller_profile)
+        ProfileResponse::from(updated_caller_profile).to_result()
     }
 
-    pub fn block_user(principal: Principal) -> Result<ProfileResponse, ApiError> {
-        let (_, mut caller_profile) = ProfileStore::get(caller())?;
+    pub async fn block_user(principal: Principal) -> CanisterResult<ProfileResponse> {
+        let (_, mut caller_profile) = profiles().get(caller()).await?;
 
         caller_profile
             .relations
             .insert(principal, RelationType::Blocked.to_string());
 
-        let updated_profile = ProfileStore::update(caller(), caller_profile);
+        let updated_profile = profiles().update(caller(), caller_profile).await?;
 
-        let (_, mut friend_profile) = ProfileStore::get(principal)?;
+        let (_, mut friend_profile) = profiles().get(principal).await?;
 
         // In case the friend has the caller as a friend, remove it
         if friend_profile.relations.contains_key(&caller()) {
             friend_profile.relations.remove(&caller());
-            let _ = ProfileStore::update(principal, friend_profile);
+            let _ = profiles().update(principal, friend_profile).await?;
         }
 
-        ProfileResponse::from_result(updated_profile)
+        ProfileResponse::from(updated_profile).to_result()
     }
 
-    pub fn unblock_user(principal: Principal) -> Result<ProfileResponse, ApiError> {
-        let (_, mut caller_profile) = ProfileStore::get(caller())?;
+    pub async fn unblock_user(principal: Principal) -> CanisterResult<ProfileResponse> {
+        let (_, mut caller_profile) = profiles().get(caller()).await?;
 
         if caller_profile
             .relations
@@ -312,67 +309,64 @@ impl ProfileCalls {
             .is_some_and(|data| data == &RelationType::Blocked.to_string())
         {
             caller_profile.relations.remove(&principal);
-            let updated_profile = ProfileStore::update(caller(), caller_profile);
-            return ProfileResponse::from_result(updated_profile);
+            let updated_profile = profiles().update(caller(), caller_profile).await?;
+            return ProfileResponse::from(updated_profile).to_result();
         }
 
         Err(ApiError::not_found().add_message("User not blocked"))
     }
 
-    pub fn get_relations(relation_type: RelationType) -> Vec<Principal> {
-        if let Ok((_, profile)) = ProfileStore::get(caller()) {
-            return profile
-                .relations
-                .iter()
-                .filter_map(|(principal, r)| {
-                    if r == &relation_type.to_string() {
-                        Some(*principal)
-                    } else {
-                        None
-                    }
-                })
-                .collect();
-        }
-        vec![]
+    pub async fn get_relations(relation_type: RelationType) -> CanisterResult<Vec<Principal>> {
+        let (_, profile) = profiles().get(caller()).await?;
+
+        let resp = profile
+            .relations
+            .iter()
+            .filter_map(|(principal, r)| {
+                if r == &relation_type.to_string() {
+                    Some(*principal)
+                } else {
+                    None
+                }
+            })
+            .collect();
+
+        Ok(resp)
     }
 
-    pub fn get_relations_with_profiles(relation_type: RelationType) -> Vec<ProfileResponse> {
-        Self::get_profiles(ProfileCalls::get_relations(relation_type))
+    pub async fn get_relations_with_profiles(
+        relation_type: RelationType,
+    ) -> CanisterResult<Vec<ProfileResponse>> {
+        Self::get_profiles(ProfileCalls::get_relations(relation_type).await?).await
     }
 
     // TODO: add logic to check the current version of these documents and add something to prompt the user to approve the latest version
-    pub fn approve_code_of_conduct(version: u64) -> Result<bool, ApiError> {
-        let (_, mut profile) = ProfileStore::get(caller())?;
+    pub async fn approve_code_of_conduct(version: u64) -> CanisterResult<bool> {
+        let (_, mut profile) = profiles().get(caller()).await?;
 
         profile.code_of_conduct = Some(DocumentDetails::new(version, time()));
-        let updated_profile = ProfileStore::update(caller(), profile);
-
-        Ok(updated_profile.is_ok())
+        Ok(profiles().update(caller(), profile).await.is_ok())
     }
 
-    pub fn approve_privacy_policy(version: u64) -> Result<bool, ApiError> {
-        let (_, mut profile) = ProfileStore::get(caller())?;
+    pub async fn approve_privacy_policy(version: u64) -> CanisterResult<bool> {
+        let (_, mut profile) = profiles().get(caller()).await?;
 
         profile.privacy_policy = Some(DocumentDetails::new(version, time()));
-        let updated_profile = ProfileStore::update(caller(), profile);
-
-        Ok(updated_profile.is_ok())
+        Ok(profiles().update(caller(), profile).await.is_ok())
     }
 
-    pub fn approve_terms_of_service(version: u64) -> Result<bool, ApiError> {
-        let (_, mut profile) = ProfileStore::get(caller())?;
+    pub async fn approve_terms_of_service(version: u64) -> CanisterResult<bool> {
+        let (_, mut profile) = profiles().get(caller()).await?;
 
         profile.terms_of_service = Some(DocumentDetails::new(version, time()));
-        let updated_profile = ProfileStore::update(caller(), profile);
-
-        Ok(updated_profile.is_ok())
+        Ok(profiles().update(caller(), profile).await.is_ok())
     }
 
-    pub fn get_subject_response_by_subject(subject: &Subject) -> SubjectResponse {
+    pub async fn get_subject_response_by_subject(subject: &Subject) -> SubjectResponse {
         match subject.clone() {
             Subject::Group(id) => SubjectResponse::Group(GroupStore::get(id).ok()),
             Subject::Event(id) => SubjectResponse::Event(EventStore::get(id).ok()),
-            Subject::Profile(id) => SubjectResponse::Profile(ProfileStore::get(id).ok()),
+            Subject::Profile(id) => SubjectResponse::Profile(profiles().get(id).await.ok()),
             Subject::Member(id) => SubjectResponse::Member(MemberStore::get(id).ok()),
             Subject::Attendee(id) => SubjectResponse::Attendee(AttendeeStore::get(id).ok()),
             Subject::None => SubjectResponse::None,

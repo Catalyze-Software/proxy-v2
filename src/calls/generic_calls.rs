@@ -5,7 +5,7 @@ use crate::{
         reward_canister_storage::RewardCanisterStorage, storage_api::StorageQueryable,
         AttendeeStore, BoostedStore, CellStorage, EventAttendeeStore, EventStore,
         FriendRequestStore, GroupEventsStore, GroupMemberStore, GroupStore, HistoryCanisterStorage,
-        LoggerStore, MemberStore, NotificationStore, ProfileStore, ReportStore, RewardBufferStore,
+        LoggerStore, MemberStore, NotificationStore, ReportStore, RewardBufferStore,
         RewardTimerStore, StorageUpdateable, UserNotificationStore,
     },
 };
@@ -153,7 +153,6 @@ fn _dev_prod_init() -> Result<(), ApiError> {
 
 #[update(guard = "is_prod_developer")]
 fn _dev_clear() {
-    ProfileStore::clear();
     FriendRequestStore::clear();
     GroupStore::clear();
     MemberStore::clear();

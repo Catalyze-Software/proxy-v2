@@ -1,39 +1,24 @@
 use candid::Principal;
 use catalyze_shared::{
-    api_error::ApiError, application_role::ApplicationRole, guards::is_not_anonymous,
+    api_error::ApiError, application_role::ApplicationRole, CanisterResult, StorageClient,
 };
 use ic_cdk::caller;
 
-use crate::storage::{ProfileStore, StorageQueryable};
+use crate::storage::profiles;
 
-/// Checks if the caller is anonymous, has a profile and is not blocked or banned on the application level
+/// Checks if the caller has a profile and is not blocked or banned on the application level
 /// # Returns
-/// * `()` if the caller is not anonymous, has a profile and is not blocked or banned
+/// * `()` if the caller has a profile and is not blocked or banned
 /// # Errors
-/// * `String` if the caller is anonymous, has no profile or is blocked or banned
-/// # Note
-/// `Result<(), String>` type is required because of the usage as a guard in the `candid` attribute macro
-pub fn has_access() -> Result<(), String> {
-    // Check if the caller is anonymous
-    is_not_anonymous()?;
+/// * `ApiError` if the caller has no profile or is blocked or banned
+pub async fn has_access() -> CanisterResult<()> {
+    let (_, profile) = profiles().get(caller()).await?;
 
-    // Get the caller's profile
-    match ProfileStore::get(caller()) {
-        Err(err) => Err(err.to_string()),
-        Ok((_, profile)) => {
-            // Check if the caller has a profile
-            // Check if the caller is blocked or banned on the application level
-            if [ApplicationRole::Blocked, ApplicationRole::Banned]
-                .contains(&profile.application_role)
-            {
-                Err(ApiError::unauthorized()
-                    .add_message("Blocked or banned")
-                    .to_string())
-            } else {
-                Ok(())
-            }
-        }
+    if ![ApplicationRole::Blocked, ApplicationRole::Banned].contains(&profile.application_role) {
+        return Ok(());
     }
+
+    Err(ApiError::unauthorized().add_message("Blocked or banned"))
 }
 
 /// Checks if the caller is the monitor principal
