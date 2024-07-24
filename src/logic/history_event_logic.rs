@@ -2,32 +2,31 @@ use candid::{CandidType, Principal};
 use catalyze_shared::{
     api_error::ApiError,
     history_event::{GroupRoleChangeKind, GroupRoleChanged, HistoryEvent},
+    CanisterResult, StorageClient,
 };
 use ic_cdk::api::call::CallResult;
 use serde::Deserialize;
 
-use crate::storage::{
-    CellStorage, HistoryCanisterStorage, HistoryPointStorage, ProfileStore, StorageQueryable,
-};
+use crate::storage::{profiles, CellStorage, HistoryCanisterStorage, HistoryPointStorage};
 
 pub struct HistoryEventLogic;
 
 impl HistoryEventLogic {
-    pub fn send(
+    pub async fn send(
         group_id: u64,
         principal: Principal,
         roles: Vec<String>,
         kind: GroupRoleChangeKind,
-    ) -> Result<(), ApiError> {
+    ) -> CanisterResult<()> {
         if HistoryCanisterStorage::is_empty() {
             return Ok(());
         }
 
-        let (_, profile) = ProfileStore::get(principal)?;
+        let (_, profile) = profiles().get(principal).await?;
 
         let event = GroupRoleChanged::new(group_id, principal, profile.username, roles, kind)
             .try_into()
-            .map_err(|e: candid::Error| ApiError::unexpected().add_message(&e.to_string()))?;
+            .map_err(|e: candid::Error| ApiError::unexpected().add_message(e.to_string()))?;
 
         let history_canister_id = HistoryCanisterStorage::get()?;
         let history_point = HistoryPointStorage::get_next()?;

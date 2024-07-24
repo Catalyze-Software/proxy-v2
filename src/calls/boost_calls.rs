@@ -4,24 +4,25 @@ use crate::{
     E8S_PER_DAY_BOOST_COST,
 };
 use catalyze_shared::{
-    api_error::ApiError, event::EventResponse, group::GroupResponse, subject::Subject,
+    api_error::ApiError, event::EventResponse, group::GroupResponse, guards::is_not_anonymous,
+    subject::Subject, CanisterResult,
 };
 use ic_cdk::{query, update};
 
 /// Returns the boosted groups
 /// # Returns
 /// * `Vec<GroupResponse>`
-#[query]
-fn get_boosted_groups() -> Vec<GroupResponse> {
-    GroupCalls::get_boosted_groups()
+#[query(composite = true)]
+async fn get_boosted_groups() -> Vec<GroupResponse> {
+    GroupCalls::get_boosted_groups().await
 }
 
 /// Returns the boosted events
 /// # Returns
 /// * `Vec<EventResponse>`
-#[query]
-fn get_boosted_events() -> Vec<EventResponse> {
-    EventCalls::get_boosted_events()
+#[query(composite = true)]
+async fn get_boosted_events() -> Vec<EventResponse> {
+    EventCalls::get_boosted_events().await
 }
 
 /// Returns the cost of boosting per day
@@ -43,8 +44,10 @@ fn get_e8s_per_day_boost_cost() -> u64 {
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 /// The identifier is used to determine if the group or event should be boosted.
-#[update(guard = "has_access")]
-async fn boost(boost_subject: Subject, blockheight: u64) -> Result<u64, ApiError> {
+#[update(guard = "is_not_anonymous")]
+async fn boost(boost_subject: Subject, blockheight: u64) -> CanisterResult<u64> {
+    has_access().await?;
+
     use Subject::*;
     let subject = match boost_subject {
         Group(id) => Subject::Group(id),
@@ -63,7 +66,7 @@ async fn boost(boost_subject: Subject, blockheight: u64) -> Result<u64, ApiError
 /// # Errors
 /// * `ApiError` if something went wrong getting the remaining boost time
 #[query]
-fn get_remaining_boost_time_in_seconds(boost_subject: Subject) -> Result<u64, ApiError> {
+fn get_remaining_boost_time_in_seconds(boost_subject: Subject) -> CanisterResult<u64> {
     use Subject::*;
     let subject = match boost_subject {
         Group(id) => Subject::Group(id),

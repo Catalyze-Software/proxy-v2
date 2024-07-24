@@ -1,7 +1,7 @@
 use crate::{helpers::guards::is_developer, logic::topic_logic::TopicCalls};
 use catalyze_shared::{
-    api_error::ApiError,
     topic::{Topic, TopicKind},
+    CanisterResult,
 };
 use ic_cdk::{query, update};
 
@@ -16,7 +16,7 @@ use ic_cdk::{query, update};
 /// # Note
 /// This function is guarded by the [`is_developer`](is_developer) function.
 #[update(guard = "is_developer")]
-pub async fn add_topic(kind: TopicKind, value: String) -> Result<Topic, ApiError> {
+pub fn add_topic(kind: TopicKind, value: String) -> CanisterResult<Topic> {
     TopicCalls::add(kind, value)
 }
 
@@ -44,7 +44,7 @@ pub async fn remove_topic(kind: TopicKind, id: u64) -> bool {
 /// # Note
 /// This function is guarded by the [`is_developer`](is_developer) function.
 #[update(guard = "is_developer")]
-pub async fn add_topics(kind: TopicKind, value: Vec<String>) -> Vec<Result<Topic, ApiError>> {
+pub async fn add_topics(kind: TopicKind, value: Vec<String>) -> Vec<CanisterResult<Topic>> {
     value
         .into_iter()
         .map(|v| TopicCalls::add(kind.clone(), v))
@@ -60,7 +60,7 @@ pub async fn add_topics(kind: TopicKind, value: Vec<String>) -> Vec<Result<Topic
 /// # Errors
 /// * `ApiError` - If something went wrong while getting the topic
 #[query]
-pub fn get_topic(kind: TopicKind, id: u64) -> Result<Topic, ApiError> {
+pub fn get_topic(kind: TopicKind, id: u64) -> CanisterResult<Topic> {
     TopicCalls::get(kind, id)
 }
 
@@ -73,7 +73,7 @@ pub fn get_topic(kind: TopicKind, id: u64) -> Result<Topic, ApiError> {
 /// # Errors
 /// * `ApiError` - If something went wrong while getting the topics
 #[query]
-pub fn get_topics(kind: TopicKind, ids: Vec<u64>) -> Result<Vec<Topic>, ApiError> {
+pub fn get_topics(kind: TopicKind, ids: Vec<u64>) -> CanisterResult<Vec<Topic>> {
     TopicCalls::get_many(kind, ids)
 }
 
@@ -85,6 +85,6 @@ pub fn get_topics(kind: TopicKind, ids: Vec<u64>) -> Result<Vec<Topic>, ApiError
 /// # Errors
 /// * `ApiError` - If something went wrong while getting the topics
 #[query]
-pub fn get_all_topics(kind: TopicKind) -> Result<Vec<Topic>, ApiError> {
+pub fn get_all_topics(kind: TopicKind) -> CanisterResult<Vec<Topic>> {
     TopicCalls::get_all(kind)
 }

@@ -12,13 +12,13 @@ use crate::{
 ///
 use candid::Principal;
 use catalyze_shared::{
-    api_error::ApiError,
     friend_request::FriendRequestResponse,
     helpers::guards::is_not_anonymous,
     profile::{PostProfile, ProfileResponse, UpdateProfile},
     relation_type::RelationType,
     subject::{Subject, SubjectResponse, SubjectType},
     wallet::PostWallet,
+    CanisterResult,
 };
 use ic_cdk::{query, update};
 
@@ -32,8 +32,8 @@ use ic_cdk::{query, update};
 /// # Note
 /// This function is guarded by the [`is_not_anonymous`](is_not_anonymous) function.
 #[update(guard = "is_not_anonymous")]
-pub fn add_profile(post_profile: PostProfile) -> Result<ProfileResponse, ApiError> {
-    ProfileCalls::add_profile(post_profile)
+pub async fn add_profile(post_profile: PostProfile) -> CanisterResult<ProfileResponse> {
+    ProfileCalls::add_profile(post_profile).await
 }
 
 /// Gets a profile by the given user principal - [`[query]`](query)
@@ -45,9 +45,10 @@ pub fn add_profile(post_profile: PostProfile) -> Result<ProfileResponse, ApiErro
 /// * `ApiError` - If something went wrong while getting the profile
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[query(guard = "has_access")]
-pub fn get_profile(principal: Principal) -> Result<ProfileResponse, ApiError> {
-    ProfileCalls::get_profile(principal)
+#[query(composite = true, guard = "is_not_anonymous")]
+pub async fn get_profile(principal: Principal) -> CanisterResult<ProfileResponse> {
+    has_access().await?;
+    ProfileCalls::get_profile(principal).await
 }
 
 /// Gets profiles by the given user principals - [`[query]`](query)
@@ -55,11 +56,14 @@ pub fn get_profile(principal: Principal) -> Result<ProfileResponse, ApiError> {
 /// * `principals` - The user principals to get the profiles by
 /// # Returns
 /// * `Vec<ProfileResponse>` - The profiles that were found
+/// # Errors
+/// * `ApiError` - If something went wrong getting the profile
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[query(guard = "has_access")]
-pub fn get_profiles(principals: Vec<Principal>) -> Vec<ProfileResponse> {
-    ProfileCalls::get_profiles(principals)
+#[query(composite = true, guard = "is_not_anonymous")]
+pub async fn get_profiles(principals: Vec<Principal>) -> CanisterResult<Vec<ProfileResponse>> {
+    has_access().await?;
+    ProfileCalls::get_profiles(principals).await
 }
 
 /// Edit the caller his a profile - [`[update]`](update)
@@ -71,9 +75,10 @@ pub fn get_profiles(principals: Vec<Principal>) -> Vec<ProfileResponse> {
 /// * `ApiError` - If something went wrong while updating the profile
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[update(guard = "has_access")]
-pub fn edit_profile(update_profile: UpdateProfile) -> Result<ProfileResponse, ApiError> {
-    ProfileCalls::update_profile(update_profile)
+#[update(guard = "is_not_anonymous")]
+pub async fn edit_profile(update_profile: UpdateProfile) -> CanisterResult<ProfileResponse> {
+    has_access().await?;
+    ProfileCalls::update_profile(update_profile).await
 }
 
 /// Adds a wallet to the caller his profile - [`[update]`](update)
@@ -87,9 +92,10 @@ pub fn edit_profile(update_profile: UpdateProfile) -> Result<ProfileResponse, Ap
 /// * `ApiError` - If something went wrong while adding the wallet
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[update(guard = "has_access")]
-pub fn add_wallet_to_profile(wallet: PostWallet) -> Result<ProfileResponse, ApiError> {
-    ProfileCalls::add_wallet_to_profile(wallet)
+#[update(guard = "is_not_anonymous")]
+pub async fn add_wallet_to_profile(wallet: PostWallet) -> CanisterResult<ProfileResponse> {
+    has_access().await?;
+    ProfileCalls::add_wallet_to_profile(wallet).await
 }
 
 /// Sets a wallet as the primary wallet of the caller his profile - [`[update]`](update)
@@ -101,9 +107,10 @@ pub fn add_wallet_to_profile(wallet: PostWallet) -> Result<ProfileResponse, ApiE
 /// * `ApiError` - If something went wrong while setting the wallet as the primary wallet
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[update(guard = "has_access")]
-pub fn set_wallet_as_primary(wallet_principal: Principal) -> Result<ProfileResponse, ApiError> {
-    ProfileCalls::set_wallet_as_primary(wallet_principal)
+#[update(guard = "is_not_anonymous")]
+pub async fn set_wallet_as_primary(wallet_principal: Principal) -> CanisterResult<ProfileResponse> {
+    has_access().await?;
+    ProfileCalls::set_wallet_as_primary(wallet_principal).await
 }
 
 /// Removes a wallet from the caller his profile - [`[update]`](update)
@@ -117,11 +124,12 @@ pub fn set_wallet_as_primary(wallet_principal: Principal) -> Result<ProfileRespo
 /// * `ApiError` - If something went wrong while removing the wallet
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[update(guard = "has_access")]
-pub fn remove_wallet_from_profile(
+#[update(guard = "is_not_anonymous")]
+pub async fn remove_wallet_from_profile(
     wallet_principal: Principal,
-) -> Result<ProfileResponse, ApiError> {
-    ProfileCalls::remove_wallet_from_profile(wallet_principal)
+) -> CanisterResult<ProfileResponse> {
+    has_access().await?;
+    ProfileCalls::remove_wallet_from_profile(wallet_principal).await
 }
 
 /// Adds a starred subject to the caller his profile - [`[update]`](update)
@@ -133,9 +141,10 @@ pub fn remove_wallet_from_profile(
 /// * `ApiError` - If something went wrong while adding the profile
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[update(guard = "has_access")]
-pub fn add_starred(subject: Subject) -> Result<ProfileResponse, ApiError> {
-    ProfileCalls::add_starred(subject)
+#[update(guard = "is_not_anonymous")]
+pub async fn add_starred(subject: Subject) -> CanisterResult<ProfileResponse> {
+    has_access().await?;
+    ProfileCalls::add_starred(subject).await
 }
 
 /// Removes a starred subject from the caller his profile - [`[update]`](update)
@@ -147,9 +156,10 @@ pub fn add_starred(subject: Subject) -> Result<ProfileResponse, ApiError> {
 /// * `ApiError` - If something went wrong while removing the profile
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[update(guard = "has_access")]
-pub fn remove_starred(subject: Subject) -> Result<ProfileResponse, ApiError> {
-    ProfileCalls::remove_starred(subject)
+#[update(guard = "is_not_anonymous")]
+pub async fn remove_starred(subject: Subject) -> CanisterResult<ProfileResponse> {
+    has_access().await?;
+    ProfileCalls::remove_starred(subject).await
 }
 
 /// Gets the starred subjects from the caller his profile - [`[query]`](query)
@@ -159,9 +169,10 @@ pub fn remove_starred(subject: Subject) -> Result<ProfileResponse, ApiError> {
 /// * `Vec<Principal>` - The group identifiers that were found
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[query(guard = "has_access")]
-pub fn get_starred_by_subject_type(subject_type: SubjectType) -> Vec<u64> {
-    ProfileCalls::get_starred_by_subject(subject_type)
+#[query(composite = true, guard = "is_not_anonymous")]
+pub async fn get_starred_by_subject_type(subject_type: SubjectType) -> CanisterResult<Vec<u64>> {
+    has_access().await?;
+    Ok(ProfileCalls::get_starred_by_subject(subject_type).await)
 }
 
 /// Adds a pinned subject to the caller his profile - [`[update]`](update)
@@ -173,9 +184,10 @@ pub fn get_starred_by_subject_type(subject_type: SubjectType) -> Vec<u64> {
 /// * `ApiError` - If something went wrong while adding the profile
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[update(guard = "has_access")]
-pub fn add_pinned(subject: Subject) -> Result<ProfileResponse, ApiError> {
-    ProfileCalls::add_pinned(subject)
+#[update(guard = "is_not_anonymous")]
+pub async fn add_pinned(subject: Subject) -> CanisterResult<ProfileResponse> {
+    has_access().await?;
+    ProfileCalls::add_pinned(subject).await
 }
 
 /// Removes a pinned subject from the caller his profile - [`[update]`](update)
@@ -187,21 +199,27 @@ pub fn add_pinned(subject: Subject) -> Result<ProfileResponse, ApiError> {
 /// * `ApiError` - If something went wrong while removing the profile
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[update(guard = "has_access")]
-pub fn remove_pinned(subject: Subject) -> Result<ProfileResponse, ApiError> {
-    ProfileCalls::remove_pinned(subject)
+#[update(guard = "is_not_anonymous")]
+pub async fn remove_pinned(subject: Subject) -> CanisterResult<ProfileResponse> {
+    has_access().await?;
+    ProfileCalls::remove_pinned(subject).await
 }
 
 /// Gets the pinned subjects from the caller his profile - [`[query]`](query)
-/// /// # Arguments
+/// # Arguments
 /// * `subject_type` - The pinned subjects type to fetch
 /// # Returns
 /// * `Vec<Principal>` - The group identifiers that were found
+/// # Errors
+/// * `ApiError` - If something went wrong while getting pinned subjects
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[query(guard = "has_access")]
-pub fn get_pinned_by_subject_type(subject_type: SubjectType) -> Vec<SubjectResponse> {
-    ProfileCalls::get_pinned_by_subject(subject_type)
+#[query(composite = true, guard = "is_not_anonymous")]
+pub async fn get_pinned_by_subject_type(
+    subject_type: SubjectType,
+) -> CanisterResult<Vec<SubjectResponse>> {
+    has_access().await?;
+    ProfileCalls::get_pinned_by_subject(subject_type).await
 }
 
 /// Create a friend request on behalf of the caller - [`[update]`](update)
@@ -214,12 +232,13 @@ pub fn get_pinned_by_subject_type(subject_type: SubjectType) -> Vec<SubjectRespo
 /// * `ApiError` - If something went wrong while creating the friend request
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[update(guard = "has_access")]
-pub fn add_friend_request(
+#[update(guard = "is_not_anonymous")]
+pub async fn add_friend_request(
     to: Principal,
     message: String,
-) -> Result<FriendRequestResponse, ApiError> {
-    FriendRequestCalls::add_friend_request(to, message)
+) -> CanisterResult<FriendRequestResponse> {
+    has_access().await?;
+    FriendRequestCalls::add_friend_request(to, message).await
 }
 
 /// Accept a friend request that is addressed to the caller - [`[update]`](update)
@@ -231,9 +250,10 @@ pub fn add_friend_request(
 /// * `ApiError` - If something went wrong while accepting the friend request
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[update(guard = "has_access")]
-pub fn accept_friend_request(friend_request_id: u64) -> Result<bool, ApiError> {
-    FriendRequestCalls::accept_friend_request(friend_request_id)
+#[update(guard = "is_not_anonymous")]
+pub async fn accept_friend_request(friend_request_id: u64) -> CanisterResult<bool> {
+    has_access().await?;
+    FriendRequestCalls::accept_friend_request(friend_request_id).await
 }
 
 /// Remove a friend request created by the caller - [`[update]`](update)
@@ -245,8 +265,9 @@ pub fn accept_friend_request(friend_request_id: u64) -> Result<bool, ApiError> {
 /// * `ApiError` - If something went wrong while removing the friend request
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[update(guard = "has_access")]
-pub fn remove_friend_request(friend_request_id: u64) -> Result<bool, ApiError> {
+#[update(guard = "is_not_anonymous")]
+pub async fn remove_friend_request(friend_request_id: u64) -> CanisterResult<bool> {
+    has_access().await?;
     FriendRequestCalls::remove_friend_request(friend_request_id)
 }
 
@@ -255,9 +276,10 @@ pub fn remove_friend_request(friend_request_id: u64) -> Result<bool, ApiError> {
 /// * `Vec<FriendRequestResponse>` - The friend requests that were found
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[query(guard = "has_access")]
-pub fn get_incoming_friend_requests() -> Vec<FriendRequestResponse> {
-    FriendRequestCalls::get_incoming_friend_requests()
+#[query(composite = true, guard = "is_not_anonymous")]
+pub async fn get_incoming_friend_requests() -> CanisterResult<Vec<FriendRequestResponse>> {
+    has_access().await?;
+    Ok(FriendRequestCalls::get_incoming_friend_requests())
 }
 
 /// Gets the friend requests that are addressed to the caller with the corresponding profile - [`[query]`](query)
@@ -265,10 +287,11 @@ pub fn get_incoming_friend_requests() -> Vec<FriendRequestResponse> {
 /// * `Vec<(FriendRequestResponse, ProfileResponse)>` - The friend requests that were found
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[query(guard = "has_access")]
-pub fn get_incoming_friend_requests_with_profile() -> Vec<(FriendRequestResponse, ProfileResponse)>
-{
-    FriendRequestCalls::get_incoming_friend_requests_with_profile()
+#[query(composite = true, guard = "is_not_anonymous")]
+pub async fn get_incoming_friend_requests_with_profile(
+) -> CanisterResult<Vec<(FriendRequestResponse, ProfileResponse)>> {
+    has_access().await?;
+    FriendRequestCalls::get_incoming_friend_requests_with_profile().await
 }
 
 /// Gets the friend requests that are send by the caller - [`[query]`](query)
@@ -276,9 +299,10 @@ pub fn get_incoming_friend_requests_with_profile() -> Vec<(FriendRequestResponse
 /// * `Vec<FriendRequestResponse>` - The friend requests that were found
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[query(guard = "has_access")]
-pub fn get_outgoing_friend_requests() -> Vec<FriendRequestResponse> {
-    FriendRequestCalls::get_outgoing_friend_requests()
+#[query(composite = true, guard = "is_not_anonymous")]
+pub async fn get_outgoing_friend_requests() -> CanisterResult<Vec<FriendRequestResponse>> {
+    has_access().await?;
+    Ok(FriendRequestCalls::get_outgoing_friend_requests())
 }
 
 /// Gets the friend requests that are send to the caller with the corresponding profile - [`[query]`](query)
@@ -286,10 +310,11 @@ pub fn get_outgoing_friend_requests() -> Vec<FriendRequestResponse> {
 /// * `Vec<(FriendRequestResponse, ProfileResponse)>` - The friend requests that were found
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[query(guard = "has_access")]
-pub fn get_outgoing_friend_requests_with_profile() -> Vec<(FriendRequestResponse, ProfileResponse)>
-{
-    FriendRequestCalls::get_outgoing_friend_requests_with_profile()
+#[query(composite = true, guard = "is_not_anonymous")]
+pub async fn get_outgoing_friend_requests_with_profile(
+) -> CanisterResult<Vec<(FriendRequestResponse, ProfileResponse)>> {
+    has_access().await?;
+    FriendRequestCalls::get_outgoing_friend_requests_with_profile().await
 }
 
 /// Decline a friend request that is addressed to the caller - [`[update]`](update)
@@ -301,8 +326,9 @@ pub fn get_outgoing_friend_requests_with_profile() -> Vec<(FriendRequestResponse
 /// * `ApiError` - If something went wrong while declining the friend request
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[update(guard = "has_access")]
-pub fn decline_friend_request(friend_request_id: u64) -> Result<bool, ApiError> {
+#[update(guard = "is_not_anonymous")]
+pub async fn decline_friend_request(friend_request_id: u64) -> CanisterResult<bool> {
+    has_access().await?;
     FriendRequestCalls::decline_friend_request(friend_request_id)
 }
 
@@ -315,9 +341,10 @@ pub fn decline_friend_request(friend_request_id: u64) -> Result<bool, ApiError> 
 /// * `ApiError` - If something went wrong while removing the friend
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[update(guard = "has_access")]
-pub fn remove_friend(principal: Principal) -> Result<ProfileResponse, ApiError> {
-    ProfileCalls::remove_friend(principal)
+#[update(guard = "is_not_anonymous")]
+pub async fn remove_friend(principal: Principal) -> CanisterResult<ProfileResponse> {
+    has_access().await?;
+    ProfileCalls::remove_friend(principal).await
 }
 
 /// Block a user on the application level - [`[update]`](update)
@@ -330,9 +357,10 @@ pub fn remove_friend(principal: Principal) -> Result<ProfileResponse, ApiError> 
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 /// TODO: Check full implementation for this
-#[update(guard = "has_access")]
-pub fn block_user(principal: Principal) -> Result<ProfileResponse, ApiError> {
-    ProfileCalls::block_user(principal)
+#[update(guard = "is_not_anonymous")]
+pub async fn block_user(principal: Principal) -> CanisterResult<ProfileResponse> {
+    has_access().await?;
+    ProfileCalls::block_user(principal).await
 }
 
 /// Unblock a user on the application level - [`[update]`](update)
@@ -345,9 +373,10 @@ pub fn block_user(principal: Principal) -> Result<ProfileResponse, ApiError> {
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 /// TODO: Check full implementation for this
-#[update(guard = "has_access")]
-pub fn unblock_user(principal: Principal) -> Result<ProfileResponse, ApiError> {
-    ProfileCalls::unblock_user(principal)
+#[update(guard = "is_not_anonymous")]
+pub async fn unblock_user(principal: Principal) -> CanisterResult<ProfileResponse> {
+    has_access().await?;
+    ProfileCalls::unblock_user(principal).await
 }
 
 /// Get the current relation for the caller based on the relation type - [`[query]`](query)
@@ -357,9 +386,10 @@ pub fn unblock_user(principal: Principal) -> Result<ProfileResponse, ApiError> {
 /// * `Vec<Principal>` - The principals of the relations
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[query(guard = "has_access")]
-pub fn get_relations(relation_type: RelationType) -> Vec<Principal> {
-    ProfileCalls::get_relations(relation_type)
+#[query(composite = true, guard = "is_not_anonymous")]
+pub async fn get_relations(relation_type: RelationType) -> CanisterResult<Vec<Principal>> {
+    has_access().await?;
+    ProfileCalls::get_relations(relation_type).await
 }
 
 /// Get the current relation profiles for the caller based on the relation type - [`[query]`](query)
@@ -369,9 +399,12 @@ pub fn get_relations(relation_type: RelationType) -> Vec<Principal> {
 /// * `Vec<ProfileResponse>` - The principals of the relations
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[query(guard = "has_access")]
-pub fn get_relations_with_profiles(relation_type: RelationType) -> Vec<ProfileResponse> {
-    ProfileCalls::get_relations_with_profiles(relation_type)
+#[query(composite = true, guard = "is_not_anonymous")]
+pub async fn get_relations_with_profiles(
+    relation_type: RelationType,
+) -> CanisterResult<Vec<ProfileResponse>> {
+    has_access().await?;
+    ProfileCalls::get_relations_with_profiles(relation_type).await
 }
 
 /// Get the current relation count for the caller based on the relation type - [`[query]`](query)
@@ -382,9 +415,10 @@ pub fn get_relations_with_profiles(relation_type: RelationType) -> Vec<ProfileRe
 /// * `u64` - The relation count that was found
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[query(guard = "has_access")]
-pub fn get_relations_count(relation_type: RelationType) -> u64 {
-    ProfileCalls::get_relations(relation_type).len() as u64
+#[query(composite = true, guard = "is_not_anonymous")]
+pub async fn get_relations_count(relation_type: RelationType) -> CanisterResult<u64> {
+    has_access().await?;
+    Ok(ProfileCalls::get_relations(relation_type).await?.len() as u64)
 }
 
 /// Approve a code of conduct version - [`[update]`](update)
@@ -396,9 +430,10 @@ pub fn get_relations_count(relation_type: RelationType) -> u64 {
 /// * `ApiError` - If something went wrong while approving the code of conduct version
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[update(guard = "has_access")]
-pub fn approve_code_of_conduct(version: u64) -> Result<bool, ApiError> {
-    ProfileCalls::approve_code_of_conduct(version)
+#[update(guard = "is_not_anonymous")]
+pub async fn approve_code_of_conduct(version: u64) -> CanisterResult<bool> {
+    has_access().await?;
+    ProfileCalls::approve_code_of_conduct(version).await
 }
 
 /// Approve a privacy policy version - [`[update]`](update)
@@ -410,9 +445,10 @@ pub fn approve_code_of_conduct(version: u64) -> Result<bool, ApiError> {
 /// * `ApiError` - If something went wrong while approving the privacy policy version
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[update(guard = "has_access")]
-pub fn approve_privacy_policy(version: u64) -> Result<bool, ApiError> {
-    ProfileCalls::approve_privacy_policy(version)
+#[update(guard = "is_not_anonymous")]
+pub async fn approve_privacy_policy(version: u64) -> CanisterResult<bool> {
+    has_access().await?;
+    ProfileCalls::approve_privacy_policy(version).await
 }
 
 /// Approve a terms of service version - [`[update]`](update)
@@ -424,7 +460,8 @@ pub fn approve_privacy_policy(version: u64) -> Result<bool, ApiError> {
 /// * `ApiError` - If something went wrong while approving the terms of service version
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[update(guard = "has_access")]
-pub fn approve_terms_of_service(version: u64) -> Result<bool, ApiError> {
-    ProfileCalls::approve_terms_of_service(version)
+#[update(guard = "is_not_anonymous")]
+pub async fn approve_terms_of_service(version: u64) -> CanisterResult<bool> {
+    has_access().await?;
+    ProfileCalls::approve_terms_of_service(version).await
 }

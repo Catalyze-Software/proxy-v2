@@ -4,11 +4,12 @@ use catalyze_shared::{
     friend_request::{FriendRequest, FriendRequestResponse},
     profile::ProfileResponse,
     relation_type::RelationType,
+    CanisterResult, StorageClient,
 };
 use ic_cdk::caller;
 
 use crate::storage::{
-    FriendRequestStore, ProfileStore, StorageInsertable, StorageQueryable, StorageUpdateable,
+    profiles, FriendRequestStore, StorageInsertable, StorageQueryable, StorageUpdateable,
 };
 
 use super::notification_logic::NotificationCalls;
@@ -18,12 +19,12 @@ pub struct FriendRequestMapper;
 pub struct FriendRequestValidation;
 
 impl FriendRequestCalls {
-    pub fn add_friend_request(
+    pub async fn add_friend_request(
         to: Principal,
         message: String,
-    ) -> Result<FriendRequestResponse, ApiError> {
+    ) -> CanisterResult<FriendRequestResponse> {
         let friend_request = FriendRequest::new(caller(), to, message);
-        let (_, caller_profile) = ProfileStore::get(caller())?;
+        let (_, caller_profile) = profiles().get(caller()).await?;
 
         if caller_profile.relations.contains_key(&to) {
             return Err(ApiError::duplicate()
@@ -70,7 +71,7 @@ impl FriendRequestCalls {
         ))
     }
 
-    pub fn accept_friend_request(friend_request_id: u64) -> Result<bool, ApiError> {
+    pub async fn accept_friend_request(friend_request_id: u64) -> CanisterResult<bool> {
         let (_, friend_request) = FriendRequestStore::get(friend_request_id)?;
 
         if friend_request.to != caller() {
@@ -79,7 +80,7 @@ impl FriendRequestCalls {
                 .add_message("You are not authorized to accept this friend request"));
         }
 
-        let (_, mut caller_profile) = ProfileStore::get(caller())?;
+        let (_, mut caller_profile) = profiles().get(caller()).await?;
 
         caller_profile.relations.insert(
             friend_request.requested_by,
@@ -87,13 +88,15 @@ impl FriendRequestCalls {
         );
 
         let (requested_by_principal, mut to_profile) =
-            ProfileStore::get(friend_request.requested_by)?;
+            profiles().get(friend_request.requested_by).await?;
         to_profile
             .relations
             .insert(friend_request.to, RelationType::Friend.to_string());
 
-        ProfileStore::update(caller(), caller_profile)?;
-        ProfileStore::update(requested_by_principal, to_profile)?;
+        profiles().update(caller(), caller_profile).await?;
+        profiles()
+            .update(requested_by_principal, to_profile)
+            .await?;
 
         NotificationCalls::notification_accept_or_decline_friend_request(
             (friend_request_id, friend_request),
@@ -103,7 +106,7 @@ impl FriendRequestCalls {
         Ok(FriendRequestStore::remove(friend_request_id))
     }
 
-    pub fn decline_friend_request(friend_request_id: u64) -> Result<bool, ApiError> {
+    pub fn decline_friend_request(friend_request_id: u64) -> CanisterResult<bool> {
         let (_, friend_request) = FriendRequestStore::get(friend_request_id)?;
 
         if friend_request.to != caller() {
@@ -119,7 +122,7 @@ impl FriendRequestCalls {
         Ok(FriendRequestStore::remove(friend_request_id))
     }
 
-    pub fn remove_friend_request(friend_request_id: u64) -> Result<bool, ApiError> {
+    pub fn remove_friend_request(friend_request_id: u64) -> CanisterResult<bool> {
         let (_, friend_request) = FriendRequestStore::get(friend_request_id)?;
 
         if friend_request.requested_by != caller() {
@@ -139,19 +142,38 @@ impl FriendRequestCalls {
             .collect()
     }
 
-    pub fn get_incoming_friend_requests_with_profile(
-    ) -> Vec<(FriendRequestResponse, ProfileResponse)> {
-        FriendRequestStore::filter(|_, request| request.to == caller())
+    pub async fn get_incoming_friend_requests_with_profile(
+    ) -> CanisterResult<Vec<(FriendRequestResponse, ProfileResponse)>> {
+        let requests = FriendRequestStore::filter(|_, req| req.to == caller());
+
+        let profiles = profiles()
+            .get_many(
+                requests
+                    .iter()
+                    .map(|(_, request)| request.requested_by)
+                    .collect(),
+            )
+            .await?;
+
+        if requests.len() != profiles.len() {
+            return Err(ApiError::unexpected()
+                .add_method_name("get_incoming_friend_requests_with_profile")
+                .add_message("Amount of the found profiles and request is not equal"));
+        }
+
+        let response = requests
             .into_iter()
-            .map(|data| {
-                // TODO: Unwrap is possibly safe, but needs to be handled better
-                let (principal, profile) = ProfileStore::get(data.1.requested_by).unwrap();
+            .enumerate()
+            .map(|(i, data)| {
+                let (principal, profile) = profiles[i].clone();
                 (
                     FriendRequestMapper::to_response(data),
                     ProfileResponse::new(principal, profile),
                 )
             })
-            .collect()
+            .collect();
+
+        Ok(response)
     }
 
     pub fn get_outgoing_friend_requests() -> Vec<FriendRequestResponse> {
@@ -161,19 +183,33 @@ impl FriendRequestCalls {
             .collect()
     }
 
-    pub fn get_outgoing_friend_requests_with_profile(
-    ) -> Vec<(FriendRequestResponse, ProfileResponse)> {
-        FriendRequestStore::filter(|_, request| request.requested_by == caller())
+    pub async fn get_outgoing_friend_requests_with_profile(
+    ) -> CanisterResult<Vec<(FriendRequestResponse, ProfileResponse)>> {
+        let requests = FriendRequestStore::filter(|_, req| req.requested_by == caller());
+
+        let profiles = profiles()
+            .get_many(requests.iter().map(|(_, request)| request.to).collect())
+            .await?;
+
+        if requests.len() != profiles.len() {
+            return Err(ApiError::unexpected()
+                .add_method_name("get_outgoing_friend_requests_with_profile")
+                .add_message("Amount of the found profiles and request is not equal"));
+        }
+
+        let response = requests
             .into_iter()
-            .map(|data| {
-                // TODO: Unwrap is possibly safe, but needs to be handled better
-                let (principal, profile) = ProfileStore::get(data.1.to).unwrap();
+            .enumerate()
+            .map(|(i, data)| {
+                let (principal, profile) = profiles[i].clone();
                 (
                     FriendRequestMapper::to_response(data),
                     ProfileResponse::new(principal, profile),
                 )
             })
-            .collect()
+            .collect();
+
+        Ok(response)
     }
 }
 

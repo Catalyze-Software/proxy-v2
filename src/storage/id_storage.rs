@@ -98,7 +98,7 @@ impl IDStore {
     pub fn next(kind: &str) -> Result<u64, ApiError> {
         let kind = kind.parse::<IDKind>().map_err(|e| {
             ApiError::unexpected()
-                .add_message(&format!("Failed to perform storage action, error: {e}"))
+                .add_message(format!("Failed to perform storage action, error: {e}"))
         })?;
 
         Self::increment(kind)

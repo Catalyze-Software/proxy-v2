@@ -1,9 +1,9 @@
 use candid::Principal;
 use catalyze_shared::{
-    api_error::ApiError,
     notification::{MultisigNotificationType, NotificationResponse},
     transaction_data::{TransactionCompleteData, TransactionData},
     user_notifications::UserNotificationData,
+    CanisterResult,
 };
 use ic_cdk::{caller, query, update};
 
@@ -23,7 +23,7 @@ fn get_unread_notifications() -> Vec<NotificationResponse> {
 fn mark_notifications_as_read(
     ids: Vec<u64>,
     is_read: bool,
-) -> Result<Vec<(u64, UserNotificationData)>, ApiError> {
+) -> CanisterResult<Vec<(u64, UserNotificationData)>> {
     NotificationCalls::mark_notifications_as_read(caller(), ids, is_read)
 }
 

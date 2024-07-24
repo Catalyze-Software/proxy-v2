@@ -1,10 +1,11 @@
 use crate::helpers::guards::is_monitor;
 use crate::storage::*;
+use catalyze_shared::{CanisterResult, StorageClient};
 use ic_cdk::query;
 
-#[query(guard = "is_monitor")]
-fn store_stats() -> Vec<String> {
-    let profile_store_size = ProfileStore::size();
+#[query(composite = true, guard = "is_monitor")]
+async fn store_stats() -> CanisterResult<Vec<String>> {
+    let profile_store_size = profiles().size().await?;
     let friend_request_store_size = FriendRequestStore::size();
     let groups_store_size = GroupStore::size();
     let members_store_size = MemberStore::size();
@@ -22,7 +23,7 @@ fn store_stats() -> Vec<String> {
     let category_store_size = CategoryStore::size();
     let skills_store_size = SkillStore::size();
 
-    vec![
+    Ok(vec![
         format!("ProfileStore: {}", profile_store_size),
         format!("FriendRequestStore: {}", friend_request_store_size),
         format!("GroupStore: {}", groups_store_size),
@@ -40,5 +41,5 @@ fn store_stats() -> Vec<String> {
         format!("TagStore: {}", tags_store_size),
         format!("CategoryStore: {}", category_store_size),
         format!("SkillStore: {}", skills_store_size),
-    ]
+    ])
 }

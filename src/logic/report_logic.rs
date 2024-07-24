@@ -2,6 +2,7 @@ use catalyze_shared::{
     api_error::ApiError,
     paged_response::PagedResponse,
     report::{PostReport, Report, ReportFilter, ReportResponse, ReportSort},
+    CanisterResult,
 };
 use ic_cdk::caller;
 use std::collections::HashMap;
@@ -13,7 +14,7 @@ use super::profile_logic::ProfileCalls;
 pub struct ReportCalls;
 
 impl ReportCalls {
-    pub fn add_report(post_report: PostReport) -> Result<ReportResponse, ApiError> {
+    pub async fn add_report(post_report: PostReport) -> CanisterResult<ReportResponse> {
         let (_, member) = MemberStore::get(caller())?;
 
         if !member.is_group_joined(&post_report.group_id) {
@@ -24,25 +25,25 @@ impl ReportCalls {
         let result = ReportStore::insert(report)?;
         ReportResponse::from_result(
             Ok(result.clone()),
-            ProfileCalls::get_subject_response_by_subject(&result.1.subject),
+            ProfileCalls::get_subject_response_by_subject(&result.1.subject).await,
         )
     }
 
-    pub fn get_report(report_id: u64) -> Result<ReportResponse, ApiError> {
+    pub async fn get_report(report_id: u64) -> CanisterResult<ReportResponse> {
         let result = ReportStore::get(report_id)?;
         ReportResponse::from_result(
             Ok(result.clone()),
-            ProfileCalls::get_subject_response_by_subject(&result.1.subject),
+            ProfileCalls::get_subject_response_by_subject(&result.1.subject).await,
         )
     }
 
-    pub fn get_reports(
+    pub async fn get_reports(
         limit: usize,
         page: usize,
         sort: ReportSort,
         filters: Vec<ReportFilter>,
         group_id: u64,
-    ) -> Result<PagedResponse<ReportResponse>, ApiError> {
+    ) -> CanisterResult<PagedResponse<ReportResponse>> {
         let mut reports =
             ReportStore::filter(|_, report| report.group_id.is_some_and(|id| id == group_id))
                 .into_iter()
@@ -57,16 +58,16 @@ impl ReportCalls {
         }
 
         let sorted_reports = sort.sort(reports);
-        let result: Vec<ReportResponse> = sorted_reports
-            .into_iter()
-            .map(|data| {
-                ReportResponse::new(
-                    data.0,
-                    data.1.clone(),
-                    ProfileCalls::get_subject_response_by_subject(&data.1.subject),
-                )
-            })
-            .collect();
+
+        let mut result = vec![];
+
+        for data in sorted_reports.into_iter() {
+            result.push(ReportResponse::new(
+                data.0,
+                data.1.clone(),
+                ProfileCalls::get_subject_response_by_subject(&data.1.subject).await,
+            ));
+        }
 
         Ok(PagedResponse::new(page, limit, result))
     }

@@ -1,29 +1,38 @@
 use super::{
-    storage_api::{
-        StaticStorageRef, Storage, StorageQueryable, StorageUpdateable, PROFILES,
-        PROFILES_MEMORY_ID,
-    },
-    StorageInsertableByKey,
+    storage_api::{PROFILE_CANISTER, PROFILE_CANISTER_MEMORY_ID},
+    CellStorage, CellStorageRef,
 };
 use candid::Principal;
-use catalyze_shared::profile::Profile;
+use catalyze_shared::{
+    profile::{Profile, ProfileFilter},
+    CanisterResult, StorageClient,
+};
 
 use ic_stable_structures::memory_manager::MemoryId;
 
-pub struct ProfileStore;
+pub struct ProfileCanisterStorage;
 
-impl Storage<Principal, Profile> for ProfileStore {
-    const NAME: &'static str = "profiles";
+impl CellStorage<Principal> for ProfileCanisterStorage {
+    const NAME: &'static str = "profile_canister";
 
-    fn storage() -> StaticStorageRef<Principal, Profile> {
-        &PROFILES
+    fn storage() -> CellStorageRef<Principal> {
+        &PROFILE_CANISTER
     }
 
     fn memory_id() -> MemoryId {
-        PROFILES_MEMORY_ID
+        PROFILE_CANISTER_MEMORY_ID
     }
 }
 
-impl StorageQueryable<Principal, Profile> for ProfileStore {}
-impl StorageUpdateable<Principal, Profile> for ProfileStore {}
-impl StorageInsertableByKey<Principal, Profile> for ProfileStore {}
+#[derive(Default)]
+pub struct ProfileStorageClient;
+
+impl StorageClient<Principal, Profile, ProfileFilter> for ProfileStorageClient {
+    fn canister(&self) -> CanisterResult<Principal> {
+        ProfileCanisterStorage::get()
+    }
+}
+
+pub fn profiles() -> ProfileStorageClient {
+    ProfileStorageClient
+}

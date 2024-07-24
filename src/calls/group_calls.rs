@@ -17,14 +17,15 @@ use crate::{
 ///
 use candid::Principal;
 use catalyze_shared::{
-    api_error::ApiError,
     group::{GroupFilter, GroupResponse, GroupSort, GroupsCount, PostGroup, UpdateGroup},
+    guards::is_not_anonymous,
     member::{InviteMemberResponse, JoinedMemberResponse, Member},
     paged_response::PagedResponse,
     permission::{PermissionType, PostPermission},
     profile::ProfileResponse,
     relation_type::RelationType,
     role::Role,
+    CanisterResult,
 };
 use ic_cdk::{query, update};
 
@@ -38,11 +39,12 @@ use ic_cdk::{query, update};
 /// * `ApiError` - If something went wrong while adding the group
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[update(guard = "has_access")]
+#[update(guard = "is_not_anonymous")]
 pub async fn add_group(
     post_group: PostGroup,
     account_identifier: Option<String>,
-) -> Result<GroupResponse, ApiError> {
+) -> CanisterResult<GroupResponse> {
+    has_access().await?;
     GroupCalls::add_group(post_group, account_identifier).await
 }
 
@@ -55,9 +57,9 @@ pub async fn add_group(
 /// * `ApiError` - If something went wrong while getting the group
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[query]
-pub fn get_group(group_id: u64) -> Result<GroupResponse, ApiError> {
-    GroupCalls::get_group(group_id)
+#[query(composite = true)]
+pub async fn get_group(group_id: u64) -> CanisterResult<GroupResponse> {
+    GroupCalls::get_group(group_id).await
 }
 
 /// Get a group by name - [`[query]`](query)
@@ -69,9 +71,9 @@ pub fn get_group(group_id: u64) -> Result<GroupResponse, ApiError> {
 /// * `ApiError` - If something went wrong while getting the group
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[query]
-pub fn get_group_by_name(name: String) -> Result<GroupResponse, ApiError> {
-    GroupCalls::get_group_by_name(name)
+#[query(composite = true)]
+pub async fn get_group_by_name(name: String) -> CanisterResult<GroupResponse> {
+    GroupCalls::get_group_by_name(name).await
 }
 
 /// Get groups - [`[query]`](query)
@@ -84,22 +86,22 @@ pub fn get_group_by_name(name: String) -> Result<GroupResponse, ApiError> {
 /// * `PagedResponse<GroupResponse>` - The groups
 /// # Errors
 /// * `ApiError` - If something went wrong while getting the groups
-#[query]
-pub fn get_groups(
+#[query(composite = true)]
+pub async fn get_groups(
     limit: usize,
     page: usize,
     filters: Vec<GroupFilter>,
     sort: GroupSort,
-) -> Result<PagedResponse<GroupResponse>, ApiError> {
-    GroupCalls::get_groups(limit, page, filters, sort)
+) -> CanisterResult<PagedResponse<GroupResponse>> {
+    GroupCalls::get_groups(limit, page, filters, sort).await
 }
 
 /// Get group counts - [`[query]`](query)
 /// # Returns
 /// * `GroupsCount` - The groups count
-#[query]
-pub fn get_groups_count(query: Option<String>) -> GroupsCount {
-    GroupCalls::get_groups_count(query)
+#[query(composite = true)]
+pub async fn get_groups_count(query: Option<String>) -> GroupsCount {
+    GroupCalls::get_groups_count(query).await
 }
 
 /// Edit a group - [`[update]`](update)
@@ -112,10 +114,11 @@ pub fn get_groups_count(query: Option<String>) -> GroupsCount {
 /// * `ApiError` - If something went wrong while updating the group
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[update(guard = "has_access")]
-pub fn edit_group(group_id: u64, update_group: UpdateGroup) -> Result<GroupResponse, ApiError> {
+#[update(guard = "is_not_anonymous")]
+pub async fn edit_group(group_id: u64, update_group: UpdateGroup) -> CanisterResult<GroupResponse> {
+    has_access().await?;
     can_edit(group_id, PermissionType::Group(None))?;
-    GroupCalls::edit_group(group_id, update_group)
+    GroupCalls::edit_group(group_id, update_group).await
 }
 
 /// Get groups by their identifiers - [`[query]`](query)
@@ -125,9 +128,10 @@ pub fn edit_group(group_id: u64, update_group: UpdateGroup) -> Result<GroupRespo
 /// * `Vec<GroupResponse>` - The groups
 /// # Errors
 /// * `ApiError` - If something went wrong while getting the groups
-#[query(guard = "has_access")]
-pub fn get_groups_by_id(group_ids: Vec<u64>) -> Vec<GroupResponse> {
-    GroupCalls::get_groups_by_id(group_ids)
+#[query(composite = true, guard = "is_not_anonymous")]
+pub async fn get_groups_by_id(group_ids: Vec<u64>) -> CanisterResult<Vec<GroupResponse>> {
+    has_access().await?;
+    Ok(GroupCalls::get_groups_by_id(group_ids).await)
 }
 
 /// Soft deletes a group - [`[update]`](update)
@@ -139,10 +143,11 @@ pub fn get_groups_by_id(group_ids: Vec<u64>) -> Vec<GroupResponse> {
 /// * `ApiError` - If something went wrong while deleting the group
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[update(guard = "has_access")]
-pub fn delete_group(group_id: u64) -> Result<(bool, bool, bool), ApiError> {
+#[update(guard = "is_not_anonymous")]
+pub async fn delete_group(group_id: u64) -> CanisterResult<(bool, bool, bool)> {
+    has_access().await?;
     can_delete(group_id, PermissionType::Group(None))?;
-    Ok(GroupCalls::delete_group(group_id))
+    Ok(GroupCalls::delete_group(group_id).await)
 }
 
 /// Add a wallet reference to the group - [`[update]`](update)
@@ -158,14 +163,15 @@ pub fn delete_group(group_id: u64) -> Result<(bool, bool, bool), ApiError> {
 /// * `ApiError` - If something went wrong while adding the wallet
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[update(guard = "has_access")]
-pub fn add_wallet_to_group(
+#[update(guard = "is_not_anonymous")]
+pub async fn add_wallet_to_group(
     group_id: u64,
     wallet_canister: Principal,
     description: String,
-) -> Result<GroupResponse, ApiError> {
+) -> CanisterResult<GroupResponse> {
+    has_access().await?;
     can_edit(group_id, PermissionType::Group(None))?;
-    GroupCalls::add_wallet_to_group(group_id, wallet_canister, description)
+    GroupCalls::add_wallet_to_group(group_id, wallet_canister, description).await
 }
 
 /// Remove a wallet reference from the group - [`[update]`](update)
@@ -180,13 +186,14 @@ pub fn add_wallet_to_group(
 /// * `ApiError` - If something went wrong while removing the wallet
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[update(guard = "has_access")]
-pub fn remove_wallet_from_group(
+#[update(guard = "is_not_anonymous")]
+pub async fn remove_wallet_from_group(
     group_id: u64,
     wallet_canister: Principal,
-) -> Result<GroupResponse, ApiError> {
+) -> CanisterResult<GroupResponse> {
+    has_access().await?;
     can_edit(group_id, PermissionType::Group(None))?;
-    GroupCalls::remove_wallet_from_group(group_id, wallet_canister)
+    GroupCalls::remove_wallet_from_group(group_id, wallet_canister).await
 }
 
 /// Add a role to the group - [`[update]`](update)
@@ -202,13 +209,14 @@ pub fn remove_wallet_from_group(
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 /// Was `add_role`
-#[update(guard = "has_access")]
-pub fn add_role_to_group(
+#[update(guard = "is_not_anonymous")]
+pub async fn add_role_to_group(
     group_id: u64,
     role_name: String,
     color: String,
     index: u64,
-) -> Result<Role, ApiError> {
+) -> CanisterResult<Role> {
+    has_access().await?;
     can_edit(group_id, PermissionType::Group(None))?;
     GroupCalls::add_role_to_group(group_id, role_name, color, index)
 }
@@ -225,10 +233,11 @@ pub fn add_role_to_group(
 /// * `ApiError` - If something went wrong while removing the role
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[update(guard = "has_access")]
-pub fn remove_group_role(group_id: u64, role_name: String) -> Result<bool, ApiError> {
+#[update(guard = "is_not_anonymous")]
+pub async fn remove_group_role(group_id: u64, role_name: String) -> CanisterResult<bool> {
+    has_access().await?;
     can_edit(group_id, PermissionType::Group(None))?;
-    GroupCalls::remove_group_role(group_id, role_name)
+    GroupCalls::remove_group_role(group_id, role_name).await
 }
 
 /// Get the roles of the group - [`[query]`](query)
@@ -238,9 +247,10 @@ pub fn remove_group_role(group_id: u64, role_name: String) -> Result<bool, ApiEr
 /// * `Vec<Role>` - The roles of the group
 /// # Note
 /// Default unmutable roles are always returned on top of the custom group specific roles.
-/// /// This function is guarded by the [`has_access`](has_access) function.
-#[update(guard = "has_access")]
-pub fn get_group_roles(group_id: u64) -> Result<Vec<Role>, ApiError> {
+/// This function is guarded by the [`has_access`](has_access) function.
+#[update(guard = "is_not_anonymous")]
+pub async fn get_group_roles(group_id: u64) -> CanisterResult<Vec<Role>> {
+    has_access().await?;
     can_read(group_id, PermissionType::Group(None))?;
     Ok(GroupCalls::get_group_roles(group_id))
 }
@@ -256,12 +266,13 @@ pub fn get_group_roles(group_id: u64) -> Result<Vec<Role>, ApiError> {
 /// * `ApiError` - If something went wrong while updating the permissions
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[update(guard = "has_access")]
-pub fn edit_role_permissions(
+#[update(guard = "is_not_anonymous")]
+pub async fn edit_role_permissions(
     group_id: u64,
     role_name: String,
     post_permissions: Vec<PostPermission>,
-) -> Result<bool, ApiError> {
+) -> CanisterResult<bool> {
+    has_access().await?;
     can_edit(group_id, PermissionType::Group(None))?;
     GroupCalls::edit_role_permissions(group_id, role_name, post_permissions)
 }
@@ -276,11 +287,12 @@ pub fn edit_role_permissions(
 /// * `ApiError` - If something went wrong while joining the group
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[update(guard = "has_access")]
+#[update(guard = "is_not_anonymous")]
 pub async fn join_group(
     group_id: u64,
     account_identifier: Option<String>,
-) -> Result<JoinedMemberResponse, ApiError> {
+) -> CanisterResult<JoinedMemberResponse> {
+    has_access().await?;
     GroupCalls::join_group(group_id, account_identifier).await
 }
 
@@ -295,8 +307,9 @@ pub async fn join_group(
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 /// TODO: This action is guarded by group role based authorization
-#[update(guard = "has_access")]
-pub fn invite_to_group(group_id: u64, member_principal: Principal) -> Result<Member, ApiError> {
+#[update(guard = "is_not_anonymous")]
+pub async fn invite_to_group(group_id: u64, member_principal: Principal) -> CanisterResult<Member> {
+    has_access().await?;
     can_edit(group_id, PermissionType::Invite(None))?;
     GroupCalls::invite_to_group(member_principal, group_id)
 }
@@ -311,11 +324,12 @@ pub fn invite_to_group(group_id: u64, member_principal: Principal) -> Result<Mem
 /// * `ApiError` - If something went wrong while accepting the invite
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[update(guard = "has_access")]
-pub fn accept_user_request_group_invite(
+#[update(guard = "is_not_anonymous")]
+pub async fn accept_user_request_group_invite(
     group_id: u64,
     member_principal: Principal,
-) -> Result<Member, ApiError> {
+) -> CanisterResult<Member> {
+    has_access().await?;
     can_edit(group_id, PermissionType::Invite(None))?;
     GroupCalls::accept_or_decline_user_request_group_invite(member_principal, group_id, true)
 }
@@ -330,11 +344,12 @@ pub fn accept_user_request_group_invite(
 /// * `ApiError` - If something went wrong while declining the invite
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[update(guard = "has_access")]
-pub fn decline_user_request_group_invite(
+#[update(guard = "is_not_anonymous")]
+pub async fn decline_user_request_group_invite(
     group_id: u64,
     member_principal: Principal,
-) -> Result<Member, ApiError> {
+) -> CanisterResult<Member> {
+    has_access().await?;
     can_edit(group_id, PermissionType::Invite(None))?;
     GroupCalls::accept_or_decline_user_request_group_invite(member_principal, group_id, false)
 }
@@ -346,8 +361,9 @@ pub fn decline_user_request_group_invite(
 /// * `Member` - The updated member entry
 /// # Errors
 /// * `ApiError` - If something went wrong while accepting the invite
-#[update(guard = "has_access")]
-pub fn accept_owner_request_group_invite(group_id: u64) -> Result<Member, ApiError> {
+#[update(guard = "is_not_anonymous")]
+pub async fn accept_owner_request_group_invite(group_id: u64) -> CanisterResult<Member> {
+    has_access().await?;
     GroupCalls::accept_or_decline_owner_request_group_invite(group_id, true)
 }
 
@@ -358,8 +374,9 @@ pub fn accept_owner_request_group_invite(group_id: u64) -> Result<Member, ApiErr
 /// * `Member` - The updated member entry
 /// # Errors
 /// * `ApiError` - If something went wrong while declining the invite
-#[update(guard = "has_access")]
-pub fn decline_owner_request_group_invite(group_id: u64) -> Result<Member, ApiError> {
+#[update(guard = "is_not_anonymous")]
+pub async fn decline_owner_request_group_invite(group_id: u64) -> CanisterResult<Member> {
+    has_access().await?;
     GroupCalls::accept_or_decline_owner_request_group_invite(group_id, false)
 }
 
@@ -374,14 +391,15 @@ pub fn decline_owner_request_group_invite(group_id: u64) -> Result<Member, ApiEr
 /// * `ApiError` - If something went wrong while assigning the role
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[update(guard = "has_access")]
-pub fn assign_role(
+#[update(guard = "is_not_anonymous")]
+pub async fn assign_role(
     group_id: u64,
     role: String,
     member_principal: Principal,
-) -> Result<Member, ApiError> {
+) -> CanisterResult<Member> {
+    has_access().await?;
     can_edit(group_id, PermissionType::Group(None))?;
-    GroupCalls::add_group_role_to_member(role, member_principal, group_id)
+    GroupCalls::add_group_role_to_member(role, member_principal, group_id).await
 }
 
 /// Remove a role from a specific group member - [`[update]`](update)
@@ -398,14 +416,15 @@ pub fn assign_role(
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 /// TODO: This action is guarded by group role based authorization
-#[update(guard = "has_access")]
-pub fn remove_member_role(
+#[update(guard = "is_not_anonymous")]
+pub async fn remove_member_role(
     group_id: u64,
     role: String,
     member_principal: Principal,
-) -> Result<Member, ApiError> {
+) -> CanisterResult<Member> {
+    has_access().await?;
     can_edit(group_id, PermissionType::Group(None))?;
-    GroupCalls::remove_group_role_from_member(role, member_principal, group_id)
+    GroupCalls::remove_group_role_from_member(role, member_principal, group_id).await
 }
 
 /// Get the member entry of a specific group member - [`[query]`](query)
@@ -420,7 +439,7 @@ pub fn remove_member_role(
 pub fn get_group_member(
     group_id: u64,
     member_principal: Principal,
-) -> Result<JoinedMemberResponse, ApiError> {
+) -> CanisterResult<JoinedMemberResponse> {
     // can_read(group_id, PermissionType::Group(None))?;
     GroupCalls::get_group_member(member_principal, group_id)
 }
@@ -433,12 +452,12 @@ pub fn get_group_member(
 /// * `(JoinedMemberResponse, ProfileResponse)` - The member entry and profile
 /// # Errors
 /// * `ApiError` - If something went wrong while getting the member entry
-#[query]
-pub fn get_group_member_with_profile(
+#[query(composite = true)]
+pub async fn get_group_member_with_profile(
     group_id: u64,
     member_principal: Principal,
-) -> Result<(JoinedMemberResponse, ProfileResponse), ApiError> {
-    GroupCalls::get_group_member_with_profile(member_principal, group_id)
+) -> CanisterResult<(JoinedMemberResponse, ProfileResponse)> {
+    GroupCalls::get_group_member_with_profile(member_principal, group_id).await
 }
 
 /// Get the groups for specific members - [`[query]`](query)
@@ -446,11 +465,16 @@ pub fn get_group_member_with_profile(
 /// * `member_principals` - The principals of the members
 /// # Returns
 /// * `Vec<JoinedMemberResponse>` - The groups per member
+/// # Errors
+/// * `ApiError` - If something went wrong while getting the groups for members
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[query(guard = "has_access")]
-pub fn get_groups_for_members(member_principals: Vec<Principal>) -> Vec<JoinedMemberResponse> {
-    GroupCalls::get_groups_for_members(member_principals)
+#[query(composite = true, guard = "is_not_anonymous")]
+pub async fn get_groups_for_members(
+    member_principals: Vec<Principal>,
+) -> CanisterResult<Vec<JoinedMemberResponse>> {
+    has_access().await?;
+    Ok(GroupCalls::get_groups_for_members(member_principals))
 }
 
 /// Get the group members for a specific group - [`[query]`](query)
@@ -462,8 +486,9 @@ pub fn get_groups_for_members(member_principals: Vec<Principal>) -> Vec<JoinedMe
 /// * `ApiError` - If something went wrong while getting the group members
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[query(guard = "has_access")]
-pub fn get_group_members(group_id: u64) -> Result<Vec<JoinedMemberResponse>, ApiError> {
+#[query(composite = true, guard = "is_not_anonymous")]
+pub async fn get_group_members(group_id: u64) -> CanisterResult<Vec<JoinedMemberResponse>> {
+    has_access().await?;
     // can_read(group_id, PermissionType::Group(None))?;
     GroupCalls::get_group_members(group_id)
 }
@@ -477,11 +502,12 @@ pub fn get_group_members(group_id: u64) -> Result<Vec<JoinedMemberResponse>, Api
 /// * `ApiError` - If something went wrong while getting the group members
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[query(guard = "has_access")]
-pub fn get_group_members_with_profiles(
+#[query(composite = true, guard = "is_not_anonymous")]
+pub async fn get_group_members_with_profiles(
     group_id: u64,
-) -> Result<Vec<(JoinedMemberResponse, ProfileResponse)>, ApiError> {
-    GroupCalls::get_group_members_with_profiles(group_id)
+) -> CanisterResult<Vec<(JoinedMemberResponse, ProfileResponse)>> {
+    has_access().await?;
+    GroupCalls::get_group_members_with_profiles(group_id).await
 }
 
 /// Get the caller member entry - [`[query]`](query)
@@ -493,18 +519,22 @@ pub fn get_group_members_with_profiles(
 /// * `ApiError` - If something went wrong while getting the member entry
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[query(guard = "has_access")]
-pub fn get_self_member() -> Result<Member, ApiError> {
+#[query(composite = true, guard = "is_not_anonymous")]
+pub async fn get_self_member() -> CanisterResult<Member> {
+    has_access().await?;
     GroupCalls::get_self_member()
 }
 /// Get the caller joined groups - [`[query]`](query)
 /// # Returns
 /// * `Vec<GroupResponse>` - All groups the user is part of
+/// # Errors
+/// * `ApiError` - If something went wrong while getting the self groups
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[query(guard = "has_access")]
-pub fn get_self_groups() -> Vec<GroupResponse> {
-    GroupCalls::get_self_groups()
+#[query(composite = true, guard = "is_not_anonymous")]
+pub async fn get_self_groups() -> CanisterResult<Vec<GroupResponse>> {
+    has_access().await?;
+    Ok(GroupCalls::get_self_groups().await)
 }
 
 /// Get the roles of a specific group member - [`[query]`](query)
@@ -518,10 +548,7 @@ pub fn get_self_groups() -> Vec<GroupResponse> {
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 #[query]
-pub fn get_member_roles(
-    group_id: u64,
-    member_principal: Principal,
-) -> Result<Vec<String>, ApiError> {
+pub fn get_member_roles(group_id: u64, member_principal: Principal) -> CanisterResult<Vec<String>> {
     // can_read(group_id, PermissionType::Group(None))?;
     GroupCalls::get_member_roles(member_principal, group_id)
 }
@@ -535,8 +562,9 @@ pub fn get_member_roles(
 /// * `ApiError` - If something went wrong while leaving the group
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[update(guard = "has_access")]
-pub fn leave_group(group_id: u64) -> Result<(), ApiError> {
+#[update(guard = "is_not_anonymous")]
+pub async fn leave_group(group_id: u64) -> CanisterResult<()> {
+    has_access().await?;
     GroupCalls::leave_group(group_id)
 }
 
@@ -549,8 +577,9 @@ pub fn leave_group(group_id: u64) -> Result<(), ApiError> {
 /// * `ApiError` - If something went wrong while removing the invite
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[update(guard = "has_access")]
-pub fn remove_invite(group_id: u64) -> Result<(), ApiError> {
+#[update(guard = "is_not_anonymous")]
+pub async fn remove_invite(group_id: u64) -> CanisterResult<()> {
+    has_access().await?;
     GroupCalls::remove_invite(group_id)
 }
 
@@ -565,8 +594,9 @@ pub fn remove_invite(group_id: u64) -> Result<(), ApiError> {
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 /// TODO: This action is guarded by group role based authorization
-#[update(guard = "has_access")]
-pub fn remove_member_from_group(group_id: u64, principal: Principal) -> Result<(), ApiError> {
+#[update(guard = "is_not_anonymous")]
+pub async fn remove_member_from_group(group_id: u64, principal: Principal) -> CanisterResult<()> {
+    has_access().await?;
     can_delete(group_id, PermissionType::Member(None))?;
     GroupCalls::remove_member_from_group(principal, group_id)
 }
@@ -581,11 +611,12 @@ pub fn remove_member_from_group(group_id: u64, principal: Principal) -> Result<(
 /// * `ApiError` - If something went wrong while removing the invite
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[update(guard = "has_access")]
-pub fn remove_member_invite_from_group(
+#[update(guard = "is_not_anonymous")]
+pub async fn remove_member_invite_from_group(
     group_id: u64,
     principal: Principal,
-) -> Result<(), ApiError> {
+) -> CanisterResult<()> {
+    has_access().await?;
     can_delete(group_id, PermissionType::Invite(None))?;
     GroupCalls::remove_member_invite_from_group(principal, group_id)
 }
@@ -600,8 +631,9 @@ pub fn remove_member_invite_from_group(
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 /// TODO: This action is guarded by group role based authorization
-#[query(guard = "has_access")]
-pub fn get_group_invites(group_id: u64) -> Result<Vec<InviteMemberResponse>, ApiError> {
+#[query(composite = true, guard = "is_not_anonymous")]
+pub async fn get_group_invites(group_id: u64) -> CanisterResult<Vec<InviteMemberResponse>> {
+    has_access().await?;
     can_read(group_id, PermissionType::Invite(None))?;
     GroupCalls::get_group_invites(group_id)
 }
@@ -616,32 +648,36 @@ pub fn get_group_invites(group_id: u64) -> Result<Vec<InviteMemberResponse>, Api
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 /// TODO: This action is guarded by group role based authorization
-#[query(guard = "has_access")]
-pub fn get_group_invites_with_profiles(
+#[query(composite = true, guard = "is_not_anonymous")]
+pub async fn get_group_invites_with_profiles(
     group_id: u64,
-) -> Result<Vec<(InviteMemberResponse, ProfileResponse)>, ApiError> {
+) -> CanisterResult<Vec<(InviteMemberResponse, ProfileResponse)>> {
+    has_access().await?;
     can_read(group_id, PermissionType::Invite(None))?;
-    GroupCalls::get_group_invites_with_profiles(group_id)
+    GroupCalls::get_group_invites_with_profiles(group_id).await
 }
 
-#[query(guard = "has_access")]
-pub fn get_banned_group_members(group_id: u64) -> Result<Vec<Principal>, ApiError> {
+#[query(composite = true, guard = "is_not_anonymous")]
+pub async fn get_banned_group_members(group_id: u64) -> CanisterResult<Vec<Principal>> {
+    has_access().await?;
     can_edit(group_id, PermissionType::Member(None))?;
     Ok(GroupCalls::get_banned_group_members(group_id))
 }
 
-#[update(guard = "has_access")]
-pub fn ban_group_member(group_id: u64, member_principal: Principal) -> Result<(), ApiError> {
+#[update(guard = "is_not_anonymous")]
+pub async fn ban_group_member(group_id: u64, member_principal: Principal) -> CanisterResult<()> {
+    has_access().await?;
     can_edit(group_id, PermissionType::Member(None))?;
     GroupCalls::remove_member_from_group(member_principal, group_id)?;
     GroupCalls::add_special_member_to_group(group_id, member_principal, RelationType::Blocked)
 }
 
-#[update(guard = "has_access")]
-pub fn remove_ban_from_group_member(
+#[update(guard = "is_not_anonymous")]
+pub async fn remove_ban_from_group_member(
     group_id: u64,
     member_principal: Principal,
-) -> Result<(), ApiError> {
+) -> CanisterResult<()> {
+    has_access().await?;
     can_edit(group_id, PermissionType::Member(None))?;
     GroupCalls::remove_special_member_from_group(group_id, member_principal)
 }
