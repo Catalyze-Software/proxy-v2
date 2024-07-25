@@ -1,0 +1,16 @@
+[package]
+name = "tests"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+eyre = "0.6"
+ic-agent = "0.37"
+ring = "0.17"
+rand = "0.8"
+elliptic-curve = { version = "0.13" }
+tokio = { version = "1.38.1", features = ["full"] }
+
+serde = { workspace = true }
+candid = { workspace = true }
+catalyze-shared = { workspace = true }
