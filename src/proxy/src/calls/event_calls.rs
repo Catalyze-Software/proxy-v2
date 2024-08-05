@@ -12,7 +12,6 @@ use crate::{
 
 /// # Questions
 /// * Should the `get_events` give back a more summier response per group compared to the `get_event` function?
-/// And what about the public / private access of these calls?
 ///
 use candid::Principal;
 use catalyze_shared::{
