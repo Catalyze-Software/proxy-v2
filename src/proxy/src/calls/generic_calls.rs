@@ -5,8 +5,8 @@ use crate::{
         reward_canister_storage::RewardCanisterStorage, storage_api::StorageQueryable,
         AttendeeStore, BoostedStore, CellStorage, EventAttendeeStore, EventStore,
         FriendRequestStore, GroupEventsStore, GroupMemberStore, GroupStore, HistoryCanisterStorage,
-        LoggerStore, MemberStore, NotificationStore, ReportStore, RewardBufferStore,
-        RewardTimerStore, StorageUpdateable, UserNotificationStore,
+        LoggerStore, MemberStore, NotificationStore, RewardBufferStore, RewardTimerStore,
+        StorageUpdateable, UserNotificationStore,
     },
 };
 use candid::Principal;
@@ -159,7 +159,6 @@ fn _dev_clear() {
     MemberStore::clear();
     EventStore::clear();
     AttendeeStore::clear();
-    ReportStore::clear();
     BoostedStore::clear();
     NotificationStore::clear();
     UserNotificationStore::clear();

@@ -2,12 +2,11 @@ use catalyze_shared::{
     api_error::ApiError,
     paged_response::PagedResponse,
     report::{PostReport, Report, ReportFilter, ReportResponse, ReportSort},
-    CanisterResult,
+    CanisterResult, StorageClient, StorageClientInsertable,
 };
 use ic_cdk::caller;
-use std::collections::HashMap;
 
-use crate::storage::{MemberStore, ReportStore, StorageInsertable, StorageQueryable};
+use crate::storage::{reports, MemberStore, StorageQueryable};
 
 use super::profile_logic::ProfileCalls;
 
@@ -22,7 +21,7 @@ impl ReportCalls {
         }
 
         let report = Report::new(post_report);
-        let result = ReportStore::insert(report)?;
+        let result = reports().insert(report).await?;
         ReportResponse::from_result(
             Ok(result.clone()),
             ProfileCalls::get_subject_response_by_subject(&result.1.subject).await,
@@ -30,7 +29,7 @@ impl ReportCalls {
     }
 
     pub async fn get_report(report_id: u64) -> CanisterResult<ReportResponse> {
-        let result = ReportStore::get(report_id)?;
+        let result = reports().get(report_id).await?;
         ReportResponse::from_result(
             Ok(result.clone()),
             ProfileCalls::get_subject_response_by_subject(&result.1.subject).await,
@@ -44,24 +43,18 @@ impl ReportCalls {
         filters: Vec<ReportFilter>,
         group_id: u64,
     ) -> CanisterResult<PagedResponse<ReportResponse>> {
-        let mut reports =
-            ReportStore::filter(|_, report| report.group_id.is_some_and(|id| id == group_id))
-                .into_iter()
-                .collect::<HashMap<u64, Report>>();
+        let filters = vec![ReportFilter::GroupId(group_id)]
+            .into_iter()
+            .chain(filters)
+            .collect();
 
-        for filter in filters {
-            for (id, report) in &reports.clone() {
-                if !filter.is_match(id, report) {
-                    reports.remove(id);
-                }
-            }
-        }
-
-        let sorted_reports = sort.sort(reports);
+        let resp = reports()
+            .filter_paginated(limit, page, sort, filters)
+            .await?;
 
         let mut result = vec![];
 
-        for data in sorted_reports.into_iter() {
+        for data in resp.data.into_iter() {
             result.push(ReportResponse::new(
                 data.0,
                 data.1.clone(),
@@ -69,6 +62,6 @@ impl ReportCalls {
             ));
         }
 
-        Ok(PagedResponse::new(page, limit, result))
+        PagedResponse::new(page, limit, result).into_result()
     }
 }

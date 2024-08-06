@@ -17,7 +17,7 @@ use catalyze_shared::{
     user_notifications::UserNotifications,
     validation::{ValidateField, ValidationType},
     wallet::{PostWallet, Wallet},
-    CanisterResult, StorageClient,
+    CanisterResult, StorageClient, StorageClientInsertableByKey,
 };
 use ic_cdk::{api::time, caller};
 

@@ -36,8 +36,8 @@ pub use history_canister_storage::HistoryCanisterStorage;
 pub use history_point_storage::HistoryPointStorage;
 pub use member_storage::MemberStore;
 pub use notification_storage::NotificationStore;
-pub use profile_storage::{profiles, ProfileStorageClient};
-pub use report_storage::ReportStore;
+pub use profile_storage::*;
+pub use report_storage::*;
 pub use storage_api::{
     StorageInsertable, StorageInsertableByKey, StorageQueryable, StorageUpdateable,
 };
