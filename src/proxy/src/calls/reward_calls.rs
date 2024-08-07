@@ -1,24 +1,10 @@
 use crate::{
     helpers::guards::is_developer,
     logic::reward_buffer_logic::send_reward_data,
-    storage::{
-        reward_canister_storage::RewardCanisterStorage, CellStorage, RewardBufferStore,
-        RewardTimerStore, StorageQueryable,
-    },
+    storage::{RewardBufferStore, RewardTimerStore, StorageQueryable},
 };
-use candid::Principal;
-use catalyze_shared::{reward::RewardableActivityResponse, CanisterResult};
+use catalyze_shared::reward::RewardableActivityResponse;
 use ic_cdk::{query, update};
-
-#[update(guard = "is_developer")]
-fn _dev_set_reward_canister(principal: Principal) -> CanisterResult<Principal> {
-    RewardCanisterStorage::set(principal)
-}
-
-#[query(guard = "is_developer")]
-fn _dev_get_reward_canister() -> CanisterResult<Principal> {
-    RewardCanisterStorage::get()
-}
 
 #[query]
 fn reward_timer_next_trigger() -> Option<u64> {

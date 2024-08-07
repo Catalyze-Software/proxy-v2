@@ -24,7 +24,7 @@ use catalyze_shared::{
     profile::{ProfileEntry, ProfileResponse},
     subject::{Subject, SubjectType},
     time_helper::hours_to_nanoseconds,
-    CanisterResult, StorageClient,
+    CanisterResult, Filter, Sorter, StorageClient,
 };
 use ic_cdk::{api::time, caller};
 use std::collections::HashMap;
@@ -109,13 +109,13 @@ impl EventCalls {
 
         for filter in filters {
             for (id, event) in &events.clone() {
-                if !filter.is_match(id, event) {
+                if !filter.matches(id, event) {
                     events.remove(id);
                 }
             }
         }
 
-        let sorted_events = sort.sort(events);
+        let sorted_events = sort.sort(events.into_iter().collect());
         let profile = profiles().get(caller()).await;
 
         let result: Vec<EventResponse> = sorted_events

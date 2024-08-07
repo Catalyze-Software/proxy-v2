@@ -11,7 +11,6 @@ pub const ID_KIND_GROUP_MEMBERS: &str = "group_members";
 pub const ID_KIND_GROUPS: &str = "groups";
 pub const ID_KIND_LOGS: &str = "logs";
 pub const ID_KIND_NOTIFICATIONS: &str = "notifications";
-pub const ID_KIND_REPORTS: &str = "reports";
 pub const ID_KIND_TAGS: &str = "tags";
 pub const ID_KIND_CATEGORIES: &str = "categories";
 pub const ID_KIND_REWARDS_BUFFER: &str = "rewards_buffer";
@@ -28,7 +27,6 @@ pub enum IDKind {
     Groups,
     Logs,
     Notifications,
-    Reports,
     Tags,
     Categories,
     Skills,
@@ -47,7 +45,6 @@ impl std::fmt::Display for IDKind {
             IDKind::Groups => write!(f, "{ID_KIND_GROUPS}"),
             IDKind::Logs => write!(f, "{ID_KIND_LOGS}"),
             IDKind::Notifications => write!(f, "{ID_KIND_NOTIFICATIONS}"),
-            IDKind::Reports => write!(f, "{ID_KIND_REPORTS}"),
             IDKind::Tags => write!(f, "{ID_KIND_TAGS}"),
             IDKind::Categories => write!(f, "{ID_KIND_CATEGORIES}"),
             IDKind::Skills => write!(f, "{ID_KIND_SKILLS}"),
@@ -70,7 +67,6 @@ impl std::str::FromStr for IDKind {
             ID_KIND_GROUPS => Ok(IDKind::Groups),
             ID_KIND_LOGS => Ok(IDKind::Logs),
             ID_KIND_NOTIFICATIONS => Ok(IDKind::Notifications),
-            ID_KIND_REPORTS => Ok(IDKind::Reports),
             ID_KIND_TAGS => Ok(IDKind::Tags),
             ID_KIND_CATEGORIES => Ok(IDKind::Categories),
             ID_KIND_SKILLS => Ok(IDKind::Skills),
@@ -133,7 +129,6 @@ impl IDStore {
             IDKind::Groups => super::GroupStore::storage().with(last_key),
             IDKind::Logs => super::LoggerStore::storage().with(last_key),
             IDKind::Notifications => super::NotificationStore::storage().with(last_key),
-            IDKind::Reports => super::ReportStore::storage().with(last_key),
             IDKind::Tags => super::TagStore::storage().with(last_key),
             IDKind::Categories => super::CategoryStore::storage().with(last_key),
             IDKind::Skills => super::SkillStore::storage().with(last_key),

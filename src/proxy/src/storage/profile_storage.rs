@@ -4,8 +4,8 @@ use super::{
 };
 use candid::Principal;
 use catalyze_shared::{
-    profile::{Profile, ProfileFilter},
-    CanisterResult, StorageClient,
+    profile::{Profile, ProfileFilter, ProfileSort},
+    CanisterResult, StorageClient, StorageClientInsertableByKey,
 };
 
 use ic_stable_structures::memory_manager::MemoryId;
@@ -27,12 +27,18 @@ impl CellStorage<Principal> for ProfileCanisterStorage {
 #[derive(Default)]
 pub struct ProfileStorageClient;
 
-impl StorageClient<Principal, Profile, ProfileFilter> for ProfileStorageClient {
+impl StorageClient<Principal, Profile, ProfileFilter, ProfileSort> for ProfileStorageClient {
     fn canister(&self) -> CanisterResult<Principal> {
         ProfileCanisterStorage::get()
     }
 }
 
-pub fn profiles() -> ProfileStorageClient {
+impl StorageClientInsertableByKey<Principal, Profile, ProfileFilter, ProfileSort>
+    for ProfileStorageClient
+{
+}
+
+pub fn profiles(
+) -> impl StorageClientInsertableByKey<Principal, Profile, ProfileFilter, ProfileSort> {
     ProfileStorageClient
 }

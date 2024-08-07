@@ -21,6 +21,7 @@ pub type Memory = VirtualMemory<DefaultMemoryImpl>;
 /// These IDs are used to identify the different stores in the `MemoryManager`.
 /// # Warning
 /// These IDs should not be changed. New IDs should be added to the end of the list
+#[deprecated(note = "Use `ProfileStorageClient` instead")]
 pub static PROFILES_MEMORY_ID: MemoryId = MemoryId::new(0);
 
 pub static GROUPS_MEMORY_ID: MemoryId = MemoryId::new(1);
@@ -29,6 +30,7 @@ pub static MEMBERS_MEMORY_ID: MemoryId = MemoryId::new(2);
 pub static EVENTS_MEMORY_ID: MemoryId = MemoryId::new(3);
 pub static ATTENDEES_MEMORY_ID: MemoryId = MemoryId::new(4);
 
+#[deprecated(note = "Use `ReportStorageClient` instead")]
 pub static REPORTS_MEMORY_ID: MemoryId = MemoryId::new(5);
 
 pub static NOTIFICATIONS_MEMORY_ID: MemoryId = MemoryId::new(6);
@@ -56,6 +58,7 @@ pub static REWARD_BUFFER_MEMORY_ID: MemoryId = MemoryId::new(20);
 pub static REWARD_CANISTER_MEMORY_ID: MemoryId = MemoryId::new(21);
 
 pub static PROFILE_CANISTER_MEMORY_ID: MemoryId = MemoryId::new(22);
+pub static REPORT_CANISTER_MEMORY_ID: MemoryId = MemoryId::new(23);
 
 /// A reference to a `StableBTreeMap` that is wrapped in a `RefCell`.
 ///# Generics
@@ -264,6 +267,8 @@ thread_local! {
     pub static MEMORY_MANAGER: MemManagerStore =
         RefCell::new(MemoryManager::init(DefaultMemoryImpl::default()));
 
+    #[allow(deprecated)]
+    #[deprecated(note = "Use `ProfileStorageClient` instead")]
     pub static PROFILES: StorageRef<Principal, Profile> = RefCell::new(
         StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.borrow().get(PROFILES_MEMORY_ID)))
     );
@@ -288,6 +293,8 @@ thread_local! {
         StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.borrow().get(ATTENDEES_MEMORY_ID)))
     );
 
+    #[allow(deprecated)]
+    #[deprecated(note = "Use `ReportStorageClient` instead")]
     pub static REPORTS: StorageRef<u64, Report> = RefCell::new(
         StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.borrow().get(REPORTS_MEMORY_ID)))
     );
@@ -359,6 +366,11 @@ thread_local! {
     pub static PROFILE_CANISTER: RefCell<Cell<Option<Principal>, Memory>> = RefCell::new(
         Cell::init(MEMORY_MANAGER.with(|p| p.borrow().get(PROFILE_CANISTER_MEMORY_ID)), None)
             .expect("Failed to initialize profile canister id")
+    );
+
+    pub static REPORT_CANISTER: RefCell<Cell<Option<Principal>, Memory>> = RefCell::new(
+        Cell::init(MEMORY_MANAGER.with(|p| p.borrow().get(REPORT_CANISTER_MEMORY_ID)), None)
+            .expect("Failed to initialize report canister id")
     );
 
 }

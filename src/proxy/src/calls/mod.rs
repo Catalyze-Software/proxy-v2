@@ -1,4 +1,5 @@
 pub mod boost_calls;
+pub mod canister_calls;
 pub mod event_calls;
 pub mod generic_calls;
 pub mod group_calls;

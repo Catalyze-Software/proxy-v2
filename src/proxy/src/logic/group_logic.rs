@@ -46,7 +46,7 @@ use catalyze_shared::{
     profile::ProfileEntry,
     time_helper::hours_to_nanoseconds,
     validator::Validator,
-    CanisterResult, StorageClient,
+    CanisterResult, Filter, Sorter, StorageClient,
 };
 use ic_cdk::{
     api::{call, time},
@@ -158,20 +158,17 @@ impl GroupCalls {
 
         for filter in filters {
             for (id, group) in &groups.clone() {
-                if !filter.is_match(id, group) {
+                if !filter.matches(id, group) {
                     groups.remove(id);
                 }
             }
         }
 
-        let group_members: HashMap<u64, MemberCollection> =
-            GroupMemberStore::get_all().into_iter().collect();
-
         let profile_resp = profiles().get(caller()).await;
         let member_resp = MemberStore::get(caller());
 
         let result = sort
-            .sort(groups, group_members)
+            .sort(groups.into_iter().collect())
             .into_iter()
             .map(|(group_id, group)| {
                 let (members_count, events_count) = Self::get_group_count_data(&group_id);
