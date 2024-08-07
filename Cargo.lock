@@ -230,7 +230,7 @@ dependencies = [
 [[package]]
 name = "catalyze-shared"
 version = "0.1.0"
-source = "git+https://github.com/Catalyze-Software/catalyze-shared?branch=feat/pagination#6e9b17396c3efc7aeef54099b47b4f5bacbe0c83"
+source = "git+https://github.com/Catalyze-Software/catalyze-shared#de6ab222da8d72786c827fb5eb33efc4388d7fff"
 dependencies = [
  "candid",
  "email_address",
