@@ -2,7 +2,7 @@ use candid::Principal;
 use catalyze_shared::{
     api_error::ApiError, attendee::Attendee, boosted::Boost, event::Event,
     event_collection::EventCollection, friend_request::FriendRequest, group::Group, log::Logger,
-    member::Member, member_collection::MemberCollection, notification::Notification,
+    member_collection::MemberCollection, notification::Notification, old_member::Member,
     profile::Profile, report::Report, reward::RewardableActivity,
     user_notifications::UserNotifications,
 };
@@ -21,44 +21,38 @@ pub type Memory = VirtualMemory<DefaultMemoryImpl>;
 /// These IDs are used to identify the different stores in the `MemoryManager`.
 /// # Warning
 /// These IDs should not be changed. New IDs should be added to the end of the list
-#[deprecated(note = "Use `ProfileStorageClient` instead")]
-pub static PROFILES_MEMORY_ID: MemoryId = MemoryId::new(0);
+pub static GROUPS_MEMORY_ID: MemoryId = MemoryId::new(0);
+pub static MEMBERS_MEMORY_ID: MemoryId = MemoryId::new(1);
 
-pub static GROUPS_MEMORY_ID: MemoryId = MemoryId::new(1);
-pub static MEMBERS_MEMORY_ID: MemoryId = MemoryId::new(2);
+pub static EVENTS_MEMORY_ID: MemoryId = MemoryId::new(2);
+pub static ATTENDEES_MEMORY_ID: MemoryId = MemoryId::new(3);
 
-pub static EVENTS_MEMORY_ID: MemoryId = MemoryId::new(3);
-pub static ATTENDEES_MEMORY_ID: MemoryId = MemoryId::new(4);
+pub static NOTIFICATIONS_MEMORY_ID: MemoryId = MemoryId::new(4);
+pub static USER_NOTIFICATIONS_MEMORY_ID: MemoryId = MemoryId::new(5);
 
-#[deprecated(note = "Use `ReportStorageClient` instead")]
-pub static REPORTS_MEMORY_ID: MemoryId = MemoryId::new(5);
+pub static FRIEND_REQUESTS_MEMORY_ID: MemoryId = MemoryId::new(6);
 
-pub static NOTIFICATIONS_MEMORY_ID: MemoryId = MemoryId::new(6);
-pub static USER_NOTIFICATIONS_MEMORY_ID: MemoryId = MemoryId::new(7);
+pub static GROUP_MEMBERS_MEMORY_ID: MemoryId = MemoryId::new(7);
+pub static EVENT_ATTENDEES_MEMORY_ID: MemoryId = MemoryId::new(8);
+pub static GROUP_EVENTS_MEMORY_ID: MemoryId = MemoryId::new(9);
 
-pub static FRIEND_REQUESTS_MEMORY_ID: MemoryId = MemoryId::new(8);
-pub static BOOSTED_MEMORY_ID: MemoryId = MemoryId::new(9);
+pub static LOGS_MEMORY_ID: MemoryId = MemoryId::new(10);
 
-pub static GROUP_MEMBERS_MEMORY_ID: MemoryId = MemoryId::new(10);
-pub static EVENT_ATTENDEES_MEMORY_ID: MemoryId = MemoryId::new(11);
-pub static GROUP_EVENTS_MEMORY_ID: MemoryId = MemoryId::new(12);
+pub static TAGS_MEMORY_ID: MemoryId = MemoryId::new(11);
+pub static CATEGORIES_MEMORY_ID: MemoryId = MemoryId::new(12);
+pub static SKILLS_MEMORY_ID: MemoryId = MemoryId::new(13);
 
-pub static LOGS_MEMORY_ID: MemoryId = MemoryId::new(13);
+pub static HISTORY_POINT_MEMORY_ID: MemoryId = MemoryId::new(14);
+pub static HISTORY_CANISTER_MEMORY_ID: MemoryId = MemoryId::new(15);
 
-pub static TAGS_MEMORY_ID: MemoryId = MemoryId::new(14);
-pub static CATEGORIES_MEMORY_ID: MemoryId = MemoryId::new(15);
-pub static SKILLS_MEMORY_ID: MemoryId = MemoryId::new(16);
+pub static IDS_MEMORY_ID: MemoryId = MemoryId::new(16);
 
-pub static HISTORY_POINT_MEMORY_ID: MemoryId = MemoryId::new(17);
-pub static HISTORY_CANISTER_MEMORY_ID: MemoryId = MemoryId::new(18);
+pub static REWARD_BUFFER_MEMORY_ID: MemoryId = MemoryId::new(17);
+pub static REWARD_CANISTER_MEMORY_ID: MemoryId = MemoryId::new(18);
 
-pub static IDS_MEMORY_ID: MemoryId = MemoryId::new(19);
-
-pub static REWARD_BUFFER_MEMORY_ID: MemoryId = MemoryId::new(20);
-pub static REWARD_CANISTER_MEMORY_ID: MemoryId = MemoryId::new(21);
-
-pub static PROFILE_CANISTER_MEMORY_ID: MemoryId = MemoryId::new(22);
-pub static REPORT_CANISTER_MEMORY_ID: MemoryId = MemoryId::new(23);
+pub static PROFILE_CANISTER_MEMORY_ID: MemoryId = MemoryId::new(19);
+pub static REPORT_CANISTER_MEMORY_ID: MemoryId = MemoryId::new(20);
+pub static BOOSTED_CANISTER_MEMORY_ID: MemoryId = MemoryId::new(21);
 
 /// A reference to a `StableBTreeMap` that is wrapped in a `RefCell`.
 ///# Generics
@@ -267,12 +261,6 @@ thread_local! {
     pub static MEMORY_MANAGER: MemManagerStore =
         RefCell::new(MemoryManager::init(DefaultMemoryImpl::default()));
 
-    #[allow(deprecated)]
-    #[deprecated(note = "Use `ProfileStorageClient` instead")]
-    pub static PROFILES: StorageRef<Principal, Profile> = RefCell::new(
-        StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.borrow().get(PROFILES_MEMORY_ID)))
-    );
-
     pub static FRIEND_REQUEST: StorageRef<u64, FriendRequest> = RefCell::new(
         StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.borrow().get(FRIEND_REQUESTS_MEMORY_ID)))
     );
@@ -291,16 +279,6 @@ thread_local! {
 
     pub static ATTENDEES: StorageRef<Principal, Attendee> = RefCell::new(
         StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.borrow().get(ATTENDEES_MEMORY_ID)))
-    );
-
-    #[allow(deprecated)]
-    #[deprecated(note = "Use `ReportStorageClient` instead")]
-    pub static REPORTS: StorageRef<u64, Report> = RefCell::new(
-        StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.borrow().get(REPORTS_MEMORY_ID)))
-    );
-
-    pub static BOOSTED: StorageRef<u64, Boost> = RefCell::new(
-        StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.borrow().get(BOOSTED_MEMORY_ID)))
     );
 
     pub static NOTIFICATIONS: StorageRef<u64, Notification> = RefCell::new(
@@ -371,6 +349,11 @@ thread_local! {
     pub static REPORT_CANISTER: RefCell<Cell<Option<Principal>, Memory>> = RefCell::new(
         Cell::init(MEMORY_MANAGER.with(|p| p.borrow().get(REPORT_CANISTER_MEMORY_ID)), None)
             .expect("Failed to initialize report canister id")
+    );
+
+    pub static BOOSTED_CANISTER: RefCell<Cell<Option<Principal>, Memory>> = RefCell::new(
+        Cell::init(MEMORY_MANAGER.with(|p| p.borrow().get(BOOSTED_CANISTER_MEMORY_ID)), None)
+            .expect("Failed to initialize boosted canister id")
     );
 
 }

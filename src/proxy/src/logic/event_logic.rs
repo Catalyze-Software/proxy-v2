@@ -1,5 +1,5 @@
 use crate::storage::{
-    profiles, AttendeeStore, BoostedStore, EventAttendeeStore, EventStore, GroupEventsStore,
+    boosteds, profiles, AttendeeStore, EventAttendeeStore, EventStore, GroupEventsStore,
     MemberStore, StorageInsertable, StorageInsertableByKey, StorageQueryable, StorageUpdateable,
 };
 
@@ -10,7 +10,7 @@ use candid::Principal;
 use catalyze_shared::{
     api_error::ApiError,
     attendee::{Attendee, InviteAttendeeResponse, JoinedAttendeeResponse},
-    boosted::Boost,
+    boosted::{Boost, BoostedFilter},
     date_range::DateRange,
     event::{
         Event, EventCallerData, EventFilter, EventResponse, EventSort, EventsCount, PostEvent,
@@ -20,7 +20,7 @@ use catalyze_shared::{
     invite_type::InviteType,
     member_collection::MemberCollection,
     paged_response::PagedResponse,
-    privacy::Privacy,
+    privacy::PrivacyType,
     profile::{ProfileEntry, ProfileResponse},
     subject::{Subject, SubjectType},
     time_helper::hours_to_nanoseconds,
@@ -50,10 +50,12 @@ impl EventCalls {
         group_events.add_event(new_event_id);
         GroupEventsStore::update(post_event.group_id, group_events)?;
 
+        let boosted = Self::get_boosted_event(new_event_id).await?;
+
         Ok(EventResponse::new(
             new_event_id,
             new_event.clone(),
-            Self::get_boosted_event(new_event_id),
+            boosted,
             Self::get_event_caller_data(new_event_id, new_event.group_id).await,
             Self::get_attendees_count(new_event_id),
         ))
@@ -62,29 +64,21 @@ impl EventCalls {
     pub async fn get_event(event_id: u64) -> CanisterResult<EventResponse> {
         let (_, event) = EventStore::get(event_id)?;
 
-        if event.match_privacy(Privacy::InviteOnly) {
+        if event.match_privacy(PrivacyType::InviteOnly) {
             let (_, caller_attendee) = AttendeeStore::get(caller())?;
 
-            if caller_attendee.is_event_joined(&event_id) {
-                Ok(EventResponse::new(
-                    event_id,
-                    event.clone(),
-                    Self::get_boosted_event(event_id),
-                    Self::get_event_caller_data(event_id, event.group_id).await,
-                    Self::get_attendees_count(event_id),
-                ))
-            } else {
-                Err(ApiError::unauthorized())
+            if !caller_attendee.is_event_joined(&event_id) {
+                return Err(ApiError::unauthorized());
             }
-        } else {
-            Ok(EventResponse::new(
-                event_id,
-                event.clone(),
-                Self::get_boosted_event(event_id),
-                Self::get_event_caller_data(event_id, event.group_id).await,
-                Self::get_attendees_count(event_id),
-            ))
         }
+
+        Ok(EventResponse::new(
+            event_id,
+            event.clone(),
+            Self::get_boosted_event(event_id).await?,
+            Self::get_event_caller_data(event_id, event.group_id).await,
+            Self::get_attendees_count(event_id),
+        ))
     }
 
     pub async fn get_events(
@@ -96,7 +90,7 @@ impl EventCalls {
         // get all the events and filter them based on the privacy
         // exclude all InviteOnly events that the caller is not a attendee of
         let mut events = EventStore::filter(|event_id, event| {
-            if event.match_privacy(Privacy::InviteOnly) {
+            if event.match_privacy(PrivacyType::InviteOnly) {
                 if let Ok((_, caller_attendee)) = AttendeeStore::get(caller()) {
                     return caller_attendee.is_event_joined(event_id);
                 }
@@ -118,18 +112,17 @@ impl EventCalls {
         let sorted_events = sort.sort(events.into_iter().collect());
         let profile = profiles().get(caller()).await;
 
-        let result: Vec<EventResponse> = sorted_events
-            .into_iter()
-            .map(|data| {
-                EventResponse::new(
-                    data.0,
-                    data.1.clone(),
-                    Self::get_boosted_event(data.0),
-                    Self::get_event_caller_data_sync(data.0, data.1.group_id, profile.clone()),
-                    Self::get_attendees_count(data.0),
-                )
-            })
-            .collect();
+        let mut result = vec![];
+
+        for (id, event) in sorted_events {
+            result.push(EventResponse::new(
+                id,
+                event.clone(),
+                Self::get_boosted_event(id).await?,
+                Self::get_event_caller_data_sync(id, event.group_id, profile.clone()),
+                Self::get_attendees_count(id),
+            ));
+        }
 
         Ok(PagedResponse::new(page, limit, result))
     }
@@ -151,14 +144,15 @@ impl EventCalls {
         Ok(EventResponse::new(
             event_id,
             event.clone(),
-            Self::get_boosted_event(event_id),
+            Self::get_boosted_event(event_id).await?,
             Self::get_event_caller_data(event_id, event.group_id).await,
             Self::get_attendees_count(event_id),
         ))
     }
 
-    pub async fn get_boosted_events() -> Vec<EventResponse> {
+    pub async fn get_boosted_events() -> CanisterResult<Vec<EventResponse>> {
         let ids = BoostCalls::get_boosts_by_subject(SubjectType::Event)
+            .await?
             .into_iter()
             .map(|(_, boost)| *boost.subject.get_id())
             .collect();
@@ -231,10 +225,11 @@ impl EventCalls {
         let event_attendees =
             EventAttendeeStore::get(event_id).map_or(MemberCollection::new(), |(_, m)| m);
 
-        if let Some((boost_id, _)) =
-            BoostedStore::find(|_, b| b.subject == Subject::Event(event_id))
+        if let Some((boost_id, _)) = boosteds()
+            .find(BoostedFilter::Subject(Subject::Event(event_id)).into())
+            .await?
         {
-            BoostedStore::remove(boost_id);
+            boosteds().remove(boost_id).await?;
         }
 
         // remove all groups from the members
@@ -302,7 +297,7 @@ impl EventCalls {
         let (_, event) = EventStore::get(event_id)?;
 
         match event.privacy {
-            Privacy::Private => {
+            PrivacyType::Private => {
                 let invite_attendee_response = InviteAttendeeResponse::new(
                     event_id,
                     event.group_id,
@@ -322,7 +317,7 @@ impl EventCalls {
                 );
                 attendees.add_invite(caller());
             }
-            Privacy::Public => {
+            PrivacyType::Public => {
                 NotificationCalls::notification_join_public_event(
                     vec![event.owner],
                     event.group_id,
@@ -564,32 +559,26 @@ impl EventCalls {
         Ok(attendee)
     }
 
-    pub async fn get_self_events() -> Vec<EventResponse> {
-        if let Ok((_, attendee)) = AttendeeStore::get(caller()) {
-            return Self::get_events_by_id(
-                attendee.get_multiple_joined().iter().map(|g| g.0).collect(),
-            )
-            .await;
-        }
-
-        vec![]
+    pub async fn get_self_events() -> CanisterResult<Vec<EventResponse>> {
+        let (_, attendee) = AttendeeStore::get(caller())?;
+        Self::get_events_by_id(attendee.get_multiple_joined().iter().map(|g| g.0).collect()).await
     }
 
-    pub async fn get_events_by_id(event_ids: Vec<u64>) -> Vec<EventResponse> {
+    pub async fn get_events_by_id(event_ids: Vec<u64>) -> CanisterResult<Vec<EventResponse>> {
         let profile = profiles().get(caller()).await;
+        let mut events = vec![];
 
-        EventStore::get_many(event_ids)
-            .into_iter()
-            .map(|data| {
-                EventResponse::new(
-                    data.0,
-                    data.1.clone(),
-                    Self::get_boosted_event(data.0),
-                    Self::get_event_caller_data_sync(data.0, data.1.group_id, profile.clone()),
-                    Self::get_attendees_count(data.0),
-                )
-            })
-            .collect()
+        for (id, event) in EventStore::get_many(event_ids) {
+            events.push(EventResponse::new(
+                id,
+                event.clone(),
+                Self::get_boosted_event(id).await?,
+                Self::get_event_caller_data_sync(id, event.group_id, profile.clone()),
+                Self::get_attendees_count(id),
+            ))
+        }
+
+        Ok(events)
     }
 
     pub fn get_attending_from_principal(
@@ -700,11 +689,11 @@ impl EventCalls {
         Ok(())
     }
 
-    fn get_boosted_event(id: u64) -> Option<Boost> {
-        match BoostCalls::get_boost_by_subject(Subject::Event(id)) {
-            Ok((_, boosted)) => Some(boosted),
-            Err(_) => None,
-        }
+    async fn get_boosted_event(id: u64) -> CanisterResult<Option<Boost>> {
+        boosteds()
+            .find(BoostedFilter::Subject(Subject::Event(id)).into())
+            .await
+            .map(|boost| boost.map(|(_, b)| b))
     }
 
     async fn get_event_caller_data(event_id: u64, group_id: u64) -> Option<EventCallerData> {

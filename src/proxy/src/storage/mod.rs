@@ -24,7 +24,7 @@ mod user_notification_storage;
 // Re-export stores
 
 pub use attendee_storage::AttendeeStore;
-pub use boosted_storage::BoostedStore;
+pub use boosted_storage::*;
 pub use cell_api::{CellStorage, CellStorageRef};
 pub use event_attendees_storage::EventAttendeeStore;
 pub use event_storage::EventStore;

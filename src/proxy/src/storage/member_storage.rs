@@ -3,7 +3,7 @@ use super::storage_api::{
     MEMBERS, MEMBERS_MEMORY_ID,
 };
 use candid::Principal;
-use catalyze_shared::member::Member;
+use catalyze_shared::old_member::Member;
 use ic_stable_structures::memory_manager::MemoryId;
 
 pub struct MemberStore;

@@ -1,27 +1,39 @@
 use super::{
-    storage_api::{
-        StaticStorageRef, Storage, StorageInsertable, StorageQueryable, StorageUpdateable, BOOSTED,
-        BOOSTED_MEMORY_ID,
-    },
-    ID_KIND_BOOSTED,
+    storage_api::{BOOSTED_CANISTER, BOOSTED_CANISTER_MEMORY_ID},
+    CellStorage, CellStorageRef,
 };
-use catalyze_shared::boosted::Boost;
+use candid::Principal;
+use catalyze_shared::{
+    boosted::{Boost, BoostedFilter, BoostedSort},
+    CanisterResult, StorageClient, StorageClientInsertable,
+};
 use ic_stable_structures::memory_manager::MemoryId;
 
-pub struct BoostedStore;
+pub struct BoostedCanisterStorage;
 
-impl Storage<u64, Boost> for BoostedStore {
-    const NAME: &'static str = ID_KIND_BOOSTED;
+impl CellStorage<Principal> for BoostedCanisterStorage {
+    const NAME: &'static str = "boosted_canister";
 
-    fn storage() -> StaticStorageRef<u64, Boost> {
-        &BOOSTED
+    fn storage() -> CellStorageRef<Principal> {
+        &BOOSTED_CANISTER
     }
 
     fn memory_id() -> MemoryId {
-        BOOSTED_MEMORY_ID
+        BOOSTED_CANISTER_MEMORY_ID
     }
 }
 
-impl StorageQueryable<u64, Boost> for BoostedStore {}
-impl StorageUpdateable<u64, Boost> for BoostedStore {}
-impl StorageInsertable<Boost> for BoostedStore {}
+#[derive(Default)]
+pub struct BoostedStorageClient;
+
+impl StorageClient<u64, Boost, BoostedFilter, BoostedSort> for BoostedStorageClient {
+    fn canister(&self) -> CanisterResult<Principal> {
+        BoostedCanisterStorage::get()
+    }
+}
+
+impl StorageClientInsertable<Boost, BoostedFilter, BoostedSort> for BoostedStorageClient {}
+
+pub fn boosteds() -> impl StorageClientInsertable<Boost, BoostedFilter, BoostedSort> {
+    BoostedStorageClient
+}

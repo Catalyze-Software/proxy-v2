@@ -1,7 +1,7 @@
 use candid::Principal;
 use catalyze_shared::{
     api_error::ApiError,
-    member::{JoinedMemberResponse, Member},
+    old_member::{JoinedMemberResponse, Member},
 };
 
 use crate::storage::{MemberStore, StorageInsertableByKey, StorageQueryable};

@@ -11,9 +11,8 @@ use crate::{
         },
     },
     storage::{
-        profiles, BoostedStore, GroupEventsStore, GroupMemberStore, GroupStore, MemberStore,
-        RewardBufferStore, StorageInsertable, StorageInsertableByKey, StorageQueryable,
-        StorageUpdateable,
+        profiles, GroupEventsStore, GroupMemberStore, GroupStore, MemberStore, RewardBufferStore,
+        StorageInsertable, StorageInsertableByKey, StorageQueryable, StorageUpdateable,
     },
     USER_GROUP_CREATION_LIMIT,
 };
@@ -31,12 +30,12 @@ use catalyze_shared::{
         },
         history_event::GroupRoleChangeKind,
         invite_type::InviteType,
-        member::{InviteMemberResponse, JoinedMemberResponse, Member},
         member_collection::MemberCollection,
         neuron::{DissolveState, ListNeurons, ListNeuronsResponse},
+        old_member::{InviteMemberResponse, JoinedMemberResponse, Member},
         paged_response::PagedResponse,
         permission::{Permission, PermissionActionType, PermissionType, PostPermission},
-        privacy::{GatedType, NeuronGatedRules, Privacy, TokenGated},
+        privacy::{GatedType, NeuronGatedRules, PrivacyType, TokenGated},
         profile::ProfileResponse,
         relation_type::RelationType,
         role::Role,
@@ -144,7 +143,7 @@ impl GroupCalls {
         // get all the groups and filter them based on the privacy
         // exclude all InviteOnly groups that the caller is not a member of
         let mut groups = GroupStore::filter(|group_id, group| {
-            if group.privacy == Privacy::InviteOnly {
+            if group.privacy == PrivacyType::InviteOnly {
                 if let Ok((_, caller_member)) = MemberStore::get(caller()) {
                     return caller_member.is_group_joined(group_id);
                 }
@@ -262,7 +261,7 @@ impl GroupCalls {
         )
     }
 
-    pub fn get_group_owner_and_privacy(id: u64) -> CanisterResult<(Principal, Privacy)> {
+    pub fn get_group_owner_and_privacy(id: u64) -> CanisterResult<(Principal, PrivacyType)> {
         let (_, group) = GroupStore::get(id)?;
         Ok((group.owner, group.privacy))
     }
@@ -507,7 +506,7 @@ impl GroupCalls {
 
         let (_, group) = GroupStore::get(group_id)?;
         // Check if the group is invite only
-        if group.privacy == Privacy::InviteOnly {
+        if group.privacy == PrivacyType::InviteOnly {
             return Err(ApiError::bad_request().add_message("Group is invite only"));
         }
 
@@ -1127,7 +1126,7 @@ impl GroupValidation {
         account_identifier: Option<String>,
         post_group: &PostGroup,
     ) -> CanisterResult<()> {
-        use Privacy::*;
+        use PrivacyType::*;
         match post_group.privacy.clone() {
             Public => Ok(()),
             Private => Ok(()),
@@ -1346,7 +1345,7 @@ impl GroupValidation {
 
         let (_, mut member_collection) = GroupMemberStore::get(group_id)?;
 
-        use Privacy::*;
+        use PrivacyType::*;
         let validated_member = match group.privacy {
             // If the group is public, add the member to the group
             Public => {

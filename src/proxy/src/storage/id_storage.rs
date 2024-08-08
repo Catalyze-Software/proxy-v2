@@ -2,7 +2,6 @@ use super::storage_api::{StaticStorageRef, Storage, StorageRef, IDS, IDS_MEMORY_
 use catalyze_shared::api_error::ApiError;
 use ic_stable_structures::{memory_manager::MemoryId, Storable};
 
-pub const ID_KIND_BOOSTED: &str = "boosted";
 pub const ID_KIND_EVENT_ATTENDEES: &str = "event_attendees";
 pub const ID_KIND_EVENTS: &str = "events";
 pub const ID_KIND_FRIEND_REQUESTS: &str = "friend_requests";
@@ -18,7 +17,6 @@ pub const ID_KIND_SKILLS: &str = "skills";
 
 #[derive(Debug, Clone)]
 pub enum IDKind {
-    BoostedKind,
     EventAttendees,
     Events,
     FriendRequests,
@@ -36,7 +34,6 @@ pub enum IDKind {
 impl std::fmt::Display for IDKind {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            IDKind::BoostedKind => write!(f, "{ID_KIND_BOOSTED}"),
             IDKind::EventAttendees => write!(f, "{ID_KIND_EVENT_ATTENDEES}"),
             IDKind::Events => write!(f, "{ID_KIND_EVENTS}"),
             IDKind::FriendRequests => write!(f, "{ID_KIND_FRIEND_REQUESTS}"),
@@ -58,7 +55,6 @@ impl std::str::FromStr for IDKind {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            ID_KIND_BOOSTED => Ok(IDKind::BoostedKind),
             ID_KIND_EVENT_ATTENDEES => Ok(IDKind::EventAttendees),
             ID_KIND_EVENTS => Ok(IDKind::Events),
             ID_KIND_FRIEND_REQUESTS => Ok(IDKind::FriendRequests),
@@ -120,7 +116,6 @@ impl IDStore {
 
     fn get_last(kind: IDKind) -> u64 {
         match kind {
-            IDKind::BoostedKind => super::BoostedStore::storage().with(last_key),
             IDKind::EventAttendees => super::EventAttendeeStore::storage().with(last_key),
             IDKind::Events => super::EventStore::storage().with(last_key),
             IDKind::FriendRequests => super::FriendRequestStore::storage().with(last_key),
