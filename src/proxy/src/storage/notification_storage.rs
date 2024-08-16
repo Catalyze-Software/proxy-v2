@@ -1,11 +1,10 @@
 use super::{
     storage_api::{
-        StaticStorageRef, Storage, StorageQueryable, StorageUpdateable, NOTIFICATIONS,
-        NOTIFICATIONS_MEMORY_ID,
+        Storage, StorageQueryable, StorageUpdateable, NOTIFICATIONS, NOTIFICATIONS_MEMORY_ID,
     },
     StorageInsertable, ID_KIND_NOTIFICATIONS,
 };
-use catalyze_shared::notification::Notification;
+use catalyze_shared::{notification::Notification, StaticStorageRef};
 use ic_stable_structures::memory_manager::MemoryId;
 
 pub struct NotificationStore;

@@ -3,12 +3,12 @@ use catalyze_shared::{
     api_error::ApiError,
     attendee::{AttendeeInvite, InviteAttendeeResponse, JoinedAttendeeResponse},
     friend_request::{FriendRequest, FriendRequestResponse},
-    member::{InviteMemberResponse, JoinedMemberResponse, MemberInvite},
     notification::{
         EventNotificationType, GroupNotificationType, MultisigNotificationType, Notification,
         NotificationResponse, NotificationType, RelationNotificationType,
         TransactionNotificationType,
     },
+    old_member::{InviteMemberResponse, JoinedMemberResponse, MemberInvite},
     transaction_data::{TransactionCompleteData, TransactionData},
     user_notifications::{UserNotificationData, UserNotifications},
     websocket_message::WSMessage,

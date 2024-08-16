@@ -1,11 +1,11 @@
 use super::{
     storage_api::{
-        StaticStorageRef, Storage, StorageInsertable, StorageQueryable, StorageUpdateable,
-        FRIEND_REQUEST, FRIEND_REQUESTS_MEMORY_ID,
+        Storage, StorageInsertable, StorageQueryable, StorageUpdateable, FRIEND_REQUEST,
+        FRIEND_REQUESTS_MEMORY_ID,
     },
     ID_KIND_FRIEND_REQUESTS,
 };
-use catalyze_shared::friend_request::FriendRequest;
+use catalyze_shared::{friend_request::FriendRequest, StaticStorageRef};
 use ic_stable_structures::memory_manager::MemoryId;
 
 pub struct FriendRequestStore;

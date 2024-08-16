@@ -1,12 +1,12 @@
 use super::{
     storage_api::{
-        StaticStorageRef, Storage, StorageQueryable, StorageUpdateable, USER_NOTIFICATIONS,
+        Storage, StorageQueryable, StorageUpdateable, USER_NOTIFICATIONS,
         USER_NOTIFICATIONS_MEMORY_ID,
     },
     StorageInsertableByKey,
 };
 use candid::Principal;
-use catalyze_shared::user_notifications::UserNotifications;
+use catalyze_shared::{user_notifications::UserNotifications, StaticStorageRef};
 use ic_stable_structures::memory_manager::MemoryId;
 
 pub struct UserNotificationStore;

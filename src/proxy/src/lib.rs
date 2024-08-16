@@ -20,9 +20,9 @@ pub fn __export_did_tmp_() -> String {
 
     use catalyze_shared::api_error::*;
     use catalyze_shared::attendee::*;
-    use catalyze_shared::event::*;
+    use catalyze_shared::event_with_attendees::*;
     use catalyze_shared::friend_request::*;
-    use catalyze_shared::group::*;
+    use catalyze_shared::group_with_members::*;
     use catalyze_shared::http_types::HttpRequest;
     use catalyze_shared::log::*;
     use catalyze_shared::member::*;

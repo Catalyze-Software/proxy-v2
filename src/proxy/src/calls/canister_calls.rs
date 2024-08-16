@@ -1,51 +1,48 @@
 use candid::Principal;
-use catalyze_shared::CanisterResult;
+use catalyze_shared::{CanisterResult, CellStorage};
 use ic_cdk::{query, update};
 
 use crate::{
     helpers::guards::is_developer,
-    storage::{
-        reward_canister_storage::RewardCanisterStorage, CellStorage, HistoryCanisterStorage,
-        ProfileCanisterStorage, ReportCanisterStorage,
-    },
+    storage::{history_canister, profile_canister, report_canister, reward_canister},
 };
 
 #[query(guard = "is_developer")]
 fn _dev_get_history_canister() -> CanisterResult<Principal> {
-    HistoryCanisterStorage::get()
+    history_canister().get()
 }
 
 #[query(guard = "is_developer")]
 fn _dev_get_reward_canister() -> CanisterResult<Principal> {
-    RewardCanisterStorage::get()
+    reward_canister().get()
 }
 
 #[query(guard = "is_developer")]
 fn _dev_get_profile_canister() -> CanisterResult<Principal> {
-    ProfileCanisterStorage::get()
+    profile_canister().get()
 }
 
 #[query(guard = "is_developer")]
 fn _dev_get_report_canister() -> CanisterResult<Principal> {
-    ReportCanisterStorage::get()
+    reward_canister().get()
 }
 
 #[update(guard = "is_developer")]
 fn _dev_set_history_canister(principal: Principal) -> CanisterResult<Principal> {
-    HistoryCanisterStorage::set(principal)
+    history_canister().set(principal)
 }
 
 #[update(guard = "is_developer")]
 fn _dev_set_reward_canister(principal: Principal) -> CanisterResult<Principal> {
-    RewardCanisterStorage::set(principal)
+    reward_canister().set(principal)
 }
 
 #[update(guard = "is_developer")]
 fn _dev_set_profile_canister(principal: Principal) -> CanisterResult<Principal> {
-    ProfileCanisterStorage::set(principal)
+    profile_canister().set(principal)
 }
 
 #[update(guard = "is_developer")]
 fn _dev_set_report_canister(principal: Principal) -> CanisterResult<Principal> {
-    ReportCanisterStorage::set(principal)
+    report_canister().set(principal)
 }

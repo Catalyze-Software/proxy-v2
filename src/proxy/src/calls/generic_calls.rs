@@ -2,17 +2,16 @@ use crate::{
     helpers::guards::{is_developer, is_prod_developer},
     logic::{boost_logic::BoostCalls, id_logic::IDLogic, websocket_logic::Websocket},
     storage::{
-        reward_canister_storage::RewardCanisterStorage, storage_api::StorageQueryable,
-        AttendeeStore, BoostedStore, CellStorage, EventAttendeeStore, EventStore,
-        FriendRequestStore, GroupEventsStore, GroupMemberStore, GroupStore, HistoryCanisterStorage,
-        LoggerStore, MemberStore, NotificationStore, RewardBufferStore, RewardTimerStore,
-        StorageUpdateable, UserNotificationStore,
+        events, groups, history_canister, reward_canister, FriendRequestStore, LoggerStore,
+        NotificationStore, RewardBufferStore, RewardTimerStore, StorageUpdateable,
+        UserNotificationStore,
     },
 };
 use candid::Principal;
 use catalyze_shared::{
     api_error::ApiError,
     http_types::{HttpRequest, HttpResponse},
+    CellStorage, StorageClient,
 };
 use ic_cdk::{
     api::{
@@ -48,34 +47,34 @@ fn icts_version() -> String {
     env!("CARGO_PKG_VERSION").to_string()
 }
 
-#[query(guard = "is_developer")]
-pub fn _dev_check_member_sync(
+#[query(composite = true, guard = "is_developer")]
+pub async fn _dev_check_member_sync(
     principal: Principal,
     group_id: u64,
 ) -> ((String, bool), (String, bool)) {
     let mut member_store_check: (String, bool) = ("MemberStore".to_string(), false);
     let mut group_member_store_check: (String, bool) = ("GroupMemberStore".to_string(), false);
 
-    member_store_check.1 = MemberStore::get(principal).is_ok();
-    let group_members = GroupMemberStore::get(group_id);
-    group_member_store_check.1 = match group_members {
-        Ok((_, group_members)) => group_members.is_member(&principal),
+    member_store_check.1 = groups().get_member(principal).await.is_ok();
+
+    group_member_store_check.1 = match groups().get(group_id).await {
+        Ok((_, group)) => group.is_member(principal),
         Err(_) => false,
     };
 
     (member_store_check, group_member_store_check)
 }
 
-#[query(guard = "is_developer")]
-pub fn _dev_check_attendees_sync(
+#[query(composite = true, guard = "is_developer")]
+pub async fn _dev_check_attendees_sync(
     principal: Principal,
     event_id: u64,
 ) -> ((String, bool), (String, bool)) {
     let mut attendee_store_check: (String, bool) = ("AttendeeStore".to_string(), false);
     let mut event_attendee_store_check: (String, bool) = ("EventAttendeeStore".to_string(), false);
 
-    attendee_store_check.1 = AttendeeStore::get(principal).is_ok();
-    let group_members = GroupMemberStore::get(event_id);
+    attendee_store_check.1 = events().get_attendee(principal).await.is_ok();
+    let group_members = GroupMemberStore::get(event_id); // TODO: Why there is group member store here?
     event_attendee_store_check.1 = match group_members {
         Ok((_, group_members)) => group_members.is_member(&principal),
         Err(_) => false,
@@ -84,15 +83,18 @@ pub fn _dev_check_attendees_sync(
     (attendee_store_check, event_attendee_store_check)
 }
 
-#[query(guard = "is_developer")]
-pub fn _dev_check_events_sync(event_id: u64, group_id: u64) -> ((String, bool), (String, bool)) {
+#[query(composite = true, guard = "is_developer")]
+pub async fn _dev_check_events_sync(
+    event_id: u64,
+    group_id: u64,
+) -> ((String, bool), (String, bool)) {
     let mut event_store_check: (String, bool) = ("EventStore".to_string(), false);
     let mut group_event_store_check: (String, bool) = ("GroupEventStore".to_string(), false);
 
-    event_store_check.1 = EventStore::get(event_id).is_ok();
-    let group_events = GroupEventsStore::get(group_id);
-    group_event_store_check.1 = match group_events {
-        Ok((_, group_events)) => group_events.has_event(&event_id),
+    event_store_check.1 = events().get(event_id).await.is_ok();
+
+    group_event_store_check.1 = match groups().get(group_id).await {
+        Ok((_, group)) => group.events.contains(&event_id),
         Err(_) => false,
     };
 
@@ -145,28 +147,18 @@ fn _dev_prod_init() -> Result<(), ApiError> {
         );
     }
 
-    let _ =
-        HistoryCanisterStorage::set(Principal::from_text("inc34-eqaaa-aaaap-ahl2a-cai").unwrap());
-    let _ =
-        RewardCanisterStorage::set(Principal::from_text("zgfl7-pqaaa-aaaap-accpa-cai").unwrap());
+    let _ = history_canister().set(Principal::from_text("inc34-eqaaa-aaaap-ahl2a-cai").unwrap());
+    let _ = reward_canister().set(Principal::from_text("zgfl7-pqaaa-aaaap-accpa-cai").unwrap());
     Ok(())
 }
 
 #[update(guard = "is_prod_developer")]
 fn _dev_clear() {
     FriendRequestStore::clear();
-    GroupStore::clear();
-    MemberStore::clear();
-    EventStore::clear();
-    AttendeeStore::clear();
-    BoostedStore::clear();
     NotificationStore::clear();
     UserNotificationStore::clear();
     LoggerStore::clear();
     RewardBufferStore::clear();
-    GroupMemberStore::clear();
-    GroupEventsStore::clear();
-    EventAttendeeStore::clear();
 }
 
 #[query]

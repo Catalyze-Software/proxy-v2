@@ -1,13 +1,11 @@
 use super::ledger_logic::Ledger;
-use crate::{
-    storage::{BoostedStore, StorageInsertable, StorageQueryable, StorageUpdateable},
-    E8S_PER_DAY_BOOST_COST,
-};
+use crate::{storage::boosteds, E8S_PER_DAY_BOOST_COST};
 use candid::Principal;
 use catalyze_shared::{
     api_error::ApiError,
-    boosted::Boost,
+    boosted::{Boost, BoostedEntry, BoostedFilter},
     subject::{Subject, SubjectType},
+    CanisterResult, StorageClient, StorageClientInsertable,
 };
 use ic_cdk::{api::time, caller};
 use ic_cdk_timers::{clear_timer, set_timer, TimerId};
@@ -22,42 +20,45 @@ thread_local! {
 pub struct BoostCalls;
 
 impl BoostCalls {
-    pub async fn boost(subject: Subject, blockheight: u64) -> Result<u64, ApiError> {
+    pub async fn boost(subject: Subject, blockheight: u64) -> CanisterResult<u64> {
         if !matches!(subject, Subject::Group(_) | Subject::Event(_)) {
             return Err(ApiError::bad_request().add_message("Invalid identifier"));
         }
+
         let tokens = Ledger::validate_transaction(caller(), blockheight).await?;
-        if blockheight > Self::get_last_block_height() {
-            Self::set_last_block_height(blockheight);
-        } else {
+
+        if !(blockheight > Self::get_last_block_height()) {
             return Err(ApiError::bad_request()
                 .add_message("Blockheight is lower than the last blockheight"));
         }
 
+        Self::set_last_block_height(blockheight);
+
         let days = Self::calculate_days(tokens);
         let seconds = Self::get_seconds_from_days(days);
+        let boost = boosteds()
+            .find(BoostedFilter::Subject(subject.clone()).into())
+            .await?;
 
-        match BoostedStore::find(|_, boost: &Boost| boost.subject == subject) {
-            None => Self::new_boost(subject, seconds, caller(), blockheight),
-            // If there is an existing boost
-            Some((updating_boost_id, updating_boost)) => {
-                Self::update_exisiting_boost(updating_boost_id, updating_boost, seconds)
-            }
+        if let Some((id, boost)) = boost {
+            return Self::update_existing_boost(id, boost, seconds).await;
         }
+
+        Self::new_boost(subject, seconds, caller(), blockheight).await
     }
 
-    fn new_boost(
+    async fn new_boost(
         subject: Subject,
         seconds: u64,
         owner: Principal,
         blockheight: u64,
-    ) -> Result<u64, ApiError> {
+    ) -> CanisterResult<u64> {
         let boost = Boost::new(subject, seconds, owner, blockheight);
 
-        let (new_boost_id, _) = BoostedStore::insert(boost)?;
+        let (new_boost_id, _) = boosteds().insert(boost).await?;
 
         let timer_id = set_timer(Duration::from_secs(seconds), move || {
-            Self::remove_boost(new_boost_id)
+            Self::remove_boost(new_boost_id);
         });
 
         Self::set_timer_id(new_boost_id, timer_id);
@@ -65,37 +66,38 @@ impl BoostCalls {
         Ok(seconds)
     }
 
-    fn update_exisiting_boost(
+    async fn update_existing_boost(
         boost_id: u64,
         mut boost: Boost,
         seconds: u64,
-    ) -> Result<u64, ApiError> {
+    ) -> CanisterResult<u64> {
         // Get and clear the existing timer
         if let Some(existing_timer_id) = Self::get_timer_id(boost_id) {
             clear_timer(existing_timer_id);
         }
 
         // Update the boost with the purchased seconds
-        let remaining_seconds = Self::get_seconds_left_for_boost(boost_id)?;
+        let remaining_seconds = Self::get_seconds_left_for_boost(boost_id).await?;
         let new_seconds = remaining_seconds + seconds;
 
         boost.seconds = new_seconds;
         boost.updated_at = time();
 
-        BoostedStore::update(boost_id, boost.clone())?;
+        boosteds().update(boost_id, boost.clone()).await?;
 
         // Remove the old timer and set a new timer with the updated seconds
         let timer_id = set_timer(Duration::from_secs(new_seconds), move || {
-            BoostedStore::remove(boost_id);
+            boosteds().remove(boost_id);
         });
 
         Self::set_timer_id(boost_id, timer_id);
         Ok(new_seconds)
     }
 
-    pub fn remove_boost(boost_id: u64) {
-        BoostedStore::remove(boost_id);
+    pub async fn remove_boost(boost_id: u64) -> CanisterResult<()> {
+        boosteds().remove(boost_id).await?;
         Self::remove_timer_id(&boost_id);
+        Ok(())
     }
 
     pub fn calculate_days(tokens: Tokens) -> u64 {
@@ -132,43 +134,38 @@ impl BoostCalls {
         });
     }
 
-    pub fn get_seconds_left_for_boost(boost_id: u64) -> Result<u64, ApiError> {
-        let (_, boosted) = BoostedStore::get(boost_id)?;
+    pub async fn get_seconds_left_for_boost(boost_id: u64) -> CanisterResult<u64> {
+        let (_, boosted) = boosteds().get(boost_id).await?;
         let time_left: u64 = Duration::from_nanos(boosted.updated_at).as_secs() + boosted.seconds;
         Ok(time_left - Duration::from_nanos(time()).as_secs())
     }
 
-    pub fn get_boost_by_subject(subject: Subject) -> Result<(u64, Boost), ApiError> {
-        match BoostedStore::get_all()
-            .into_iter()
-            .find(|(_, boosted)| boosted.subject == subject)
-        {
-            Some((id, boosted)) => Ok((id, boosted)),
-            None => Err(ApiError::not_found().add_message("No boosted group or event found")),
-        }
+    pub async fn get_boost_by_subject(subject: Subject) -> CanisterResult<Option<BoostedEntry>> {
+        let resp = boosteds()
+            .find(BoostedFilter::Subject(subject).into())
+            .await?;
+
+        Ok(resp)
     }
 
-    pub fn get_boosts_by_subject(subject: SubjectType) -> Vec<(u64, Boost)> {
-        BoostedStore::get_all()
-            .into_iter()
-            .filter(|(_, boosted)| match boosted.subject.get_type() {
-                SubjectType::Group => matches!(subject, SubjectType::Group),
-                SubjectType::Event => matches!(subject, SubjectType::Event),
-                _ => false,
-            })
-            .collect()
+    pub async fn get_boosts_by_subject(subject: SubjectType) -> CanisterResult<Vec<BoostedEntry>> {
+        boosteds()
+            .filter(BoostedFilter::SubjectType(subject).into())
+            .await
     }
 
-    pub fn start_timers_after_upgrade() {
-        BoostedStore::get_all()
-            .into_iter()
-            .for_each(|(boost_id, _)| {
-                let seconds_left = Self::get_seconds_left_for_boost(boost_id).unwrap_or(0);
-                let timer_id = set_timer(Duration::from_secs(seconds_left), move || {
-                    Self::remove_boost(boost_id)
-                });
+    pub async fn start_timers_after_upgrade() -> CanisterResult<()> {
+        let boosts = boosteds().get_all().await?;
 
-                Self::set_timer_id(boost_id, timer_id);
+        for (boost_id, _) in boosts {
+            let seconds_left = Self::get_seconds_left_for_boost(boost_id).await?;
+            let timer_id = set_timer(Duration::from_secs(seconds_left), move || {
+                Self::remove_boost(boost_id);
             });
+
+            Self::set_timer_id(boost_id, timer_id);
+        }
+
+        Ok(())
     }
 }

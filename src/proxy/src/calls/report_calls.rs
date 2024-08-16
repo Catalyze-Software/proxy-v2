@@ -50,7 +50,7 @@ pub async fn add_report(post_report: PostReport) -> CanisterResult<ReportRespons
 #[query(composite = true, guard = "is_not_anonymous")]
 pub async fn get_report(report_id: u64, group_id: u64) -> CanisterResult<ReportResponse> {
     has_access().await?;
-    can_write(group_id, PermissionType::Group(None))?;
+    can_write(group_id, PermissionType::Group(None)).await?;
     ReportCalls::get_report(report_id).await
 }
 
@@ -78,6 +78,6 @@ pub async fn get_reports(
     group_id: u64,
 ) -> CanisterResult<PagedResponse<ReportResponse>> {
     has_access().await?;
-    can_read(group_id, PermissionType::Group(None))?;
+    can_read(group_id, PermissionType::Group(None)).await?;
     ReportCalls::get_reports(limit, page, sort, filters, group_id).await
 }

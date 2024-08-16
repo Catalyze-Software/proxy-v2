@@ -1,13 +1,13 @@
 use super::{
     storage_api::{
-        StaticStorageRef, Storage, StorageInsertable, StorageQueryable, StorageUpdateable, LOGS,
-        LOGS_MEMORY_ID,
+        Storage, StorageInsertable, StorageQueryable, StorageUpdateable, LOGS, LOGS_MEMORY_ID,
     },
     ID_KIND_LOGS,
 };
 use catalyze_shared::{
     api_error::ApiError,
     log::{Logger, PostLog},
+    StaticStorageRef,
 };
 use ic_stable_structures::memory_manager::MemoryId;
 

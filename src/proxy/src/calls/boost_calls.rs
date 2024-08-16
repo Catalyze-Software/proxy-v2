@@ -4,8 +4,8 @@ use crate::{
     E8S_PER_DAY_BOOST_COST,
 };
 use catalyze_shared::{
-    api_error::ApiError, event::EventResponse, group::GroupResponse, guards::is_not_anonymous,
-    subject::Subject, CanisterResult,
+    api_error::ApiError, event_with_attendees::EventResponse, group_with_members::GroupResponse,
+    guards::is_not_anonymous, subject::Subject, CanisterResult,
 };
 use ic_cdk::{query, update};
 
@@ -13,7 +13,7 @@ use ic_cdk::{query, update};
 /// # Returns
 /// * `Vec<GroupResponse>`
 #[query(composite = true)]
-async fn get_boosted_groups() -> Vec<GroupResponse> {
+async fn get_boosted_groups() -> CanisterResult<Vec<GroupResponse>> {
     GroupCalls::get_boosted_groups().await
 }
 
@@ -21,7 +21,7 @@ async fn get_boosted_groups() -> Vec<GroupResponse> {
 /// # Returns
 /// * `Vec<EventResponse>`
 #[query(composite = true)]
-async fn get_boosted_events() -> Vec<EventResponse> {
+async fn get_boosted_events() -> CanisterResult<Vec<EventResponse>> {
     EventCalls::get_boosted_events().await
 }
 
@@ -65,8 +65,8 @@ async fn boost(boost_subject: Subject, blockheight: u64) -> CanisterResult<u64> 
 /// * `u64` - the remaining boost time in seconds
 /// # Errors
 /// * `ApiError` if something went wrong getting the remaining boost time
-#[query]
-fn get_remaining_boost_time_in_seconds(boost_subject: Subject) -> CanisterResult<u64> {
+#[query(composite = true)]
+async fn get_remaining_boost_time_in_seconds(boost_subject: Subject) -> CanisterResult<u64> {
     use Subject::*;
     let subject = match boost_subject {
         Group(id) => Subject::Group(id),
@@ -74,6 +74,6 @@ fn get_remaining_boost_time_in_seconds(boost_subject: Subject) -> CanisterResult
         _ => return Err(ApiError::bad_request().add_message("Invalid identifier")),
     };
 
-    let (id, _) = BoostCalls::get_boost_by_subject(subject)?;
-    BoostCalls::get_seconds_left_for_boost(id)
+    let (id, _) = BoostCalls::get_boost_by_subject(subject).await?;
+    BoostCalls::get_seconds_left_for_boost(id).await
 }

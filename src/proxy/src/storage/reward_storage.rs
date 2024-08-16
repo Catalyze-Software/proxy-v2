@@ -1,10 +1,13 @@
 use super::{
-    storage_api::{StaticStorageRef, Storage, REWARD_BUFFER, REWARD_BUFFER_MEMORY_ID},
+    storage_api::{Storage, REWARD_BUFFER, REWARD_BUFFER_MEMORY_ID},
     StorageInsertable, StorageQueryable, StorageUpdateable, ID_KIND_REWARDS_BUFFER,
 };
 use crate::logic::reward_buffer_logic::send_reward_data;
 use candid::Principal;
-use catalyze_shared::reward::{Activity, RewardableActivity};
+use catalyze_shared::{
+    reward::{Activity, RewardableActivity},
+    StaticStorageRef,
+};
 use ic_cdk::{api::time, spawn};
 use ic_cdk_timers::set_timer_interval;
 use ic_stable_structures::memory_manager::MemoryId;
@@ -23,7 +26,9 @@ pub struct RewardTimerStore;
 impl RewardTimerStore {
     pub fn start() {
         let _ = set_timer_interval(Duration::from_nanos(DAY_IN_NANOS), move || {
-            spawn(send_reward_data());
+            spawn(async move {
+                let _ = send_reward_data().await;
+            });
         });
 
         let next_trigger = time() + DAY_IN_NANOS;

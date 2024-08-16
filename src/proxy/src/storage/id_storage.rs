@@ -1,14 +1,8 @@
-use super::storage_api::{StaticStorageRef, Storage, StorageRef, IDS, IDS_MEMORY_ID};
-use catalyze_shared::api_error::ApiError;
+use super::storage_api::{Storage, IDS, IDS_MEMORY_ID};
+use catalyze_shared::{api_error::ApiError, StaticStorageRef, StorageRef};
 use ic_stable_structures::{memory_manager::MemoryId, Storable};
 
-pub const ID_KIND_BOOSTED: &str = "boosted";
-pub const ID_KIND_EVENT_ATTENDEES: &str = "event_attendees";
-pub const ID_KIND_EVENTS: &str = "events";
 pub const ID_KIND_FRIEND_REQUESTS: &str = "friend_requests";
-pub const ID_KIND_GROUP_EVENTS: &str = "group_events";
-pub const ID_KIND_GROUP_MEMBERS: &str = "group_members";
-pub const ID_KIND_GROUPS: &str = "groups";
 pub const ID_KIND_LOGS: &str = "logs";
 pub const ID_KIND_NOTIFICATIONS: &str = "notifications";
 pub const ID_KIND_TAGS: &str = "tags";
@@ -18,13 +12,7 @@ pub const ID_KIND_SKILLS: &str = "skills";
 
 #[derive(Debug, Clone)]
 pub enum IDKind {
-    BoostedKind,
-    EventAttendees,
-    Events,
     FriendRequests,
-    GroupEvents,
-    GroupMembers,
-    Groups,
     Logs,
     Notifications,
     Tags,
@@ -36,13 +24,7 @@ pub enum IDKind {
 impl std::fmt::Display for IDKind {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            IDKind::BoostedKind => write!(f, "{ID_KIND_BOOSTED}"),
-            IDKind::EventAttendees => write!(f, "{ID_KIND_EVENT_ATTENDEES}"),
-            IDKind::Events => write!(f, "{ID_KIND_EVENTS}"),
             IDKind::FriendRequests => write!(f, "{ID_KIND_FRIEND_REQUESTS}"),
-            IDKind::GroupEvents => write!(f, "{ID_KIND_GROUP_EVENTS}"),
-            IDKind::GroupMembers => write!(f, "{ID_KIND_GROUP_MEMBERS}"),
-            IDKind::Groups => write!(f, "{ID_KIND_GROUPS}"),
             IDKind::Logs => write!(f, "{ID_KIND_LOGS}"),
             IDKind::Notifications => write!(f, "{ID_KIND_NOTIFICATIONS}"),
             IDKind::Tags => write!(f, "{ID_KIND_TAGS}"),
@@ -58,13 +40,7 @@ impl std::str::FromStr for IDKind {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            ID_KIND_BOOSTED => Ok(IDKind::BoostedKind),
-            ID_KIND_EVENT_ATTENDEES => Ok(IDKind::EventAttendees),
-            ID_KIND_EVENTS => Ok(IDKind::Events),
             ID_KIND_FRIEND_REQUESTS => Ok(IDKind::FriendRequests),
-            ID_KIND_GROUP_EVENTS => Ok(IDKind::GroupEvents),
-            ID_KIND_GROUP_MEMBERS => Ok(IDKind::GroupMembers),
-            ID_KIND_GROUPS => Ok(IDKind::Groups),
             ID_KIND_LOGS => Ok(IDKind::Logs),
             ID_KIND_NOTIFICATIONS => Ok(IDKind::Notifications),
             ID_KIND_TAGS => Ok(IDKind::Tags),
@@ -120,13 +96,7 @@ impl IDStore {
 
     fn get_last(kind: IDKind) -> u64 {
         match kind {
-            IDKind::BoostedKind => super::BoostedStore::storage().with(last_key),
-            IDKind::EventAttendees => super::EventAttendeeStore::storage().with(last_key),
-            IDKind::Events => super::EventStore::storage().with(last_key),
             IDKind::FriendRequests => super::FriendRequestStore::storage().with(last_key),
-            IDKind::GroupEvents => super::GroupEventsStore::storage().with(last_key),
-            IDKind::GroupMembers => super::GroupMemberStore::storage().with(last_key),
-            IDKind::Groups => super::GroupStore::storage().with(last_key),
             IDKind::Logs => super::LoggerStore::storage().with(last_key),
             IDKind::Notifications => super::NotificationStore::storage().with(last_key),
             IDKind::Tags => super::TagStore::storage().with(last_key),

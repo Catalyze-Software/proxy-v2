@@ -1,16 +1,10 @@
-use super::{
-    attendee_logic::AttendeeCalls, member_logic::MemberCalls, notification_logic::NotificationCalls,
-};
-use crate::storage::{
-    profiles, AttendeeStore, EventAttendeeStore, EventStore, GroupMemberStore, GroupStore,
-    MemberStore, StorageInsertableByKey, StorageQueryable, UserNotificationStore,
-};
+use super::notification_logic::NotificationCalls;
+use crate::storage::{events, groups, profiles, StorageInsertableByKey, UserNotificationStore};
 use candid::Principal;
 use catalyze_shared::{
     api_error::ApiError,
     document_details::DocumentDetails,
     helpers::validator::Validator,
-    member_collection::MemberCollection,
     profile::{PostProfile, Profile, ProfileFilter, ProfileResponse, UpdateProfile},
     relation_type::RelationType,
     subject::{Subject, SubjectResponse, SubjectType},
@@ -40,8 +34,6 @@ impl ProfileCalls {
         let new_profile = Profile::from(post_profile);
         let stored_profile = profiles().insert(caller(), new_profile).await?;
 
-        let _ = MemberCalls::create_empty_member(caller());
-        let _ = AttendeeCalls::create_empty_attendee(caller());
         let _ = UserNotificationStore::insert_by_key(caller(), UserNotifications::new());
 
         ProfileResponse::from(stored_profile).to_result()
@@ -135,49 +127,28 @@ impl ProfileCalls {
     }
 
     pub async fn add_starred(subject: Subject) -> CanisterResult<ProfileResponse> {
-        let (_, mut existing_profile) = profiles().get(caller()).await?;
+        let (_, mut profile) = profiles().get(caller()).await?;
 
-        if existing_profile.starred.contains(&subject) {
+        if profile.starred.contains(&subject) {
             return Err(ApiError::duplicate().add_message("already starred"));
         }
 
-        match subject {
-            Subject::Group(id) => {
-                let group_members = GroupMemberStore::get(id)
-                    .map_or(MemberCollection::new(), |(_, members)| members);
-                if !group_members.is_member(&caller()) {
-                    return Err(
-                        ApiError::unauthorized().add_message("You can only star joined groups")
-                    );
-                }
-            }
-            Subject::Event(id) => {
-                let event_attendees = EventAttendeeStore::get(id)
-                    .map_or(MemberCollection::new(), |(_, members)| members);
-                if !event_attendees.is_member(&caller()) {
-                    return Err(
-                        ApiError::unauthorized().add_message("You can only star joined events")
-                    );
-                }
-            }
-            _ => return Err(ApiError::not_implemented().add_message("Subject type not supported")),
-        };
+        Self::validate_subject(subject.clone()).await?;
+        profile.starred.push(subject);
 
-        existing_profile.starred.push(subject);
-
-        ProfileResponse::from(profiles().update(caller(), existing_profile).await?).to_result()
+        ProfileResponse::from(profiles().update(caller(), profile).await?).to_result()
     }
 
     pub async fn remove_starred(subject: Subject) -> CanisterResult<ProfileResponse> {
-        let (_, mut existing_profile) = profiles().get(caller()).await?;
+        let (_, mut profile) = profiles().get(caller()).await?;
 
-        if !existing_profile.starred.contains(&subject) {
+        if !profile.starred.contains(&subject) {
             return Err(ApiError::not_found().add_message("not starred"));
         }
 
-        existing_profile.starred.retain(|s| s != &subject);
+        profile.starred.retain(|s| s != &subject);
 
-        ProfileResponse::from(profiles().update(caller(), existing_profile).await?).to_result()
+        ProfileResponse::from(profiles().update(caller(), profile).await?).to_result()
     }
 
     pub async fn get_starred_by_subject(subject: SubjectType) -> Vec<u64> {
@@ -193,49 +164,28 @@ impl ProfileCalls {
     }
 
     pub async fn add_pinned(subject: Subject) -> CanisterResult<ProfileResponse> {
-        let (_, mut existing_profile) = profiles().get(caller()).await?;
+        let (_, mut profile) = profiles().get(caller()).await?;
 
-        if existing_profile.pinned.contains(&subject) {
+        if profile.pinned.contains(&subject) {
             return Err(ApiError::duplicate().add_message("already pinned"));
         }
 
-        match subject {
-            Subject::Group(id) => {
-                let group_members = GroupMemberStore::get(id)
-                    .map_or(MemberCollection::new(), |(_, members)| members);
-                if !group_members.is_member(&caller()) {
-                    return Err(
-                        ApiError::unauthorized().add_message("You can only pin joined groups")
-                    );
-                }
-            }
-            Subject::Event(id) => {
-                let event_attendees = EventAttendeeStore::get(id)
-                    .map_or(MemberCollection::new(), |(_, members)| members);
-                if !event_attendees.is_member(&caller()) {
-                    return Err(
-                        ApiError::unauthorized().add_message("You can only pin joined events")
-                    );
-                }
-            }
-            _ => return Err(ApiError::not_implemented().add_message("Subject type not supported")),
-        };
+        Self::validate_subject(subject.clone()).await?;
+        profile.pinned.push(subject);
 
-        existing_profile.pinned.push(subject);
-
-        ProfileResponse::from(profiles().update(caller(), existing_profile).await?).to_result()
+        ProfileResponse::from(profiles().update(caller(), profile).await?).to_result()
     }
 
     pub async fn remove_pinned(subject: Subject) -> CanisterResult<ProfileResponse> {
-        let (_, mut existing_profile) = profiles().get(caller()).await?;
+        let (_, mut profile) = profiles().get(caller()).await?;
 
-        if !existing_profile.pinned.contains(&subject) {
+        if !profile.pinned.contains(&subject) {
             return Err(ApiError::not_found().add_message("not pinned"));
         }
 
-        existing_profile.pinned.retain(|s| s != &subject);
+        profile.pinned.retain(|s| s != &subject);
 
-        ProfileResponse::from(profiles().update(caller(), existing_profile).await?).to_result()
+        ProfileResponse::from(profiles().update(caller(), profile).await?).to_result()
     }
 
     pub async fn get_pinned_by_subject(
@@ -364,13 +314,40 @@ impl ProfileCalls {
 
     pub async fn get_subject_response_by_subject(subject: &Subject) -> SubjectResponse {
         match subject.clone() {
-            Subject::Group(id) => SubjectResponse::Group(GroupStore::get(id).ok()),
-            Subject::Event(id) => SubjectResponse::Event(EventStore::get(id).ok()),
+            // Subject::Group(id) => SubjectResponse::Group(groups().get(id).await.ok()),
+            // Subject::Event(id) => SubjectResponse::Event(events().get(id).await.ok()),
             Subject::Profile(id) => SubjectResponse::Profile(profiles().get(id).await.ok()),
-            Subject::Member(id) => SubjectResponse::Member(MemberStore::get(id).ok()),
-            Subject::Attendee(id) => SubjectResponse::Attendee(AttendeeStore::get(id).ok()),
+            // Subject::Member(id) => SubjectResponse::Member(MemberStore::get(id).ok()),
+            // Subject::Attendee(id) => SubjectResponse::Attendee(AttendeeStore::get(id).ok()),
             Subject::None => SubjectResponse::None,
+            _ => SubjectResponse::None, // TODO: FIX ME NEED TO DISCUSS
         }
+    }
+
+    async fn validate_subject(subject: Subject) -> CanisterResult<()> {
+        match subject {
+            Subject::Group(id) => {
+                let (_, group) = groups().get(id).await?;
+
+                if !group.is_member(caller()) {
+                    return Err(
+                        ApiError::unauthorized().add_message("You can only star joined groups")
+                    );
+                }
+            }
+            Subject::Event(id) => {
+                let (_, event) = events().get(id).await?;
+
+                if !event.is_attendee(caller()) {
+                    return Err(
+                        ApiError::unauthorized().add_message("You can only star joined events")
+                    );
+                }
+            }
+            _ => return Err(ApiError::not_implemented().add_message("Subject type not supported")),
+        };
+
+        Ok(())
     }
 }
 

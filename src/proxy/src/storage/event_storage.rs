@@ -1,27 +1,34 @@
-use super::{
-    storage_api::{
-        StaticStorageRef, Storage, StorageInsertable, StorageQueryable, StorageUpdateable, EVENTS,
-        EVENTS_MEMORY_ID,
-    },
-    ID_KIND_EVENTS,
+use super::storage_api::EVENT_CANISTER;
+use candid::Principal;
+use catalyze_shared::{
+    attendee::AttendeeEntry,
+    event_collection::EventCollectionEntry,
+    event_with_attendees::{EventFilter, EventSort, EventWithAttendees},
+    ic_call::ic_call,
+    CanisterResult, StorageClient, StorageClientInsertable,
 };
-use catalyze_shared::event::Event;
-use ic_stable_structures::memory_manager::MemoryId;
 
-pub struct EventStore;
+#[derive(Default)]
+pub struct EventStorageClient;
 
-impl Storage<u64, Event> for EventStore {
-    const NAME: &'static str = ID_KIND_EVENTS;
-
-    fn storage() -> StaticStorageRef<u64, Event> {
-        &EVENTS
+impl StorageClient<u64, EventWithAttendees, EventFilter, EventSort> for EventStorageClient {
+    fn name(&self) -> String {
+        "event".to_string()
     }
 
-    fn memory_id() -> MemoryId {
-        EVENTS_MEMORY_ID
+    fn storage_canister_id(&self) -> catalyze_shared::StaticCellStorageRef<Principal> {
+        &EVENT_CANISTER
     }
 }
 
-impl StorageQueryable<u64, Event> for EventStore {}
-impl StorageUpdateable<u64, Event> for EventStore {}
-impl StorageInsertable<Event> for EventStore {}
+impl StorageClientInsertable<EventWithAttendees, EventFilter, EventSort> for EventStorageClient {}
+
+impl EventStorageClient {
+    pub async fn get_attendee(&self, principal: Principal) -> CanisterResult<AttendeeEntry> {
+        ic_call(self.canister_id()?, "get_attendee", (principal,)).await
+    }
+}
+
+pub fn events() -> EventStorageClient {
+    EventStorageClient
+}
