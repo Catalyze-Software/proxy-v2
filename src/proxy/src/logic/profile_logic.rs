@@ -5,7 +5,9 @@ use catalyze_shared::{
     api_error::ApiError,
     document_details::DocumentDetails,
     helpers::validator::Validator,
-    profile::{PostProfile, Profile, ProfileFilter, ProfileResponse, UpdateProfile},
+    profile_with_refs::{
+        PostProfile, ProfileFilter, ProfileResponse, ProfileWithRefs, UpdateProfile,
+    },
     relation_type::RelationType,
     subject::{Subject, SubjectResponse, SubjectType},
     user_notifications::UserNotifications,
@@ -31,7 +33,7 @@ impl ProfileCalls {
             return Err(ApiError::duplicate().add_message("Username already exists"));
         }
 
-        let new_profile = Profile::from(post_profile);
+        let new_profile = ProfileWithRefs::from(post_profile);
         let stored_profile = profiles().insert(caller(), new_profile).await?;
 
         let _ = UserNotificationStore::insert_by_key(caller(), UserNotifications::new());
@@ -52,17 +54,18 @@ impl ProfileCalls {
         let (_, mut existing_profile) = profiles().get(caller()).await?;
 
         if existing_profile
+            .references
             .wallets
-            .contains_key(&post_wallet.principal)
+            .contains_key(&post_wallet.principal.to_string())
         {
             return Err(ApiError::duplicate().add_message("Wallet already exists"));
         }
 
-        existing_profile.wallets.insert(
-            post_wallet.principal,
+        existing_profile.references.wallets.insert(
+            post_wallet.principal.to_string(),
             Wallet {
                 provider: post_wallet.provider,
-                is_primary: existing_profile.wallets.is_empty(),
+                is_primary: existing_profile.references.wallets.is_empty(),
             },
         );
 
@@ -72,13 +75,15 @@ impl ProfileCalls {
     pub async fn remove_wallet_from_profile(
         principal: Principal,
     ) -> CanisterResult<ProfileResponse> {
+        let principal = principal.to_string();
         let (_, mut existing_profile) = profiles().get(caller()).await?;
 
-        if !existing_profile.wallets.contains_key(&principal) {
+        if !existing_profile.references.wallets.contains_key(&principal) {
             return Err(ApiError::not_found().add_message("Wallet does not exist"));
         }
 
         if existing_profile
+            .references
             .wallets
             .get(&principal)
             .is_some_and(|w| w.is_primary)
@@ -86,23 +91,25 @@ impl ProfileCalls {
             return Err(ApiError::bad_request().add_message("Cannot remove primary wallet"));
         }
 
-        existing_profile.wallets.remove(&principal);
+        existing_profile.references.wallets.remove(&principal);
 
         ProfileResponse::from(profiles().update(caller(), existing_profile).await?).to_result()
     }
 
     pub async fn set_wallet_as_primary(principal: Principal) -> CanisterResult<ProfileResponse> {
+        let principal = principal.to_string();
         let (_, mut existing_profile) = profiles().get(caller()).await?;
 
-        if !existing_profile.wallets.contains_key(&principal) {
+        if !existing_profile.references.wallets.contains_key(&principal) {
             return Err(ApiError::not_found().add_message("Wallet does not exist"));
         }
 
-        for (_principal, wallet) in existing_profile.wallets.iter_mut() {
+        for (_principal, wallet) in existing_profile.references.wallets.iter_mut() {
             wallet.is_primary = false;
         }
 
         existing_profile
+            .references
             .wallets
             .get_mut(&principal)
             .unwrap()
@@ -129,12 +136,12 @@ impl ProfileCalls {
     pub async fn add_starred(subject: Subject) -> CanisterResult<ProfileResponse> {
         let (_, mut profile) = profiles().get(caller()).await?;
 
-        if profile.starred.contains(&subject) {
+        if profile.is_starred(&subject) {
             return Err(ApiError::duplicate().add_message("already starred"));
         }
 
         Self::validate_subject(subject.clone()).await?;
-        profile.starred.push(subject);
+        profile.references.starred.push(subject);
 
         ProfileResponse::from(profiles().update(caller(), profile).await?).to_result()
     }
@@ -142,11 +149,11 @@ impl ProfileCalls {
     pub async fn remove_starred(subject: Subject) -> CanisterResult<ProfileResponse> {
         let (_, mut profile) = profiles().get(caller()).await?;
 
-        if !profile.starred.contains(&subject) {
+        if !profile.is_starred(&subject) {
             return Err(ApiError::not_found().add_message("not starred"));
         }
 
-        profile.starred.retain(|s| s != &subject);
+        profile.remove_starred(&subject);
 
         ProfileResponse::from(profiles().update(caller(), profile).await?).to_result()
     }
@@ -154,6 +161,7 @@ impl ProfileCalls {
     pub async fn get_starred_by_subject(subject: SubjectType) -> Vec<u64> {
         if let Ok((_, profile)) = profiles().get(caller()).await {
             return profile
+                .references
                 .starred
                 .iter()
                 .filter(|s| s.get_type() == subject)
@@ -166,12 +174,12 @@ impl ProfileCalls {
     pub async fn add_pinned(subject: Subject) -> CanisterResult<ProfileResponse> {
         let (_, mut profile) = profiles().get(caller()).await?;
 
-        if profile.pinned.contains(&subject) {
+        if profile.is_pinned(&subject) {
             return Err(ApiError::duplicate().add_message("already pinned"));
         }
 
         Self::validate_subject(subject.clone()).await?;
-        profile.pinned.push(subject);
+        profile.references.pinned.push(subject);
 
         ProfileResponse::from(profiles().update(caller(), profile).await?).to_result()
     }
@@ -179,11 +187,11 @@ impl ProfileCalls {
     pub async fn remove_pinned(subject: Subject) -> CanisterResult<ProfileResponse> {
         let (_, mut profile) = profiles().get(caller()).await?;
 
-        if !profile.pinned.contains(&subject) {
+        if !profile.is_pinned(&subject) {
             return Err(ApiError::not_found().add_message("not pinned"));
         }
 
-        profile.pinned.retain(|s| s != &subject);
+        profile.remove_pinned(&subject);
 
         ProfileResponse::from(profiles().update(caller(), profile).await?).to_result()
     }
@@ -195,7 +203,7 @@ impl ProfileCalls {
 
         let mut subjects = vec![];
 
-        for s in profile.pinned.iter() {
+        for s in profile.references.pinned.iter() {
             if s.get_type() == subject {
                 subjects.push(Self::get_subject_response_by_subject(s).await);
             }
@@ -208,21 +216,21 @@ impl ProfileCalls {
         // Remove the friend from the caller profile
         let (_, mut caller_profile) = profiles().get(caller()).await?;
 
-        if !caller_profile.relations.contains_key(&principal) {
+        if !caller_profile.references.relations.contains_key(&principal) {
             return Err(ApiError::not_found().add_message("Friend does not exist"));
         }
 
-        caller_profile.relations.remove(&principal);
+        caller_profile.references.relations.remove(&principal);
         let updated_caller_profile = profiles().update(caller(), caller_profile).await?;
 
         let (_, mut friend_profile) = profiles().get(principal).await?;
 
         // Remove the caller from the friend profile
-        if !friend_profile.relations.contains_key(&caller()) {
+        if !friend_profile.references.relations.contains_key(&caller()) {
             return Err(ApiError::not_found().add_message("Friend does not exist"));
         }
 
-        friend_profile.relations.remove(&caller());
+        friend_profile.references.relations.remove(&caller());
 
         profiles().update(principal, friend_profile).await?;
 
@@ -234,6 +242,7 @@ impl ProfileCalls {
         let (_, mut caller_profile) = profiles().get(caller()).await?;
 
         caller_profile
+            .references
             .relations
             .insert(principal, RelationType::Blocked.to_string());
 
@@ -242,8 +251,8 @@ impl ProfileCalls {
         let (_, mut friend_profile) = profiles().get(principal).await?;
 
         // In case the friend has the caller as a friend, remove it
-        if friend_profile.relations.contains_key(&caller()) {
-            friend_profile.relations.remove(&caller());
+        if friend_profile.references.relations.contains_key(&caller()) {
+            friend_profile.references.relations.remove(&caller());
             let _ = profiles().update(principal, friend_profile).await?;
         }
 
@@ -254,11 +263,12 @@ impl ProfileCalls {
         let (_, mut caller_profile) = profiles().get(caller()).await?;
 
         if caller_profile
+            .references
             .relations
             .get(&principal)
             .is_some_and(|data| data == &RelationType::Blocked.to_string())
         {
-            caller_profile.relations.remove(&principal);
+            caller_profile.references.relations.remove(&principal);
             let updated_profile = profiles().update(caller(), caller_profile).await?;
             return ProfileResponse::from(updated_profile).to_result();
         }
@@ -270,6 +280,7 @@ impl ProfileCalls {
         let (_, profile) = profiles().get(caller()).await?;
 
         let resp = profile
+            .references
             .relations
             .iter()
             .filter_map(|(principal, r)| {
@@ -294,33 +305,42 @@ impl ProfileCalls {
     pub async fn approve_code_of_conduct(version: u64) -> CanisterResult<bool> {
         let (_, mut profile) = profiles().get(caller()).await?;
 
-        profile.code_of_conduct = Some(DocumentDetails::new(version, time()));
+        profile.documents.code_of_conduct = Some(DocumentDetails::new(version, time()));
         Ok(profiles().update(caller(), profile).await.is_ok())
     }
 
     pub async fn approve_privacy_policy(version: u64) -> CanisterResult<bool> {
         let (_, mut profile) = profiles().get(caller()).await?;
 
-        profile.privacy_policy = Some(DocumentDetails::new(version, time()));
+        profile.documents.privacy_policy = Some(DocumentDetails::new(version, time()));
         Ok(profiles().update(caller(), profile).await.is_ok())
     }
 
     pub async fn approve_terms_of_service(version: u64) -> CanisterResult<bool> {
         let (_, mut profile) = profiles().get(caller()).await?;
 
-        profile.terms_of_service = Some(DocumentDetails::new(version, time()));
+        profile.documents.terms_of_service = Some(DocumentDetails::new(version, time()));
         Ok(profiles().update(caller(), profile).await.is_ok())
     }
 
     pub async fn get_subject_response_by_subject(subject: &Subject) -> SubjectResponse {
         match subject.clone() {
-            // Subject::Group(id) => SubjectResponse::Group(groups().get(id).await.ok()),
-            // Subject::Event(id) => SubjectResponse::Event(events().get(id).await.ok()),
+            Subject::Group(id) => SubjectResponse::Group(groups().get(id).await.ok()),
+            Subject::Event(id) => SubjectResponse::Event(events().get(id).await.ok()),
             Subject::Profile(id) => SubjectResponse::Profile(profiles().get(id).await.ok()),
-            // Subject::Member(id) => SubjectResponse::Member(MemberStore::get(id).ok()),
-            // Subject::Attendee(id) => SubjectResponse::Attendee(AttendeeStore::get(id).ok()),
-            Subject::None => SubjectResponse::None,
-            _ => SubjectResponse::None, // TODO: FIX ME NEED TO DISCUSS
+            Subject::Member(id) => {
+                if let Ok((_, profile)) = profiles().get(id).await {
+                    return SubjectResponse::Member(Some((id, profile.references.groups)));
+                }
+                SubjectResponse::Member(None)
+            }
+            Subject::Attendee(id) => {
+                if let Ok((_, profile)) = profiles().get(id).await {
+                    return SubjectResponse::Attendee(Some((id, profile.references.events)));
+                }
+                SubjectResponse::Attendee(None)
+            }
+            _ => SubjectResponse::None,
         }
     }
 

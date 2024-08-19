@@ -14,7 +14,7 @@ use candid::Principal;
 use catalyze_shared::{
     friend_request::FriendRequestResponse,
     helpers::guards::is_not_anonymous,
-    profile::{PostProfile, ProfileResponse, UpdateProfile},
+    profile_with_refs::{PostProfile, ProfileResponse, UpdateProfile},
     relation_type::RelationType,
     subject::{Subject, SubjectResponse, SubjectType},
     wallet::PostWallet,

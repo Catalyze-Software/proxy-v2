@@ -35,7 +35,7 @@ use catalyze_shared::{
         paged_response::PagedResponse,
         permission::{Permission, PermissionActionType, PermissionType, PostPermission},
         privacy::{GatedType, NeuronGatedRules, TokenGated},
-        profile::ProfileResponse,
+        profile_with_refs::ProfileResponse,
         relation_type::RelationType,
         role::Role,
         subject::{Subject, SubjectType},
@@ -79,9 +79,12 @@ impl GroupCalls {
         GroupValidation::validate_group_privacy(&caller(), account_identifier, &post_group).await?;
 
         // Get the member and add the group to the member
-        let (_, member) = groups().get_member(caller()).await?;
+        let owned = groups()
+            .filter(GroupFilter::Owner(caller()).into())
+            .await?
+            .len();
 
-        if member.get_owned().len() >= USER_GROUP_CREATION_LIMIT {
+        if owned >= USER_GROUP_CREATION_LIMIT {
             return Err(ApiError::bad_request().add_message(
                 format!("You can only own {} groups", USER_GROUP_CREATION_LIMIT).as_str(),
             ));
@@ -92,6 +95,8 @@ impl GroupCalls {
 
         // notify the reward buffer store that the group member count has changed
         RewardBufferStore::notify_group_member_count_changed(new_group_id);
+
+        Self::add_group_to_profile(new_group_id, caller()).await?;
 
         GroupResponse::from_result(Ok((new_group_id, new_group)), None)
     }
@@ -251,6 +256,8 @@ impl GroupCalls {
                     profile.remove_pinned(&subject);
                 }
 
+                profile.remove_group(group_id);
+
                 (*id, profile.clone())
             })
             .collect::<Vec<_>>();
@@ -380,6 +387,8 @@ impl GroupCalls {
         group.add_member(caller());
         groups().update(group_id, group).await?;
 
+        Self::add_group_to_profile(group_id, caller()).await?;
+
         Ok(JoinedMemberResponse::new(caller(), member, group_id))
     }
 
@@ -407,6 +416,7 @@ impl GroupCalls {
             return Err(ApiError::bad_request().add_message("Group is invite only"));
         }
 
+        // TODO: DISCUSS OVERHERE
         let (_, mut invitee_member) = groups().get_member(invitee_principal).await?;
 
         // we don't have the `invitee_member.notification_id` at this point, not sure if needed
@@ -428,6 +438,8 @@ impl GroupCalls {
         groups().update(group_id, group).await?;
 
         invitee_member.add_invite(group_id, InviteType::OwnerRequest, Some(notification_id));
+
+        Self::add_group_to_profile(group_id, invitee_principal).await?;
 
         Ok(invitee_member)
     }
@@ -464,6 +476,7 @@ impl GroupCalls {
             group.convert_invite_to_member(principal);
         } else {
             group.remove_invite(principal);
+            Self::remove_group_from_profile(group_id, principal).await?;
         }
 
         groups().update(group_id, group).await?;
@@ -472,6 +485,7 @@ impl GroupCalls {
         RewardBufferStore::notify_group_member_count_changed(group_id);
 
         // Add the group to the member and set the role
+        // TODO: DISCUSS OVERHERE
         groups()
             .get_member(principal)
             .await
@@ -498,6 +512,7 @@ impl GroupCalls {
             group.convert_invite_to_member(principal);
         } else {
             group.remove_invite(principal);
+            Self::remove_group_from_profile(group_id, principal).await?;
         }
 
         // TODO: not sure that we still need to use this type
@@ -521,6 +536,7 @@ impl GroupCalls {
         // notify the reward buffer store that the group member count has changed
         RewardBufferStore::notify_group_member_count_changed(group_id);
 
+        // TODO: DISCUSS OVERHERE
         groups()
             .get_member(principal)
             .await
@@ -560,6 +576,7 @@ impl GroupCalls {
         )
         .await?;
 
+        // TODO: DISCUSS OVERHERE
         let member = groups().get_member(member_principal).await?.1;
 
         NotificationCalls::notification_change_group_member_role(
@@ -603,6 +620,7 @@ impl GroupCalls {
         )
         .await?;
 
+        // TODO: DISCUSS OVERHERE
         groups()
             .get_member(member_principal)
             .await
@@ -613,6 +631,7 @@ impl GroupCalls {
         principal: Principal,
         group_id: u64,
     ) -> CanisterResult<JoinedMemberResponse> {
+        // TODO: DISCUSS OVERHERE
         let (_, member) = groups().get_member(principal).await?;
 
         // Check if the member is in the group
@@ -626,6 +645,7 @@ impl GroupCalls {
     pub async fn get_groups_for_members(
         principals: Vec<Principal>,
     ) -> CanisterResult<Vec<JoinedMemberResponse>> {
+        // TODO: DISCUSS OVERHERE
         let members = groups().get_many_members(principals).await?;
 
         let mut result: Vec<JoinedMemberResponse> = vec![];
@@ -708,6 +728,7 @@ impl GroupCalls {
         permission_type: PermissionType,
         permission_action_type: PermissionActionType,
     ) -> CanisterResult<Vec<JoinedMemberResponse>> {
+        // TODO: DISCUSS OVERHERE
         Ok(Self::get_group_members(group_id)?
             .into_iter()
             .filter(|m| {
@@ -723,6 +744,7 @@ impl GroupCalls {
     }
 
     pub async fn get_self_member() -> CanisterResult<Member> {
+        // TODO: DISCUSS OVERHERE
         groups()
             .get_member(caller())
             .await
@@ -730,79 +752,75 @@ impl GroupCalls {
     }
 
     pub async fn get_self_groups() -> CanisterResult<Vec<GroupResponse>> {
-        let (_, member) = groups().get_member(caller()).await?;
-        let group_ids = member.get_multiple_joined().iter().map(|g| g.0).collect();
-        let groups = groups().get_many(group_ids).await?;
-
-        Ok(groups
+        let (_, profile) = profiles().get(caller()).await?;
+        let groups = groups().get_many(profile.references.groups).await?;
+        let resp = groups
             .into_iter()
+            .filter(|(_, group)| group.is_member(caller()))
             .map(|(id, group)| GroupResponse::new(id, group, None))
-            .collect())
+            .collect();
+
+        Ok(resp)
     }
 
     pub async fn get_member_roles(
         principal: Principal,
         group_id: u64,
     ) -> CanisterResult<Vec<String>> {
-        let (_, member) = groups().get_member(principal).await?;
-        Ok(member.get_roles(group_id))
-    }
+        let (_, group) = groups().get(group_id).await?;
+        let member = group.members.members.get(&principal);
 
-    pub fn leave_group(group_id: u64) -> CanisterResult<()> {
-        let (_, mut member) = MemberStore::get(caller())?;
-
-        // Check if the member is in the group
-        if !member.is_group_joined(&group_id) {
+        if member.is_none() {
             return Err(ApiError::bad_request().add_message("Member is not in the group"));
         }
 
-        let (_, group) = GroupStore::get(group_id)?;
+        Ok(member.unwrap().roles.clone())
+    }
+
+    pub async fn leave_group(group_id: u64) -> CanisterResult<()> {
+        let (_, mut group) = groups().get(group_id).await?;
+
+        // Check if the member is in the group
+        if !group.is_member(caller()) {
+            return Err(ApiError::bad_request().add_message("Member is not in the group"));
+        }
 
         if group.owner == caller() {
             return Err(ApiError::bad_request().add_message("Owner cannot leave the group"));
         }
 
         // Remove the group from the member
-        member.remove_joined(group_id);
+        group.remove_member(caller());
+        groups().update(group_id, group).await?;
 
-        MemberStore::update(caller(), member)?;
+        Self::remove_group_from_profile(group_id, caller()).await?;
 
-        let (id, mut member_collection) = GroupMemberStore::get(group_id)?;
-
-        NotificationCalls::notification_leave_group(
-            member_collection.get_member_principals(),
-            group_id,
-        );
-
-        member_collection.remove_member(&caller());
-        GroupMemberStore::update(id, member_collection)?;
+        NotificationCalls::notification_leave_group(group.get_members(), group_id);
 
         Ok(())
     }
 
-    pub fn remove_invite(group_id: u64) -> CanisterResult<()> {
-        let (_, mut member) = MemberStore::get(caller())?;
+    pub async fn remove_invite(group_id: u64) -> CanisterResult<()> {
+        let (_, mut group) = groups().get(group_id).await?;
 
         // Check if the member is in the group
-        if !member.is_group_invited(&group_id) {
+        if !group.is_invited(caller()) {
             return Err(ApiError::bad_request().add_message("Member is not invited to the group"));
         }
 
         // Remove the group from the member
-        member.remove_invite(group_id);
+        group.remove_invite(caller());
+        groups().update(group_id, group).await?;
 
-        MemberStore::update(caller(), member)?;
-
-        let (id, mut member_collection) = GroupMemberStore::get(group_id)?;
-        member_collection.remove_invite(&caller());
-        GroupMemberStore::update(id, member_collection)?;
+        Self::remove_group_from_profile(group_id, caller()).await?;
 
         Ok(())
     }
 
-    pub fn get_banned_group_members(group_id: u64) -> Vec<Principal> {
-        if let Ok((_, group)) = GroupStore::get(group_id) {
+    pub async fn get_banned_group_members(group_id: u64) -> Vec<Principal> {
+        if let Ok((_, group)) = groups().get(group_id).await {
             return group
+                .members
                 .special_members
                 .into_iter()
                 .filter(|m| m.1 == RelationType::Blocked.to_string())
@@ -813,23 +831,24 @@ impl GroupCalls {
         Default::default()
     }
 
-    pub fn remove_member_from_group(principal: Principal, group_id: u64) -> CanisterResult<()> {
-        let (_, mut member) = MemberStore::get(principal)?;
+    pub async fn remove_member_from_group(
+        principal: Principal,
+        group_id: u64,
+    ) -> CanisterResult<()> {
+        let (_, mut group) = groups().get(group_id).await?;
 
         // Check if the member is in the group
-        if !member.is_group_joined(&group_id) {
+        if !group.is_member(principal) {
             return Err(ApiError::bad_request().add_message("Member is not in the group"));
         }
 
         // Remove the group from the member
-        member.remove_joined(group_id);
+        group.remove_member(principal);
+        groups().update(group_id, group).await?;
 
-        MemberStore::update(principal, member.clone())?;
+        Self::remove_group_from_profile(group_id, principal).await?;
 
-        let (id, mut member_collection) = GroupMemberStore::get(group_id)?;
-        member_collection.remove_member(&principal);
-        GroupMemberStore::update(id, member_collection)?;
-
+        // TODO: DISCUSS OVERHERE
         NotificationCalls::notification_remove_group_member(
             JoinedMemberResponse::new(principal, member, group_id),
             Self::get_higher_role_members(group_id),
@@ -838,34 +857,34 @@ impl GroupCalls {
         Ok(())
     }
 
-    pub fn remove_member_invite_from_group(
+    pub async fn remove_member_invite_from_group(
         principal: Principal,
         group_id: u64,
     ) -> CanisterResult<()> {
-        let (_, mut member) = MemberStore::get(principal)?;
+        let (_, mut group) = groups().get(group_id).await?;
 
         // Check if the member is in the group
-        if !member.is_group_invited(&group_id) {
+        if !group.is_invited(principal) {
             return Err(ApiError::bad_request().add_message("Member is not invited to the group"));
         }
 
+        // Remove the group from the member
+        group.remove_member(principal);
+        groups().update(group_id, group).await?;
+
+        Self::remove_group_from_profile(group_id, principal).await?;
+
+        // TODO: DISCUSS OVERHERE
         NotificationCalls::notification_remove_group_invite(
             InviteMemberResponse::new(principal, member.clone(), group_id),
             Self::get_higher_role_members(group_id),
         );
 
-        // Remove the group from the member
-        member.remove_invite(group_id);
-        let _ = MemberStore::update(principal, member.clone())?;
-
-        let (_, mut member_collection) = GroupMemberStore::get(group_id)?;
-        member_collection.remove_invite(&principal);
-        GroupMemberStore::update(group_id, member_collection)?;
-
         Ok(())
     }
 
     pub fn get_group_invites(group_id: u64) -> CanisterResult<Vec<InviteMemberResponse>> {
+        // TODO: DISCUSS OVERHERE
         let (_, member_collection) = GroupMemberStore::get(group_id)?;
         let members = MemberStore::get_many(member_collection.get_invite_principals());
 
@@ -881,6 +900,7 @@ impl GroupCalls {
     pub async fn get_group_invites_with_profiles(
         group_id: u64,
     ) -> CanisterResult<Vec<(InviteMemberResponse, ProfileResponse)>> {
+        // TODO: DISCUSS OVERHERE
         let (_, member_collection) = GroupMemberStore::get(group_id)?;
         let members = MemberStore::get_many(member_collection.get_invite_principals());
 
@@ -913,78 +933,26 @@ impl GroupCalls {
         Ok(boost)
     }
 
-    async fn get_group_caller_data(group_id: u64) -> Option<GroupCallerData> {
-        let profile = profiles().get(caller()).await;
-        let member_resp = MemberStore::get(caller());
-        Self::get_group_caller_data_sync(group_id, profile, member_resp)
-    }
-
-    fn get_group_caller_data_sync(
-        group_id: u64,
-        profile_resp: CanisterResult<ProfileEntry>,
-        member_resp: CanisterResult<(Principal, Member)>,
-    ) -> Option<GroupCallerData> {
-        let is_starred = profile_resp
-            .clone()
-            .is_ok_and(|(_, profile)| profile.is_starred(&Subject::Group(group_id)));
-
-        let is_pinned =
-            profile_resp.is_ok_and(|(_, profile)| profile.is_pinned(&Subject::Group(group_id)));
-
-        let mut joined: Option<JoinedMemberResponse> = None;
-        let mut invite: Option<InviteMemberResponse> = None;
-
-        if let Ok((_, member)) = member_resp {
-            if member.is_group_joined(&group_id) {
-                joined = Some(JoinedMemberResponse::new(
-                    caller(),
-                    member.clone(),
-                    group_id,
-                ));
-            };
-
-            if member.is_group_invited(&group_id) {
-                invite = Some(InviteMemberResponse::new(caller(), member, group_id));
-            }
-        }
-
-        Some(GroupCallerData::new(joined, invite, is_starred, is_pinned))
-    }
-
-    pub fn get_group_count_data(group_id: &u64) -> (u64, u64) {
-        let member_count = match GroupMemberStore::get(*group_id) {
-            Ok((_, member_collection)) => member_collection.get_member_count(),
-            Err(_) => 0,
-        };
-
-        let event_count = match GroupEventsStore::get(*group_id) {
-            Ok((_, event_collection)) => event_collection.get_events_count(),
-            Err(_) => 0,
-        };
-
-        (member_count, event_count)
-    }
-
-    pub fn add_special_member_to_group(
+    pub async fn add_special_member_to_group(
         group_id: u64,
         principal: Principal,
         relation: RelationType,
     ) -> CanisterResult<()> {
-        let (_, mut group) = GroupStore::get(group_id)?;
+        let (_, mut group) = groups().get(group_id).await?;
 
         group.add_special_member(principal, relation);
-        GroupStore::update(group_id, group)?;
+        groups().update(group_id, group).await?;
         Ok(())
     }
 
-    pub fn remove_special_member_from_group(
+    pub async fn remove_special_member_from_group(
         group_id: u64,
         principal: Principal,
     ) -> CanisterResult<()> {
-        let (_, mut group) = GroupStore::get(group_id)?;
+        let (_, mut group) = groups().get(group_id).await?;
 
-        group.remove_special_member_from_group(principal);
-        GroupStore::update(group_id, group)?;
+        group.remove_special_member(principal);
+        groups().update(group_id, group).await?;
         Ok(())
     }
 
@@ -998,6 +966,88 @@ impl GroupCalls {
         .iter()
         .map(|m| m.principal)
         .collect()
+    }
+
+    fn has_pending_join_request(group: GroupWithMembers, principal: Principal) -> bool {
+        if let Some(invite) = group.members.invites.get(&principal) {
+            return invite.invite_type == InviteType::UserRequest;
+        }
+        false
+    }
+
+    async fn add_group_to_profile(group_id: u64, principal: Principal) -> CanisterResult<()> {
+        let (_, mut profile) = profiles().get(principal).await?;
+        if !profile.is_group_member(group_id) {
+            profile.add_group(group_id);
+            profiles().update(principal, profile).await?;
+        }
+
+        Ok(())
+    }
+
+    async fn remove_group_from_profile(group_id: u64, principal: Principal) -> CanisterResult<()> {
+        let (_, mut profile) = profiles().get(principal).await?;
+        if profile.is_group_member(group_id) {
+            profile.remove_group(group_id);
+            profiles().update(principal, profile).await?;
+        }
+
+        Ok(())
+    }
+
+    pub fn has_pending_invite(group: GroupWithMembers, principal: Principal) -> bool {
+        if let Some(invite) = group.members.invites.get(&principal) {
+            return invite.invite_type == InviteType::OwnerRequest;
+        }
+        false
+    }
+}
+
+impl GroupValidation {
+    pub fn validate_post_group(post_group: PostGroup) -> CanisterResult<()> {
+        let validator_fields = vec![
+            ValidateField(
+                ValidationType::StringLength(post_group.name, 3, 64),
+                "name".to_string(),
+            ),
+            ValidateField(
+                ValidationType::StringLength(post_group.description, 0, 2500),
+                "description".to_string(),
+            ),
+            ValidateField(
+                ValidationType::StringLength(post_group.website, 0, 200),
+                "website".to_string(),
+            ),
+            ValidateField(
+                ValidationType::Count(post_group.tags.len(), 0, 25),
+                "tags".to_string(),
+            ),
+        ];
+
+        Validator::new(validator_fields).validate()
+    }
+
+    pub fn validate_update_group(update_group: UpdateGroup) -> CanisterResult<()> {
+        let validator_fields = vec![
+            ValidateField(
+                ValidationType::StringLength(update_group.name, 3, 64),
+                "name".to_string(),
+            ),
+            ValidateField(
+                ValidationType::StringLength(update_group.description, 0, 2500),
+                "description".to_string(),
+            ),
+            ValidateField(
+                ValidationType::StringLength(update_group.website, 0, 200),
+                "website".to_string(),
+            ),
+            ValidateField(
+                ValidationType::Count(update_group.tags.len(), 0, 25),
+                "tags".to_string(),
+            ),
+        ];
+
+        Validator::new(validator_fields).validate()
     }
 
     async fn validate_member_join(
@@ -1124,68 +1174,6 @@ impl GroupCalls {
         GroupMemberStore::update(group_id, member_collection)?;
 
         validated_member
-    }
-
-    fn has_pending_join_request(group: GroupWithMembers, principal: Principal) -> bool {
-        if let Some(invite) = group.members.invites.get(&principal) {
-            return invite.invite_type == InviteType::UserRequest;
-        }
-        false
-    }
-
-    pub fn has_pending_invite(group: GroupWithMembers, principal: Principal) -> bool {
-        if let Some(invite) = group.members.invites.get(&principal) {
-            return invite.invite_type == InviteType::OwnerRequest;
-        }
-        false
-    }
-}
-
-impl GroupValidation {
-    pub fn validate_post_group(post_group: PostGroup) -> CanisterResult<()> {
-        let validator_fields = vec![
-            ValidateField(
-                ValidationType::StringLength(post_group.name, 3, 64),
-                "name".to_string(),
-            ),
-            ValidateField(
-                ValidationType::StringLength(post_group.description, 0, 2500),
-                "description".to_string(),
-            ),
-            ValidateField(
-                ValidationType::StringLength(post_group.website, 0, 200),
-                "website".to_string(),
-            ),
-            ValidateField(
-                ValidationType::Count(post_group.tags.len(), 0, 25),
-                "tags".to_string(),
-            ),
-        ];
-
-        Validator::new(validator_fields).validate()
-    }
-
-    pub fn validate_update_group(update_group: UpdateGroup) -> CanisterResult<()> {
-        let validator_fields = vec![
-            ValidateField(
-                ValidationType::StringLength(update_group.name, 3, 64),
-                "name".to_string(),
-            ),
-            ValidateField(
-                ValidationType::StringLength(update_group.description, 0, 2500),
-                "description".to_string(),
-            ),
-            ValidateField(
-                ValidationType::StringLength(update_group.website, 0, 200),
-                "website".to_string(),
-            ),
-            ValidateField(
-                ValidationType::Count(update_group.tags.len(), 0, 25),
-                "tags".to_string(),
-            ),
-        ];
-
-        Validator::new(validator_fields).validate()
     }
 
     async fn validate_group_privacy(

@@ -8,7 +8,7 @@ use super::{
 use candid::Principal;
 use catalyze_shared::{
     api_error::ApiError,
-    attendee::{Attendee, AttendeeInvite, InviteAttendeeResponse, JoinedAttendeeResponse},
+    attendee::{AttendeeInvite, InviteAttendeeResponse, JoinedAttendeeResponse},
     boosted::{Boost, BoostedFilter},
     date_range::DateRange,
     event_with_attendees::{
@@ -18,7 +18,7 @@ use catalyze_shared::{
     invite_type::InviteType,
     paged_response::PagedResponse,
     privacy::PrivacyType,
-    profile::ProfileResponse,
+    profile_with_refs::ProfileResponse,
     subject::{Subject, SubjectType},
     time_helper::hours_to_nanoseconds,
     CanisterResult, StorageClient, StorageClientInsertable,
@@ -27,20 +27,25 @@ use ic_cdk::{api::time, caller};
 
 pub struct EventCalls;
 
+pub type NewAttendee = (Principal, Vec<u64>);
+
 impl EventCalls {
     pub async fn add_event(post_event: PostEvent) -> CanisterResult<EventResponse> {
         let (new_event_id, new_event) = events()
             .insert(EventWithAttendees::from(post_event.clone()))
             .await?;
 
-        let group_id = new_event
-            .group_id
-            .expect("Group ID is required for private events"); // TODO: FIX MB
+        let group_id = new_event.ensured_group_id()?;
 
         let (_, mut group) = groups().get(group_id).await?;
         group.add_event(new_event_id);
 
         groups().update(group_id, group).await?;
+
+        let (_, mut profile) = profiles().get(caller()).await?;
+        profile.add_event(new_event_id);
+
+        profiles().update(caller(), profile).await?;
 
         Ok(EventResponse::new(
             new_event_id,
@@ -164,13 +169,12 @@ impl EventCalls {
 
         let future = events
             .iter()
-            // TODO: WHY DATES ARE VEC?
-            .filter(|(_, event)| event.dates[0].is_after_start_date(now))
+            .filter(|(_, event)| event.get_total_date_range().is_after_start_date(now))
             .count() as u64;
 
         let past = events
             .iter()
-            .filter(|(_, event)| event.dates[0].is_before_start_date(now))
+            .filter(|(_, event)| event.get_total_date_range().is_before_start_date(now))
             .count() as u64;
 
         let starred = ProfileCalls::get_starred_by_subject(SubjectType::Event)
@@ -214,11 +218,13 @@ impl EventCalls {
                     profile.remove_pinned(&subject);
                 }
 
+                profile.remove_event(id);
+
                 (*profile_id, profile.clone())
             })
             .collect::<Vec<_>>();
 
-        profiles().update_many(profile_list).await.unwrap();
+        profiles().update_many(profile_list).await?;
 
         let (_, mut group) = groups().get(group_id).await?;
         group.remove_event(id);
@@ -244,9 +250,7 @@ impl EventCalls {
     pub async fn join_event(event_id: u64) -> CanisterResult<JoinedAttendeeResponse> {
         let (_, mut event) = events().get(event_id).await?;
 
-        let group_id = event
-            .group_id
-            .expect("Group ID is required for private events"); // TODO: Why this option?
+        let group_id = event.ensured_group_id()?;
         let member = caller();
 
         match event.privacy.privacy_type {
@@ -280,6 +284,12 @@ impl EventCalls {
         }
 
         events().update(event_id, event).await?;
+        let (_, mut profile) = profiles().get(member).await?;
+
+        if !profile.is_event_attendee(event_id) {
+            profile.add_event(event_id);
+            profiles().update(member, profile).await?;
+        }
 
         Ok(JoinedAttendeeResponse::new(event_id, group_id, member))
     }
@@ -307,6 +317,13 @@ impl EventCalls {
         );
 
         events().update(id, event).await?;
+
+        let (_, mut profile) = profiles().get(attendee_principal).await?;
+
+        if !profile.is_event_attendee(id) {
+            profile.add_event(id);
+            profiles().update(attendee_principal, profile).await?;
+        }
 
         Ok(invite_attendee_response)
     }
@@ -342,7 +359,7 @@ impl EventCalls {
     pub async fn accept_or_decline_owner_request_event_invite(
         id: u64,
         accept: bool,
-    ) -> CanisterResult<Attendee> {
+    ) -> CanisterResult<NewAttendee> {
         let (_, event) = events().get(id).await?;
         let attendee_principal = caller();
 
@@ -361,18 +378,15 @@ impl EventCalls {
         )
         .await?;
 
-        events()
-            .get_attendee(attendee_principal)
-            .await
-            .map(|(_, x)| x)
+        let (_, profile) = profiles().get(attendee_principal).await?;
+
+        Ok((attendee_principal, profile.get_event_ids()))
     }
 
     pub async fn get_event_attendees(event_id: u64) -> CanisterResult<Vec<JoinedAttendeeResponse>> {
         let (_, event) = events().get(event_id).await?;
 
-        let group_id = event
-            .group_id
-            .expect("Group ID is required for private events"); // TODO: FIX MB
+        let group_id = event.ensured_group_id()?;
 
         let response = event
             .get_members()
@@ -430,9 +444,7 @@ impl EventCalls {
         event_id: u64,
     ) -> CanisterResult<Vec<(ProfileResponse, InviteAttendeeResponse)>> {
         let (_, event) = events().get(event_id).await?;
-        let group_id = event
-            .group_id
-            .expect("Group ID is required for private events"); // TODO: FIX MB
+        let group_id = event.ensured_group_id()?;
 
         let profiles = profiles()
             .get_many(event.get_invites())
@@ -455,14 +467,14 @@ impl EventCalls {
         Ok(profiles)
     }
 
-    pub async fn get_self_attendee() -> CanisterResult<Attendee> {
-        let (_, attendee) = events().get_attendee(caller()).await?;
-        Ok(attendee)
+    pub async fn get_self_attendee() -> CanisterResult<NewAttendee> {
+        let (_, profile) = profiles().get(caller()).await?;
+        Ok((caller(), profile.get_event_ids()))
     }
 
     pub async fn get_self_events() -> CanisterResult<Vec<EventResponse>> {
-        let (_, attendee) = events().get_attendee(caller()).await?;
-        Self::get_events_by_id(attendee.get_multiple_joined().iter().map(|g| g.0).collect()).await
+        let (_, profile) = profiles().get(caller()).await?;
+        Self::get_events_by_id(profile.get_event_ids()).await
     }
 
     pub async fn get_events_by_id(event_ids: Vec<u64>) -> CanisterResult<Vec<EventResponse>> {
@@ -488,30 +500,41 @@ impl EventCalls {
     pub async fn get_attending_from_principal(
         principal: Principal,
     ) -> CanisterResult<Vec<JoinedAttendeeResponse>> {
-        let (_, attendee) = events().get_attendee(caller()).await?;
+        let (_, profile) = profiles().get(principal).await?;
 
-        let response = attendee
-            .joined
-            .into_iter()
-            .map(|(event_id, join)| JoinedAttendeeResponse::new(event_id, join.group_id, principal))
-            .collect();
+        let mut response = vec![];
+
+        for (id, event) in events().get_many(profile.get_event_ids()).await? {
+            if !event.is_attendee(principal) {
+                continue;
+            }
+
+            let group_id = event.ensured_group_id()?;
+            let attendee = JoinedAttendeeResponse::new(id, group_id, principal);
+            response.push(attendee);
+        }
 
         Ok(response)
     }
 
     pub async fn leave_event(event_id: u64) -> CanisterResult<()> {
         let (_, mut event) = events().get(event_id).await?;
+        let user_id = caller();
 
-        if !event.is_attendee(caller()) {
+        if !event.is_attendee(user_id) {
             return Err(ApiError::not_found());
         }
 
-        if event.owner == caller() {
+        if event.owner == user_id {
             return Err(ApiError::bad_request().add_message("Owner cannot leave event"));
         }
 
-        event.remove_attendee(caller());
+        event.remove_attendee(user_id);
         events().update(event_id, event).await?;
+
+        let (_, mut profile) = profiles().get(user_id).await?;
+        profile.remove_event(event_id);
+        profiles().update(user_id, profile).await?;
 
         Ok(())
     }
@@ -530,6 +553,12 @@ impl EventCalls {
         event.remove_invite(user_id);
         events().update(event_id, event).await?;
 
+        let (_, mut profile) = profiles().get(user_id).await?;
+        if profile.is_event_attendee(event_id) {
+            profile.remove_event(event_id);
+            profiles().update(user_id, profile).await?;
+        }
+
         Ok(())
     }
 
@@ -545,9 +574,13 @@ impl EventCalls {
         event.remove_attendee(attendee_principal);
         events().update(event_id, event.clone()).await?;
 
-        let group_id = event
-            .group_id
-            .expect("Group ID is required for private events"); // TODO: FIX MB
+        let group_id = event.ensured_group_id()?;
+
+        let (_, mut profile) = profiles().get(attendee_principal).await?;
+        if profile.is_event_attendee(event_id) {
+            profile.remove_event(event_id);
+            profiles().update(attendee_principal, profile).await?;
+        }
 
         NotificationCalls::notification_remove_event_attendee(
             JoinedAttendeeResponse::new(event_id, group_id, attendee_principal),
@@ -573,13 +606,13 @@ impl EventCalls {
 
         if let Some(invite) = event.attendees.invites.get(&attendee_principal) {
             if let Some(notification_id) = invite.notification_id {
+                let group_id = event.ensured_group_id()?;
+
                 NotificationCalls::notification_remove_event_invite(
                     notification_id,
                     InviteAttendeeResponse::new(
                         event_id,
-                        event
-                            .group_id
-                            .expect("Group ID is required for private events"), // TODO: FIX MB
+                        group_id,
                         attendee_principal,
                         invite.invite_type.clone(),
                     ),
@@ -589,6 +622,12 @@ impl EventCalls {
 
         event.remove_invite(user_id);
         events().update(event_id, event).await?;
+
+        let (_, mut profile) = profiles().get(user_id).await?;
+        if profile.is_event_attendee(event_id) {
+            profile.remove_event(event_id);
+            profiles().update(user_id, profile).await?;
+        }
 
         Ok(())
     }
@@ -645,14 +684,18 @@ impl EventCalls {
             event.convert_invite_to_attendee(attendee_principal);
         } else {
             event.remove_invite(attendee_principal);
+            let (_, mut profile) = profiles().get(attendee_principal).await?;
+
+            if profile.is_event_attendee(id) {
+                profile.remove_event(id);
+                profiles().update(attendee_principal, profile).await?;
+            }
         }
 
         events().update(id, event.clone()).await?;
 
         let attendee_invite = AttendeeInvite {
-            group_id: event
-                .group_id
-                .expect("Group ID is required for private events"), // TODO: FIX MB
+            group_id: event.ensured_group_id()?,
             invite_type: invite_type.clone(),
             notification_id: invite.notification_id,
             updated_at: time(),

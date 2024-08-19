@@ -1,14 +1,16 @@
 use super::storage_api::PROFILE_CANISTER;
 use candid::Principal;
 use catalyze_shared::{
-    profile::{Profile, ProfileFilter, ProfileSort},
+    profile_with_refs::{ProfileFilter, ProfileSort, ProfileWithRefs},
     StorageClient, StorageClientInsertableByKey,
 };
 
 #[derive(Default)]
 pub struct ProfileStorageClient;
 
-impl StorageClient<Principal, Profile, ProfileFilter, ProfileSort> for ProfileStorageClient {
+impl StorageClient<Principal, ProfileWithRefs, ProfileFilter, ProfileSort>
+    for ProfileStorageClient
+{
     fn name(&self) -> String {
         "profile".to_string()
     }
@@ -18,12 +20,12 @@ impl StorageClient<Principal, Profile, ProfileFilter, ProfileSort> for ProfileSt
     }
 }
 
-impl StorageClientInsertableByKey<Principal, Profile, ProfileFilter, ProfileSort>
+impl StorageClientInsertableByKey<Principal, ProfileWithRefs, ProfileFilter, ProfileSort>
     for ProfileStorageClient
 {
 }
 
 pub fn profiles(
-) -> impl StorageClientInsertableByKey<Principal, Profile, ProfileFilter, ProfileSort> {
+) -> impl StorageClientInsertableByKey<Principal, ProfileWithRefs, ProfileFilter, ProfileSort> {
     ProfileStorageClient
 }

@@ -24,9 +24,10 @@ impl HistoryEventLogic {
 
         let (_, profile) = profiles().get(principal).await?;
 
-        let event = GroupRoleChanged::new(group_id, principal, profile.username, roles, kind)
-            .try_into()
-            .map_err(|e: candid::Error| ApiError::unexpected().add_message(e.to_string()))?;
+        let event =
+            GroupRoleChanged::new(group_id, principal, profile.metadata.username, roles, kind)
+                .try_into()
+                .map_err(|e: candid::Error| ApiError::unexpected().add_message(e.to_string()))?;
 
         let history_canister_id = history_canister().get()?;
         let history_point = get_next_history_point()?;
