@@ -27,7 +27,7 @@ impl BoostCalls {
 
         let tokens = Ledger::validate_transaction(caller(), blockheight).await?;
 
-        if !(blockheight > Self::get_last_block_height()) {
+        if blockheight <= Self::get_last_block_height() {
             return Err(ApiError::bad_request()
                 .add_message("Blockheight is lower than the last blockheight"));
         }
@@ -58,7 +58,9 @@ impl BoostCalls {
         let (new_boost_id, _) = boosteds().insert(boost).await?;
 
         let timer_id = set_timer(Duration::from_secs(seconds), move || {
-            Self::remove_boost(new_boost_id);
+            ic_cdk::spawn(async move {
+                let _ = Self::remove_boost(new_boost_id).await;
+            });
         });
 
         Self::set_timer_id(new_boost_id, timer_id);
@@ -87,7 +89,9 @@ impl BoostCalls {
 
         // Remove the old timer and set a new timer with the updated seconds
         let timer_id = set_timer(Duration::from_secs(new_seconds), move || {
-            boosteds().remove(boost_id);
+            ic_cdk::spawn(async move {
+                let _ = boosteds().remove(boost_id).await;
+            });
         });
 
         Self::set_timer_id(boost_id, timer_id);
@@ -160,7 +164,9 @@ impl BoostCalls {
         for (boost_id, _) in boosts {
             let seconds_left = Self::get_seconds_left_for_boost(boost_id).await?;
             let timer_id = set_timer(Duration::from_secs(seconds_left), move || {
-                Self::remove_boost(boost_id);
+                ic_cdk::spawn(async move {
+                    let _ = Self::remove_boost(boost_id).await;
+                });
             });
 
             Self::set_timer_id(boost_id, timer_id);

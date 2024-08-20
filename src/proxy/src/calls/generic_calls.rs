@@ -2,16 +2,15 @@ use crate::{
     helpers::guards::{is_developer, is_prod_developer},
     logic::{boost_logic::BoostCalls, id_logic::IDLogic, websocket_logic::Websocket},
     storage::{
-        events, groups, history_canister, profiles, reward_canister, FriendRequestStore,
-        LoggerStore, NotificationStore, RewardBufferStore, RewardTimerStore, StorageUpdateable,
-        UserNotificationStore,
+        history_canister, reward_canister, FriendRequestStore, LoggerStore, NotificationStore,
+        RewardBufferStore, RewardTimerStore, StorageUpdateable, UserNotificationStore,
     },
 };
 use candid::Principal;
 use catalyze_shared::{
     api_error::ApiError,
     http_types::{HttpRequest, HttpResponse},
-    CellStorage, StorageClient,
+    CellStorage,
 };
 use ic_cdk::{
     api::{
@@ -22,10 +21,10 @@ use ic_cdk::{
 };
 
 #[post_upgrade]
-pub fn post_upgrade() {
+pub async fn post_upgrade() {
     Websocket::init();
     RewardTimerStore::start();
-    BoostCalls::start_timers_after_upgrade();
+    let _ = BoostCalls::start_timers_after_upgrade().await;
 }
 
 #[pre_upgrade]
@@ -45,65 +44,6 @@ fn icts_name() -> String {
 #[query]
 fn icts_version() -> String {
     env!("CARGO_PKG_VERSION").to_string()
-}
-
-#[query(composite = true, guard = "is_developer")]
-pub async fn _dev_check_member_sync(
-    principal: Principal,
-    group_id: u64,
-) -> ((String, bool), (String, bool)) {
-    let mut member_store_check: (String, bool) = ("MemberStore".to_string(), false);
-    let mut group_member_store_check: (String, bool) = ("GroupMemberStore".to_string(), false);
-
-    if let Ok((_, profile)) = profiles().get(principal).await {
-        member_store_check.1 = profile.is_group_member(group_id);
-    }
-
-    group_member_store_check.1 = match groups().get(group_id).await {
-        Ok((_, group)) => group.is_member(principal),
-        Err(_) => false,
-    };
-
-    (member_store_check, group_member_store_check)
-}
-
-#[query(composite = true, guard = "is_developer")]
-pub async fn _dev_check_attendees_sync(
-    principal: Principal,
-    event_id: u64,
-) -> ((String, bool), (String, bool)) {
-    let mut attendee_store_check: (String, bool) = ("AttendeeStore".to_string(), false);
-    let mut event_attendee_store_check: (String, bool) = ("EventAttendeeStore".to_string(), false);
-
-    if let Ok((_, event)) = events().get(event_id).await {
-        attendee_store_check.1 = event.is_attendee(principal);
-    }
-
-    let group_members = GroupMemberStore::get(event_id); // TODO: Why there is group member store here?
-    event_attendee_store_check.1 = match group_members {
-        Ok((_, group_members)) => group_members.is_member(&principal),
-        Err(_) => false,
-    };
-
-    (attendee_store_check, event_attendee_store_check)
-}
-
-#[query(composite = true, guard = "is_developer")]
-pub async fn _dev_check_events_sync(
-    event_id: u64,
-    group_id: u64,
-) -> ((String, bool), (String, bool)) {
-    let mut event_store_check: (String, bool) = ("EventStore".to_string(), false);
-    let mut group_event_store_check: (String, bool) = ("GroupEventStore".to_string(), false);
-
-    event_store_check.1 = events().get(event_id).await.is_ok();
-
-    group_event_store_check.1 = match groups().get(group_id).await {
-        Ok((_, group)) => group.events.contains(&event_id),
-        Err(_) => false,
-    };
-
-    (event_store_check, group_event_store_check)
 }
 
 #[update(guard = "is_developer")]

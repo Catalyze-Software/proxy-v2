@@ -91,7 +91,7 @@ impl EventCalls {
         }
 
         resp.map(|(id, event)| {
-            EventResponse::new(*id, event.clone(), boosted_events.get(&id).unwrap().clone())
+            EventResponse::new(*id, event.clone(), boosted_events.get(id).unwrap().clone())
         })
         .into_result()
     }
@@ -127,14 +127,14 @@ impl EventCalls {
         let mut filters = vec![];
 
         if let Some(group_ids) = group_ids {
-            let group_ids = group_ids.into_iter().map(|id| Some(id)).collect();
+            let group_ids = group_ids.into_iter().map(Some).collect();
             filters = EventFilter::Groups(group_ids).into();
         }
         if let Some(query) = query {
             filters.push(EventFilter::Name(query));
         }
 
-        let events = match filters.len() > 0 {
+        let events = match !filters.is_empty() {
             true => events().filter(filters).await,
             false => events().get_all().await,
         }?;
@@ -488,7 +488,7 @@ impl EventCalls {
         let events = events
             .iter()
             .map(|(id, event)| {
-                EventResponse::new(*id, event.clone(), boosted_events.get(&id).unwrap().clone())
+                EventResponse::new(*id, event.clone(), boosted_events.get(id).unwrap().clone())
             })
             .collect();
 

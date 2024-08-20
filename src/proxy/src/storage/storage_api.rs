@@ -2,7 +2,6 @@ use candid::Principal;
 use catalyze_shared::{
     api_error::ApiError,
     boosted::Boost,
-    event_collection::EventCollection,
     friend_request::FriendRequest,
     log::Logger,
     notification::Notification,

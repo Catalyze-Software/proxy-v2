@@ -74,7 +74,7 @@ pub async fn has_permission(
         .members
         .members
         .get(&caller)
-        .ok_or_else(|| ApiError::unauthorized())?;
+        .ok_or_else(ApiError::unauthorized)?;
 
     let member_roles = member.roles.clone();
 
