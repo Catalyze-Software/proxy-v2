@@ -74,6 +74,10 @@ async fn get_remaining_boost_time_in_seconds(boost_subject: Subject) -> Canister
         _ => return Err(ApiError::bad_request().add_message("Invalid identifier")),
     };
 
-    let (id, _) = BoostCalls::get_boost_by_subject(subject).await?;
+    let (id, _) = BoostCalls::get_boost_by_subject(subject)
+        .await?
+        .ok_or_else(|| {
+            ApiError::not_found().add_message("No boost found for the given identifier")
+        })?;
     BoostCalls::get_seconds_left_for_boost(id).await
 }

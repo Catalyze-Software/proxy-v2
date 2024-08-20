@@ -12,8 +12,8 @@ use catalyze_shared::{
     boosted::{Boost, BoostedFilter},
     date_range::DateRange,
     event_with_attendees::{
-        EventFilter, EventResponse, EventSort, EventWithAttendees, EventsCount, PostEvent,
-        UpdateEvent,
+        Attendee, EventFilter, EventResponse, EventSort, EventWithAttendees, EventsCount,
+        PostEvent, UpdateEvent,
     },
     invite_type::InviteType,
     paged_response::PagedResponse,
@@ -26,8 +26,6 @@ use catalyze_shared::{
 use ic_cdk::{api::time, caller};
 
 pub struct EventCalls;
-
-pub type NewAttendee = (Principal, Vec<u64>);
 
 impl EventCalls {
     pub async fn add_event(post_event: PostEvent) -> CanisterResult<EventResponse> {
@@ -359,7 +357,7 @@ impl EventCalls {
     pub async fn accept_or_decline_owner_request_event_invite(
         id: u64,
         accept: bool,
-    ) -> CanisterResult<NewAttendee> {
+    ) -> CanisterResult<Attendee> {
         let (_, event) = events().get(id).await?;
         let attendee_principal = caller();
 
@@ -467,7 +465,7 @@ impl EventCalls {
         Ok(profiles)
     }
 
-    pub async fn get_self_attendee() -> CanisterResult<NewAttendee> {
+    pub async fn get_self_attendee() -> CanisterResult<Attendee> {
         let (_, profile) = profiles().get(caller()).await?;
         Ok((caller(), profile.get_event_ids()))
     }

@@ -15,14 +15,14 @@ use crate::{
 ///
 use candid::Principal;
 use catalyze_shared::{
-    attendee::{Attendee, InviteAttendeeResponse, JoinedAttendeeResponse},
+    attendee::{InviteAttendeeResponse, JoinedAttendeeResponse},
     event_with_attendees::{
-        EventFilter, EventResponse, EventSort, EventsCount, PostEvent, UpdateEvent,
+        Attendee, EventFilter, EventResponse, EventSort, EventsCount, PostEvent, UpdateEvent,
     },
     guards::is_not_anonymous,
     paged_response::PagedResponse,
     permission::PermissionType,
-    profile::ProfileResponse,
+    profile_with_refs::ProfileResponse,
     CanisterResult,
 };
 use ic_cdk::{query, update};

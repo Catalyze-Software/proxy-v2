@@ -16,12 +16,14 @@ use crate::{
 ///
 use candid::Principal;
 use catalyze_shared::{
-    group::{GroupFilter, GroupResponse, GroupSort, GroupsCount, PostGroup, UpdateGroup},
+    group_with_members::{
+        GroupFilter, GroupResponse, GroupSort, GroupsCount, PostGroup, UpdateGroup,
+    },
     guards::is_not_anonymous,
-    member::{InviteMemberResponse, JoinedMemberResponse, Member},
+    old_member::{InviteMemberResponse, JoinedMemberResponse},
     paged_response::PagedResponse,
     permission::{PermissionType, PostPermission},
-    profile::ProfileResponse,
+    profile_with_refs::ProfileResponse,
     relation_type::RelationType,
     role::Role,
     CanisterResult,
@@ -99,7 +101,7 @@ pub async fn get_groups(
 /// # Returns
 /// * `GroupsCount` - The groups count
 #[query(composite = true)]
-pub async fn get_groups_count(query: Option<String>) -> GroupsCount {
+pub async fn get_groups_count(query: Option<String>) -> CanisterResult<GroupsCount> {
     GroupCalls::get_groups_count(query).await
 }
 
@@ -116,7 +118,7 @@ pub async fn get_groups_count(query: Option<String>) -> GroupsCount {
 #[update(guard = "is_not_anonymous")]
 pub async fn edit_group(group_id: u64, update_group: UpdateGroup) -> CanisterResult<GroupResponse> {
     has_access().await?;
-    can_edit(group_id, PermissionType::Group(None))?;
+    can_edit(group_id, PermissionType::Group(None)).await?;
     GroupCalls::edit_group(group_id, update_group).await
 }
 
@@ -130,7 +132,7 @@ pub async fn edit_group(group_id: u64, update_group: UpdateGroup) -> CanisterRes
 #[query(composite = true, guard = "is_not_anonymous")]
 pub async fn get_groups_by_id(group_ids: Vec<u64>) -> CanisterResult<Vec<GroupResponse>> {
     has_access().await?;
-    Ok(GroupCalls::get_groups_by_id(group_ids).await)
+    GroupCalls::get_groups_by_id(group_ids).await
 }
 
 /// Soft deletes a group - [`[update]`](update)
@@ -143,10 +145,10 @@ pub async fn get_groups_by_id(group_ids: Vec<u64>) -> CanisterResult<Vec<GroupRe
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "is_not_anonymous")]
-pub async fn delete_group(group_id: u64) -> CanisterResult<(bool, bool, bool)> {
+pub async fn delete_group(group_id: u64) -> CanisterResult<bool> {
     has_access().await?;
-    can_delete(group_id, PermissionType::Group(None))?;
-    Ok(GroupCalls::delete_group(group_id).await)
+    can_delete(group_id, PermissionType::Group(None)).await?;
+    GroupCalls::delete_group(group_id).await
 }
 
 /// Add a wallet reference to the group - [`[update]`](update)
@@ -169,7 +171,7 @@ pub async fn add_wallet_to_group(
     description: String,
 ) -> CanisterResult<GroupResponse> {
     has_access().await?;
-    can_edit(group_id, PermissionType::Group(None))?;
+    can_edit(group_id, PermissionType::Group(None)).await?;
     GroupCalls::add_wallet_to_group(group_id, wallet_canister, description).await
 }
 
@@ -191,7 +193,7 @@ pub async fn remove_wallet_from_group(
     wallet_canister: Principal,
 ) -> CanisterResult<GroupResponse> {
     has_access().await?;
-    can_edit(group_id, PermissionType::Group(None))?;
+    can_edit(group_id, PermissionType::Group(None)).await?;
     GroupCalls::remove_wallet_from_group(group_id, wallet_canister).await
 }
 
@@ -216,8 +218,8 @@ pub async fn add_role_to_group(
     index: u64,
 ) -> CanisterResult<Role> {
     has_access().await?;
-    can_edit(group_id, PermissionType::Group(None))?;
-    GroupCalls::add_role_to_group(group_id, role_name, color, index)
+    can_edit(group_id, PermissionType::Group(None)).await?;
+    GroupCalls::add_role_to_group(group_id, role_name, color, index).await
 }
 
 /// Remove a role from the group - [`[update]`](update)
@@ -235,7 +237,7 @@ pub async fn add_role_to_group(
 #[update(guard = "is_not_anonymous")]
 pub async fn remove_group_role(group_id: u64, role_name: String) -> CanisterResult<bool> {
     has_access().await?;
-    can_edit(group_id, PermissionType::Group(None))?;
+    can_edit(group_id, PermissionType::Group(None)).await?;
     GroupCalls::remove_group_role(group_id, role_name).await
 }
 
@@ -250,8 +252,8 @@ pub async fn remove_group_role(group_id: u64, role_name: String) -> CanisterResu
 #[update(guard = "is_not_anonymous")]
 pub async fn get_group_roles(group_id: u64) -> CanisterResult<Vec<Role>> {
     has_access().await?;
-    can_read(group_id, PermissionType::Group(None))?;
-    Ok(GroupCalls::get_group_roles(group_id))
+    can_read(group_id, PermissionType::Group(None)).await?;
+    GroupCalls::get_group_roles(group_id).await
 }
 
 /// Edit role permissions for a group role - [`[update]`](update)
@@ -272,8 +274,8 @@ pub async fn edit_role_permissions(
     post_permissions: Vec<PostPermission>,
 ) -> CanisterResult<bool> {
     has_access().await?;
-    can_edit(group_id, PermissionType::Group(None))?;
-    GroupCalls::edit_role_permissions(group_id, role_name, post_permissions)
+    can_edit(group_id, PermissionType::Group(None)).await?;
+    GroupCalls::edit_role_permissions(group_id, role_name, post_permissions).await
 }
 
 /// Join a group - [`[update]`](update)
@@ -307,9 +309,10 @@ pub async fn join_group(
 /// This function is guarded by the [`has_access`](has_access) function.
 /// TODO: This action is guarded by group role based authorization
 #[update(guard = "is_not_anonymous")]
+// TODO: HELP ME
 pub async fn invite_to_group(group_id: u64, member_principal: Principal) -> CanisterResult<Member> {
     has_access().await?;
-    can_edit(group_id, PermissionType::Invite(None))?;
+    can_edit(group_id, PermissionType::Invite(None)).await?;
     GroupCalls::invite_to_group(member_principal, group_id)
 }
 
@@ -327,9 +330,10 @@ pub async fn invite_to_group(group_id: u64, member_principal: Principal) -> Cani
 pub async fn accept_user_request_group_invite(
     group_id: u64,
     member_principal: Principal,
+    // TODO: HELP ME
 ) -> CanisterResult<Member> {
     has_access().await?;
-    can_edit(group_id, PermissionType::Invite(None))?;
+    can_edit(group_id, PermissionType::Invite(None)).await?;
     GroupCalls::accept_or_decline_user_request_group_invite(member_principal, group_id, true)
 }
 
@@ -347,9 +351,10 @@ pub async fn accept_user_request_group_invite(
 pub async fn decline_user_request_group_invite(
     group_id: u64,
     member_principal: Principal,
+    // TODO: HELP ME
 ) -> CanisterResult<Member> {
     has_access().await?;
-    can_edit(group_id, PermissionType::Invite(None))?;
+    can_edit(group_id, PermissionType::Invite(None)).await?;
     GroupCalls::accept_or_decline_user_request_group_invite(member_principal, group_id, false)
 }
 
@@ -361,6 +366,7 @@ pub async fn decline_user_request_group_invite(
 /// # Errors
 /// * `ApiError` - If something went wrong while accepting the invite
 #[update(guard = "is_not_anonymous")]
+// TODO: HELP ME
 pub async fn accept_owner_request_group_invite(group_id: u64) -> CanisterResult<Member> {
     has_access().await?;
     GroupCalls::accept_or_decline_owner_request_group_invite(group_id, true)
@@ -374,6 +380,7 @@ pub async fn accept_owner_request_group_invite(group_id: u64) -> CanisterResult<
 /// # Errors
 /// * `ApiError` - If something went wrong while declining the invite
 #[update(guard = "is_not_anonymous")]
+// TODO: HELP ME
 pub async fn decline_owner_request_group_invite(group_id: u64) -> CanisterResult<Member> {
     has_access().await?;
     GroupCalls::accept_or_decline_owner_request_group_invite(group_id, false)
@@ -395,9 +402,10 @@ pub async fn assign_role(
     group_id: u64,
     role: String,
     member_principal: Principal,
+    // TODO: HELP ME
 ) -> CanisterResult<Member> {
     has_access().await?;
-    can_edit(group_id, PermissionType::Group(None))?;
+    can_edit(group_id, PermissionType::Group(None)).await?;
     GroupCalls::add_group_role_to_member(role, member_principal, group_id).await
 }
 
@@ -421,8 +429,9 @@ pub async fn remove_member_role(
     role: String,
     member_principal: Principal,
 ) -> CanisterResult<Member> {
+    // TODO: HELP ME
     has_access().await?;
-    can_edit(group_id, PermissionType::Group(None))?;
+    can_edit(group_id, PermissionType::Group(None)).await?;
     GroupCalls::remove_group_role_from_member(role, member_principal, group_id).await
 }
 
@@ -434,13 +443,13 @@ pub async fn remove_member_role(
 /// * `JoinedMemberResponse` - The member entry
 /// # Errors
 /// * `ApiError` - If something went wrong while getting the member entry
-#[query]
-pub fn get_group_member(
+#[query(composite = true)]
+pub async fn get_group_member(
     group_id: u64,
     member_principal: Principal,
 ) -> CanisterResult<JoinedMemberResponse> {
     // can_read(group_id, PermissionType::Group(None))?;
-    GroupCalls::get_group_member(member_principal, group_id)
+    GroupCalls::get_group_member(member_principal, group_id).await
 }
 
 /// Get the member entry and profile of a specific group member - [`[query]`](query)
@@ -473,7 +482,7 @@ pub async fn get_groups_for_members(
     member_principals: Vec<Principal>,
 ) -> CanisterResult<Vec<JoinedMemberResponse>> {
     has_access().await?;
-    Ok(GroupCalls::get_groups_for_members(member_principals))
+    GroupCalls::get_groups_for_members(member_principals).await
 }
 
 /// Get the group members for a specific group - [`[query]`](query)
@@ -489,7 +498,7 @@ pub async fn get_groups_for_members(
 pub async fn get_group_members(group_id: u64) -> CanisterResult<Vec<JoinedMemberResponse>> {
     has_access().await?;
     // can_read(group_id, PermissionType::Group(None))?;
-    GroupCalls::get_group_members(group_id)
+    GroupCalls::get_group_members(group_id).await
 }
 
 /// Get the group members for a specific group - [`[query]`](query)
@@ -533,7 +542,7 @@ pub async fn get_self_member() -> CanisterResult<Member> {
 #[query(composite = true, guard = "is_not_anonymous")]
 pub async fn get_self_groups() -> CanisterResult<Vec<GroupResponse>> {
     has_access().await?;
-    Ok(GroupCalls::get_self_groups().await)
+    GroupCalls::get_self_groups().await
 }
 
 /// Get the roles of a specific group member - [`[query]`](query)
@@ -546,10 +555,10 @@ pub async fn get_self_groups() -> CanisterResult<Vec<GroupResponse>> {
 /// * `ApiError` - If something went wrong while getting the roles
 /// # Note
 /// This function is guarded by the [`has_access`](has_access) function.
-#[query]
+#[query(composite = true)]
 pub fn get_member_roles(group_id: u64, member_principal: Principal) -> CanisterResult<Vec<String>> {
     // can_read(group_id, PermissionType::Group(None))?;
-    GroupCalls::get_member_roles(member_principal, group_id)
+    GroupCalls::get_member_roles(member_principal, group_id).await
 }
 
 /// Leave a group as a caller - [`[update]`](update)
@@ -564,7 +573,7 @@ pub fn get_member_roles(group_id: u64, member_principal: Principal) -> CanisterR
 #[update(guard = "is_not_anonymous")]
 pub async fn leave_group(group_id: u64) -> CanisterResult<()> {
     has_access().await?;
-    GroupCalls::leave_group(group_id)
+    GroupCalls::leave_group(group_id).await
 }
 
 /// Remove an invite for a group as a user
@@ -579,7 +588,7 @@ pub async fn leave_group(group_id: u64) -> CanisterResult<()> {
 #[update(guard = "is_not_anonymous")]
 pub async fn remove_invite(group_id: u64) -> CanisterResult<()> {
     has_access().await?;
-    GroupCalls::remove_invite(group_id)
+    GroupCalls::remove_invite(group_id).await
 }
 
 /// Remove a member from a group
@@ -596,8 +605,8 @@ pub async fn remove_invite(group_id: u64) -> CanisterResult<()> {
 #[update(guard = "is_not_anonymous")]
 pub async fn remove_member_from_group(group_id: u64, principal: Principal) -> CanisterResult<()> {
     has_access().await?;
-    can_delete(group_id, PermissionType::Member(None))?;
-    GroupCalls::remove_member_from_group(principal, group_id)
+    can_delete(group_id, PermissionType::Member(None)).await?;
+    GroupCalls::remove_member_from_group(principal, group_id).await
 }
 
 /// Remove a member invite from a group as an admin
@@ -616,8 +625,8 @@ pub async fn remove_member_invite_from_group(
     principal: Principal,
 ) -> CanisterResult<()> {
     has_access().await?;
-    can_delete(group_id, PermissionType::Invite(None))?;
-    GroupCalls::remove_member_invite_from_group(principal, group_id)
+    can_delete(group_id, PermissionType::Invite(None)).await?;
+    GroupCalls::remove_member_invite_from_group(principal, group_id).await
 }
 
 /// Get the group invites for a specific group - [`[query]`](query)
@@ -633,7 +642,7 @@ pub async fn remove_member_invite_from_group(
 #[query(composite = true, guard = "is_not_anonymous")]
 pub async fn get_group_invites(group_id: u64) -> CanisterResult<Vec<InviteMemberResponse>> {
     has_access().await?;
-    can_read(group_id, PermissionType::Invite(None))?;
+    can_read(group_id, PermissionType::Invite(None)).await?;
     GroupCalls::get_group_invites(group_id)
 }
 
@@ -652,23 +661,23 @@ pub async fn get_group_invites_with_profiles(
     group_id: u64,
 ) -> CanisterResult<Vec<(InviteMemberResponse, ProfileResponse)>> {
     has_access().await?;
-    can_read(group_id, PermissionType::Invite(None))?;
+    can_read(group_id, PermissionType::Invite(None)).await?;
     GroupCalls::get_group_invites_with_profiles(group_id).await
 }
 
 #[query(composite = true, guard = "is_not_anonymous")]
 pub async fn get_banned_group_members(group_id: u64) -> CanisterResult<Vec<Principal>> {
     has_access().await?;
-    can_edit(group_id, PermissionType::Member(None))?;
-    Ok(GroupCalls::get_banned_group_members(group_id))
+    can_edit(group_id, PermissionType::Member(None)).await?;
+    Ok(GroupCalls::get_banned_group_members(group_id).await)
 }
 
 #[update(guard = "is_not_anonymous")]
 pub async fn ban_group_member(group_id: u64, member_principal: Principal) -> CanisterResult<()> {
     has_access().await?;
-    can_edit(group_id, PermissionType::Member(None))?;
-    GroupCalls::remove_member_from_group(member_principal, group_id)?;
-    GroupCalls::add_special_member_to_group(group_id, member_principal, RelationType::Blocked)
+    can_edit(group_id, PermissionType::Member(None)).await?;
+    GroupCalls::remove_member_from_group(member_principal, group_id).await?;
+    GroupCalls::add_special_member_to_group(group_id, member_principal, RelationType::Blocked).await
 }
 
 #[update(guard = "is_not_anonymous")]
@@ -677,6 +686,6 @@ pub async fn remove_ban_from_group_member(
     member_principal: Principal,
 ) -> CanisterResult<()> {
     has_access().await?;
-    can_edit(group_id, PermissionType::Member(None))?;
-    GroupCalls::remove_special_member_from_group(group_id, member_principal)
+    can_edit(group_id, PermissionType::Member(None)).await?;
+    GroupCalls::remove_special_member_from_group(group_id, member_principal).await
 }

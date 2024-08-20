@@ -43,7 +43,7 @@ use catalyze_shared::{
     },
     old_member::{InviteMemberResponse, JoinedMemberResponse, Member, MemberInvite},
     privacy::PrivacyType,
-    profile::ProfileEntry,
+    profile::{self, ProfileEntry},
     time_helper::hours_to_nanoseconds,
     validator::Validator,
     CanisterResult, Filter, Sorter, StorageClient, StorageClientInsertable,
@@ -1055,52 +1055,49 @@ impl GroupValidation {
         group_id: u64,
         account_identifier: &Option<String>,
     ) -> CanisterResult<Member> {
-        let (group_id, group) = GroupStore::get(group_id)?;
-        let (_, mut member) = MemberStore::get(caller)?;
+        let (group_id, group) = groups().get(group_id).await?;
 
         if group.is_banned_member(caller) {
             return Err(ApiError::unauthorized().add_message("You are allowed to join this group"));
         }
 
         // Check if the member is already in the group
-        if member.is_group_joined(&group_id) {
+        if group.is_member(caller) {
             return Err(ApiError::bad_request().add_message("Member is already in the group"));
         }
 
-        let (_, mut member_collection) = GroupMemberStore::get(group_id)?;
+        let (_, mut profile) = profiles().get(caller).await?;
 
-        use Privacy::*;
-        let validated_member = match group.privacy {
+        use PrivacyType::*;
+        let validated_member = match group.privacy.privacy_type {
             // If the group is public, add the member to the group
             Public => {
-                member.add_joined(group_id, vec!["member".to_string()]);
-                let group_member_principals = GroupCalls::get_group_members(group_id)?
-                    .iter()
-                    .map(|member| member.principal)
-                    .collect();
+                if !profile.is_group_member(group_id) {
+                    profile.add_group(group_id);
+                    profiles().update(caller, profile).await?;
+                }
 
-                member_collection.add_member(caller);
-
-                NotificationCalls::notification_join_public_group(
-                    group_member_principals,
-                    group_id,
-                );
+                NotificationCalls::notification_join_public_group(group.get_members(), group_id);
 
                 // notify the reward buffer store that the group member count has changed
                 RewardBufferStore::notify_group_member_count_changed(group_id);
 
+                // TODO: DISCUSS OVERHERE
                 Ok(member)
             }
             // If the group is private, add the invite to the member
             Private => {
                 let notification_id = NotificationCalls::notification_user_join_request_group(
                     GroupCalls::get_higher_role_members(group_id),
+                    // TODO: DISCUSS OVERHERE
                     InviteMemberResponse::new(caller, member.clone(), group_id),
                 )?;
+                if !profile.is_group_member(group_id) {
+                    profile.add_group(group_id);
+                    profiles().update(caller, profile).await?;
+                }
 
-                member_collection.add_invite(caller);
-
-                member.add_invite(group_id, InviteType::UserRequest, Some(notification_id));
+                // TODO: DISCUSS OVERHERE
                 Ok(member)
             }
             // If the group is invite only, throw an error
@@ -1125,12 +1122,14 @@ impl GroupValidation {
                             }
                         }
                         if is_valid {
-                            member.add_joined(group_id, vec!["member".to_string()]);
-                            member_collection.add_member(caller);
-
+                            if !profile.is_group_member(group_id) {
+                                profile.add_group(group_id);
+                                profiles().update(caller, profile).await?;
+                            }
                             // notify the reward buffer store that the group member count has changed
                             RewardBufferStore::notify_group_member_count_changed(group_id);
 
+                            // TODO: DISCUSS OVERHERE
                             Ok(member)
                             // If the caller does not own the neuron, throw an error
                         } else {
@@ -1153,12 +1152,15 @@ impl GroupValidation {
                             }
                         }
                         if is_valid {
-                            member.add_joined(group_id, vec!["member".to_string()]);
-                            member_collection.add_member(caller);
+                            if !profile.is_group_member(group_id) {
+                                profile.add_group(group_id);
+                                profiles().update(caller, profile).await?;
+                            }
 
                             // notify the reward buffer store that the group member count has changed
                             RewardBufferStore::notify_group_member_count_changed(group_id);
 
+                            // TODO: DISCUSS OVERHERE
                             Ok(member)
                             // If the caller does not own the NFT, throw an error
                         } else {
@@ -1171,8 +1173,6 @@ impl GroupValidation {
             }
         };
 
-        GroupMemberStore::update(group_id, member_collection)?;
-
         validated_member
     }
 
@@ -1181,7 +1181,7 @@ impl GroupValidation {
         account_identifier: Option<String>,
         post_group: &PostGroup,
     ) -> CanisterResult<()> {
-        use Privacy::*;
+        use PrivacyType::*;
         match post_group.privacy.clone() {
             Public => Ok(()),
             Private => Ok(()),

@@ -2,8 +2,8 @@ use crate::{
     helpers::guards::{is_developer, is_prod_developer},
     logic::{boost_logic::BoostCalls, id_logic::IDLogic, websocket_logic::Websocket},
     storage::{
-        events, groups, history_canister, reward_canister, FriendRequestStore, LoggerStore,
-        NotificationStore, RewardBufferStore, RewardTimerStore, StorageUpdateable,
+        events, groups, history_canister, profiles, reward_canister, FriendRequestStore,
+        LoggerStore, NotificationStore, RewardBufferStore, RewardTimerStore, StorageUpdateable,
         UserNotificationStore,
     },
 };
@@ -55,7 +55,9 @@ pub async fn _dev_check_member_sync(
     let mut member_store_check: (String, bool) = ("MemberStore".to_string(), false);
     let mut group_member_store_check: (String, bool) = ("GroupMemberStore".to_string(), false);
 
-    member_store_check.1 = groups().get_member(principal).await.is_ok();
+    if let Ok((_, profile)) = profiles().get(principal).await {
+        member_store_check.1 = profile.is_group_member(group_id);
+    }
 
     group_member_store_check.1 = match groups().get(group_id).await {
         Ok((_, group)) => group.is_member(principal),
@@ -73,7 +75,10 @@ pub async fn _dev_check_attendees_sync(
     let mut attendee_store_check: (String, bool) = ("AttendeeStore".to_string(), false);
     let mut event_attendee_store_check: (String, bool) = ("EventAttendeeStore".to_string(), false);
 
-    attendee_store_check.1 = events().get_attendee(principal).await.is_ok();
+    if let Ok((_, event)) = events().get(event_id).await {
+        attendee_store_check.1 = event.is_attendee(principal);
+    }
+
     let group_members = GroupMemberStore::get(event_id); // TODO: Why there is group member store here?
     event_attendee_store_check.1 = match group_members {
         Ok((_, group_members)) => group_members.is_member(&principal),
