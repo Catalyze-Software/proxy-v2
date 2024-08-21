@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::storage::{boosteds, events, groups, profiles};
+use crate::storage::{boosts, events, groups, profiles};
 
 use super::{
     boost_logic::BoostCalls, notification_logic::NotificationCalls, profile_logic::ProfileCalls,
@@ -195,12 +195,12 @@ impl EventCalls {
 
         let _ = events().remove(id).await?;
 
-        let boosted = boosteds()
+        let boosted = boosts()
             .find(BoostedFilter::Subject(Subject::Event(id)).into())
             .await?;
 
         if let Some((boost_id, _)) = boosted {
-            let _ = boosteds().remove(boost_id).await?;
+            let _ = boosts().remove(boost_id).await?;
         }
 
         // remove all groups from the members

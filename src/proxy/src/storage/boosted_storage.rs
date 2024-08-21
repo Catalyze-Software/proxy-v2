@@ -10,7 +10,7 @@ pub struct BoostedStorageClient;
 
 impl StorageClient<u64, Boost, BoostedFilter, BoostedSort> for BoostedStorageClient {
     fn name(&self) -> String {
-        "boosted".to_string()
+        "boosts".to_string()
     }
 
     fn storage_canister_id(&self) -> catalyze_shared::StaticCellStorageRef<Principal> {
@@ -20,6 +20,6 @@ impl StorageClient<u64, Boost, BoostedFilter, BoostedSort> for BoostedStorageCli
 
 impl StorageClientInsertable<Boost, BoostedFilter, BoostedSort> for BoostedStorageClient {}
 
-pub fn boosteds() -> impl StorageClientInsertable<Boost, BoostedFilter, BoostedSort> {
+pub fn boosts() -> impl StorageClientInsertable<Boost, BoostedFilter, BoostedSort> {
     BoostedStorageClient
 }

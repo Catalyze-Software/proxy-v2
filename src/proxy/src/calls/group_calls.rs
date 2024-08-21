@@ -249,7 +249,7 @@ pub async fn remove_group_role(group_id: u64, role_name: String) -> CanisterResu
 /// # Note
 /// Default unmutable roles are always returned on top of the custom group specific roles.
 /// This function is guarded by the [`has_access`](has_access) function.
-#[update(guard = "is_not_anonymous")]
+#[query(composite = true, guard = "is_not_anonymous")]
 pub async fn get_group_roles(group_id: u64) -> CanisterResult<Vec<Role>> {
     has_access().await?;
     can_read(group_id, PermissionType::Group(None)).await?;

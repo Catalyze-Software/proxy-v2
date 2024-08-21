@@ -10,7 +10,7 @@ use crate::{
             legacy_dip721_balance_of,
         },
     },
-    storage::{boosteds, events, groups, profiles, RewardBufferStore},
+    storage::{boosts, events, groups, profiles, RewardBufferStore},
     USER_GROUP_CREATION_LIMIT,
 };
 use candid::Principal;
@@ -232,11 +232,11 @@ impl GroupCalls {
     pub async fn delete_group(group_id: u64) -> CanisterResult<bool> {
         let (_, group) = groups().get(group_id).await?;
 
-        if let Some((boost_id, _)) = boosteds()
+        if let Some((boost_id, _)) = boosts()
             .find(BoostedFilter::Subject(Subject::Group(group_id)).into())
             .await?
         {
-            boosteds().remove(boost_id).await?;
+            boosts().remove(boost_id).await?;
         }
 
         // remove all pinned and starred from the profiles

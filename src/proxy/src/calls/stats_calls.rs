@@ -11,7 +11,7 @@ async fn store_stats() -> CanisterResult<Vec<String>> {
         format!("GroupStore: {}", groups().size().await?),
         format!("EventStore: {}", events().size().await?),
         format!("ReportStore: {}", reports().size().await?),
-        format!("BoostStore: {}", boosteds().size().await?),
+        format!("BoostStore: {}", boosts().size().await?),
         format!("NotificationStore: {}", NotificationStore::size()),
         format!("UserNotificationsStore: {}", UserNotificationStore::size()),
         format!("LoggerStore: {}", LoggerStore::size()),

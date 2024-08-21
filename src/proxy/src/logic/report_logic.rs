@@ -16,12 +16,7 @@ impl ReportCalls {
     pub async fn add_report(post_report: PostReport) -> CanisterResult<ReportResponse> {
         let (_, group) = groups().get(post_report.group_id).await?;
 
-        let is_group_joined = group
-            .get_members()
-            .into_iter()
-            .any(|member| member == caller());
-
-        if is_group_joined {
+        if group.is_member(caller()) {
             return Err(ApiError::bad_request());
         }
 
