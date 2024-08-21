@@ -15,6 +15,7 @@ use crate::{
 ///
 use candid::Principal;
 use catalyze_shared::{
+    api_error::ApiError,
     attendee::{InviteAttendeeResponse, JoinedAttendeeResponse},
     event_with_attendees::{
         Attendee, EventFilter, EventResponse, EventSort, EventsCount, PostEvent, UpdateEvent,
@@ -39,11 +40,12 @@ use ic_cdk::{query, update};
 #[update(guard = "is_not_anonymous")]
 pub async fn add_event(post_event: PostEvent) -> CanisterResult<EventResponse> {
     has_access().await?;
-    can_edit(
-        post_event.group_id.expect("Group ID not set"),
-        PermissionType::Event(None),
-    )
-    .await?; // TODO: Check if this is correct
+
+    let group_id = post_event
+        .group_id
+        .ok_or_else(|| ApiError::bad_request().add_message("Group id is required"))?;
+
+    can_edit(group_id, PermissionType::Event(None)).await?;
     EventCalls::add_event(post_event).await
 }
 
