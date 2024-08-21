@@ -38,7 +38,7 @@ use catalyze_shared::{
         subject::{Subject, SubjectType},
         validation::{ValidateField, ValidationType},
     },
-    old_member::{InviteMemberResponse, JoinedMemberResponse, MemberInvite},
+    old_member::{InviteMemberResponse, JoinedMemberResponse},
     privacy::PrivacyType,
     time_helper::hours_to_nanoseconds,
     validator::Validator,
@@ -102,11 +102,12 @@ impl GroupCalls {
     }
 
     pub async fn get_group_by_name(name: String) -> CanisterResult<GroupResponse> {
-        if let Some((id, _)) = groups().find(GroupFilter::Name(name).into()).await? {
-            return Self::get_group(id).await;
-        };
+        let (id, group) = groups()
+            .find(GroupFilter::Name(name).into())
+            .await?
+            .ok_or_else(|| ApiError::not_found().add_message("Group not found"))?;
 
-        Err(ApiError::not_found().add_message("Group not found"))
+        GroupResponse::from_result(Ok((id, group)), Self::get_boosted_group(id).await?)
     }
 
     pub async fn get_groups(
@@ -506,18 +507,11 @@ impl GroupCalls {
             Self::remove_group_from_profile(group_id, principal).await?;
         }
 
-        let invite = MemberInvite {
-            invite_type: invite.invite_type,
-            notification_id: invite.notification_id,
-            created_at: invite.created_at,
-            updated_at: invite.updated_at,
-        };
-
         groups().update(group_id, group.clone()).await?;
 
         NotificationCalls::notification_owner_join_request_group_accept_or_decline(
             principal,
-            invite,
+            invite.into(),
             accept,
             group.get_members(),
             Self::get_higher_role_members(group_id).await,
@@ -667,11 +661,11 @@ impl GroupCalls {
         }
 
         let (_, profile) = profiles().get(principal).await?;
-        let member = JoinedMemberResponse {
-            group_id,
+        let member = JoinedMemberResponse::new(
             principal,
-            roles: group.members.members.get(&principal).unwrap().roles.clone(),
-        };
+            group.members.members.get(&principal).unwrap().roles.clone(),
+            group_id,
+        );
 
         Ok((member, ProfileResponse::new(principal, profile)))
     }
@@ -685,11 +679,11 @@ impl GroupCalls {
             .await?
             .into_iter()
             .map(|(principal, profile)| {
-                let member = JoinedMemberResponse {
-                    group_id,
+                let member = JoinedMemberResponse::new(
                     principal,
-                    roles: group.members.members.get(&principal).unwrap().roles.clone(),
-                };
+                    group.members.members.get(&principal).unwrap().roles.clone(),
+                    group_id,
+                );
 
                 (member, ProfileResponse::new(principal, profile))
             })

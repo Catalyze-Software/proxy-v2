@@ -1,7 +1,6 @@
 use candid::Principal;
 use catalyze_shared::{
     api_error::ApiError,
-    boosted::Boost,
     friend_request::FriendRequest,
     log::Logger,
     notification::Notification,
@@ -23,27 +22,26 @@ pub static NOTIFICATIONS_MEMORY_ID: MemoryId = MemoryId::new(1);
 pub static USER_NOTIFICATIONS_MEMORY_ID: MemoryId = MemoryId::new(2);
 
 pub static FRIEND_REQUESTS_MEMORY_ID: MemoryId = MemoryId::new(3);
-pub static BOOSTED_MEMORY_ID: MemoryId = MemoryId::new(4);
 
-pub static LOGS_MEMORY_ID: MemoryId = MemoryId::new(5);
+pub static LOGS_MEMORY_ID: MemoryId = MemoryId::new(4);
 
-pub static TAGS_MEMORY_ID: MemoryId = MemoryId::new(6);
-pub static CATEGORIES_MEMORY_ID: MemoryId = MemoryId::new(7);
-pub static SKILLS_MEMORY_ID: MemoryId = MemoryId::new(8);
+pub static TAGS_MEMORY_ID: MemoryId = MemoryId::new(5);
+pub static CATEGORIES_MEMORY_ID: MemoryId = MemoryId::new(6);
+pub static SKILLS_MEMORY_ID: MemoryId = MemoryId::new(7);
 
-pub static HISTORY_POINT_MEMORY_ID: MemoryId = MemoryId::new(9);
+pub static HISTORY_POINT_MEMORY_ID: MemoryId = MemoryId::new(8);
 
-pub static IDS_MEMORY_ID: MemoryId = MemoryId::new(10);
+pub static IDS_MEMORY_ID: MemoryId = MemoryId::new(9);
 
-pub static REWARD_BUFFER_MEMORY_ID: MemoryId = MemoryId::new(11);
+pub static REWARD_BUFFER_MEMORY_ID: MemoryId = MemoryId::new(10);
 
-pub static HISTORY_CANISTER_MEMORY_ID: MemoryId = MemoryId::new(12);
-pub static REWARD_CANISTER_MEMORY_ID: MemoryId = MemoryId::new(13);
-pub static PROFILE_CANISTER_MEMORY_ID: MemoryId = MemoryId::new(14);
-pub static REPORT_CANISTER_MEMORY_ID: MemoryId = MemoryId::new(15);
-pub static GROUP_CANISTER_MEMORY_ID: MemoryId = MemoryId::new(16);
-pub static EVENT_CANISTER_MEMORY_ID: MemoryId = MemoryId::new(17);
-pub static BOOSTED_CANISTER_MEMORY_ID: MemoryId = MemoryId::new(18);
+pub static HISTORY_CANISTER_MEMORY_ID: MemoryId = MemoryId::new(11);
+pub static REWARD_CANISTER_MEMORY_ID: MemoryId = MemoryId::new(12);
+pub static PROFILE_CANISTER_MEMORY_ID: MemoryId = MemoryId::new(13);
+pub static REPORT_CANISTER_MEMORY_ID: MemoryId = MemoryId::new(14);
+pub static GROUP_CANISTER_MEMORY_ID: MemoryId = MemoryId::new(15);
+pub static EVENT_CANISTER_MEMORY_ID: MemoryId = MemoryId::new(16);
+pub static BOOSTED_CANISTER_MEMORY_ID: MemoryId = MemoryId::new(17);
 
 pub trait Storage<K: Storable + Ord + Clone, V: Storable + Clone> {
     const NAME: &'static str;
@@ -244,7 +242,6 @@ thread_local! {
     pub static MEMORY_MANAGER: MemoryManagerStorage = init_memory_manager();
 
     pub static FRIEND_REQUEST: StorageRef<u64, FriendRequest> = init_btree(&MEMORY_MANAGER, FRIEND_REQUESTS_MEMORY_ID);
-    pub static BOOSTED: StorageRef<u64, Boost> = init_btree(&MEMORY_MANAGER, BOOSTED_MEMORY_ID);
     pub static NOTIFICATIONS: StorageRef<u64, Notification> = init_btree(&MEMORY_MANAGER, NOTIFICATIONS_MEMORY_ID);
     pub static USER_NOTIFICATIONS: StorageRef<Principal, UserNotifications> = init_btree(&MEMORY_MANAGER, USER_NOTIFICATIONS_MEMORY_ID);
     pub static LOGS: StorageRef<u64, Logger> = init_btree(&MEMORY_MANAGER, LOGS_MEMORY_ID);

@@ -145,11 +145,9 @@ impl BoostCalls {
     }
 
     pub async fn get_boost_by_subject(subject: Subject) -> CanisterResult<Option<BoostedEntry>> {
-        let resp = boosteds()
+        boosteds()
             .find(BoostedFilter::Subject(subject).into())
-            .await?;
-
-        Ok(resp)
+            .await
     }
 
     pub async fn get_boosts_by_subject(subject: SubjectType) -> CanisterResult<Vec<BoostedEntry>> {
