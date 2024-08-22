@@ -25,7 +25,7 @@ pub use report_storage::*;
 pub use storage_api::{
     StorageInsertable, StorageInsertableByKey, StorageQueryable, StorageUpdateable,
 };
-pub use topic_storage::{CategoryStore, SkillStore, TagStore};
+pub use topic_storage::*;
 pub use user_notification_storage::UserNotificationStore;
 
 pub use cells::*;
