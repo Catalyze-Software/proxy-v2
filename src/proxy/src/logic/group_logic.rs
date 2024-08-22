@@ -42,7 +42,7 @@ use catalyze_shared::{
     privacy::PrivacyType,
     time_helper::hours_to_nanoseconds,
     validator::Validator,
-    CanisterResult, StorageClient, StorageClientInsertable,
+    CanisterResult, Filter, StorageClient, StorageClientInsertable,
 };
 use ic_cdk::{
     api::{call, time},
@@ -64,7 +64,7 @@ impl GroupCalls {
 
         // Check if the group name already exists
         if groups()
-            .find(GroupFilter::Name(post_group.name.clone()).into())
+            .find(GroupFilter::Name(post_group.name.clone()).to_vec())
             .await?
             .is_some()
         {
@@ -76,7 +76,7 @@ impl GroupCalls {
 
         // Get the member and add the group to the member
         let owned = groups()
-            .filter(GroupFilter::Owner(caller()).into())
+            .filter(GroupFilter::Owner(caller()).to_vec())
             .await?
             .len();
 
@@ -103,7 +103,7 @@ impl GroupCalls {
 
     pub async fn get_group_by_name(name: String) -> CanisterResult<GroupResponse> {
         let (id, group) = groups()
-            .find(GroupFilter::Name(name).into())
+            .find(GroupFilter::Name(name).to_vec())
             .await?
             .ok_or_else(|| ApiError::not_found().add_message("Group not found"))?;
 
@@ -159,7 +159,7 @@ impl GroupCalls {
 
     pub async fn get_groups_count(query: Option<String>) -> CanisterResult<GroupsCount> {
         let groups = match query {
-            Some(query) => groups().filter(GroupFilter::Name(query).into()).await,
+            Some(query) => groups().filter(GroupFilter::Name(query).to_vec()).await,
             None => groups().get_all().await,
         }?;
 
@@ -233,7 +233,7 @@ impl GroupCalls {
         let (_, group) = groups().get(group_id).await?;
 
         if let Some((boost_id, _)) = boosts()
-            .find(BoostedFilter::Subject(Subject::Group(group_id)).into())
+            .find(BoostedFilter::Subject(Subject::Group(group_id)).to_vec())
             .await?
         {
             boosts().remove(boost_id).await?;

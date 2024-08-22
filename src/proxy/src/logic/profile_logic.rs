@@ -13,7 +13,7 @@ use catalyze_shared::{
     user_notifications::UserNotifications,
     validation::{ValidateField, ValidationType},
     wallet::{PostWallet, Wallet},
-    CanisterResult, StorageClient, StorageClientInsertableByKey,
+    CanisterResult, Filter, StorageClient, StorageClientInsertableByKey,
 };
 use ic_cdk::{api::time, caller};
 
@@ -25,7 +25,7 @@ impl ProfileCalls {
         ProfileValidation::validate_post_profile(&post_profile)?;
 
         let exists = profiles()
-            .find(ProfileFilter::Username(post_profile.username.clone()).into())
+            .find(ProfileFilter::Username(post_profile.username.clone()).to_vec())
             .await?
             .is_some();
 
