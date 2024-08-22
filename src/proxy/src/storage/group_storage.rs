@@ -1,27 +1,25 @@
-use super::{
-    storage_api::{
-        StaticStorageRef, Storage, StorageInsertable, StorageQueryable, StorageUpdateable, GROUPS,
-        GROUPS_MEMORY_ID,
-    },
-    ID_KIND_GROUPS,
+use super::storage_api::GROUP_CANISTER;
+use candid::Principal;
+use catalyze_shared::{
+    group_with_members::{GroupFilter, GroupSort, GroupWithMembers},
+    StorageClient, StorageClientInsertable,
 };
-use catalyze_shared::group::Group;
-use ic_stable_structures::memory_manager::MemoryId;
 
-pub struct GroupStore;
+#[derive(Default)]
+pub struct GroupStorageClient;
 
-impl Storage<u64, Group> for GroupStore {
-    const NAME: &'static str = ID_KIND_GROUPS;
-
-    fn storage() -> StaticStorageRef<u64, Group> {
-        &GROUPS
+impl StorageClient<u64, GroupWithMembers, GroupFilter, GroupSort> for GroupStorageClient {
+    fn name(&self) -> String {
+        "group".to_string()
     }
 
-    fn memory_id() -> MemoryId {
-        GROUPS_MEMORY_ID
+    fn storage_canister_id(&self) -> catalyze_shared::StaticCellStorageRef<Principal> {
+        &GROUP_CANISTER
     }
 }
 
-impl StorageQueryable<u64, Group> for GroupStore {}
-impl StorageUpdateable<u64, Group> for GroupStore {}
-impl StorageInsertable<Group> for GroupStore {}
+impl StorageClientInsertable<GroupWithMembers, GroupFilter, GroupSort> for GroupStorageClient {}
+
+pub fn groups() -> GroupStorageClient {
+    GroupStorageClient
+}

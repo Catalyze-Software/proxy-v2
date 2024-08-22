@@ -21,5 +21,5 @@ fn read_reward_buffer() -> Vec<RewardableActivityResponse> {
 
 #[update(guard = "is_developer")]
 async fn _dev_send_reward_data() {
-    send_reward_data().await
+    let _ = send_reward_data().await;
 }

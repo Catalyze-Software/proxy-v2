@@ -2,7 +2,7 @@ use candid::Principal;
 use catalyze_shared::{
     api_error::ApiError,
     friend_request::{FriendRequest, FriendRequestResponse},
-    profile::ProfileResponse,
+    profile_with_refs::ProfileResponse,
     relation_type::RelationType,
     CanisterResult, StorageClient,
 };
@@ -26,7 +26,7 @@ impl FriendRequestCalls {
         let friend_request = FriendRequest::new(caller(), to, message);
         let (_, caller_profile) = profiles().get(caller()).await?;
 
-        if caller_profile.relations.contains_key(&to) {
+        if caller_profile.references.relations.contains_key(&to) {
             return Err(ApiError::duplicate()
                 .add_method_name("add_friend_request")
                 .add_message("Friend request already exists"));
@@ -82,7 +82,7 @@ impl FriendRequestCalls {
 
         let (_, mut caller_profile) = profiles().get(caller()).await?;
 
-        caller_profile.relations.insert(
+        caller_profile.references.relations.insert(
             friend_request.requested_by,
             RelationType::Friend.to_string(),
         );
@@ -90,6 +90,7 @@ impl FriendRequestCalls {
         let (requested_by_principal, mut to_profile) =
             profiles().get(friend_request.requested_by).await?;
         to_profile
+            .references
             .relations
             .insert(friend_request.to, RelationType::Friend.to_string());
 

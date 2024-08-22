@@ -1,34 +1,20 @@
-use super::{
-    storage_api::{REPORT_CANISTER, REPORT_CANISTER_MEMORY_ID},
-    CellStorage, CellStorageRef,
-};
+use super::storage_api::REPORT_CANISTER;
 use candid::Principal;
 use catalyze_shared::{
     report::{Report, ReportFilter, ReportSort},
-    CanisterResult, StorageClient, StorageClientInsertable,
+    StorageClient, StorageClientInsertable,
 };
-use ic_stable_structures::memory_manager::MemoryId;
-
-pub struct ReportCanisterStorage;
-
-impl CellStorage<Principal> for ReportCanisterStorage {
-    const NAME: &'static str = "report_canister";
-
-    fn storage() -> CellStorageRef<Principal> {
-        &REPORT_CANISTER
-    }
-
-    fn memory_id() -> MemoryId {
-        REPORT_CANISTER_MEMORY_ID
-    }
-}
 
 #[derive(Default)]
 pub struct ReportStorageClient;
 
 impl StorageClient<u64, Report, ReportFilter, ReportSort> for ReportStorageClient {
-    fn canister(&self) -> CanisterResult<Principal> {
-        ReportCanisterStorage::get()
+    fn name(&self) -> String {
+        "report".to_string()
+    }
+
+    fn storage_canister_id(&self) -> catalyze_shared::StaticCellStorageRef<Principal> {
+        &REPORT_CANISTER
     }
 }
 

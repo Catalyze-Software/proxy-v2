@@ -3,49 +3,54 @@ use catalyze_shared::{
     api_error::ApiError,
     permission::{PermissionActionType, PermissionType},
     role::Role,
+    CanisterResult, StorageClient,
 };
 use ic_cdk::caller;
 
-use crate::storage::{GroupStore, MemberStore, StorageQueryable};
+use crate::storage::groups;
 
 /// Determine if the caller has permission to perform an action on group based entities
 /// # Arguments
 /// * `group_identifier` - The group identifier
 /// * `permission_type` - The permission type to check
-pub fn can_edit(group_id: u64, permission_type: PermissionType) -> Result<(), ApiError> {
+pub async fn can_edit(group_id: u64, permission_type: PermissionType) -> CanisterResult<()> {
     has_permission(
         caller(),
         group_id,
         &permission_type,
         &PermissionActionType::Edit,
     )
+    .await
 }
 
-pub fn can_write(group_id: u64, permission_type: PermissionType) -> Result<(), ApiError> {
+pub async fn can_write(group_id: u64, permission_type: PermissionType) -> CanisterResult<()> {
     has_permission(
         caller(),
         group_id,
         &permission_type,
         &PermissionActionType::Write,
     )
+    .await
 }
 
-pub fn can_delete(group_id: u64, permission_type: PermissionType) -> Result<(), ApiError> {
+pub async fn can_delete(group_id: u64, permission_type: PermissionType) -> CanisterResult<()> {
     has_permission(
         caller(),
         group_id,
         &permission_type,
         &PermissionActionType::Delete,
     )
+    .await
 }
 
-pub fn can_read(group_id: u64, permission_type: PermissionType) -> Result<(), ApiError> {
+pub async fn can_read(group_id: u64, permission_type: PermissionType) -> CanisterResult<()> {
     has_permission(
         caller(),
         group_id,
         &permission_type,
         &PermissionActionType::Read,
     )
+    .await
 }
 
 /// Check if the caller has permission to perform an action on a group
@@ -57,15 +62,23 @@ pub fn can_read(group_id: u64, permission_type: PermissionType) -> Result<(), Ap
 /// * `permission_action` - The permission action to check
 /// # Returns
 /// * `Result<(), String>` - Returns an error if the caller does not have permission
-pub fn has_permission(
+pub async fn has_permission(
     caller: Principal,
     group_id: u64,
     permission: &PermissionType,
     permission_action: &PermissionActionType,
-) -> Result<(), ApiError> {
-    let member_roles = MemberStore::get(caller)?.1.get_roles(group_id);
+) -> CanisterResult<()> {
+    let (_, group) = groups().get(group_id).await?;
 
-    let group_roles = GroupStore::get(group_id)?.1.get_roles();
+    let member = group
+        .members
+        .members
+        .get(&caller)
+        .ok_or_else(ApiError::unauthorized)?;
+
+    let member_roles = member.roles.clone();
+
+    let group_roles = group.get_roles();
 
     let mut found_roles: Vec<&Role> = vec![];
 

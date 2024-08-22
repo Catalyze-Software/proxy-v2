@@ -15,12 +15,15 @@ use crate::{
 ///
 use candid::Principal;
 use catalyze_shared::{
-    attendee::{Attendee, InviteAttendeeResponse, JoinedAttendeeResponse},
-    event::{EventFilter, EventResponse, EventSort, EventsCount, PostEvent, UpdateEvent},
+    api_error::ApiError,
+    attendee::{InviteAttendeeResponse, JoinedAttendeeResponse},
+    event_with_attendees::{
+        Attendee, EventFilter, EventResponse, EventSort, EventsCount, PostEvent, UpdateEvent,
+    },
     guards::is_not_anonymous,
     paged_response::PagedResponse,
     permission::PermissionType,
-    profile::ProfileResponse,
+    profile_with_refs::ProfileResponse,
     CanisterResult,
 };
 use ic_cdk::{query, update};
@@ -37,7 +40,12 @@ use ic_cdk::{query, update};
 #[update(guard = "is_not_anonymous")]
 pub async fn add_event(post_event: PostEvent) -> CanisterResult<EventResponse> {
     has_access().await?;
-    can_edit(post_event.group_id, PermissionType::Event(None))?;
+
+    let group_id = post_event
+        .group_id
+        .ok_or_else(|| ApiError::bad_request().add_message("Group id is required"))?;
+
+    can_edit(group_id, PermissionType::Event(None)).await?;
     EventCalls::add_event(post_event).await
 }
 
@@ -80,8 +88,11 @@ async fn get_events(
 /// * `query` - Optional query to filter the events
 /// # Returns
 /// * `EventsCount` - The events in a paged response
-#[query]
-async fn get_event_count(group_ids: Option<Vec<u64>>, query: Option<String>) -> EventsCount {
+#[query(composite = true)]
+async fn get_event_count(
+    group_ids: Option<Vec<u64>>,
+    query: Option<String>,
+) -> CanisterResult<EventsCount> {
     EventCalls::get_events_count(group_ids, query).await
 }
 
@@ -103,7 +114,7 @@ pub async fn edit_event(
     update_event: UpdateEvent,
 ) -> CanisterResult<EventResponse> {
     has_access().await?;
-    can_edit(group_id, PermissionType::Event(None))?;
+    can_edit(group_id, PermissionType::Event(None)).await?;
     EventCalls::edit_event(event_id, update_event, group_id).await
 }
 
@@ -120,7 +131,7 @@ pub async fn edit_event(
 #[update(guard = "is_not_anonymous")]
 pub async fn delete_event(event_id: u64, group_id: u64) -> CanisterResult<()> {
     has_access().await?;
-    can_delete(group_id, PermissionType::Event(None))?;
+    can_delete(group_id, PermissionType::Event(None)).await?;
     EventCalls::delete_event(event_id, group_id).await
 }
 
@@ -138,8 +149,8 @@ pub async fn delete_event(event_id: u64, group_id: u64) -> CanisterResult<()> {
 #[update(guard = "is_not_anonymous")]
 pub async fn cancel_event(event_id: u64, group_id: u64, reason: String) -> CanisterResult<()> {
     has_access().await?;
-    can_edit(group_id, PermissionType::Event(None))?;
-    EventCalls::cancel_event(event_id, reason, group_id)
+    can_edit(group_id, PermissionType::Event(None)).await?;
+    EventCalls::cancel_event(event_id, reason, group_id).await
 }
 
 // Attendee methods
@@ -157,7 +168,7 @@ pub async fn cancel_event(event_id: u64, group_id: u64, reason: String) -> Canis
 #[update(guard = "is_not_anonymous")]
 pub async fn join_event(event_id: u64) -> CanisterResult<JoinedAttendeeResponse> {
     has_access().await?;
-    EventCalls::join_event(event_id)
+    EventCalls::join_event(event_id).await
 }
 
 /// Invite a user to an event - [`[update]`](update)
@@ -179,8 +190,8 @@ pub async fn invite_to_event(
     attendee_principal: Principal,
 ) -> CanisterResult<InviteAttendeeResponse> {
     has_access().await?;
-    can_edit(group_id, PermissionType::Event(None))?;
-    EventCalls::invite_to_event(event_id, attendee_principal, group_id)
+    can_edit(group_id, PermissionType::Event(None)).await?;
+    EventCalls::invite_to_event(event_id, attendee_principal, group_id).await
 }
 
 /// Accept an user invite to an event as a admin - [`[update]`](update)
@@ -202,13 +213,14 @@ pub async fn accept_user_request_event_invite(
     attendee_principal: Principal,
 ) -> CanisterResult<JoinedAttendeeResponse> {
     has_access().await?;
-    can_edit(group_id, PermissionType::Event(None))?;
+    can_edit(group_id, PermissionType::Event(None)).await?;
     EventCalls::accept_or_decline_user_request_event_invite(
         event_id,
         attendee_principal,
         group_id,
         true,
     )
+    .await
 }
 
 /// Decline an user invite to an event as a admin - [`[update]`](update)
@@ -230,13 +242,14 @@ pub async fn decline_user_request_event_invite(
     attendee_principal: Principal,
 ) -> CanisterResult<JoinedAttendeeResponse> {
     has_access().await?;
-    can_edit(group_id, PermissionType::Event(None))?;
+    can_edit(group_id, PermissionType::Event(None)).await?;
     EventCalls::accept_or_decline_user_request_event_invite(
         event_id,
         attendee_principal,
         group_id,
         false,
     )
+    .await
 }
 
 /// Accept an owner invite to an event as a user - [`[update]`](update)
@@ -251,7 +264,7 @@ pub async fn decline_user_request_event_invite(
 #[update(guard = "is_not_anonymous")]
 pub async fn accept_owner_request_event_invite(event_id: u64) -> CanisterResult<Attendee> {
     has_access().await?;
-    EventCalls::accept_or_decline_owner_request_event_invite(event_id, true)
+    EventCalls::accept_or_decline_owner_request_event_invite(event_id, true).await
 }
 
 /// Decline an owner invite to an event as a user - [`[update]`](update)
@@ -266,7 +279,7 @@ pub async fn accept_owner_request_event_invite(event_id: u64) -> CanisterResult<
 #[update(guard = "is_not_anonymous")]
 pub async fn decline_owner_request_event_invite(event_id: u64) -> CanisterResult<Attendee> {
     has_access().await?;
-    EventCalls::accept_or_decline_owner_request_event_invite(event_id, false)
+    EventCalls::accept_or_decline_owner_request_event_invite(event_id, false).await
 }
 
 /// Get the attendees for an event - [`[query]`](query)
@@ -281,7 +294,7 @@ pub async fn decline_owner_request_event_invite(event_id: u64) -> CanisterResult
 #[query(composite = true, guard = "is_not_anonymous")]
 pub async fn get_event_attendees(event_id: u64) -> CanisterResult<Vec<JoinedAttendeeResponse>> {
     has_access().await?;
-    EventCalls::get_event_attendees(event_id)
+    EventCalls::get_event_attendees(event_id).await
 }
 
 /// Get the attendees for an event - [`[query]`](query)
@@ -330,7 +343,7 @@ pub async fn get_event_invites_with_profiles(
 #[query(composite = true, guard = "is_not_anonymous")]
 pub async fn get_self_attendee() -> CanisterResult<Attendee> {
     has_access().await?;
-    EventCalls::get_self_attendee()
+    EventCalls::get_self_attendee().await
 }
 /// Get the caller joined groups - [`[query]`](query)
 /// # Returns
@@ -342,7 +355,7 @@ pub async fn get_self_attendee() -> CanisterResult<Attendee> {
 #[query(composite = true, guard = "is_not_anonymous")]
 pub async fn get_self_events() -> CanisterResult<Vec<EventResponse>> {
     has_access().await?;
-    Ok(EventCalls::get_self_events().await)
+    EventCalls::get_self_events().await
 }
 
 /// Get the joined events from a principal - [`[query]`](query)
@@ -359,7 +372,7 @@ pub async fn get_attending_from_principal(
     principal: Principal,
 ) -> CanisterResult<Vec<JoinedAttendeeResponse>> {
     has_access().await?;
-    EventCalls::get_attending_from_principal(principal)
+    EventCalls::get_attending_from_principal(principal).await
 }
 
 /// Leave an event - [`[update]`](update)
@@ -374,7 +387,7 @@ pub async fn get_attending_from_principal(
 #[update(guard = "is_not_anonymous")]
 pub async fn leave_event(event_id: u64) -> CanisterResult<()> {
     has_access().await?;
-    EventCalls::leave_event(event_id)
+    EventCalls::leave_event(event_id).await
 }
 
 /// Remove an event invite as a user - [`[update]`](update)
@@ -391,7 +404,7 @@ pub async fn leave_event(event_id: u64) -> CanisterResult<()> {
 #[update(guard = "is_not_anonymous")]
 pub async fn remove_event_invite(event_id: u64) -> CanisterResult<()> {
     has_access().await?;
-    EventCalls::remove_event_invite(event_id)
+    EventCalls::remove_event_invite(event_id).await
 }
 
 /// Remove an event attendee as a admin - [`[update]`](update)
@@ -412,8 +425,8 @@ pub async fn remove_attendee_from_event(
     attendee_principal: Principal,
 ) -> CanisterResult<()> {
     has_access().await?;
-    can_edit(group_id, PermissionType::Event(None))?;
-    EventCalls::remove_attendee_from_event(attendee_principal, event_id)
+    can_edit(group_id, PermissionType::Event(None)).await?;
+    EventCalls::remove_attendee_from_event(attendee_principal, event_id).await
 }
 
 /// Remove an event invite as a admin - [`[update]`](update)
@@ -434,8 +447,8 @@ pub async fn remove_attendee_invite_from_event(
     attendee_principal: Principal,
 ) -> CanisterResult<()> {
     has_access().await?;
-    can_edit(group_id, PermissionType::Event(None))?;
-    EventCalls::remove_attendee_invite_from_event(attendee_principal, event_id)
+    can_edit(group_id, PermissionType::Event(None)).await?;
+    EventCalls::remove_attendee_invite_from_event(attendee_principal, event_id).await
 }
 
 /// Get the invites for an event - [`[query]`](query)
@@ -455,5 +468,5 @@ pub async fn get_event_invites(
     group_id: u64,
 ) -> CanisterResult<Vec<InviteAttendeeResponse>> {
     has_access().await?;
-    EventCalls::get_event_invites(event_id, group_id)
+    EventCalls::get_event_invites(event_id, group_id).await
 }

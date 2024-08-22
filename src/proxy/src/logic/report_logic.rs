@@ -6,7 +6,7 @@ use catalyze_shared::{
 };
 use ic_cdk::caller;
 
-use crate::storage::{reports, MemberStore, StorageQueryable};
+use crate::storage::{groups, reports};
 
 use super::profile_logic::ProfileCalls;
 
@@ -14,9 +14,9 @@ pub struct ReportCalls;
 
 impl ReportCalls {
     pub async fn add_report(post_report: PostReport) -> CanisterResult<ReportResponse> {
-        let (_, member) = MemberStore::get(caller())?;
+        let (_, group) = groups().get(post_report.group_id).await?;
 
-        if !member.is_group_joined(&post_report.group_id) {
+        if group.is_member(caller()) {
             return Err(ApiError::bad_request());
         }
 

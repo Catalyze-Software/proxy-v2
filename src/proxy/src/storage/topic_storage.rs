@@ -1,9 +1,10 @@
+use catalyze_shared::StaticStorageRef;
 use ic_stable_structures::memory_manager::MemoryId;
 
 use super::{
     storage_api::{
-        StaticStorageRef, Storage, StorageQueryable, StorageUpdateable, CATEGORIES,
-        CATEGORIES_MEMORY_ID, SKILLS, SKILLS_MEMORY_ID, TAGS, TAGS_MEMORY_ID,
+        Storage, StorageQueryable, StorageUpdateable, CATEGORIES, CATEGORIES_MEMORY_ID, SKILLS,
+        SKILLS_MEMORY_ID, TAGS, TAGS_MEMORY_ID,
     },
     StorageInsertable, ID_KIND_CATEGORIES, ID_KIND_SKILLS, ID_KIND_TAGS,
 };
