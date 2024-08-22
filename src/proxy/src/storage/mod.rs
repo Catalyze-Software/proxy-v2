@@ -17,7 +17,7 @@ mod user_notification_storage;
 
 pub use boosted_storage::*;
 pub use event_storage::*;
-pub use friend_request_storage::FriendRequestStore;
+pub use friend_request_storage::*;
 pub use group_storage::*;
 pub use notification_storage::NotificationStore;
 pub use profile_storage::*;

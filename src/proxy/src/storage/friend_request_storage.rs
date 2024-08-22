@@ -1,27 +1,31 @@
-use super::{
-    storage_api::{
-        Storage, StorageInsertable, StorageQueryable, StorageUpdateable, FRIEND_REQUEST,
-        FRIEND_REQUESTS_MEMORY_ID,
-    },
-    ID_KIND_FRIEND_REQUESTS,
+use super::storage_api::FRIEND_REQUEST_CANISTER;
+use candid::Principal;
+use catalyze_shared::{
+    friend_request::{FriendRequest, FriendRequestFilter, FriendRequestSort},
+    StorageClient, StorageClientInsertable,
 };
-use catalyze_shared::{friend_request::FriendRequest, StaticStorageRef};
-use ic_stable_structures::memory_manager::MemoryId;
 
-pub struct FriendRequestStore;
+#[derive(Default)]
+pub struct FriendRequestStorageClient;
 
-impl Storage<u64, FriendRequest> for FriendRequestStore {
-    const NAME: &'static str = ID_KIND_FRIEND_REQUESTS;
-
-    fn storage() -> StaticStorageRef<u64, FriendRequest> {
-        &FRIEND_REQUEST
+impl StorageClient<u64, FriendRequest, FriendRequestFilter, FriendRequestSort>
+    for FriendRequestStorageClient
+{
+    fn name(&self) -> String {
+        "friend_requests".to_string()
     }
 
-    fn memory_id() -> MemoryId {
-        FRIEND_REQUESTS_MEMORY_ID
+    fn storage_canister_id(&self) -> catalyze_shared::StaticCellStorageRef<Principal> {
+        &FRIEND_REQUEST_CANISTER
     }
 }
 
-impl StorageQueryable<u64, FriendRequest> for FriendRequestStore {}
-impl StorageUpdateable<u64, FriendRequest> for FriendRequestStore {}
-impl StorageInsertable<FriendRequest> for FriendRequestStore {}
+impl StorageClientInsertable<FriendRequest, FriendRequestFilter, FriendRequestSort>
+    for FriendRequestStorageClient
+{
+}
+
+pub fn friend_requests(
+) -> impl StorageClientInsertable<FriendRequest, FriendRequestFilter, FriendRequestSort> {
+    FriendRequestStorageClient
+}
