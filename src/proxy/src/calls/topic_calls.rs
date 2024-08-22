@@ -1,6 +1,6 @@
 use crate::{helpers::guards::is_developer, logic::topic_logic::TopicCalls};
 use catalyze_shared::{
-    topic::{Topic, TopicKind},
+    topic::{TopicEntry, TopicKind},
     CanisterResult,
 };
 use ic_cdk::{query, update};
@@ -16,8 +16,8 @@ use ic_cdk::{query, update};
 /// # Note
 /// This function is guarded by the [`is_developer`](is_developer) function.
 #[update(guard = "is_developer")]
-pub fn add_topic(kind: TopicKind, value: String) -> CanisterResult<Topic> {
-    TopicCalls::add(kind, value)
+pub async fn add_topic(kind: TopicKind, value: String) -> CanisterResult<TopicEntry> {
+    TopicCalls::add(kind, value).await
 }
 
 /// Remove a topic from the canister  - [`[update]`](update)
@@ -29,8 +29,8 @@ pub fn add_topic(kind: TopicKind, value: String) -> CanisterResult<Topic> {
 /// # Note
 /// This function is guarded by the [`is_developer`](is_developer) function.
 #[update(guard = "is_developer")]
-pub async fn remove_topic(kind: TopicKind, id: u64) -> bool {
-    TopicCalls::remove(kind, id)
+pub async fn remove_topic(id: u64) -> CanisterResult<bool> {
+    TopicCalls::remove(id).await
 }
 
 /// Add many topics to the canister  - [`[update]`](update)
@@ -44,11 +44,8 @@ pub async fn remove_topic(kind: TopicKind, id: u64) -> bool {
 /// # Note
 /// This function is guarded by the [`is_developer`](is_developer) function.
 #[update(guard = "is_developer")]
-pub async fn add_topics(kind: TopicKind, value: Vec<String>) -> Vec<CanisterResult<Topic>> {
-    value
-        .into_iter()
-        .map(|v| TopicCalls::add(kind.clone(), v))
-        .collect()
+pub async fn add_topics(kind: TopicKind, value: Vec<String>) -> CanisterResult<Vec<TopicEntry>> {
+    TopicCalls::add_many(kind, value).await
 }
 
 /// Get a topic - [`[query]`](query)
@@ -59,9 +56,9 @@ pub async fn add_topics(kind: TopicKind, value: Vec<String>) -> Vec<CanisterResu
 /// * `Topic` - The topic
 /// # Errors
 /// * `ApiError` - If something went wrong while getting the topic
-#[query]
-pub fn get_topic(kind: TopicKind, id: u64) -> CanisterResult<Topic> {
-    TopicCalls::get(kind, id)
+#[query(composite = true)]
+pub async fn get_topic(id: u64) -> CanisterResult<TopicEntry> {
+    TopicCalls::get(id).await
 }
 
 /// Get topics by their identifiers and kind - [`[query]`](query)
@@ -72,9 +69,9 @@ pub fn get_topic(kind: TopicKind, id: u64) -> CanisterResult<Topic> {
 /// * `Vec<Topic>` - The topics
 /// # Errors
 /// * `ApiError` - If something went wrong while getting the topics
-#[query]
-pub fn get_topics(kind: TopicKind, ids: Vec<u64>) -> CanisterResult<Vec<Topic>> {
-    TopicCalls::get_many(kind, ids)
+#[query(composite = true)]
+pub async fn get_topics(ids: Vec<u64>) -> CanisterResult<Vec<TopicEntry>> {
+    TopicCalls::get_many(ids).await
 }
 
 /// Get all topics by kind - [`[query]`](query)
@@ -84,7 +81,7 @@ pub fn get_topics(kind: TopicKind, ids: Vec<u64>) -> CanisterResult<Vec<Topic>> 
 /// * `Vec<Topic>` - The topics
 /// # Errors
 /// * `ApiError` - If something went wrong while getting the topics
-#[query]
-pub fn get_all_topics(kind: TopicKind) -> CanisterResult<Vec<Topic>> {
-    TopicCalls::get_all(kind)
+#[query(composite = true)]
+pub async fn get_all_topics(kind: TopicKind) -> CanisterResult<Vec<TopicEntry>> {
+    TopicCalls::get_all(kind).await
 }

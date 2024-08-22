@@ -1,99 +1,73 @@
 use catalyze_shared::{
     api_error::ApiError,
-    topic::{Topic, TopicKind},
+    topic::{Topic, TopicEntry, TopicFilter, TopicKind},
     validation::{ValidateField, ValidationType},
     validator::Validator,
+    CanisterResult, StorageClient, StorageClientInsertable,
 };
 
-use crate::storage::{
-    CategoryStore, SkillStore, StorageInsertable, StorageQueryable, StorageUpdateable, TagStore,
-};
+use crate::storage::topics;
 
 pub struct TopicCalls;
 
 impl TopicCalls {
-    pub fn add(kind: TopicKind, topic: String) -> Result<Topic, ApiError> {
-        let topic = handle_topic(kind.clone(), topic)?;
-
-        let raw = match kind {
-            TopicKind::Tag => TagStore::insert(topic),
-            TopicKind::Category => CategoryStore::insert(topic),
-            TopicKind::Skill => SkillStore::insert(topic),
-        }?;
-
-        Topic::from((raw, kind)).into()
+    pub async fn add(kind: TopicKind, topic: String) -> CanisterResult<TopicEntry> {
+        let topic = handle_topic(kind.clone(), topic).await?;
+        topics().insert(Topic::new(kind, topic)).await
     }
 
-    pub fn get_all(kind: TopicKind) -> Result<Vec<Topic>, ApiError> {
-        let result = match kind {
-            TopicKind::Tag => TagStore::get_all(),
-            TopicKind::Category => CategoryStore::get_all(),
-            TopicKind::Skill => SkillStore::get_all(),
+    pub async fn add_many(kind: TopicKind, list: Vec<String>) -> CanisterResult<Vec<TopicEntry>> {
+        let mut mapped: Vec<Topic> = vec![];
+
+        for topic in list {
+            let topic = handle_topic(kind.clone(), topic).await?;
+            mapped.push(Topic::new(kind.clone(), topic));
         }
-        .into_iter()
-        .map(|raw| Topic::from((raw, kind.clone())))
-        .collect();
 
-        Ok(result)
+        topics().insert_many(mapped).await
     }
 
-    pub fn get(kind: TopicKind, id: u64) -> Result<Topic, ApiError> {
-        let raw = match kind {
-            TopicKind::Tag => TagStore::get(id),
-            TopicKind::Category => CategoryStore::get(id),
-            TopicKind::Skill => SkillStore::get(id),
-        }?;
-
-        Topic::from((raw, kind)).into()
+    pub async fn get_all(kind: TopicKind) -> CanisterResult<Vec<TopicEntry>> {
+        topics().filter(TopicFilter::Kind(kind).into()).await
     }
 
-    pub fn get_many(kind: TopicKind, ids: Vec<u64>) -> Result<Vec<Topic>, ApiError> {
-        let result = match kind {
-            TopicKind::Tag => TagStore::get_many(ids),
-            TopicKind::Category => CategoryStore::get_many(ids),
-            TopicKind::Skill => SkillStore::get_many(ids),
-        }
-        .into_iter()
-        .map(|raw| Topic::from((raw, kind.clone())))
-        .collect();
-
-        Ok(result)
+    pub async fn get(id: u64) -> CanisterResult<TopicEntry> {
+        topics().get(id).await
     }
 
-    pub fn remove(kind: TopicKind, id: u64) -> bool {
-        match kind {
-            TopicKind::Tag => TagStore::remove(id),
-            TopicKind::Category => CategoryStore::remove(id),
-            TopicKind::Skill => SkillStore::remove(id),
-        }
+    pub async fn get_many(ids: Vec<u64>) -> CanisterResult<Vec<TopicEntry>> {
+        topics().get_many(ids).await
+    }
+
+    pub async fn remove(id: u64) -> CanisterResult<bool> {
+        topics().remove(id).await
     }
 }
 
 const TOPIC_MAX_LENGTH: usize = 32;
 const TOPIC_MIN_LENGTH: usize = 1;
 
-fn handle_topic(kind: TopicKind, topic: String) -> Result<String, ApiError> {
+async fn handle_topic(kind: TopicKind, topic: String) -> CanisterResult<String> {
     let topic = topic.to_lowercase();
-    let topic = topic.trim();
+    let topic = topic.trim().to_owned();
 
     Validator::new(vec![ValidateField(
-        ValidationType::StringLength(topic.to_string(), TOPIC_MIN_LENGTH, TOPIC_MAX_LENGTH),
+        ValidationType::StringLength(topic.clone(), TOPIC_MIN_LENGTH, TOPIC_MAX_LENGTH),
         kind.to_string(),
     )])
     .validate()?;
 
-    let existing = match kind {
-        TopicKind::Tag => TagStore::find(|_, value| value == topic),
-        TopicKind::Category => CategoryStore::find(|_, value| value == topic),
-        TopicKind::Skill => SkillStore::find(|_, value| value == topic),
-    };
+    let filters = vec![
+        TopicFilter::Kind(kind.clone()),
+        TopicFilter::Value(topic.clone()),
+    ];
 
-    if let Some(existing) = existing {
+    if let Some((id, existing)) = topics().find(filters).await? {
         return Err(ApiError::duplicate()
             .add_tag(kind.to_string())
             .add_message(format!(
                 "{kind} \"{}\" already exists with ID: {}",
-                existing.1, existing.0
+                existing.value, id
             )));
     }
 

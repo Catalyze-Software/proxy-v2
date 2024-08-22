@@ -20,28 +20,20 @@ use super::IDStore;
 /// These IDs should not be changed. New IDs should be added to the end of the list
 pub static NOTIFICATIONS_MEMORY_ID: MemoryId = MemoryId::new(1);
 pub static USER_NOTIFICATIONS_MEMORY_ID: MemoryId = MemoryId::new(2);
-
 pub static FRIEND_REQUESTS_MEMORY_ID: MemoryId = MemoryId::new(3);
-
 pub static LOGS_MEMORY_ID: MemoryId = MemoryId::new(4);
+pub static HISTORY_POINT_MEMORY_ID: MemoryId = MemoryId::new(5);
+pub static IDS_MEMORY_ID: MemoryId = MemoryId::new(6);
+pub static REWARD_BUFFER_MEMORY_ID: MemoryId = MemoryId::new(7);
 
-pub static TAGS_MEMORY_ID: MemoryId = MemoryId::new(5);
-pub static CATEGORIES_MEMORY_ID: MemoryId = MemoryId::new(6);
-pub static SKILLS_MEMORY_ID: MemoryId = MemoryId::new(7);
-
-pub static HISTORY_POINT_MEMORY_ID: MemoryId = MemoryId::new(8);
-
-pub static IDS_MEMORY_ID: MemoryId = MemoryId::new(9);
-
-pub static REWARD_BUFFER_MEMORY_ID: MemoryId = MemoryId::new(10);
-
-pub static HISTORY_CANISTER_MEMORY_ID: MemoryId = MemoryId::new(11);
-pub static REWARD_CANISTER_MEMORY_ID: MemoryId = MemoryId::new(12);
-pub static PROFILE_CANISTER_MEMORY_ID: MemoryId = MemoryId::new(13);
-pub static REPORT_CANISTER_MEMORY_ID: MemoryId = MemoryId::new(14);
-pub static GROUP_CANISTER_MEMORY_ID: MemoryId = MemoryId::new(15);
-pub static EVENT_CANISTER_MEMORY_ID: MemoryId = MemoryId::new(16);
-pub static BOOSTED_CANISTER_MEMORY_ID: MemoryId = MemoryId::new(17);
+pub static HISTORY_CANISTER_MEMORY_ID: MemoryId = MemoryId::new(8);
+pub static REWARD_CANISTER_MEMORY_ID: MemoryId = MemoryId::new(9);
+pub static PROFILE_CANISTER_MEMORY_ID: MemoryId = MemoryId::new(10);
+pub static REPORT_CANISTER_MEMORY_ID: MemoryId = MemoryId::new(11);
+pub static GROUP_CANISTER_MEMORY_ID: MemoryId = MemoryId::new(12);
+pub static EVENT_CANISTER_MEMORY_ID: MemoryId = MemoryId::new(13);
+pub static BOOSTED_CANISTER_MEMORY_ID: MemoryId = MemoryId::new(14);
+pub static TOPIC_CANISTER_MEMORY_ID: MemoryId = MemoryId::new(15);
 
 pub trait Storage<K: Storable + Ord + Clone, V: Storable + Clone> {
     const NAME: &'static str;
@@ -247,9 +239,6 @@ thread_local! {
     pub static LOGS: StorageRef<u64, Logger> = init_btree(&MEMORY_MANAGER, LOGS_MEMORY_ID);
     pub static REWARD_BUFFER: StorageRef<u64, RewardableActivity> = init_btree(&MEMORY_MANAGER, REWARD_BUFFER_MEMORY_ID);
 
-    pub static TAGS: StorageRef<u64, String> = init_btree(&MEMORY_MANAGER, TAGS_MEMORY_ID);
-    pub static CATEGORIES: StorageRef<u64, String> = init_btree(&MEMORY_MANAGER, CATEGORIES_MEMORY_ID);
-    pub static SKILLS: StorageRef<u64, String> = init_btree(&MEMORY_MANAGER, SKILLS_MEMORY_ID);
     pub static HISTORY_POINT: CellStorageRef<u64> = init_cell(&MEMORY_MANAGER, "history_point", HISTORY_POINT_MEMORY_ID);
 
     pub static IDS: StorageRef<String, u64> = init_btree(&MEMORY_MANAGER, IDS_MEMORY_ID);
@@ -261,4 +250,5 @@ thread_local! {
     pub static GROUP_CANISTER: CellStorageRef<Principal> = init_cell(&MEMORY_MANAGER, "group_canister_id", GROUP_CANISTER_MEMORY_ID);
     pub static EVENT_CANISTER: CellStorageRef<Principal> = init_cell(&MEMORY_MANAGER, "event_canister_id", EVENT_CANISTER_MEMORY_ID);
     pub static BOOSTED_CANISTER: CellStorageRef<Principal> = init_cell(&MEMORY_MANAGER, "boosted_canister_id", BOOSTED_CANISTER_MEMORY_ID);
+    pub static TOPIC_CANISTER: CellStorageRef<Principal> = init_cell(&MEMORY_MANAGER, "topic_canister_id", TOPIC_CANISTER_MEMORY_ID);
 }

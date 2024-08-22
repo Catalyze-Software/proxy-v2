@@ -3,6 +3,7 @@ use catalyze_shared::{CanisterResult, CellStorage, GenericCellStorage};
 
 use super::storage_api::{
     HISTORY_CANISTER, HISTORY_POINT, PROFILE_CANISTER, REPORT_CANISTER, REWARD_CANISTER,
+    TOPIC_CANISTER,
 };
 
 pub fn reward_canister() -> impl CellStorage<Principal> {
@@ -30,4 +31,8 @@ pub fn profile_canister() -> impl CellStorage<Principal> {
 
 pub fn report_canister() -> impl CellStorage<Principal> {
     GenericCellStorage::new("report_canister", &REPORT_CANISTER)
+}
+
+pub fn topic_canister() -> impl CellStorage<Principal> {
+    GenericCellStorage::new("topic_canister", &TOPIC_CANISTER)
 }
