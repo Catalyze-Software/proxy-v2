@@ -2,8 +2,8 @@ use crate::{
     helpers::guards::{is_developer, is_prod_developer},
     logic::{boost_logic::BoostCalls, id_logic::IDLogic, websocket_logic::Websocket},
     storage::{
-        history_canister, reward_canister, FriendRequestStore, LoggerStore, NotificationStore,
-        RewardBufferStore, RewardTimerStore, StorageUpdateable, UserNotificationStore,
+        history_canister, reward_canister, FriendRequestStore, LoggerStore, RewardBufferStore,
+        RewardTimerStore, StorageUpdateable,
     },
 };
 use candid::Principal;
@@ -44,12 +44,6 @@ fn icts_name() -> String {
 #[query]
 fn icts_version() -> String {
     env!("CARGO_PKG_VERSION").to_string()
-}
-
-#[update(guard = "is_developer")]
-pub fn _dev_clear_notifications() {
-    UserNotificationStore::clear();
-    NotificationStore::clear();
 }
 
 #[update(guard = "is_prod_developer")]
@@ -100,8 +94,6 @@ fn _dev_prod_init() -> Result<(), ApiError> {
 #[update(guard = "is_prod_developer")]
 fn _dev_clear() {
     FriendRequestStore::clear();
-    NotificationStore::clear();
-    UserNotificationStore::clear();
     LoggerStore::clear();
     RewardBufferStore::clear();
 }

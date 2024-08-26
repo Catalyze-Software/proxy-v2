@@ -61,7 +61,7 @@ impl FriendRequestCalls {
             FriendRequestResponse::new(friend_request_id, inserted_friend_request.clone());
 
         let notification_id =
-            NotificationCalls::notification_add_friend_request(friend_request_response)?;
+            NotificationCalls::notification_add_friend_request(friend_request_response).await?;
 
         inserted_friend_request.set_notification_id(notification_id);
 
@@ -102,12 +102,13 @@ impl FriendRequestCalls {
         NotificationCalls::notification_accept_or_decline_friend_request(
             (friend_request_id, friend_request),
             true,
-        )?;
+        )
+        .await?;
 
         Ok(FriendRequestStore::remove(friend_request_id))
     }
 
-    pub fn decline_friend_request(friend_request_id: u64) -> CanisterResult<bool> {
+    pub async fn decline_friend_request(friend_request_id: u64) -> CanisterResult<bool> {
         let (_, friend_request) = FriendRequestStore::get(friend_request_id)?;
 
         if friend_request.to != caller() {
@@ -119,11 +120,13 @@ impl FriendRequestCalls {
         NotificationCalls::notification_accept_or_decline_friend_request(
             (friend_request_id, friend_request),
             false,
-        )?;
+        )
+        .await?;
+
         Ok(FriendRequestStore::remove(friend_request_id))
     }
 
-    pub fn remove_friend_request(friend_request_id: u64) -> CanisterResult<bool> {
+    pub async fn remove_friend_request(friend_request_id: u64) -> CanisterResult<bool> {
         let (_, friend_request) = FriendRequestStore::get(friend_request_id)?;
 
         if friend_request.requested_by != caller() {
@@ -132,7 +135,8 @@ impl FriendRequestCalls {
                 .add_message("You are not authorized to remove this friend request"));
         }
 
-        NotificationCalls::notification_remove_friend_request(friend_request.to, friend_request_id);
+        NotificationCalls::notification_remove_friend_request(friend_request.to, friend_request_id)
+            .await;
         Ok(FriendRequestStore::remove(friend_request_id))
     }
 

@@ -25,7 +25,6 @@ impl StorageClientInsertableByKey<Principal, ProfileWithRefs, ProfileFilter, Pro
 {
 }
 
-pub fn profiles(
-) -> impl StorageClientInsertableByKey<Principal, ProfileWithRefs, ProfileFilter, ProfileSort> {
+pub fn profiles() -> ProfileStorageClient {
     ProfileStorageClient
 }

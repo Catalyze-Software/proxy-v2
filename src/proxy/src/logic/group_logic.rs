@@ -426,7 +426,8 @@ impl GroupCalls {
             invitee_principal,
             invite_member_response,
             Self::get_higher_role_members(group_id).await,
-        )?;
+        )
+        .await?;
 
         group.add_invite(
             invitee_principal,
@@ -467,7 +468,8 @@ impl GroupCalls {
             accept,
             group.get_members(),
             Self::get_higher_role_members(group_id).await,
-        )?;
+        )
+        .await?;
 
         if accept {
             group.convert_invite_to_member(principal);
@@ -515,7 +517,8 @@ impl GroupCalls {
             accept,
             group.get_members(),
             Self::get_higher_role_members(group_id).await,
-        )?;
+        )
+        .await?;
 
         // notify the reward buffer store that the group member count has changed
         RewardBufferStore::notify_group_member_count_changed(group_id);
@@ -568,7 +571,8 @@ impl GroupCalls {
         NotificationCalls::notification_change_group_member_role(
             joined_response,
             Self::get_higher_role_members(group_id).await,
-        );
+        )
+        .await;
 
         Ok(())
     }
@@ -766,7 +770,7 @@ impl GroupCalls {
 
         Self::remove_group_from_profile(group_id, caller()).await?;
 
-        NotificationCalls::notification_leave_group(group.get_members(), group_id);
+        NotificationCalls::notification_leave_group(group.get_members(), group_id).await;
 
         Ok(())
     }
@@ -824,7 +828,8 @@ impl GroupCalls {
         NotificationCalls::notification_remove_group_member(
             JoinedMemberResponse::new(principal, roles, group_id),
             Self::get_higher_role_members(group_id).await,
-        );
+        )
+        .await;
 
         Ok(())
     }
@@ -856,7 +861,8 @@ impl GroupCalls {
         NotificationCalls::notification_remove_group_invite(
             InviteMemberResponse::new(principal, invite, group_id),
             Self::get_higher_role_members(group_id).await,
-        );
+        )
+        .await;
 
         Ok(())
     }
@@ -1056,7 +1062,8 @@ impl GroupValidation {
                     profiles().update(caller, profile).await?;
                 }
 
-                NotificationCalls::notification_join_public_group(group.get_members(), group_id);
+                NotificationCalls::notification_join_public_group(group.get_members(), group_id)
+                    .await;
 
                 // notify the reward buffer store that the group member count has changed
                 RewardBufferStore::notify_group_member_count_changed(group_id);
@@ -1075,7 +1082,8 @@ impl GroupValidation {
                 NotificationCalls::notification_user_join_request_group(
                     GroupCalls::get_higher_role_members(group_id).await,
                     InviteMemberResponse::new(caller, invite, group_id),
-                )?;
+                )
+                .await?;
 
                 if !profile.is_group_member(group_id) {
                     profile.add_group(group_id);

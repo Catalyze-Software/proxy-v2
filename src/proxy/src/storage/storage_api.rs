@@ -42,6 +42,7 @@ pub static REPORT_CANISTER_MEMORY_ID: MemoryId = MemoryId::new(14);
 pub static GROUP_CANISTER_MEMORY_ID: MemoryId = MemoryId::new(15);
 pub static EVENT_CANISTER_MEMORY_ID: MemoryId = MemoryId::new(16);
 pub static BOOSTED_CANISTER_MEMORY_ID: MemoryId = MemoryId::new(17);
+pub static NOTIFICATION_CANISTER_MEMORY_ID: MemoryId = MemoryId::new(18);
 
 pub trait Storage<K: Storable + Ord + Clone, V: Storable + Clone> {
     const NAME: &'static str;
@@ -261,4 +262,5 @@ thread_local! {
     pub static GROUP_CANISTER: CellStorageRef<Principal> = init_cell(&MEMORY_MANAGER, "group_canister_id", GROUP_CANISTER_MEMORY_ID);
     pub static EVENT_CANISTER: CellStorageRef<Principal> = init_cell(&MEMORY_MANAGER, "event_canister_id", EVENT_CANISTER_MEMORY_ID);
     pub static BOOSTED_CANISTER: CellStorageRef<Principal> = init_cell(&MEMORY_MANAGER, "boosted_canister_id", BOOSTED_CANISTER_MEMORY_ID);
+    pub static NOTIFICATION_CANISTER: CellStorageRef<Principal> = init_cell(&MEMORY_MANAGER, "notification_canister_id", NOTIFICATION_CANISTER_MEMORY_ID);
 }

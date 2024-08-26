@@ -1,14 +1,14 @@
 use std::{cell::RefCell, collections::HashMap};
 
 use candid::Principal;
-use catalyze_shared::{user_notifications::UserNotifications, websocket_message::WSMessage};
+use catalyze_shared::{websocket_message::WSMessage, StorageClient};
 use ic_cdk::api::time;
 use ic_websocket_cdk::{
     send as ws_send, OnCloseCallbackArgs, OnMessageCallbackArgs, OnOpenCallbackArgs, WsHandlers,
     WsInitParams,
 };
 
-use crate::storage::{RewardBufferStore, StorageQueryable, UserNotificationStore};
+use crate::storage::{profiles, RewardBufferStore};
 
 thread_local! {
    pub static CONNECTED_CLIENTS: RefCell<HashMap<Principal, u64>> = RefCell::new(HashMap::new());
@@ -35,12 +35,18 @@ impl Websocket {
 
         RewardBufferStore::notify_active_user(args.client_principal);
 
-        let (_, notification_ids) = UserNotificationStore::get(args.client_principal)
-            .unwrap_or((args.client_principal, UserNotifications::new()));
-        Self::send_message(
-            args.client_principal,
-            WSMessage::UnreadCount(notification_ids.get_unread_ids().len() as u64),
-        );
+        ic_cdk::spawn(async move {
+            let notifications = profiles()
+                .get(args.client_principal)
+                .await
+                .map(|(_, p)| p.references.notifications)
+                .unwrap_or_default();
+
+            Self::send_message(
+                args.client_principal,
+                WSMessage::UnreadCount(notifications.get_unread_ids().len() as u64),
+            );
+        });
     }
 
     pub fn on_close(args: OnCloseCallbackArgs) {

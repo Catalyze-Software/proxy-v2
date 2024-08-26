@@ -262,7 +262,8 @@ impl EventCalls {
                 let notification_id = NotificationCalls::notification_user_join_request_event(
                     vec![event.owner],
                     invite_attendee_response,
-                )?;
+                )
+                .await?;
 
                 event.add_invite(caller(), InviteType::UserRequest, Some(notification_id));
             }
@@ -271,7 +272,8 @@ impl EventCalls {
                     vec![event.owner],
                     group_id,
                     event_id,
-                );
+                )
+                .await;
 
                 event.add_attendee(member);
             }
@@ -306,7 +308,8 @@ impl EventCalls {
             attendee_principal,
             invite_attendee_response.clone(),
             vec![],
-        )?;
+        )
+        .await?;
 
         event.add_invite(
             attendee_principal,
@@ -583,7 +586,8 @@ impl EventCalls {
         NotificationCalls::notification_remove_event_attendee(
             JoinedAttendeeResponse::new(event_id, group_id, attendee_principal),
             event.get_members(),
-        );
+        )
+        .await;
 
         Ok(())
     }
@@ -614,7 +618,8 @@ impl EventCalls {
                         attendee_principal,
                         invite.invite_type.clone(),
                     ),
-                );
+                )
+                .await;
             }
         }
 
@@ -707,7 +712,8 @@ impl EventCalls {
                     attendee_invite,
                     event.get_members(),
                     accept,
-                )?;
+                )
+                .await?;
             }
             InviteType::OwnerRequest => {
                 NotificationCalls::notification_owner_join_request_event_accept_or_decline(
@@ -715,7 +721,8 @@ impl EventCalls {
                     attendee_invite,
                     event.get_members(),
                     accept,
-                )?;
+                )
+                .await?;
             }
         }
 

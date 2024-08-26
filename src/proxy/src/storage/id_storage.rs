@@ -14,7 +14,6 @@ pub const ID_KIND_SKILLS: &str = "skills";
 pub enum IDKind {
     FriendRequests,
     Logs,
-    Notifications,
     Tags,
     Categories,
     Skills,
@@ -26,7 +25,6 @@ impl std::fmt::Display for IDKind {
         match self {
             IDKind::FriendRequests => write!(f, "{ID_KIND_FRIEND_REQUESTS}"),
             IDKind::Logs => write!(f, "{ID_KIND_LOGS}"),
-            IDKind::Notifications => write!(f, "{ID_KIND_NOTIFICATIONS}"),
             IDKind::Tags => write!(f, "{ID_KIND_TAGS}"),
             IDKind::Categories => write!(f, "{ID_KIND_CATEGORIES}"),
             IDKind::Skills => write!(f, "{ID_KIND_SKILLS}"),
@@ -42,7 +40,6 @@ impl std::str::FromStr for IDKind {
         match s {
             ID_KIND_FRIEND_REQUESTS => Ok(IDKind::FriendRequests),
             ID_KIND_LOGS => Ok(IDKind::Logs),
-            ID_KIND_NOTIFICATIONS => Ok(IDKind::Notifications),
             ID_KIND_TAGS => Ok(IDKind::Tags),
             ID_KIND_CATEGORIES => Ok(IDKind::Categories),
             ID_KIND_SKILLS => Ok(IDKind::Skills),
@@ -98,7 +95,6 @@ impl IDStore {
         match kind {
             IDKind::FriendRequests => super::FriendRequestStore::storage().with(last_key),
             IDKind::Logs => super::LoggerStore::storage().with(last_key),
-            IDKind::Notifications => super::NotificationStore::storage().with(last_key),
             IDKind::Tags => super::TagStore::storage().with(last_key),
             IDKind::Categories => super::CategoryStore::storage().with(last_key),
             IDKind::Skills => super::SkillStore::storage().with(last_key),
