@@ -2,8 +2,8 @@ use crate::{
     helpers::guards::{is_developer, is_prod_developer},
     logic::{boost_logic::BoostCalls, id_logic::IDLogic, websocket_logic::Websocket},
     storage::{
-        history_canister, reward_canister, LoggerStore, NotificationStore, RewardBufferStore,
-        RewardTimerStore, StorageUpdateable, UserNotificationStore,
+        history_canister, reward_canister, NotificationStore, RewardBufferStore, RewardTimerStore,
+        StorageUpdateable, UserNotificationStore,
     },
 };
 use candid::Principal;
@@ -101,7 +101,6 @@ fn _dev_prod_init() -> Result<(), ApiError> {
 fn _dev_clear() {
     NotificationStore::clear();
     UserNotificationStore::clear();
-    LoggerStore::clear();
     RewardBufferStore::clear();
 }
 
