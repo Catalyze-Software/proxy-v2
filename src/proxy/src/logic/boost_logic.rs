@@ -5,7 +5,7 @@ use catalyze_shared::{
     api_error::ApiError,
     boosted::{Boost, BoostedEntry, BoostedFilter},
     subject::{Subject, SubjectType},
-    CanisterResult, StorageClient, StorageClientInsertable,
+    CanisterResult, Filter, StorageClient, StorageClientInsertable,
 };
 use ic_cdk::{api::time, caller};
 use ic_cdk_timers::{clear_timer, set_timer, TimerId};
@@ -37,7 +37,7 @@ impl BoostCalls {
         let days = Self::calculate_days(tokens);
         let seconds = Self::get_seconds_from_days(days);
         let boost = boosts()
-            .find(BoostedFilter::Subject(subject.clone()).into())
+            .find(BoostedFilter::Subject(subject.clone()).to_vec())
             .await?;
 
         if let Some((id, boost)) = boost {
@@ -145,12 +145,14 @@ impl BoostCalls {
     }
 
     pub async fn get_boost_by_subject(subject: Subject) -> CanisterResult<Option<BoostedEntry>> {
-        boosts().find(BoostedFilter::Subject(subject).into()).await
+        boosts()
+            .find(BoostedFilter::Subject(subject).to_vec())
+            .await
     }
 
     pub async fn get_boosts_by_subject(subject: SubjectType) -> CanisterResult<Vec<BoostedEntry>> {
         boosts()
-            .filter(BoostedFilter::SubjectType(subject).into())
+            .filter(BoostedFilter::SubjectType(subject).to_vec())
             .await
     }
 
