@@ -2,13 +2,12 @@ mod boosted_storage;
 pub mod cells;
 mod event_storage;
 mod friend_request_storage;
+mod global_storage;
 mod group_storage;
 mod id_storage;
-mod logger_storage;
 mod notification_storage;
 mod profile_storage;
 mod report_storage;
-pub mod reward_storage;
 pub mod storage_api;
 mod topic_storage;
 mod user_notification_storage;
@@ -29,9 +28,5 @@ pub use topic_storage::*;
 pub use user_notification_storage::UserNotificationStore;
 
 pub use cells::*;
+pub use global_storage::*;
 pub use id_storage::*;
-pub use logger_storage::LoggerStore;
-pub use reward_storage::{RewardBufferStore, RewardTimerStore};
-
-// Re-export constants
-pub use logger_storage::LOGIN_EVENT;

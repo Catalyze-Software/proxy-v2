@@ -13,7 +13,7 @@ ic-stable-structures = "0.6"
 ic-websocket-cdk = "0.4"
 ic-cdk-timers = "0.9"
 
-catalyze-shared = { git = "https://github.com/Catalyze-Software/catalyze-shared", branch = "feat/friend-reqs" }
+catalyze-shared = { git = "https://github.com/Catalyze-Software/catalyze-shared" }
 
 [profile.release]
 lto = true

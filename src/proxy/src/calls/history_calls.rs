@@ -1,9 +1,9 @@
-use catalyze_shared::{CanisterResult, CellStorage};
+use catalyze_shared::CanisterResult;
 use ic_cdk::query;
 
-use crate::storage::history_point;
+use crate::storage::global;
 
 #[query]
-fn get_history_point() -> CanisterResult<u64> {
-    history_point().get()
+async fn get_history_point() -> CanisterResult<u64> {
+    global().get_history_point().await
 }

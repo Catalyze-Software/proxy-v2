@@ -2,23 +2,17 @@ use super::storage_api::{Storage, IDS, IDS_MEMORY_ID};
 use catalyze_shared::{api_error::ApiError, StaticStorageRef, StorageRef};
 use ic_stable_structures::{memory_manager::MemoryId, Storable};
 
-pub const ID_KIND_LOGS: &str = "logs";
 pub const ID_KIND_NOTIFICATIONS: &str = "notifications";
-pub const ID_KIND_REWARDS_BUFFER: &str = "rewards_buffer";
 
 #[derive(Debug, Clone)]
 pub enum IDKind {
-    Logs,
     Notifications,
-    RewardBuffer,
 }
 
 impl std::fmt::Display for IDKind {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            IDKind::Logs => write!(f, "{ID_KIND_LOGS}"),
             IDKind::Notifications => write!(f, "{ID_KIND_NOTIFICATIONS}"),
-            IDKind::RewardBuffer => write!(f, "{ID_KIND_REWARDS_BUFFER}"),
         }
     }
 }
@@ -28,9 +22,7 @@ impl std::str::FromStr for IDKind {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            ID_KIND_LOGS => Ok(IDKind::Logs),
             ID_KIND_NOTIFICATIONS => Ok(IDKind::Notifications),
-            ID_KIND_REWARDS_BUFFER => Ok(IDKind::RewardBuffer),
             _ => Err(format!("Unknown IDKind: {s}")),
         }
     }
@@ -80,9 +72,7 @@ impl IDStore {
 
     fn get_last(kind: IDKind) -> u64 {
         match kind {
-            IDKind::Logs => super::LoggerStore::storage().with(last_key),
             IDKind::Notifications => super::NotificationStore::storage().with(last_key),
-            IDKind::RewardBuffer => super::RewardBufferStore::storage().with(last_key),
         }
     }
 }
