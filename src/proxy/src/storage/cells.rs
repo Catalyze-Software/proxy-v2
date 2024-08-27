@@ -1,25 +1,9 @@
 use candid::Principal;
-use catalyze_shared::{CanisterResult, CellStorage, GenericCellStorage};
+use catalyze_shared::{CellStorage, GenericCellStorage};
 
 use super::storage_api::{
-    HISTORY_CANISTER, HISTORY_POINT, PROFILE_CANISTER, REPORT_CANISTER, REWARD_CANISTER,
-    TOPIC_CANISTER,
+    GLOBAL_CANISTER, HISTORY_CANISTER, PROFILE_CANISTER, REPORT_CANISTER, TOPIC_CANISTER,
 };
-
-pub fn reward_canister() -> impl CellStorage<Principal> {
-    GenericCellStorage::new("reward_canister", &REWARD_CANISTER)
-}
-
-pub fn history_point() -> impl CellStorage<u64> {
-    GenericCellStorage::new("history_point", &HISTORY_POINT)
-}
-
-pub fn get_next_history_point() -> CanisterResult<u64> {
-    let current = history_point().get().unwrap_or(1);
-    let next = current + 1;
-    history_point().set(next)?;
-    Ok(next)
-}
 
 pub fn history_canister() -> impl CellStorage<Principal> {
     GenericCellStorage::new("history_canister", &HISTORY_CANISTER)
@@ -35,4 +19,8 @@ pub fn report_canister() -> impl CellStorage<Principal> {
 
 pub fn topic_canister() -> impl CellStorage<Principal> {
     GenericCellStorage::new("topic_canister", &TOPIC_CANISTER)
+}
+
+pub fn global_canister() -> impl CellStorage<Principal> {
+    GenericCellStorage::new("global_canister_id", &GLOBAL_CANISTER)
 }

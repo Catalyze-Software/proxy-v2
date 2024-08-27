@@ -7,7 +7,7 @@ use catalyze_shared::{
 use ic_cdk::api::call::CallResult;
 use serde::Deserialize;
 
-use crate::storage::{get_next_history_point, history_canister, profiles};
+use crate::storage::{global, history_canister, profiles};
 
 pub struct HistoryEventLogic;
 
@@ -30,7 +30,7 @@ impl HistoryEventLogic {
                 .map_err(|e: candid::Error| ApiError::unexpected().add_message(e.to_string()))?;
 
         let history_canister_id = history_canister().get()?;
-        let history_point = get_next_history_point()?;
+        let history_point = global().next_history_point().await?;
 
         ic_cdk::spawn(async move {
             let _ = send_event(history_canister_id, history_point, event).await;

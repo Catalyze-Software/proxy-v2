@@ -10,7 +10,7 @@ use crate::{
             legacy_dip721_balance_of,
         },
     },
-    storage::{boosts, events, groups, profiles, RewardBufferStore},
+    storage::{boosts, events, global, groups, profiles},
     USER_GROUP_CREATION_LIMIT,
 };
 use candid::Principal;
@@ -90,7 +90,9 @@ impl GroupCalls {
         let (new_group_id, new_group) = groups().insert(post_group.into()).await?;
 
         // notify the reward buffer store that the group member count has changed
-        RewardBufferStore::notify_group_member_count_changed(new_group_id);
+        global()
+            .notify_group_member_count_changed(new_group_id)
+            .await?;
 
         Self::add_group_to_profile(new_group_id, caller()).await?;
 
@@ -479,7 +481,7 @@ impl GroupCalls {
         groups().update(group_id, group).await?;
 
         // notify the reward buffer store that the group member count has changed
-        RewardBufferStore::notify_group_member_count_changed(group_id);
+        global().notify_group_member_count_changed(group_id).await?;
 
         Ok(())
     }
@@ -518,7 +520,7 @@ impl GroupCalls {
         )?;
 
         // notify the reward buffer store that the group member count has changed
-        RewardBufferStore::notify_group_member_count_changed(group_id);
+        global().notify_group_member_count_changed(group_id).await?;
 
         Ok(())
     }
@@ -1059,7 +1061,7 @@ impl GroupValidation {
                 NotificationCalls::notification_join_public_group(group.get_members(), group_id);
 
                 // notify the reward buffer store that the group member count has changed
-                RewardBufferStore::notify_group_member_count_changed(group_id);
+                global().notify_group_member_count_changed(group_id).await?;
 
                 Ok(())
             }
@@ -1111,7 +1113,7 @@ impl GroupValidation {
                                 profiles().update(caller, profile).await?;
                             }
                             // notify the reward buffer store that the group member count has changed
-                            RewardBufferStore::notify_group_member_count_changed(group_id);
+                            global().notify_group_member_count_changed(group_id).await?;
 
                             Ok(())
                         } else {
@@ -1141,7 +1143,7 @@ impl GroupValidation {
                             }
 
                             // notify the reward buffer store that the group member count has changed
-                            RewardBufferStore::notify_group_member_count_changed(group_id);
+                            global().notify_group_member_count_changed(group_id).await?;
 
                             Ok(())
                             // If the caller does not own the NFT, throw an error
