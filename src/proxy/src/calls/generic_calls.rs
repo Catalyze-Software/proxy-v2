@@ -1,6 +1,6 @@
 use crate::{
     helpers::guards::{is_developer, is_prod_developer},
-    logic::{boost_logic::BoostCalls, id_logic::IDLogic, websocket_logic::Websocket},
+    logic::{id_logic::IDLogic, websocket_logic::Websocket},
     storage::{history_canister, NotificationStore, StorageUpdateable, UserNotificationStore},
 };
 use candid::Principal;
@@ -20,7 +20,6 @@ use ic_cdk::{
 #[post_upgrade]
 pub async fn post_upgrade() {
     Websocket::init();
-    let _ = BoostCalls::start_timers_after_upgrade().await;
 }
 
 #[pre_upgrade]
