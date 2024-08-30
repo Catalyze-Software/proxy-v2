@@ -1,54 +1,25 @@
-use catalyze_shared::StaticStorageRef;
-use ic_stable_structures::memory_manager::MemoryId;
-
-use super::{
-    storage_api::{
-        Storage, StorageQueryable, StorageUpdateable, CATEGORIES, CATEGORIES_MEMORY_ID, SKILLS,
-        SKILLS_MEMORY_ID, TAGS, TAGS_MEMORY_ID,
-    },
-    StorageInsertable, ID_KIND_CATEGORIES, ID_KIND_SKILLS, ID_KIND_TAGS,
+use super::storage_api::TOPIC_CANISTER;
+use candid::Principal;
+use catalyze_shared::{
+    topic::{Topic, TopicFilter, TopicSort},
+    StorageClient, StorageClientInsertable,
 };
 
-pub struct TagStore;
-pub struct CategoryStore;
-pub struct SkillStore;
+#[derive(Default)]
+pub struct TopicStorageClient;
 
-impl Storage<u64, String> for TagStore {
-    const NAME: &'static str = ID_KIND_TAGS;
-
-    fn storage() -> StaticStorageRef<u64, String> {
-        &TAGS
+impl StorageClient<u64, Topic, TopicFilter, TopicSort> for TopicStorageClient {
+    fn name(&self) -> String {
+        "topics".to_string()
     }
 
-    fn memory_id() -> MemoryId {
-        TAGS_MEMORY_ID
+    fn storage_canister_id(&self) -> catalyze_shared::StaticCellStorageRef<Principal> {
+        &TOPIC_CANISTER
     }
 }
 
-impl Storage<u64, String> for CategoryStore {
-    const NAME: &'static str = ID_KIND_CATEGORIES;
+impl StorageClientInsertable<Topic, TopicFilter, TopicSort> for TopicStorageClient {}
 
-    fn storage() -> StaticStorageRef<u64, String> {
-        &CATEGORIES
-    }
-
-    fn memory_id() -> MemoryId {
-        CATEGORIES_MEMORY_ID
-    }
+pub fn topics() -> impl StorageClientInsertable<Topic, TopicFilter, TopicSort> {
+    TopicStorageClient
 }
-
-impl Storage<u64, String> for SkillStore {
-    const NAME: &'static str = ID_KIND_SKILLS;
-
-    fn storage() -> StaticStorageRef<u64, String> {
-        &SKILLS
-    }
-
-    fn memory_id() -> MemoryId {
-        SKILLS_MEMORY_ID
-    }
-}
-
-impl<T: Storage<u64, String>> StorageQueryable<u64, String> for T {}
-impl<T: Storage<u64, String>> StorageUpdateable<u64, String> for T {}
-impl<T: Storage<u64, String>> StorageInsertable<String> for T {}

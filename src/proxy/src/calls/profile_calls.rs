@@ -279,7 +279,7 @@ pub async fn remove_friend_request(friend_request_id: u64) -> CanisterResult<boo
 #[query(composite = true, guard = "is_not_anonymous")]
 pub async fn get_incoming_friend_requests() -> CanisterResult<Vec<FriendRequestResponse>> {
     has_access().await?;
-    Ok(FriendRequestCalls::get_incoming_friend_requests())
+    FriendRequestCalls::get_incoming_friend_requests().await
 }
 
 /// Gets the friend requests that are addressed to the caller with the corresponding profile - [`[query]`](query)
@@ -302,7 +302,7 @@ pub async fn get_incoming_friend_requests_with_profile(
 #[query(composite = true, guard = "is_not_anonymous")]
 pub async fn get_outgoing_friend_requests() -> CanisterResult<Vec<FriendRequestResponse>> {
     has_access().await?;
-    Ok(FriendRequestCalls::get_outgoing_friend_requests())
+    FriendRequestCalls::get_outgoing_friend_requests().await
 }
 
 /// Gets the friend requests that are send to the caller with the corresponding profile - [`[query]`](query)

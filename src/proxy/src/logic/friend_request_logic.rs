@@ -1,22 +1,26 @@
+use std::time::Duration;
+
 use candid::Principal;
 use catalyze_shared::{
     api_error::ApiError,
-    friend_request::{FriendRequest, FriendRequestResponse},
+    friend_request::{FriendRequest, FriendRequestFilter, FriendRequestResponse},
     profile_with_refs::ProfileResponse,
     relation_type::RelationType,
-    CanisterResult, StorageClient,
+    CanisterResult, Filter, StorageClient, StorageClientInsertable,
 };
-use ic_cdk::caller;
+use ic_cdk::{caller, spawn};
+use ic_cdk_timers::set_timer;
 
-use crate::storage::{
-    profiles, FriendRequestStore, StorageInsertable, StorageQueryable, StorageUpdateable,
-};
+use crate::storage::{friend_requests, profiles};
 
 use super::notification_logic::NotificationCalls;
 
 pub struct FriendRequestCalls;
 pub struct FriendRequestMapper;
 pub struct FriendRequestValidation;
+
+const SECONDS_IN_A_MONTH: u64 = 30 * 24 * 60 * 60;
+const FRIEND_REQUEST_AUTO_REMOVE_DELAY: Duration = Duration::from_secs(SECONDS_IN_A_MONTH);
 
 impl FriendRequestCalls {
     pub async fn add_friend_request(
@@ -33,29 +37,30 @@ impl FriendRequestCalls {
         }
 
         // if somebody tries to make the same friend request
-        if FriendRequestStore::find(|_, request| {
-            request.to == to && request.requested_by == caller()
-        })
-        .is_some()
-        {
+        let is_retry = friend_requests()
+            .find(FriendRequestFilter::Requestor(caller()).to_vec())
+            .await?
+            .is_some();
+        if is_retry {
             return Err(ApiError::duplicate()
                 .add_method_name("add_friend_request")
                 .add_message("Friend request already exists"));
         }
 
+        let is_requested_by_recipient = friend_requests()
+            .find(FriendRequestFilter::Recipient(to).to_vec())
+            .await?
+            .is_some();
+
         // if there is a friend request from the caller to the to
-        if FriendRequestStore::find(|_, request| {
-            request.to == caller() && request.requested_by == to
-        })
-        .is_some()
-        {
+        if is_requested_by_recipient {
             return Err(ApiError::duplicate()
                 .add_method_name("add_friend_request")
                 .add_message("Friend request already exists"));
         }
 
         let (friend_request_id, mut inserted_friend_request) =
-            FriendRequestStore::insert(friend_request)?;
+            friend_requests().insert(friend_request).await?;
 
         let friend_request_response =
             FriendRequestResponse::new(friend_request_id, inserted_friend_request.clone());
@@ -65,14 +70,25 @@ impl FriendRequestCalls {
 
         inserted_friend_request.set_notification_id(notification_id);
 
-        FriendRequestMapper::to_result_response(FriendRequestStore::update(
-            friend_request_id,
-            inserted_friend_request,
-        ))
+        let result = friend_requests()
+            .update(friend_request_id, inserted_friend_request.clone())
+            .await;
+
+        set_timer(FRIEND_REQUEST_AUTO_REMOVE_DELAY, move || {
+            spawn(async move {
+                let _ = friend_requests().remove(friend_request_id).await;
+                NotificationCalls::notification_remove_friend_request(
+                    inserted_friend_request.to,
+                    friend_request_id,
+                );
+            })
+        });
+
+        FriendRequestMapper::to_result_response(result)
     }
 
     pub async fn accept_friend_request(friend_request_id: u64) -> CanisterResult<bool> {
-        let (_, friend_request) = FriendRequestStore::get(friend_request_id)?;
+        let (_, friend_request) = friend_requests().get(friend_request_id).await?;
 
         if friend_request.to != caller() {
             return Err(ApiError::unauthorized()
@@ -89,6 +105,7 @@ impl FriendRequestCalls {
 
         let (requested_by_principal, mut to_profile) =
             profiles().get(friend_request.requested_by).await?;
+
         to_profile
             .references
             .relations
@@ -105,11 +122,11 @@ impl FriendRequestCalls {
         )
         .await?;
 
-        Ok(FriendRequestStore::remove(friend_request_id))
+        friend_requests().remove(friend_request_id).await
     }
 
     pub async fn decline_friend_request(friend_request_id: u64) -> CanisterResult<bool> {
-        let (_, friend_request) = FriendRequestStore::get(friend_request_id)?;
+        let (_, friend_request) = friend_requests().get(friend_request_id).await?;
 
         if friend_request.to != caller() {
             return Err(ApiError::unauthorized()
@@ -120,14 +137,13 @@ impl FriendRequestCalls {
         NotificationCalls::notification_accept_or_decline_friend_request(
             (friend_request_id, friend_request),
             false,
-        )
-        .await?;
+        )?;
 
-        Ok(FriendRequestStore::remove(friend_request_id))
+        friend_requests().remove(friend_request_id).await
     }
 
     pub async fn remove_friend_request(friend_request_id: u64) -> CanisterResult<bool> {
-        let (_, friend_request) = FriendRequestStore::get(friend_request_id)?;
+        let (_, friend_request) = friend_requests().get(friend_request_id).await?;
 
         if friend_request.requested_by != caller() {
             return Err(ApiError::unauthorized()
@@ -135,21 +151,26 @@ impl FriendRequestCalls {
                 .add_message("You are not authorized to remove this friend request"));
         }
 
-        NotificationCalls::notification_remove_friend_request(friend_request.to, friend_request_id)
-            .await;
-        Ok(FriendRequestStore::remove(friend_request_id))
+        NotificationCalls::notification_remove_friend_request(friend_request.to, friend_request_id);
+        friend_requests().remove(friend_request_id).await
     }
 
-    pub fn get_incoming_friend_requests() -> Vec<FriendRequestResponse> {
-        FriendRequestStore::filter(|_, request| request.to == caller())
+    pub async fn get_incoming_friend_requests() -> CanisterResult<Vec<FriendRequestResponse>> {
+        let reqs = friend_requests()
+            .filter(FriendRequestFilter::Recipient(caller()).to_vec())
+            .await?
             .into_iter()
             .map(FriendRequestMapper::to_response)
-            .collect()
+            .collect();
+
+        Ok(reqs)
     }
 
     pub async fn get_incoming_friend_requests_with_profile(
     ) -> CanisterResult<Vec<(FriendRequestResponse, ProfileResponse)>> {
-        let requests = FriendRequestStore::filter(|_, req| req.to == caller());
+        let requests = friend_requests()
+            .filter(FriendRequestFilter::Requestor(caller()).to_vec())
+            .await?;
 
         let profiles = profiles()
             .get_many(
@@ -181,16 +202,22 @@ impl FriendRequestCalls {
         Ok(response)
     }
 
-    pub fn get_outgoing_friend_requests() -> Vec<FriendRequestResponse> {
-        FriendRequestStore::filter(|_, request| request.requested_by == caller())
+    pub async fn get_outgoing_friend_requests() -> CanisterResult<Vec<FriendRequestResponse>> {
+        let requests = friend_requests()
+            .filter(FriendRequestFilter::Requestor(caller()).to_vec())
+            .await?
             .into_iter()
             .map(FriendRequestMapper::to_response)
-            .collect()
+            .collect();
+
+        Ok(requests)
     }
 
     pub async fn get_outgoing_friend_requests_with_profile(
     ) -> CanisterResult<Vec<(FriendRequestResponse, ProfileResponse)>> {
-        let requests = FriendRequestStore::filter(|_, req| req.requested_by == caller());
+        let requests = friend_requests()
+            .filter(FriendRequestFilter::Requestor(caller()).to_vec())
+            .await?;
 
         let profiles = profiles()
             .get_many(requests.iter().map(|(_, request)| request.to).collect())

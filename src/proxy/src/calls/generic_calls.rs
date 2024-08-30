@@ -1,10 +1,7 @@
 use crate::{
     helpers::guards::{is_developer, is_prod_developer},
-    logic::{boost_logic::BoostCalls, id_logic::IDLogic, websocket_logic::Websocket},
-    storage::{
-        history_canister, reward_canister, FriendRequestStore, LoggerStore, RewardBufferStore,
-        RewardTimerStore, StorageUpdateable,
-    },
+    logic::{id_logic::IDLogic, websocket_logic::Websocket},
+    storage::{history_canister, NotificationStore, StorageUpdateable, UserNotificationStore},
 };
 use candid::Principal;
 use catalyze_shared::{
@@ -23,8 +20,6 @@ use ic_cdk::{
 #[post_upgrade]
 pub async fn post_upgrade() {
     Websocket::init();
-    RewardTimerStore::start();
-    let _ = BoostCalls::start_timers_after_upgrade().await;
 }
 
 #[pre_upgrade]
@@ -33,7 +28,6 @@ pub fn pre_upgrade() {}
 #[init]
 pub fn init() {
     Websocket::init();
-    RewardTimerStore::start();
 }
 
 #[query]
@@ -87,15 +81,14 @@ fn _dev_prod_init() -> Result<(), ApiError> {
     }
 
     let _ = history_canister().set(Principal::from_text("inc34-eqaaa-aaaap-ahl2a-cai").unwrap());
-    let _ = reward_canister().set(Principal::from_text("zgfl7-pqaaa-aaaap-accpa-cai").unwrap());
+
     Ok(())
 }
 
 #[update(guard = "is_prod_developer")]
 fn _dev_clear() {
-    FriendRequestStore::clear();
-    LoggerStore::clear();
-    RewardBufferStore::clear();
+    NotificationStore::clear();
+    UserNotificationStore::clear();
 }
 
 #[query]

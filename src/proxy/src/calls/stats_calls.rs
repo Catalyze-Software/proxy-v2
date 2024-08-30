@@ -7,15 +7,12 @@ use ic_cdk::query;
 async fn store_stats() -> CanisterResult<Vec<String>> {
     Ok(vec![
         format!("ProfileStore: {}", profiles().size().await?),
-        format!("FriendRequestStore: {}", FriendRequestStore::size()),
+        format!("FriendRequestStore: {}", friend_requests().size().await?),
         format!("GroupStore: {}", groups().size().await?),
         format!("EventStore: {}", events().size().await?),
         format!("ReportStore: {}", reports().size().await?),
         format!("BoostStore: {}", boosts().size().await?),
         format!("NotificationStore: {}", notifications().size().await?),
-        format!("LoggerStore: {}", LoggerStore::size()),
-        format!("TagStore: {}", TagStore::size()),
-        format!("CategoryStore: {}", CategoryStore::size()),
-        format!("SkillStore: {}", SkillStore::size()),
+        format!("TopicStore: {}", topics().size().await?),
     ])
 }

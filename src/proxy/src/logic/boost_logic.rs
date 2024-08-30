@@ -5,16 +5,14 @@ use catalyze_shared::{
     api_error::ApiError,
     boosted::{Boost, BoostedEntry, BoostedFilter},
     subject::{Subject, SubjectType},
-    CanisterResult, StorageClient, StorageClientInsertable,
+    CanisterResult, Filter, StorageClient, StorageClientInsertable,
 };
 use ic_cdk::{api::time, caller};
-use ic_cdk_timers::{clear_timer, set_timer, TimerId};
 use ic_ledger_types::Tokens;
-use std::{cell::RefCell, collections::HashMap, time::Duration};
+use std::{cell::RefCell, time::Duration};
 
 thread_local! {
     pub static LAST_BLOCK_HEIGHT: RefCell<u64> = RefCell::new(u64::default());
-    pub static TIMERS: RefCell<HashMap<u64, TimerId>> = RefCell::new(HashMap::default());
 }
 
 pub struct BoostCalls;
@@ -37,7 +35,7 @@ impl BoostCalls {
         let days = Self::calculate_days(tokens);
         let seconds = Self::get_seconds_from_days(days);
         let boost = boosts()
-            .find(BoostedFilter::Subject(subject.clone()).into())
+            .find(BoostedFilter::Subject(subject.clone()).to_vec())
             .await?;
 
         if let Some((id, boost)) = boost {
@@ -54,17 +52,7 @@ impl BoostCalls {
         blockheight: u64,
     ) -> CanisterResult<u64> {
         let boost = Boost::new(subject, seconds, owner, blockheight);
-
-        let (new_boost_id, _) = boosts().insert(boost).await?;
-
-        let timer_id = set_timer(Duration::from_secs(seconds), move || {
-            ic_cdk::spawn(async move {
-                let _ = Self::remove_boost(new_boost_id).await;
-            });
-        });
-
-        Self::set_timer_id(new_boost_id, timer_id);
-
+        boosts().insert(boost).await?;
         Ok(seconds)
     }
 
@@ -73,11 +61,6 @@ impl BoostCalls {
         mut boost: Boost,
         seconds: u64,
     ) -> CanisterResult<u64> {
-        // Get and clear the existing timer
-        if let Some(existing_timer_id) = Self::get_timer_id(boost_id) {
-            clear_timer(existing_timer_id);
-        }
-
         // Update the boost with the purchased seconds
         let remaining_seconds = Self::get_seconds_left_for_boost(boost_id).await?;
         let new_seconds = remaining_seconds + seconds;
@@ -85,22 +68,13 @@ impl BoostCalls {
         boost.seconds = new_seconds;
         boost.updated_at = time();
 
-        boosts().update(boost_id, boost.clone()).await?;
+        boosts().update(boost_id, boost).await?;
 
-        // Remove the old timer and set a new timer with the updated seconds
-        let timer_id = set_timer(Duration::from_secs(new_seconds), move || {
-            ic_cdk::spawn(async move {
-                let _ = boosts().remove(boost_id).await;
-            });
-        });
-
-        Self::set_timer_id(boost_id, timer_id);
         Ok(new_seconds)
     }
 
     pub async fn remove_boost(boost_id: u64) -> CanisterResult<()> {
         boosts().remove(boost_id).await?;
-        Self::remove_timer_id(&boost_id);
         Ok(())
     }
 
@@ -122,22 +96,6 @@ impl BoostCalls {
         LAST_BLOCK_HEIGHT.with(|b| *b.borrow())
     }
 
-    pub fn set_timer_id(boost_id: u64, timer_id: TimerId) {
-        TIMERS.with(|t| {
-            t.borrow_mut().insert(boost_id, timer_id);
-        });
-    }
-
-    pub fn get_timer_id(boost_id: u64) -> Option<TimerId> {
-        TIMERS.with(|t| t.borrow().get(&boost_id).cloned())
-    }
-
-    pub fn remove_timer_id(boost_id: &u64) {
-        TIMERS.with(|t| {
-            t.borrow_mut().remove(boost_id);
-        });
-    }
-
     pub async fn get_seconds_left_for_boost(boost_id: u64) -> CanisterResult<u64> {
         let (_, boosted) = boosts().get(boost_id).await?;
         let time_left: u64 = Duration::from_nanos(boosted.updated_at).as_secs() + boosted.seconds;
@@ -145,29 +103,14 @@ impl BoostCalls {
     }
 
     pub async fn get_boost_by_subject(subject: Subject) -> CanisterResult<Option<BoostedEntry>> {
-        boosts().find(BoostedFilter::Subject(subject).into()).await
+        boosts()
+            .find(BoostedFilter::Subject(subject).to_vec())
+            .await
     }
 
     pub async fn get_boosts_by_subject(subject: SubjectType) -> CanisterResult<Vec<BoostedEntry>> {
         boosts()
-            .filter(BoostedFilter::SubjectType(subject).into())
+            .filter(BoostedFilter::SubjectType(subject).to_vec())
             .await
-    }
-
-    pub async fn start_timers_after_upgrade() -> CanisterResult<()> {
-        let boosts = boosts().get_all().await?;
-
-        for (boost_id, _) in boosts {
-            let seconds_left = Self::get_seconds_left_for_boost(boost_id).await?;
-            let timer_id = set_timer(Duration::from_secs(seconds_left), move || {
-                ic_cdk::spawn(async move {
-                    let _ = Self::remove_boost(boost_id).await;
-                });
-            });
-
-            Self::set_timer_id(boost_id, timer_id);
-        }
-
-        Ok(())
     }
 }

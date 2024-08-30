@@ -8,6 +8,7 @@ use ic_websocket_cdk::{
     WsInitParams,
 };
 
+use crate::storage::{global, StorageQueryable, UserNotificationStore};
 use crate::storage::{profiles, RewardBufferStore};
 
 thread_local! {
@@ -33,7 +34,9 @@ impl Websocket {
     pub fn on_open(args: OnOpenCallbackArgs) {
         Self::add_connected_to_clients(args.client_principal);
 
-        RewardBufferStore::notify_active_user(args.client_principal);
+        ic_cdk::spawn(async move {
+            let _ = global().notify_active_user(args.client_principal).await;
+        });
 
         ic_cdk::spawn(async move {
             let notifications = profiles()

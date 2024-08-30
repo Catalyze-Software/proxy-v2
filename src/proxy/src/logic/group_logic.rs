@@ -10,7 +10,7 @@ use crate::{
             legacy_dip721_balance_of,
         },
     },
-    storage::{boosts, events, groups, profiles, RewardBufferStore},
+    storage::{boosts, events, global, groups, profiles},
     USER_GROUP_CREATION_LIMIT,
 };
 use candid::Principal;
@@ -42,7 +42,7 @@ use catalyze_shared::{
     privacy::PrivacyType,
     time_helper::hours_to_nanoseconds,
     validator::Validator,
-    CanisterResult, StorageClient, StorageClientInsertable,
+    CanisterResult, Filter, StorageClient, StorageClientInsertable,
 };
 use ic_cdk::{
     api::{call, time},
@@ -64,7 +64,7 @@ impl GroupCalls {
 
         // Check if the group name already exists
         if groups()
-            .find(GroupFilter::Name(post_group.name.clone()).into())
+            .find(GroupFilter::Name(post_group.name.clone()).to_vec())
             .await?
             .is_some()
         {
@@ -76,7 +76,7 @@ impl GroupCalls {
 
         // Get the member and add the group to the member
         let owned = groups()
-            .filter(GroupFilter::Owner(caller()).into())
+            .filter(GroupFilter::Owner(caller()).to_vec())
             .await?
             .len();
 
@@ -90,7 +90,9 @@ impl GroupCalls {
         let (new_group_id, new_group) = groups().insert(post_group.into()).await?;
 
         // notify the reward buffer store that the group member count has changed
-        RewardBufferStore::notify_group_member_count_changed(new_group_id);
+        global()
+            .notify_group_member_count_changed(new_group_id)
+            .await?;
 
         Self::add_group_to_profile(new_group_id, caller()).await?;
 
@@ -103,7 +105,7 @@ impl GroupCalls {
 
     pub async fn get_group_by_name(name: String) -> CanisterResult<GroupResponse> {
         let (id, group) = groups()
-            .find(GroupFilter::Name(name).into())
+            .find(GroupFilter::Name(name).to_vec())
             .await?
             .ok_or_else(|| ApiError::not_found().add_message("Group not found"))?;
 
@@ -159,7 +161,7 @@ impl GroupCalls {
 
     pub async fn get_groups_count(query: Option<String>) -> CanisterResult<GroupsCount> {
         let groups = match query {
-            Some(query) => groups().filter(GroupFilter::Name(query).into()).await,
+            Some(query) => groups().filter(GroupFilter::Name(query).to_vec()).await,
             None => groups().get_all().await,
         }?;
 
@@ -233,7 +235,7 @@ impl GroupCalls {
         let (_, group) = groups().get(group_id).await?;
 
         if let Some((boost_id, _)) = boosts()
-            .find(BoostedFilter::Subject(Subject::Group(group_id)).into())
+            .find(BoostedFilter::Subject(Subject::Group(group_id)).to_vec())
             .await?
         {
             boosts().remove(boost_id).await?;
@@ -481,7 +483,7 @@ impl GroupCalls {
         groups().update(group_id, group).await?;
 
         // notify the reward buffer store that the group member count has changed
-        RewardBufferStore::notify_group_member_count_changed(group_id);
+        global().notify_group_member_count_changed(group_id).await?;
 
         Ok(())
     }
@@ -521,7 +523,7 @@ impl GroupCalls {
         .await?;
 
         // notify the reward buffer store that the group member count has changed
-        RewardBufferStore::notify_group_member_count_changed(group_id);
+        global().notify_group_member_count_changed(group_id).await?;
 
         Ok(())
     }
@@ -1066,7 +1068,7 @@ impl GroupValidation {
                     .await;
 
                 // notify the reward buffer store that the group member count has changed
-                RewardBufferStore::notify_group_member_count_changed(group_id);
+                global().notify_group_member_count_changed(group_id).await?;
 
                 Ok(())
             }
@@ -1119,7 +1121,7 @@ impl GroupValidation {
                                 profiles().update(caller, profile).await?;
                             }
                             // notify the reward buffer store that the group member count has changed
-                            RewardBufferStore::notify_group_member_count_changed(group_id);
+                            global().notify_group_member_count_changed(group_id).await?;
 
                             Ok(())
                         } else {
@@ -1149,7 +1151,7 @@ impl GroupValidation {
                             }
 
                             // notify the reward buffer store that the group member count has changed
-                            RewardBufferStore::notify_group_member_count_changed(group_id);
+                            global().notify_group_member_count_changed(group_id).await?;
 
                             Ok(())
                             // If the caller does not own the NFT, throw an error

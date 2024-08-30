@@ -21,7 +21,7 @@ use catalyze_shared::{
     profile_with_refs::ProfileResponse,
     subject::{Subject, SubjectType},
     time_helper::hours_to_nanoseconds,
-    CanisterResult, StorageClient, StorageClientInsertable,
+    CanisterResult, Filter, StorageClient, StorageClientInsertable,
 };
 use ic_cdk::{api::time, caller};
 
@@ -128,7 +128,7 @@ impl EventCalls {
 
         if let Some(group_ids) = group_ids {
             let group_ids = group_ids.into_iter().map(Some).collect();
-            filters = EventFilter::Groups(group_ids).into();
+            filters = EventFilter::Groups(group_ids).to_vec();
         }
         if let Some(query) = query {
             filters.push(EventFilter::Name(query));
@@ -196,7 +196,7 @@ impl EventCalls {
         let _ = events().remove(id).await?;
 
         let boosted = boosts()
-            .find(BoostedFilter::Subject(Subject::Event(id)).into())
+            .find(BoostedFilter::Subject(Subject::Event(id)).to_vec())
             .await?;
 
         if let Some((boost_id, _)) = boosted {
