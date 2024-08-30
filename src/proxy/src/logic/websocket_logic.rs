@@ -8,8 +8,7 @@ use ic_websocket_cdk::{
     WsInitParams,
 };
 
-use crate::storage::{global, StorageQueryable, UserNotificationStore};
-use crate::storage::{profiles, RewardBufferStore};
+use crate::storage::{global, profiles};
 
 thread_local! {
    pub static CONNECTED_CLIENTS: RefCell<HashMap<Principal, u64>> = RefCell::new(HashMap::new());

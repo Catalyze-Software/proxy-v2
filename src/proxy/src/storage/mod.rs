@@ -4,7 +4,6 @@ mod event_storage;
 mod friend_request_storage;
 mod global_storage;
 mod group_storage;
-mod id_storage;
 mod notification_storage;
 mod profile_storage;
 mod report_storage;
@@ -20,12 +19,8 @@ pub use group_storage::*;
 pub use notification_storage::*;
 pub use profile_storage::*;
 pub use report_storage::*;
-pub use storage_api::{
-    StorageInsertable, StorageInsertableByKey, StorageQueryable, StorageUpdateable,
-};
+pub use storage_api::*;
 pub use topic_storage::*;
-pub use user_notification_storage::UserNotificationStore;
 
 pub use cells::*;
 pub use global_storage::*;
-pub use id_storage::*;

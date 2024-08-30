@@ -1,7 +1,6 @@
 use crate::{
-    helpers::guards::{is_developer, is_prod_developer},
-    logic::{id_logic::IDLogic, websocket_logic::Websocket},
-    storage::{history_canister, NotificationStore, StorageUpdateable, UserNotificationStore},
+    helpers::guards::is_prod_developer, logic::websocket_logic::Websocket,
+    storage::history_canister,
 };
 use candid::Principal;
 use catalyze_shared::{
@@ -67,11 +66,6 @@ async fn _dev_create_canister(controllers: Vec<Principal>) -> Result<Principal, 
     }
 }
 
-#[query(guard = "is_developer")]
-fn _dev_get_all_ids() -> Vec<(String, u64)> {
-    IDLogic::get_all()
-}
-
 #[update(guard = "is_prod_developer")]
 fn _dev_prod_init() -> Result<(), ApiError> {
     if id().to_string() != "2jvhk-5aaaa-aaaap-ahewa-cai" {
@@ -83,12 +77,6 @@ fn _dev_prod_init() -> Result<(), ApiError> {
     let _ = history_canister().set(Principal::from_text("inc34-eqaaa-aaaap-ahl2a-cai").unwrap());
 
     Ok(())
-}
-
-#[update(guard = "is_prod_developer")]
-fn _dev_clear() {
-    NotificationStore::clear();
-    UserNotificationStore::clear();
 }
 
 #[query]

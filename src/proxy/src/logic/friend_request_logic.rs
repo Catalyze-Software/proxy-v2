@@ -80,7 +80,8 @@ impl FriendRequestCalls {
                 NotificationCalls::notification_remove_friend_request(
                     inserted_friend_request.to,
                     friend_request_id,
-                );
+                )
+                .await;
             })
         });
 
@@ -137,7 +138,8 @@ impl FriendRequestCalls {
         NotificationCalls::notification_accept_or_decline_friend_request(
             (friend_request_id, friend_request),
             false,
-        )?;
+        )
+        .await?;
 
         friend_requests().remove(friend_request_id).await
     }
@@ -151,7 +153,8 @@ impl FriendRequestCalls {
                 .add_message("You are not authorized to remove this friend request"));
         }
 
-        NotificationCalls::notification_remove_friend_request(friend_request.to, friend_request_id);
+        NotificationCalls::notification_remove_friend_request(friend_request.to, friend_request_id)
+            .await;
         friend_requests().remove(friend_request_id).await
     }
 
