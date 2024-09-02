@@ -3,11 +3,11 @@ use catalyze_shared::{
     notification::{MultisigNotificationType, NotificationResponse},
     transaction_data::{TransactionCompleteData, TransactionData},
     user_notifications::UserNotificationData,
-    CanisterResult,
+    CanisterResult, CellStorage,
 };
 use ic_cdk::{caller, query, update};
 
-use crate::logic::notification_logic::NotificationCalls;
+use crate::{logic::notification_logic::NotificationCalls, storage::transaction_handler_canister};
 
 #[query(composite = true)]
 async fn get_notifications() -> Vec<NotificationResponse> {
@@ -39,20 +39,28 @@ async fn remove_all_notifications() -> Vec<(u64, UserNotificationData)> {
 
 #[update]
 async fn add_transaction_notification(transaction: TransactionData) -> bool {
-    if caller().to_string() != "4bli7-7iaaa-aaaap-ahd4a-cai" {
-        return false;
+    if let Ok(principal) = transaction_handler_canister().get() {
+        if caller() != principal {
+            return false;
+        }
+
+        return NotificationCalls::notification_add_transaction(transaction).await;
     }
 
-    NotificationCalls::notification_add_transaction(transaction).await
+    false
 }
 
 #[update]
 async fn add_transactions_complete_notification(data: TransactionCompleteData) -> bool {
-    if caller().to_string() != "4bli7-7iaaa-aaaap-ahd4a-cai" {
-        return false;
+    if let Ok(principal) = transaction_handler_canister().get() {
+        if caller() != principal {
+            return false;
+        }
+
+        return NotificationCalls::notification_add_complete_transaction(data).await;
     }
 
-    NotificationCalls::notification_add_complete_transaction(data).await
+    false
 }
 
 #[update]

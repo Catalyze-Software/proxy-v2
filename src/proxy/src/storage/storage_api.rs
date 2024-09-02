@@ -1,8 +1,6 @@
 use candid::Principal;
 use catalyze_shared::{
-    notification::Notification,
     state::{init_btree, init_cell, init_memory_manager},
-    user_notifications::UserNotifications,
     CellStorageRef, MemoryManagerStorage, StorageRef,
 };
 use ic_stable_structures::memory_manager::MemoryId;
@@ -26,12 +24,10 @@ pub static TOPIC_CANISTER_MEMORY_ID: MemoryId = MemoryId::new(11);
 pub static FRIEND_REQUEST_CANISTER_MEMORY_ID: MemoryId = MemoryId::new(12);
 pub static GLOBAL_CANISTER_MEMORY_ID: MemoryId = MemoryId::new(13);
 pub static NOTIFICATION_CANISTER_MEMORY_ID: MemoryId = MemoryId::new(14);
+pub static TRANSACTION_HANDLER_CANISTER_MEMORY_ID: MemoryId = MemoryId::new(15);
 
 thread_local! {
     pub static MEMORY_MANAGER: MemoryManagerStorage = init_memory_manager();
-
-    pub static NOTIFICATIONS: StorageRef<u64, Notification> = init_btree(&MEMORY_MANAGER, NOTIFICATIONS_MEMORY_ID);
-    pub static USER_NOTIFICATIONS: StorageRef<Principal, UserNotifications> = init_btree(&MEMORY_MANAGER, USER_NOTIFICATIONS_MEMORY_ID);
 
     pub static IDS: StorageRef<String, u64> = init_btree(&MEMORY_MANAGER, IDS_MEMORY_ID);
 
@@ -45,4 +41,5 @@ thread_local! {
     pub static TOPIC_CANISTER: CellStorageRef<Principal> = init_cell(&MEMORY_MANAGER, "topic_canister_id", TOPIC_CANISTER_MEMORY_ID);
     pub static FRIEND_REQUEST_CANISTER: CellStorageRef<Principal> = init_cell(&MEMORY_MANAGER, "friend_request_canister_id", FRIEND_REQUEST_CANISTER_MEMORY_ID);
     pub static GLOBAL_CANISTER: CellStorageRef<Principal> = init_cell(&MEMORY_MANAGER, "global_canister_id", GLOBAL_CANISTER_MEMORY_ID);
+    pub static TRANSACTION_HANDLER_CANISTER: CellStorageRef<Principal> = init_cell(&MEMORY_MANAGER, "transaction_handler_canister_id", TRANSACTION_HANDLER_CANISTER_MEMORY_ID);
 }
