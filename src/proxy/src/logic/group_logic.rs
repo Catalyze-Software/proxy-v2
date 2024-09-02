@@ -731,13 +731,13 @@ impl GroupCalls {
     pub async fn get_self_groups() -> CanisterResult<Vec<GroupResponse>> {
         let (_, profile) = profiles().get(caller()).await?;
         let groups = groups().get_many(profile.references.groups).await?;
-        let resp = groups
+        let result = groups
             .into_iter()
             .filter(|(_, group)| group.is_member(caller()))
             .map(|(id, group)| GroupResponse::new(id, group, None))
             .collect();
 
-        Ok(resp)
+        Ok(result)
     }
 
     pub async fn get_member_roles(
@@ -773,7 +773,6 @@ impl GroupCalls {
         Self::remove_group_from_profile(group_id, caller()).await?;
 
         NotificationCalls::notification_leave_group(group.get_members(), group_id).await;
-
         Ok(())
     }
 
@@ -789,9 +788,7 @@ impl GroupCalls {
         group.remove_invite(caller());
         groups().update(group_id, group).await?;
 
-        Self::remove_group_from_profile(group_id, caller()).await?;
-
-        Ok(())
+        Self::remove_group_from_profile(group_id, caller()).await
     }
 
     pub async fn get_banned_group_members(group_id: u64) -> Vec<Principal> {
