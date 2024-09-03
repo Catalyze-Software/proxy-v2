@@ -1,8 +1,11 @@
 use candid::Principal;
 use catalyze_shared::{CellStorage, GenericCellStorage};
 
-use super::storage_api::{
-    GLOBAL_CANISTER, HISTORY_CANISTER, PROFILE_CANISTER, REPORT_CANISTER, TOPIC_CANISTER,
+use super::{
+    storage_api::{
+        GLOBAL_CANISTER, HISTORY_CANISTER, PROFILE_CANISTER, REPORT_CANISTER, TOPIC_CANISTER,
+    },
+    TRANSACTION_HANDLER_CANISTER,
 };
 
 pub fn history_canister() -> impl CellStorage<Principal> {
@@ -23,4 +26,11 @@ pub fn topic_canister() -> impl CellStorage<Principal> {
 
 pub fn global_canister() -> impl CellStorage<Principal> {
     GenericCellStorage::new("global_canister_id", &GLOBAL_CANISTER)
+}
+
+pub fn transaction_handler_canister() -> impl CellStorage<Principal> {
+    GenericCellStorage::new(
+        "transaction_handler_canister_id",
+        &TRANSACTION_HANDLER_CANISTER,
+    )
 }

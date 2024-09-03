@@ -1,7 +1,5 @@
 use super::notification_logic::NotificationCalls;
-use crate::storage::{
-    events, global, groups, profiles, StorageInsertableByKey, UserNotificationStore,
-};
+use crate::storage::{events, global, groups, profiles};
 use candid::Principal;
 use catalyze_shared::{
     api_error::ApiError,
@@ -58,10 +56,9 @@ impl ProfileCalls {
             });
         }
 
-        let new_profile = ProfileWithRefs::from(post_profile);
+        let mut new_profile = ProfileWithRefs::from(post_profile);
+        new_profile.references.notifications = UserNotifications::new();
         let stored_profile = profiles().insert(caller, new_profile).await?;
-
-        let _ = UserNotificationStore::insert_by_key(caller, UserNotifications::new());
 
         ProfileResponse::from(stored_profile).to_result()
     }
@@ -275,7 +272,7 @@ impl ProfileCalls {
 
         profiles().update(principal, friend_profile).await?;
 
-        NotificationCalls::notification_remove_friend(principal, caller());
+        NotificationCalls::notification_remove_friend(principal, caller()).await;
         ProfileResponse::from(updated_caller_profile).to_result()
     }
 
