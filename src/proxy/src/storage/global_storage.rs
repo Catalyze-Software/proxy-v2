@@ -18,6 +18,15 @@ impl GlobalStorageClient {
         .await
     }
 
+    pub async fn notify_referral_accepted(&self, referrer: Principal) -> CanisterResult<()> {
+        ic_call(
+            global_canister().get()?,
+            "notify_referral_accepted",
+            (referrer,),
+        )
+        .await
+    }
+
     pub async fn notify_active_user(&self, principal: Principal) -> CanisterResult<()> {
         ic_call(global_canister().get()?, "notify_active_user", (principal,)).await
     }
