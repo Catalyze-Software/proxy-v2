@@ -317,14 +317,14 @@ impl NotificationCalls {
 
         let (_, mut notification) = notifications().get(notification_id).await?;
 
-        let keys = [
+        let principals = [
             vec![invitee_principal],
             group_members.clone(),
             higher_role_members.clone(),
         ]
         .concat();
 
-        let profiles = profiles().get_many(keys).await?;
+        let profiles = profiles().get_many(principals).await?;
 
         let invite_member_response = match notification.notification_type.clone() {
             NotificationType::Group(GroupNotificationType::JoinGroupOwnerRequest(
@@ -595,11 +595,11 @@ impl NotificationCalls {
             .get_many([vec![invitee_principal], receivers.clone()].concat())
             .await?;
 
-        let mut notification: Option<(u64, Notification)> = None;
+        let mut data: Option<(u64, Notification)> = None;
 
         for (principal, profile) in profiles {
             if principal == invitee_principal {
-                let data = Self::add_and_send_notification(
+                let notification = Self::add_and_send_notification(
                     vec![(principal, profile.clone())],
                     NotificationType::Event(EventNotificationType::JoinEventOwnerRequest(
                         invite_attendee_response.clone(),
@@ -608,9 +608,12 @@ impl NotificationCalls {
                 )
                 .await?;
 
-                notification = Some(data);
-            } else if receivers.contains(&principal) {
-                if let Some((_, notification)) = notification.clone() {
+                data = Some(notification);
+                continue;
+            }
+
+            if receivers.contains(&principal) {
+                if let Some((_, notification)) = data.clone() {
                     Self::send_notification(
                         None,
                         notification.clone(),
@@ -620,7 +623,7 @@ impl NotificationCalls {
             }
         }
 
-        Ok(notification.ok_or_else(ApiError::not_found)?.0)
+        Ok(data.ok_or_else(ApiError::not_found)?.0)
     }
 
     pub async fn notification_remove_event_invite(
@@ -722,7 +725,8 @@ impl NotificationCalls {
             return false;
         }
 
-        for profile in profiles().get_many(receivers).await.unwrap_or_default() {
+        let profiles = profiles().get_many(receivers).await.unwrap_or_default();
+        for profile in profiles {
             Self::send_notification(
                 None,
                 Notification::new(NotificationType::Multisig(notification.clone()), false),
