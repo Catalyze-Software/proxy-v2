@@ -15,7 +15,7 @@ use catalyze_shared::{
     transaction_data::{TransactionCompleteData, TransactionData},
     user_notifications::{UserNotificationData, UserNotifications},
     websocket_message::WSMessage,
-    StorageClient, StorageClientInsertable,
+    CanisterResult, StorageClient, StorageClientInsertable,
 };
 use ic_cdk::caller;
 
@@ -34,7 +34,7 @@ impl NotificationCalls {
     /// stores + sends notification
     pub async fn notification_add_friend_request(
         friend_request: FriendRequestResponse,
-    ) -> Result<u64, ApiError> {
+    ) -> CanisterResult<u64> {
         let to = profiles().get(friend_request.to).await?;
         let (notification_id, notification) = Self::add_notification(
             vec![to.clone()],
@@ -53,58 +53,63 @@ impl NotificationCalls {
     pub async fn notification_accept_or_decline_friend_request(
         friend_request_data: (u64, FriendRequest),
         is_accepted: bool,
-    ) -> Result<(), ApiError> {
+    ) -> CanisterResult<()> {
         // get the associated friend request
         let (_, friend_request) = friend_request_data;
 
+        let notification_id = friend_request
+            .notification_id
+            .ok_or_else(ApiError::not_found)?;
+
         // check if the notification exists
-        if let Some(notification_id) = friend_request.notification_id {
-            let (_, mut notification) = notifications().get(notification_id).await?;
+        let (_, mut notification) = notifications().get(notification_id).await?;
 
-            // check if the notification is a friend request
-            if let NotificationType::Relation(RelationNotificationType::FriendRequest(
-                friend_request,
-            )) = &notification.notification_type.clone()
-            {
-                // mark the notification as accepted, this also marks it as not actionable
-                let notification_type = match is_accepted {
-                    true => RelationNotificationType::FriendRequestAccept(friend_request.clone()),
-                    false => RelationNotificationType::FriendRequestDecline(friend_request.clone()),
-                };
-                notification
-                    .mark_as_accepted(is_accepted, NotificationType::Relation(notification_type));
-                let _ = notifications()
-                    .update(notification_id, notification.clone())
-                    .await;
-
-                let profiles = profiles()
-                    .get_many(vec![friend_request.requested_by, friend_request.to])
-                    .await?;
-
-                for (principal, profile) in profiles {
-                    if principal == friend_request.requested_by {
-                        Self::send_notification(
-                            Some(notification_id),
-                            notification.clone(),
-                            (principal, profile.clone()),
-                        )
-                    };
-                    if principal == friend_request.to {
-                        Self::send_notification(
-                            None,
-                            notification.clone(),
-                            (principal, profile.clone()),
-                        )
-                    };
-                }
-
-                Ok(())
-            } else {
-                Err(ApiError::bad_request().add_message("Notification is not a friend request"))
+        let friend_request = match notification.notification_type.clone() {
+            NotificationType::Relation(RelationNotificationType::FriendRequest(friend_request)) => {
+                friend_request
             }
-        } else {
-            Err(ApiError::not_found())
+            _ => {
+                return Err(
+                    ApiError::bad_request().add_message("Notification is not a friend request")
+                )
+            }
+        };
+
+        // mark the notification as accepted, this also marks it as not actionable
+        let notification_type = match is_accepted {
+            true => RelationNotificationType::FriendRequestAccept(friend_request.clone()),
+            false => RelationNotificationType::FriendRequestDecline(friend_request.clone()),
+        };
+
+        notification.mark_as_accepted(is_accepted, NotificationType::Relation(notification_type));
+
+        let _ = notifications()
+            .update(notification_id, notification.clone())
+            .await?;
+
+        let profiles = profiles()
+            .get_many(vec![friend_request.requested_by, friend_request.to])
+            .await?;
+
+        for (principal, profile) in profiles {
+            let mut notification_id = Some(notification_id);
+
+            if principal == friend_request.to {
+                notification_id = None;
+            }
+
+            if principal != friend_request.requested_by && principal != friend_request.to {
+                continue;
+            }
+
+            Self::send_notification(
+                notification_id,
+                notification.clone(),
+                (principal, profile.clone()),
+            )
         }
+
+        Ok(())
     }
 
     // sends notification
@@ -174,7 +179,7 @@ impl NotificationCalls {
     pub async fn notification_user_join_request_group(
         receivers: Vec<Principal>,
         invite_member_response: InviteMemberResponse,
-    ) -> Result<u64, ApiError> {
+    ) -> CanisterResult<u64> {
         let (notification_id, _) = Self::add_and_send_notification(
             profiles().get_many(receivers).await.unwrap_or_default(),
             NotificationType::Group(GroupNotificationType::JoinGroupUserRequest(
@@ -193,69 +198,72 @@ impl NotificationCalls {
         is_accepted: bool,
         group_members: Vec<Principal>,
         higher_role_members: Vec<Principal>,
-    ) -> Result<(), ApiError> {
-        if let Some(notification_id) = invite.notification_id {
-            let (_, mut notification) = notifications().get(notification_id).await?;
+    ) -> CanisterResult<()> {
+        let notification_id = invite.notification_id.ok_or_else(|| {
+            ApiError::bad_request().add_message("Notification is not a user join group request")
+        })?;
 
-            if let NotificationType::Group(GroupNotificationType::JoinGroupUserRequest(
-                invite_member_response,
-            )) = notification.notification_type.clone()
-            {
-                let notification_type = match is_accepted {
-                    true => {
-                        GroupNotificationType::JoinGroupUserRequestAccept(invite_member_response)
-                    }
-                    false => {
-                        GroupNotificationType::JoinGroupUserRequestDecline(invite_member_response)
-                    }
-                };
+        let (_, mut notification) = notifications().get(notification_id).await?;
 
-                notification
-                    .mark_as_accepted(is_accepted, NotificationType::Group(notification_type));
-                let _ = notifications()
-                    .update(notification_id, notification.clone())
-                    .await;
+        let invite_member_response = match notification.notification_type.clone() {
+            NotificationType::Group(GroupNotificationType::JoinGroupUserRequest(
+                invite_member_response_resp,
+            )) => invite_member_response_resp,
+            _ => {
+                return Err(ApiError::bad_request()
+                    .add_message("Notification is not a user join group request"))
+            }
+        };
 
-                let principals = [
-                    vec![notification.sender],
-                    group_members.clone(),
-                    higher_role_members.clone(),
-                ]
-                .concat();
-                let profiles = profiles().get_many(principals).await.unwrap_or_default();
+        let notification_type = match is_accepted {
+            true => GroupNotificationType::JoinGroupUserRequestAccept(invite_member_response),
+            false => GroupNotificationType::JoinGroupUserRequestDecline(invite_member_response),
+        };
 
-                for (principal, profile) in profiles {
-                    if notification.sender == principal {
-                        Self::send_notification(
-                            Some(notification_id),
-                            notification.clone(),
-                            (principal, profile.clone()), // the person who request to join
-                        );
-                    }
+        notification.mark_as_accepted(is_accepted, NotificationType::Group(notification_type));
 
-                    if is_accepted {
-                        if higher_role_members.contains(&principal) {
-                            Self::send_notification(
-                                None,
-                                notification.clone(),
-                                (principal, profile.clone()), // the group members
-                            );
-                        }
-                    } else if group_members.contains(&principal) {
-                        Self::send_notification(
-                            None,
-                            notification.clone(),
-                            (principal, profile.clone()), // the group members
-                        );
-                    }
-                }
+        let _ = notifications()
+            .update(notification_id, notification.clone())
+            .await?;
+
+        let principals = [
+            vec![notification.sender],
+            group_members.clone(),
+            higher_role_members.clone(),
+        ]
+        .concat();
+
+        let profiles = profiles().get_many(principals).await?;
+
+        for (principal, profile) in profiles {
+            if notification.sender == principal {
+                Self::send_notification(
+                    Some(notification_id),
+                    notification.clone(),
+                    (principal, profile.clone()), // the person who request to join
+                );
             }
 
-            Ok(())
-        } else {
-            Err(ApiError::bad_request()
-                .add_message("Notification is not a user join group request"))
+            if is_accepted && higher_role_members.contains(&principal) {
+                Self::send_notification(
+                    None,
+                    notification.clone(),
+                    (principal, profile.clone()), // the group members
+                );
+
+                continue;
+            }
+
+            if group_members.contains(&principal) {
+                Self::send_notification(
+                    None,
+                    notification.clone(),
+                    (principal, profile.clone()), // the group members
+                );
+            }
         }
+
+        Ok(())
     }
 
     // stores + sends notification
@@ -263,12 +271,12 @@ impl NotificationCalls {
         invitee_principal: Principal,
         invite_member_response: InviteMemberResponse,
         receivers: Vec<Principal>,
-    ) -> Result<u64, ApiError> {
+    ) -> CanisterResult<u64> {
         let mut data: Option<(u64, Notification)> = None;
+
         let profiles = profiles()
             .get_many([vec![invitee_principal], receivers.clone()].concat())
-            .await
-            .unwrap_or_default();
+            .await?;
 
         for (principal, profile) in profiles {
             if principal == invitee_principal {
@@ -280,18 +288,19 @@ impl NotificationCalls {
                     true,
                 )
                 .await?;
+
                 data = Some(notification);
-            } else if receivers.contains(&principal) {
+                continue;
+            }
+
+            if receivers.contains(&principal) {
                 if let Some((_, notification)) = data.clone() {
                     Self::send_notification(None, notification, (principal, profile.clone()));
                 }
             }
         }
 
-        match data {
-            Some((notification_id, _)) => Ok(notification_id),
-            None => Err(ApiError::not_found()),
-        }
+        Ok(data.ok_or_else(ApiError::not_found)?.0)
     }
 
     // sends notification
@@ -301,79 +310,55 @@ impl NotificationCalls {
         is_accepted: bool,
         group_members: Vec<Principal>,
         higher_role_members: Vec<Principal>,
-    ) -> Result<(), ApiError> {
-        if let Some(notification_id) = invite.notification_id {
-            let (_, mut notification) = notifications().get(notification_id).await?;
+    ) -> CanisterResult<()> {
+        let notification_id = invite.notification_id.ok_or_else(|| {
+            ApiError::bad_request().add_message("Notification is not a user join group request")
+        })?;
 
-            let profiles = profiles()
-                .get_many(
-                    [
-                        vec![invitee_principal],
-                        group_members.clone(),
-                        higher_role_members.clone(),
-                    ]
-                    .concat(),
-                )
-                .await
-                .unwrap_or_default();
-            if let NotificationType::Group(GroupNotificationType::JoinGroupOwnerRequest(
+        let (_, mut notification) = notifications().get(notification_id).await?;
+
+        let principals = [
+            vec![invitee_principal],
+            group_members.clone(),
+            higher_role_members.clone(),
+        ]
+        .concat();
+
+        let profiles = profiles().get_many(principals).await?;
+
+        let invite_member_response = match notification.notification_type.clone() {
+            NotificationType::Group(GroupNotificationType::JoinGroupOwnerRequest(
                 invite_member_response,
-            )) = notification.notification_type.clone()
-            {
-                let notification_type = match is_accepted {
-                    true => {
-                        GroupNotificationType::JoinGroupOwnerRequestAccept(invite_member_response)
-                    }
-                    false => {
-                        GroupNotificationType::JoinGroupOwnerRequestDecline(invite_member_response)
-                    }
-                };
+            )) => invite_member_response,
+            _ => return Err(ApiError::bad_request().add_message("")),
+        };
 
-                notification
-                    .mark_as_accepted(is_accepted, NotificationType::Group(notification_type));
-                let _ = notifications()
-                    .update(notification_id, notification.clone())
-                    .await;
+        let notification_type = match is_accepted {
+            true => GroupNotificationType::JoinGroupOwnerRequestAccept(invite_member_response),
+            false => GroupNotificationType::JoinGroupOwnerRequestDecline(invite_member_response),
+        };
 
-                for (principal, profile) in profiles {
-                    if is_accepted {
-                        if principal == invitee_principal {
-                            Self::send_notification(
-                                None,
-                                notification.clone(),
-                                (principal, profile.clone()),
-                            );
-                        }
+        notification.mark_as_accepted(is_accepted, NotificationType::Group(notification_type));
 
-                        if notification.sender == principal {
-                            Self::send_notification(
-                                Some(notification_id),
-                                notification.clone(),
-                                (principal, profile.clone()),
-                            );
-                        } else {
-                            Self::send_notification(
-                                None,
-                                notification.clone(),
-                                (principal, profile.clone()),
-                            );
-                        }
-                    } else if notification.sender == principal {
-                        Self::send_notification(
-                            Some(notification_id),
-                            notification.clone(),
-                            (principal, profile.clone()),
-                        );
-                    } else {
-                        Self::send_notification(None, notification.clone(), (principal, profile));
-                    }
-                }
+        let _ = notifications()
+            .update(notification_id, notification.clone())
+            .await;
+
+        for (principal, profile) in profiles {
+            let mut notification_id = Some(notification_id);
+
+            if notification.sender != principal || principal == invitee_principal {
+                notification_id = None;
             }
-            Ok(())
-        } else {
-            Err(ApiError::bad_request()
-                .add_message("Notification is not a user join group request"))
+
+            Self::send_notification(
+                notification_id,
+                notification.clone(),
+                (principal, profile.clone()),
+            );
         }
+
+        Ok(())
     }
 
     pub async fn notification_change_group_member_role(
@@ -422,29 +407,38 @@ impl NotificationCalls {
         invite: InviteMemberResponse,
         receivers: Vec<Principal>,
     ) {
-        if let Some(_invite) = invite.invite.clone() {
-            if let Some(notification_id) = _invite.notification_id {
-                if let Ok((_, mut notification)) = notifications().get(notification_id).await {
-                    notification.mark_as_accepted(
-                        false,
-                        NotificationType::Group(GroupNotificationType::RemoveInviteByOwner(
-                            invite.clone(),
-                        )),
-                    );
-                    let _ = notifications()
-                        .update(notification_id, notification.clone())
-                        .await;
+        let member_invite = match invite.invite.clone() {
+            Some(member_invite) => member_invite,
+            None => return,
+        };
 
-                    let profiles = profiles()
-                        .get_many([vec![invite.principal], receivers].concat())
-                        .await
-                        .unwrap_or_default();
-                    for receiver in profiles {
-                        Self::send_notification(None, notification.clone(), receiver);
-                    }
-                }
-            }
-        }
+        let notification_id = match member_invite.notification_id {
+            Some(notification_id) => notification_id,
+            None => return,
+        };
+
+        let mut notification = match notifications().get(notification_id).await {
+            Ok((_, notification)) => notification,
+            Err(_) => return,
+        };
+
+        notification.mark_as_accepted(
+            false,
+            NotificationType::Group(GroupNotificationType::RemoveInviteByOwner(invite.clone())),
+        );
+
+        let _ = notifications()
+            .update(notification_id, notification.clone())
+            .await;
+
+        profiles()
+            .get_many([vec![invite.principal], receivers].concat())
+            .await
+            .unwrap_or_default()
+            .into_iter()
+            .for_each(|receiver| {
+                Self::send_notification(None, notification.clone(), receiver);
+            });
     }
 
     // Event notifications
@@ -457,14 +451,11 @@ impl NotificationCalls {
     ) {
         let profiles = profiles().get_many(receivers).await.unwrap_or_default();
         for receiver in profiles {
+            let event = EventNotificationType::UserJoinEvent((group_id, event_id));
+
             Self::send_notification(
                 None,
-                Notification::new(
-                    NotificationType::Event(EventNotificationType::UserJoinEvent((
-                        group_id, event_id,
-                    ))),
-                    false,
-                ),
+                Notification::new(NotificationType::Event(event), false),
                 receiver,
             );
         }
@@ -474,18 +465,13 @@ impl NotificationCalls {
     pub async fn notification_user_join_request_event(
         receivers: Vec<Principal>,
         invite_attendee_response: InviteAttendeeResponse,
-    ) -> Result<u64, ApiError> {
-        let profiles = profiles().get_many(receivers).await.unwrap_or_default();
-        let (notification_id, _) = Self::add_and_send_notification(
-            profiles,
-            NotificationType::Event(EventNotificationType::JoinEventUserRequest(
-                invite_attendee_response,
-            )),
-            true,
-        )
-        .await?;
+    ) -> CanisterResult<u64> {
+        let profiles = profiles().get_many(receivers).await?;
+        let event = EventNotificationType::JoinEventUserRequest(invite_attendee_response);
 
-        Ok(notification_id)
+        Self::add_and_send_notification(profiles, NotificationType::Event(event), true)
+            .await
+            .map(|(id, _)| id)
     }
 
     // sends notifications
@@ -494,59 +480,55 @@ impl NotificationCalls {
         invite: AttendeeInvite,
         event_attendees: Vec<Principal>,
         is_accepted: bool,
-    ) -> Result<(), ApiError> {
-        if let Some(notification_id) = invite.notification_id {
-            let (_, mut notification) = notifications().get(notification_id).await?;
+    ) -> CanisterResult<()> {
+        let notification_id = invite.notification_id.ok_or_else(|| {
+            ApiError::bad_request().add_message("Notification is not a user join group request")
+        })?;
 
-            if let NotificationType::Event(EventNotificationType::JoinEventUserRequest(
+        let (_, mut notification) = notifications().get(notification_id).await?;
+
+        let invite_attendee_response = match notification.notification_type.clone() {
+            NotificationType::Event(EventNotificationType::JoinEventUserRequest(
                 invite_attendee_response,
-            )) = notification.notification_type.clone()
-            {
-                let notification_type = match is_accepted {
-                    true => {
-                        EventNotificationType::JoinEventUserRequestAccept(invite_attendee_response)
-                    }
-                    false => {
-                        EventNotificationType::JoinEventUserRequestDecline(invite_attendee_response)
-                    }
-                };
+            )) => invite_attendee_response,
+            _ => {
+                return Err(ApiError::bad_request()
+                    .add_message("Notification is not a user join group request"))
+            }
+        };
 
-                notification
-                    .mark_as_accepted(is_accepted, NotificationType::Event(notification_type));
-                let _ = notifications()
-                    .update(notification_id, notification.clone())
-                    .await;
+        let notification_type = match is_accepted {
+            true => EventNotificationType::JoinEventUserRequestAccept(invite_attendee_response),
+            false => EventNotificationType::JoinEventUserRequestDecline(invite_attendee_response),
+        };
 
-                let profiles = profiles()
-                    .get_many([vec![receiver], event_attendees.clone()].concat())
-                    .await
-                    .unwrap_or_default();
+        notification.mark_as_accepted(is_accepted, NotificationType::Event(notification_type));
 
-                for (principal, profile) in profiles {
-                    if principal == receiver {
-                        Self::send_notification(None, notification.clone(), (principal, profile));
-                    } else if is_accepted {
-                        if notification.sender == principal {
-                            Self::send_notification(
-                                Some(notification_id),
-                                notification.clone(),
-                                (principal, profile),
-                            );
-                        } else {
-                            Self::send_notification(
-                                None,
-                                notification.clone(),
-                                (principal, profile),
-                            );
-                        }
-                    }
+        let _ = notifications()
+            .update(notification_id, notification.clone())
+            .await;
+
+        let profiles = profiles()
+            .get_many([vec![receiver], event_attendees.clone()].concat())
+            .await?;
+
+        for (principal, profile) in profiles {
+            if principal == receiver {
+                Self::send_notification(None, notification.clone(), (principal, profile));
+            } else if is_accepted {
+                if notification.sender == principal {
+                    Self::send_notification(
+                        Some(notification_id),
+                        notification.clone(),
+                        (principal, profile),
+                    );
+                } else {
+                    Self::send_notification(None, notification.clone(), (principal, profile));
                 }
             }
-            Ok(())
-        } else {
-            Err(ApiError::bad_request()
-                .add_message("Notification is not a user join group request"))
         }
+
+        Ok(())
     }
 
     // sends notification
@@ -555,59 +537,52 @@ impl NotificationCalls {
         invite: AttendeeInvite,
         event_attendees: Vec<Principal>,
         is_accepted: bool,
-    ) -> Result<(), ApiError> {
-        if let Some(notification_id) = invite.notification_id {
-            let (_, mut notification) = notifications().get(notification_id).await?;
+    ) -> CanisterResult<()> {
+        let notification_id = invite.notification_id.ok_or_else(|| {
+            ApiError::bad_request().add_message("Notification is not a user join group request")
+        })?;
 
-            if let NotificationType::Event(EventNotificationType::JoinEventOwnerRequest(
+        let (_, mut notification) = notifications().get(notification_id).await?;
+
+        let event_attendee_response = match notification.notification_type.clone() {
+            NotificationType::Event(EventNotificationType::JoinEventOwnerRequest(
                 event_attendee_response,
-            )) = notification.notification_type.clone()
-            {
-                let notification_type = match is_accepted {
-                    true => {
-                        EventNotificationType::JoinEventOwnerRequestAccept(event_attendee_response)
-                    }
-                    false => {
-                        EventNotificationType::JoinEventOwnerRequestDecline(event_attendee_response)
-                    }
-                };
-
-                notification
-                    .mark_as_accepted(is_accepted, NotificationType::Event(notification_type));
-                let _ = notifications()
-                    .update(notification_id, notification.clone())
-                    .await;
-
-                let profiles = profiles()
-                    .get_many([vec![invitee_principal], event_attendees.clone()].concat())
-                    .await
-                    .unwrap_or_default();
-
-                for (principal, profile) in profiles {
-                    if invitee_principal == principal {
-                        Self::send_notification(None, notification.clone(), (principal, profile));
-                    } else if is_accepted {
-                        if notification.sender == principal {
-                            Self::send_notification(
-                                Some(notification_id),
-                                notification.clone(),
-                                (principal, profile),
-                            );
-                        } else {
-                            Self::send_notification(
-                                None,
-                                notification.clone(),
-                                (principal, profile),
-                            );
-                        }
-                    }
-                }
+            )) => event_attendee_response,
+            _ => {
+                return Err(ApiError::bad_request()
+                    .add_message("Notification is not a user join group request"))
             }
-            Ok(())
-        } else {
-            Err(ApiError::bad_request()
-                .add_message("Notification is not a user join group request"))
+        };
+
+        let notification_type = match is_accepted {
+            true => EventNotificationType::JoinEventOwnerRequestAccept(event_attendee_response),
+            false => EventNotificationType::JoinEventOwnerRequestDecline(event_attendee_response),
+        };
+
+        notification.mark_as_accepted(is_accepted, NotificationType::Event(notification_type));
+        let _ = notifications()
+            .update(notification_id, notification.clone())
+            .await;
+
+        let profiles = profiles()
+            .get_many([vec![invitee_principal], event_attendees.clone()].concat())
+            .await?;
+
+        for (principal, profile) in profiles {
+            if invitee_principal == principal || is_accepted && notification.sender != principal {
+                Self::send_notification(None, notification.clone(), (principal, profile.clone()));
+            }
+
+            if is_accepted && notification.sender == principal {
+                Self::send_notification(
+                    Some(notification_id),
+                    notification.clone(),
+                    (principal, profile),
+                );
+            }
         }
+
+        Ok(())
     }
 
     // stores + sends notification
@@ -615,16 +590,16 @@ impl NotificationCalls {
         invitee_principal: Principal,
         invite_attendee_response: InviteAttendeeResponse,
         receivers: Vec<Principal>,
-    ) -> Result<u64, ApiError> {
+    ) -> CanisterResult<u64> {
         let profiles = profiles()
             .get_many([vec![invitee_principal], receivers.clone()].concat())
-            .await
-            .unwrap_or_default();
+            .await?;
 
-        let mut notification: Option<(u64, Notification)> = None;
+        let mut data: Option<(u64, Notification)> = None;
+
         for (principal, profile) in profiles {
             if principal == invitee_principal {
-                let data = Self::add_and_send_notification(
+                let notification = Self::add_and_send_notification(
                     vec![(principal, profile.clone())],
                     NotificationType::Event(EventNotificationType::JoinEventOwnerRequest(
                         invite_attendee_response.clone(),
@@ -633,9 +608,12 @@ impl NotificationCalls {
                 )
                 .await?;
 
-                notification = Some(data);
-            } else if receivers.contains(&principal) {
-                if let Some((_, notification)) = notification.clone() {
+                data = Some(notification);
+                continue;
+            }
+
+            if receivers.contains(&principal) {
+                if let Some((_, notification)) = data.clone() {
                     Self::send_notification(
                         None,
                         notification.clone(),
@@ -645,10 +623,7 @@ impl NotificationCalls {
             }
         }
 
-        match notification {
-            Some((notification_id, _)) => Ok(notification_id),
-            None => Err(ApiError::not_found()),
-        }
+        Ok(data.ok_or_else(ApiError::not_found)?.0)
     }
 
     pub async fn notification_remove_event_invite(
@@ -680,24 +655,11 @@ impl NotificationCalls {
             .unwrap_or_default();
 
         for (principal, profile) in profiles {
+            let event = EventNotificationType::RemoveAttendeeByOwner(attendee.clone());
+
             Self::send_notification(
                 None,
-                Notification::new(
-                    NotificationType::Event(EventNotificationType::RemoveAttendeeByOwner(
-                        attendee.clone(),
-                    )),
-                    false,
-                ),
-                (principal, profile.clone()),
-            );
-            Self::send_notification(
-                None,
-                Notification::new(
-                    NotificationType::Event(EventNotificationType::RemoveAttendeeByOwner(
-                        attendee.clone(),
-                    )),
-                    false,
-                ),
+                Notification::new(NotificationType::Event(event), false),
                 (principal, profile.clone()),
             );
         }
@@ -763,7 +725,8 @@ impl NotificationCalls {
             return false;
         }
 
-        for profile in profiles().get_many(receivers).await.unwrap_or_default() {
+        let profiles = profiles().get_many(receivers).await.unwrap_or_default();
+        for profile in profiles {
             Self::send_notification(
                 None,
                 Notification::new(NotificationType::Multisig(notification.clone()), false),
@@ -822,7 +785,7 @@ impl NotificationCalls {
         principal: Principal,
         ids: Vec<u64>,
         is_read: bool,
-    ) -> Result<Vec<(u64, UserNotificationData)>, ApiError> {
+    ) -> CanisterResult<Vec<(u64, UserNotificationData)>> {
         let (_, mut profile) = profiles().get(principal).await?;
 
         profile
@@ -867,7 +830,7 @@ impl NotificationCalls {
         receivers: Vec<ProfileEntry>,
         notification_type: NotificationType,
         is_actionable: bool,
-    ) -> Result<(u64, Notification), ApiError> {
+    ) -> CanisterResult<(u64, Notification)> {
         // Create the new notification
         let notification = Notification::new(notification_type, is_actionable);
 
@@ -931,7 +894,7 @@ impl NotificationCalls {
         receivers: Vec<ProfileEntry>,
         notification_type: NotificationType,
         is_actionable: bool,
-    ) -> Result<(u64, Notification), ApiError> {
+    ) -> CanisterResult<(u64, Notification)> {
         let (new_notification_id, new_notification) =
             Self::add_notification(receivers.clone(), notification_type, is_actionable).await?;
 
