@@ -1,26 +1,30 @@
-use super::{
-    storage_api::{
-        Storage, StorageQueryable, StorageUpdateable, NOTIFICATIONS, NOTIFICATIONS_MEMORY_ID,
-    },
-    StorageInsertable, ID_KIND_NOTIFICATIONS,
+use super::storage_api::NOTIFICATION_CANISTER;
+use candid::Principal;
+use catalyze_shared::{
+    notification::{Notification, NotificationFilter, NotificationSort},
+    StorageClient, StorageClientInsertable,
 };
-use catalyze_shared::{notification::Notification, StaticStorageRef};
-use ic_stable_structures::memory_manager::MemoryId;
 
-pub struct NotificationStore;
+#[derive(Default)]
+pub struct NotificationStorageClient;
 
-impl Storage<u64, Notification> for NotificationStore {
-    const NAME: &'static str = ID_KIND_NOTIFICATIONS;
-
-    fn storage() -> StaticStorageRef<u64, Notification> {
-        &NOTIFICATIONS
+impl StorageClient<u64, Notification, NotificationFilter, NotificationSort>
+    for NotificationStorageClient
+{
+    fn name(&self) -> String {
+        "notification".to_string()
     }
 
-    fn memory_id() -> MemoryId {
-        NOTIFICATIONS_MEMORY_ID
+    fn storage_canister_id(&self) -> catalyze_shared::StaticCellStorageRef<Principal> {
+        &NOTIFICATION_CANISTER
     }
 }
 
-impl StorageQueryable<u64, Notification> for NotificationStore {}
-impl StorageUpdateable<u64, Notification> for NotificationStore {}
-impl StorageInsertable<Notification> for NotificationStore {}
+impl StorageClientInsertable<Notification, NotificationFilter, NotificationSort>
+    for NotificationStorageClient
+{
+}
+
+pub fn notifications() -> NotificationStorageClient {
+    NotificationStorageClient
+}

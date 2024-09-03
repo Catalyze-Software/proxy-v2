@@ -4,7 +4,7 @@ use ic_cdk::{query, update};
 
 use crate::{
     helpers::guards::is_developer,
-    storage::{history_canister, profile_canister, report_canister},
+    storage::{history_canister, profile_canister, report_canister, transaction_handler_canister},
 };
 
 #[query(guard = "is_developer")]
@@ -35,4 +35,9 @@ fn _dev_set_profile_canister(principal: Principal) -> CanisterResult<Principal> 
 #[update(guard = "is_developer")]
 fn _dev_set_report_canister(principal: Principal) -> CanisterResult<Principal> {
     report_canister().set(principal)
+}
+
+#[update(guard = "is_developer")]
+fn _dev_set_transaction_handler_canister(principal: Principal) -> CanisterResult<Principal> {
+    transaction_handler_canister().set(principal)
 }
