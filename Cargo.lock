@@ -234,7 +234,7 @@ source = "git+https://github.com/Catalyze-Software/catalyze-shared#a4ad6a97ef846
 dependencies = [
  "candid",
  "email_address",
- "ic-cdk 0.15.1",
+ "ic-cdk",
  "ic-stable-structures",
  "icrc-ledger-types",
  "serde",
@@ -817,20 +817,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "038ff230bf0fc8630943e3c52e989d248a7c89834ccb65da408fabc5817a475b"
 dependencies = [
  "candid",
- "ic-cdk-macros 0.15.0",
- "ic0",
- "serde",
- "serde_bytes",
-]
-
-[[package]]
-name = "ic-cdk"
-version = "0.16.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dd8ecacd682fa05a985253592963306cb9799622d7b1cce4b1edb89c6ec85be1"
-dependencies = [
- "candid",
- "ic-cdk-macros 0.16.0",
+ "ic-cdk-macros",
  "ic0",
  "serde",
  "serde_bytes",
@@ -851,41 +838,13 @@ dependencies = [
 ]
 
 [[package]]
-name = "ic-cdk-macros"
-version = "0.16.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0d4d857135deef20cc7ea8f3869a30cd9cfeb1392b3a81043790b2cd82adc3e0"
-dependencies = [
- "candid",
- "proc-macro2",
- "quote",
- "serde",
- "serde_tokenstream",
- "syn 2.0.77",
-]
-
-[[package]]
 name = "ic-cdk-timers"
 version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "61fdca8e1d9ffb65ae68019b342c182009de9dc206fd849db0b0e90ee19f6fa4"
 dependencies = [
  "futures",
- "ic-cdk 0.15.1",
- "ic0",
- "serde",
- "serde_bytes",
- "slotmap",
-]
-
-[[package]]
-name = "ic-cdk-timers"
-version = "0.10.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0c7c528bbb3d4d934b43a364855995d318649217c7510f40f92ad52eba3ff7be"
-dependencies = [
- "futures",
- "ic-cdk 0.16.0",
+ "ic-cdk",
  "ic0",
  "serde",
  "serde_bytes",
@@ -906,14 +865,14 @@ dependencies = [
 
 [[package]]
 name = "ic-ledger-types"
-version = "0.13.0"
+version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1a144b5b4c9e4b164b338440cfbdcf9f30ff45e3d48a3be62d2424996dc93d6f"
+checksum = "0fd70c701d11208d5d853c1a908bb143848d89c1951f401413cef9c062642112"
 dependencies = [
  "candid",
  "crc32fast",
  "hex",
- "ic-cdk 0.16.0",
+ "ic-cdk",
  "serde",
  "serde_bytes",
  "sha2 0.10.8",
@@ -967,9 +926,9 @@ checksum = "cfba259904c00d8e41b8fdf174823719e15ca09bc1e86eca7534ec9bf59ee384"
 dependencies = [
  "base64",
  "candid",
- "ic-cdk 0.15.1",
- "ic-cdk-macros 0.15.0",
- "ic-cdk-timers 0.9.0",
+ "ic-cdk",
+ "ic-cdk-macros",
+ "ic-cdk-timers",
  "ic-certification",
  "serde",
  "serde_bytes",
@@ -1402,8 +1361,8 @@ version = "0.2.4"
 dependencies = [
  "candid",
  "catalyze-shared",
- "ic-cdk 0.16.0",
- "ic-cdk-timers 0.10.0",
+ "ic-cdk",
+ "ic-cdk-timers",
  "ic-ledger-types",
  "ic-stable-structures",
  "ic-websocket-cdk",

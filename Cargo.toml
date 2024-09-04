@@ -7,11 +7,11 @@ candid = "0.10"
 serde = "1.0"
 serde_json = "1.0"
 
-ic-cdk = "0.16"
-ic-ledger-types = "0.13"
+ic-cdk = "0.15"
+ic-ledger-types = "0.12"
 ic-stable-structures = "0.6"
 ic-websocket-cdk = "0.4"
-ic-cdk-timers = "0.10"
+ic-cdk-timers = "0.9"
 
 catalyze-shared = { git = "https://github.com/Catalyze-Software/catalyze-shared" }
 
