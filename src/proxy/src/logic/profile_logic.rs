@@ -41,14 +41,12 @@ impl ProfileCalls {
             if !referrer_profile.is_referral_exists(caller) {
                 return Err(ApiError::not_found().add_message("Referral does not exist"));
             }
-            if referrer_profile.is_referral_accepted(caller) {
-                return Err(ApiError::bad_request().add_message("Referral is accepted"));
-            }
+
             if referrer_profile.is_referral_expired(caller) {
                 return Err(ApiError::bad_request().add_message("Referral is expired"));
             }
 
-            referrer_profile.accept_referral(caller);
+            referrer_profile.remove_referral(caller);
 
             ic_cdk::spawn(async move {
                 let _ = profiles().update(referrer, referrer_profile).await;
@@ -162,11 +160,7 @@ impl ProfileCalls {
             return Err(ApiError::duplicate().add_message("Referral already exists"));
         }
 
-        if profile.is_referral_expired(referral) {
-            profile.renew_referral(referral);
-        } else {
-            profile.add_referral(referral);
-        }
+        profile.add_referral(referral);
 
         ProfileResponse::from(profiles().update(caller(), profile).await?).to_result()
     }
