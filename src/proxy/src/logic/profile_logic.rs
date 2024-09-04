@@ -1,5 +1,5 @@
 use super::notification_logic::NotificationCalls;
-use crate::storage::{events, groups, profiles};
+use crate::storage::{events, global, groups, profiles};
 use candid::Principal;
 use catalyze_shared::{
     api_error::ApiError,
@@ -33,9 +33,30 @@ impl ProfileCalls {
             return Err(ApiError::duplicate().add_message("Username already exists"));
         }
 
+        let caller = caller();
+
+        if let Some(referrer) = post_profile.referrer {
+            let (_, mut referrer_profile) = profiles().get(referrer).await?;
+
+            if !referrer_profile.is_referral_exists(caller) {
+                return Err(ApiError::not_found().add_message("Referral does not exist"));
+            }
+
+            if referrer_profile.is_referral_expired(caller) {
+                return Err(ApiError::bad_request().add_message("Referral is expired"));
+            }
+
+            referrer_profile.remove_referral(caller);
+
+            ic_cdk::spawn(async move {
+                let _ = profiles().update(referrer, referrer_profile).await;
+                let _ = global().notify_referral_accepted(referrer).await;
+            });
+        }
+
         let mut new_profile = ProfileWithRefs::from(post_profile);
         new_profile.references.notifications = UserNotifications::new();
-        let stored_profile = profiles().insert(caller(), new_profile).await?;
+        let stored_profile = profiles().insert(caller, new_profile).await?;
 
         ProfileResponse::from(stored_profile).to_result()
     }
@@ -130,6 +151,18 @@ impl ProfileCalls {
             .collect();
 
         Ok(profiles)
+    }
+
+    pub async fn add_referral(referral: Principal) -> CanisterResult<ProfileResponse> {
+        let (_, mut profile) = profiles().get(caller()).await?;
+
+        if profile.is_referral_exists(referral) && !profile.is_referral_expired(referral) {
+            return Err(ApiError::duplicate().add_message("Referral already exists"));
+        }
+
+        profile.add_referral(referral);
+
+        ProfileResponse::from(profiles().update(caller(), profile).await?).to_result()
     }
 
     pub async fn add_starred(subject: Subject) -> CanisterResult<ProfileResponse> {
