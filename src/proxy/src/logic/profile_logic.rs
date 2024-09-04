@@ -275,8 +275,11 @@ impl ProfileCalls {
         Err(ApiError::not_found().add_message("User not blocked"))
     }
 
-    pub async fn get_relations(relation_type: RelationType) -> CanisterResult<Vec<Principal>> {
-        let (_, profile) = profiles().get(caller()).await?;
+    pub async fn get_relations(
+        principal: Principal,
+        relation_type: RelationType,
+    ) -> CanisterResult<Vec<Principal>> {
+        let (_, profile) = profiles().get(principal).await?;
 
         let resp = profile
             .references
@@ -295,9 +298,10 @@ impl ProfileCalls {
     }
 
     pub async fn get_relations_with_profiles(
+        principal: Principal,
         relation_type: RelationType,
     ) -> CanisterResult<Vec<ProfileResponse>> {
-        Self::get_profiles(ProfileCalls::get_relations(relation_type).await?).await
+        Self::get_profiles(ProfileCalls::get_relations(principal, relation_type).await?).await
     }
 
     // TODO: add logic to check the current version of these documents and add something to prompt the user to approve the latest version

@@ -20,7 +20,7 @@ use catalyze_shared::{
     wallet::PostWallet,
     CanisterResult,
 };
-use ic_cdk::{query, update};
+use ic_cdk::{caller, query, update};
 
 /// Adds a profile to the canister - [`[update]`](update)
 /// # Arguments
@@ -389,7 +389,23 @@ pub async fn unblock_user(principal: Principal) -> CanisterResult<ProfileRespons
 #[query(composite = true, guard = "is_not_anonymous")]
 pub async fn get_relations(relation_type: RelationType) -> CanisterResult<Vec<Principal>> {
     has_access().await?;
-    ProfileCalls::get_relations(relation_type).await
+    ProfileCalls::get_relations(caller(), relation_type).await
+}
+/// Get the current relation for the principal based on the relation type - [`[query]`](query)
+/// # Arguments
+/// * `principal` - The principal to get the relation for
+/// * `relation_type` - The relation type to get the relation for `friend` or `blocked`
+/// # Returns
+/// * `Vec<Principal>` - The principals of the relations
+/// # Note
+/// This function is guarded by the [`has_access`](has_access) function.
+#[query(composite = true, guard = "is_not_anonymous")]
+pub async fn get_relations_by_principal(
+    principal: Principal,
+    relation_type: RelationType,
+) -> CanisterResult<Vec<Principal>> {
+    has_access().await?;
+    ProfileCalls::get_relations(principal, relation_type).await
 }
 
 /// Get the current relation profiles for the caller based on the relation type - [`[query]`](query)
@@ -404,7 +420,24 @@ pub async fn get_relations_with_profiles(
     relation_type: RelationType,
 ) -> CanisterResult<Vec<ProfileResponse>> {
     has_access().await?;
-    ProfileCalls::get_relations_with_profiles(relation_type).await
+    ProfileCalls::get_relations_with_profiles(caller(), relation_type).await
+}
+
+/// Get the current relation profiles for the principal based on the relation type - [`[query]`](query)
+/// # Arguments
+/// * `principal` - The principal to get the relation for
+/// * `relation_type` - The relation type to get the relation for `friend` or `blocked`
+/// # Returns
+/// * `Vec<ProfileResponse>` - The principals of the relations
+/// # Note
+/// This function is guarded by the [`has_access`](has_access) function.
+#[query(composite = true, guard = "is_not_anonymous")]
+pub async fn get_relations_with_profiles_by_principal(
+    principal: Principal,
+    relation_type: RelationType,
+) -> CanisterResult<Vec<ProfileResponse>> {
+    has_access().await?;
+    ProfileCalls::get_relations_with_profiles(principal, relation_type).await
 }
 
 /// Get the current relation count for the caller based on the relation type - [`[query]`](query)
@@ -418,7 +451,28 @@ pub async fn get_relations_with_profiles(
 #[query(composite = true, guard = "is_not_anonymous")]
 pub async fn get_relations_count(relation_type: RelationType) -> CanisterResult<u64> {
     has_access().await?;
-    Ok(ProfileCalls::get_relations(relation_type).await?.len() as u64)
+    Ok(ProfileCalls::get_relations(caller(), relation_type)
+        .await?
+        .len() as u64)
+}
+
+/// Get the current relation count for the principal based on the relation type - [`[query]`](query)
+/// # Arguments
+/// * `principal` - The principal to get the relation count for
+/// * `relation_type` - The relation type to get the relation count for `friend` or `blocked`
+/// # Returns
+/// * `u64` - The relation count that was found
+/// # Note
+/// This function is guarded by the [`has_access`](has_access) function.
+#[query(composite = true, guard = "is_not_anonymous")]
+pub async fn get_relations_count_by_principal(
+    principal: Principal,
+    relation_type: RelationType,
+) -> CanisterResult<u64> {
+    has_access().await?;
+    Ok(ProfileCalls::get_relations(principal, relation_type)
+        .await?
+        .len() as u64)
 }
 
 /// Approve a code of conduct version - [`[update]`](update)
