@@ -5,8 +5,9 @@ use ic_cdk::{id, query, update};
 use crate::{
     helpers::guards::is_developer,
     storage::{
-        boost_canister, event_canister, group_canister, history_canister, notification_canister,
-        profile_canister, report_canister, topic_canister, transaction_handler_canister,
+        boost_canister, event_canister, friend_request_canister, group_canister, history_canister,
+        notification_canister, profile_canister, report_canister, topic_canister,
+        transaction_handler_canister,
     },
 };
 
@@ -98,7 +99,7 @@ fn _dev_set_boost_canister(principal: Principal) -> CanisterResult<Principal> {
     boost_canister().set(principal)
 }
 
-// Boost canister
+// Topic canister
 #[query(guard = "is_developer")]
 fn _dev_get_topic_canister() -> CanisterResult<Principal> {
     topic_canister().get()
@@ -107,6 +108,17 @@ fn _dev_get_topic_canister() -> CanisterResult<Principal> {
 #[update(guard = "is_developer")]
 fn _dev_set_topic_canister(principal: Principal) -> CanisterResult<Principal> {
     topic_canister().set(principal)
+}
+
+// Friend request canister
+#[query(guard = "is_developer")]
+fn _dev_get_friend_request_canister() -> CanisterResult<Principal> {
+    friend_request_canister().get()
+}
+
+#[update(guard = "is_developer")]
+fn _dev_set_friend_request_canister(principal: Principal) -> CanisterResult<Principal> {
+    friend_request_canister().set(principal)
 }
 
 #[update(guard = "is_developer")]
@@ -128,6 +140,8 @@ pub fn _dev_canisters_init() {
         let _ = event_canister().set(Principal::from_text("i4fbf-wyaaa-aaaap-ahtbq-cai").unwrap());
         let _ = topic_canister().set(Principal::from_text("v7fgc-xaaaa-aaaap-ahw2q-cai").unwrap());
         let _ = boost_canister().set(Principal::from_text("vyeaw-2yaaa-aaaap-ahw2a-cai").unwrap());
+        let _ = friend_request_canister()
+            .set(Principal::from_text("vwgn6-biaaa-aaaap-ahw3a-cai").unwrap());
     }
 
     // // staging
