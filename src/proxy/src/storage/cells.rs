@@ -5,7 +5,8 @@ use super::{
     storage_api::{
         GLOBAL_CANISTER, HISTORY_CANISTER, PROFILE_CANISTER, REPORT_CANISTER, TOPIC_CANISTER,
     },
-    EVENT_CANISTER, GROUP_CANISTER, NOTIFICATION_CANISTER, TRANSACTION_HANDLER_CANISTER,
+    BOOSTED_CANISTER, EVENT_CANISTER, GROUP_CANISTER, NOTIFICATION_CANISTER,
+    TRANSACTION_HANDLER_CANISTER,
 };
 
 pub fn history_canister() -> impl CellStorage<Principal> {
@@ -38,6 +39,10 @@ pub fn topic_canister() -> impl CellStorage<Principal> {
 
 pub fn global_canister() -> impl CellStorage<Principal> {
     GenericCellStorage::new("global_canister", &GLOBAL_CANISTER)
+}
+
+pub fn boost_canister() -> impl CellStorage<Principal> {
+    GenericCellStorage::new("boost_canister", &BOOSTED_CANISTER)
 }
 
 pub fn transaction_handler_canister() -> impl CellStorage<Principal> {
