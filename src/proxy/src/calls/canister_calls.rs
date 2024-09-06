@@ -144,9 +144,5 @@ pub fn _dev_canisters_init() {
             .set(Principal::from_text("vwgn6-biaaa-aaaap-ahw3a-cai").unwrap());
     }
 
-    // // staging
-    // if id().to_string().as_str() == "unset" {}
-
-    // // production
-    // if id().to_string().as_str() == "unset" {}
+    // TODO: Add staging and production canisters for correct initialization
 }

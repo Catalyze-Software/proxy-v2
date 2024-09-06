@@ -59,19 +59,6 @@ async fn _dev_create_canister(controllers: Vec<Principal>) -> Result<Principal, 
     }
 }
 
-// #[update(guard = "is_prod_developer")]
-// fn _dev_prod_init() -> Result<(), ApiError> {
-//     if id().to_string() != "2jvhk-5aaaa-aaaap-ahewa-cai" {
-//         return Err(
-//             ApiError::unsupported().add_message("This canister is not the production canister")
-//         );
-//     }
-
-//     let _ = history_canister().set(Principal::from_text("inc34-eqaaa-aaaap-ahl2a-cai").unwrap());
-
-//     Ok(())
-// }
-
 #[query]
 fn http_request(req: HttpRequest) -> HttpResponse {
     let mut path: Vec<&str> = req.url.as_str().split('/').collect();
