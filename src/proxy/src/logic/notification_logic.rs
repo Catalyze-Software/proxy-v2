@@ -29,9 +29,6 @@ use super::websocket_logic::Websocket;
 pub struct NotificationCalls;
 
 impl NotificationCalls {
-    // Friend request notifications
-
-    /// stores + sends notification
     pub async fn notification_add_friend_request(
         friend_request: FriendRequestResponse,
     ) -> CanisterResult<u64> {
@@ -49,7 +46,6 @@ impl NotificationCalls {
         Ok(notification_id)
     }
 
-    /// stores + sends notification
     pub async fn notification_accept_or_decline_friend_request(
         friend_request_data: (u64, FriendRequest),
         is_accepted: bool,
@@ -75,7 +71,6 @@ impl NotificationCalls {
             }
         };
 
-        // mark the notification as accepted, this also marks it as not actionable
         let notification_type = match is_accepted {
             true => RelationNotificationType::FriendRequestAccept(friend_request.clone()),
             false => RelationNotificationType::FriendRequestDecline(friend_request.clone()),
@@ -112,7 +107,6 @@ impl NotificationCalls {
         Ok(())
     }
 
-    // sends notification
     pub async fn notification_remove_friend_request(receiver: Principal, friend_request_id: u64) {
         if let Ok(profile) = profiles().get(receiver).await {
             Self::send_notification(
@@ -128,7 +122,6 @@ impl NotificationCalls {
         }
     }
 
-    // sends notification
     pub async fn notification_remove_friend(receiver: Principal, friend_principal: Principal) {
         if let Ok(profile) = profiles().get(receiver).await {
             Self::send_notification(
@@ -144,9 +137,6 @@ impl NotificationCalls {
         }
     }
 
-    // Group notifications
-
-    // sends notification
     pub async fn notification_join_public_group(receivers: Vec<Principal>, group_id: u64) {
         let profiles = profiles().get_many(receivers).await.unwrap_or_default();
         for receiver in profiles {
@@ -175,7 +165,6 @@ impl NotificationCalls {
         }
     }
 
-    // stores + sends notification
     pub async fn notification_user_join_request_group(
         receivers: Vec<Principal>,
         invite_member_response: InviteMemberResponse,
@@ -192,7 +181,6 @@ impl NotificationCalls {
         Ok(notification_id)
     }
 
-    // sends notifications
     pub async fn notification_user_join_request_group_accept_or_decline(
         invite: MemberInvite,
         is_accepted: bool,
@@ -240,33 +228,24 @@ impl NotificationCalls {
                 Self::send_notification(
                     Some(notification_id),
                     notification.clone(),
-                    (principal, profile.clone()), // the person who request to join
+                    (principal, profile.clone()),
                 );
             }
 
             if is_accepted && higher_role_members.contains(&principal) {
-                Self::send_notification(
-                    None,
-                    notification.clone(),
-                    (principal, profile.clone()), // the group members
-                );
+                Self::send_notification(None, notification.clone(), (principal, profile.clone()));
 
                 continue;
             }
 
             if group_members.contains(&principal) {
-                Self::send_notification(
-                    None,
-                    notification.clone(),
-                    (principal, profile.clone()), // the group members
-                );
+                Self::send_notification(None, notification.clone(), (principal, profile.clone()));
             }
         }
 
         Ok(())
     }
 
-    // stores + sends notification
     pub async fn notification_owner_join_request_group(
         invitee_principal: Principal,
         invite_member_response: InviteMemberResponse,
@@ -303,7 +282,6 @@ impl NotificationCalls {
         Ok(data.ok_or_else(ApiError::not_found)?.0)
     }
 
-    // sends notification
     pub async fn notification_owner_join_request_group_accept_or_decline(
         invitee_principal: Principal,
         invite: MemberInvite,
@@ -441,9 +419,6 @@ impl NotificationCalls {
             });
     }
 
-    // Event notifications
-
-    // sends notification
     pub async fn notification_join_public_event(
         receivers: Vec<Principal>,
         group_id: u64,
@@ -461,7 +436,6 @@ impl NotificationCalls {
         }
     }
 
-    // store + sends notification
     pub async fn notification_user_join_request_event(
         receivers: Vec<Principal>,
         invite_attendee_response: InviteAttendeeResponse,
@@ -474,7 +448,6 @@ impl NotificationCalls {
             .map(|(id, _)| id)
     }
 
-    // sends notifications
     pub async fn notification_user_join_request_event_accept_or_decline(
         receiver: Principal,
         invite: AttendeeInvite,
@@ -531,7 +504,6 @@ impl NotificationCalls {
         Ok(())
     }
 
-    // sends notification
     pub async fn notification_owner_join_request_event_accept_or_decline(
         invitee_principal: Principal,
         invite: AttendeeInvite,
@@ -585,7 +557,6 @@ impl NotificationCalls {
         Ok(())
     }
 
-    // stores + sends notification
     pub async fn notification_owner_join_request_event(
         invitee_principal: Principal,
         invite_attendee_response: InviteAttendeeResponse,
@@ -665,7 +636,6 @@ impl NotificationCalls {
         }
     }
 
-    // Transaction notifications
     pub async fn notification_add_transaction(transaction: TransactionData) -> bool {
         if let Ok(profile) = profiles().get(transaction.receiver).await {
             let _ = Self::add_and_send_notification(
@@ -831,10 +801,8 @@ impl NotificationCalls {
         notification_type: NotificationType,
         is_actionable: bool,
     ) -> CanisterResult<(u64, Notification)> {
-        // Create the new notification
         let notification = Notification::new(notification_type, is_actionable);
 
-        // store the new notification in the notification store
         let (new_notification_id, new_notification) = notifications().insert(notification).await?;
 
         if let Ok((principal, mut profile)) = profiles().get(caller()).await {

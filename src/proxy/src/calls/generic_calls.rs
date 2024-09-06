@@ -1,19 +1,12 @@
-use crate::{
-    helpers::guards::is_prod_developer, logic::websocket_logic::Websocket,
-    storage::history_canister,
-};
+use crate::{helpers::guards::is_prod_developer, logic::websocket_logic::Websocket};
 use candid::Principal;
-use catalyze_shared::{
-    api_error::ApiError,
-    http_types::{HttpRequest, HttpResponse},
-    CellStorage,
-};
+use catalyze_shared::http_types::{HttpRequest, HttpResponse};
 use ic_cdk::{
     api::{
         canister_balance128,
         management_canister::main::{create_canister, CanisterSettings, CreateCanisterArgument},
     },
-    id, init, post_upgrade, pre_upgrade, query, update,
+    init, post_upgrade, pre_upgrade, query, update,
 };
 
 #[post_upgrade]
@@ -64,19 +57,6 @@ async fn _dev_create_canister(controllers: Vec<Principal>) -> Result<Principal, 
         Ok((canister,)) => Ok(canister.canister_id),
         Err((_, err)) => Err(err),
     }
-}
-
-#[update(guard = "is_prod_developer")]
-fn _dev_prod_init() -> Result<(), ApiError> {
-    if id().to_string() != "2jvhk-5aaaa-aaaap-ahewa-cai" {
-        return Err(
-            ApiError::unsupported().add_message("This canister is not the production canister")
-        );
-    }
-
-    let _ = history_canister().set(Principal::from_text("inc34-eqaaa-aaaap-ahl2a-cai").unwrap());
-
-    Ok(())
 }
 
 #[query]

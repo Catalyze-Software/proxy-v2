@@ -18,7 +18,6 @@ pub mod storage;
 pub fn __export_did_tmp_() -> String {
     use candid::export_service;
 
-    use catalyze_shared::api_error::*;
     use catalyze_shared::attendee::{InviteAttendeeResponse, JoinedAttendeeResponse};
     use catalyze_shared::event_with_attendees::*;
     use catalyze_shared::friend_request::*;
