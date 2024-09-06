@@ -46,6 +46,15 @@ impl GlobalStorageClient {
     pub async fn next_history_point(&self) -> CanisterResult<u64> {
         ic_call(global_canister().get()?, "next_history_point", ()).await
     }
+
+    pub async fn notify_profile_filled(&self, principal: Principal) -> CanisterResult<()> {
+        ic_call(
+            global_canister().get()?,
+            "notify_profile_filled",
+            (principal,),
+        )
+        .await
+    }
 }
 
 pub fn global() -> GlobalStorageClient {

@@ -67,6 +67,12 @@ impl ProfileCalls {
         let (_, existing_profile) = profiles().get(caller()).await?;
         let updated_profile = existing_profile.update(update_profile);
 
+        if updated_profile.is_filled() {
+            ic_cdk::spawn(async move {
+                let _ = global().notify_profile_filled(caller()).await;
+            });
+        }
+
         ProfileResponse::from(profiles().update(caller(), updated_profile).await?).to_result()
     }
 
