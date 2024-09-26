@@ -25,7 +25,7 @@ impl ProfileCalls {
         ProfileValidation::validate_post_profile(&post_profile)?;
 
         let exists = profiles()
-            .find(ProfileFilter::Username(post_profile.username.clone()).to_vec())
+            ._raw_find(ProfileFilter::Username(post_profile.username.clone()).to_vec())
             .await?
             .is_some();
 
@@ -64,7 +64,7 @@ impl ProfileCalls {
     pub async fn update_profile(update_profile: UpdateProfile) -> CanisterResult<ProfileResponse> {
         ProfileValidation::validate_update_profile(&update_profile)?;
 
-        let (_, existing_profile) = profiles().get(caller()).await?;
+        let (_, existing_profile) = profiles()._raw_get(caller()).await?;
         let updated_profile = existing_profile.update(update_profile);
 
         if updated_profile.is_filled() {
@@ -77,7 +77,7 @@ impl ProfileCalls {
     }
 
     pub async fn add_wallet_to_profile(post_wallet: PostWallet) -> CanisterResult<ProfileResponse> {
-        let (_, mut existing_profile) = profiles().get(caller()).await?;
+        let (_, mut existing_profile) = profiles()._raw_get(caller()).await?;
 
         if existing_profile
             .references
@@ -102,7 +102,7 @@ impl ProfileCalls {
         principal: Principal,
     ) -> CanisterResult<ProfileResponse> {
         let principal = principal.to_string();
-        let (_, mut existing_profile) = profiles().get(caller()).await?;
+        let (_, mut existing_profile) = profiles()._raw_get(caller()).await?;
 
         if !existing_profile.references.wallets.contains_key(&principal) {
             return Err(ApiError::not_found().add_message("Wallet does not exist"));
@@ -124,7 +124,7 @@ impl ProfileCalls {
 
     pub async fn set_wallet_as_primary(principal: Principal) -> CanisterResult<ProfileResponse> {
         let principal = principal.to_string();
-        let (_, mut existing_profile) = profiles().get(caller()).await?;
+        let (_, mut existing_profile) = profiles()._raw_get(caller()).await?;
 
         if !existing_profile.references.wallets.contains_key(&principal) {
             return Err(ApiError::not_found().add_message("Wallet does not exist"));
@@ -160,7 +160,7 @@ impl ProfileCalls {
     }
 
     pub async fn add_referral(referral: Principal) -> CanisterResult<ProfileResponse> {
-        let (_, mut profile) = profiles().get(caller()).await?;
+        let (_, mut profile) = profiles()._raw_get(caller()).await?;
 
         if profile.is_referral_exists(referral) && !profile.is_referral_expired(referral) {
             return Err(ApiError::duplicate().add_message("Referral already exists"));
@@ -172,7 +172,7 @@ impl ProfileCalls {
     }
 
     pub async fn add_starred(subject: Subject) -> CanisterResult<ProfileResponse> {
-        let (_, mut profile) = profiles().get(caller()).await?;
+        let (_, mut profile) = profiles()._raw_get(caller()).await?;
 
         if profile.is_starred(&subject) {
             return Err(ApiError::duplicate().add_message("already starred"));
@@ -185,7 +185,7 @@ impl ProfileCalls {
     }
 
     pub async fn remove_starred(subject: Subject) -> CanisterResult<ProfileResponse> {
-        let (_, mut profile) = profiles().get(caller()).await?;
+        let (_, mut profile) = profiles()._raw_get(caller()).await?;
 
         if !profile.is_starred(&subject) {
             return Err(ApiError::not_found().add_message("not starred"));
@@ -210,7 +210,7 @@ impl ProfileCalls {
     }
 
     pub async fn add_pinned(subject: Subject) -> CanisterResult<ProfileResponse> {
-        let (_, mut profile) = profiles().get(caller()).await?;
+        let (_, mut profile) = profiles()._raw_get(caller()).await?;
 
         if profile.is_pinned(&subject) {
             return Err(ApiError::duplicate().add_message("already pinned"));
@@ -223,7 +223,7 @@ impl ProfileCalls {
     }
 
     pub async fn remove_pinned(subject: Subject) -> CanisterResult<ProfileResponse> {
-        let (_, mut profile) = profiles().get(caller()).await?;
+        let (_, mut profile) = profiles()._raw_get(caller()).await?;
 
         if !profile.is_pinned(&subject) {
             return Err(ApiError::not_found().add_message("not pinned"));
@@ -252,7 +252,7 @@ impl ProfileCalls {
 
     pub async fn remove_friend(principal: Principal) -> CanisterResult<ProfileResponse> {
         // Remove the friend from the caller profile
-        let (_, mut caller_profile) = profiles().get(caller()).await?;
+        let (_, mut caller_profile) = profiles()._raw_get(caller()).await?;
 
         if !caller_profile.references.relations.contains_key(&principal) {
             return Err(ApiError::not_found().add_message("Friend does not exist"));
@@ -277,7 +277,7 @@ impl ProfileCalls {
     }
 
     pub async fn block_user(principal: Principal) -> CanisterResult<ProfileResponse> {
-        let (_, mut caller_profile) = profiles().get(caller()).await?;
+        let (_, mut caller_profile) = profiles()._raw_get(caller()).await?;
 
         caller_profile
             .references
@@ -298,7 +298,7 @@ impl ProfileCalls {
     }
 
     pub async fn unblock_user(principal: Principal) -> CanisterResult<ProfileResponse> {
-        let (_, mut caller_profile) = profiles().get(caller()).await?;
+        let (_, mut caller_profile) = profiles()._raw_get(caller()).await?;
 
         if caller_profile
             .references
@@ -345,21 +345,21 @@ impl ProfileCalls {
 
     // TODO: add logic to check the current version of these documents and add something to prompt the user to approve the latest version
     pub async fn approve_code_of_conduct(version: u64) -> CanisterResult<bool> {
-        let (_, mut profile) = profiles().get(caller()).await?;
+        let (_, mut profile) = profiles()._raw_get(caller()).await?;
 
         profile.documents.code_of_conduct = Some(DocumentDetails::new(version, time()));
         Ok(profiles().update(caller(), profile).await.is_ok())
     }
 
     pub async fn approve_privacy_policy(version: u64) -> CanisterResult<bool> {
-        let (_, mut profile) = profiles().get(caller()).await?;
+        let (_, mut profile) = profiles()._raw_get(caller()).await?;
 
         profile.documents.privacy_policy = Some(DocumentDetails::new(version, time()));
         Ok(profiles().update(caller(), profile).await.is_ok())
     }
 
     pub async fn approve_terms_of_service(version: u64) -> CanisterResult<bool> {
-        let (_, mut profile) = profiles().get(caller()).await?;
+        let (_, mut profile) = profiles()._raw_get(caller()).await?;
 
         profile.documents.terms_of_service = Some(DocumentDetails::new(version, time()));
         Ok(profiles().update(caller(), profile).await.is_ok())

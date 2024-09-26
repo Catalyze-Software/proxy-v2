@@ -27,7 +27,7 @@ pub fn __export_did_tmp_() -> String {
     use catalyze_shared::old_member::*;
     use catalyze_shared::paged_response::*;
     use catalyze_shared::permission::*;
-    use catalyze_shared::profile::*;
+    use catalyze_shared::profile_with_refs::*;
     use catalyze_shared::relation_type::*;
     use catalyze_shared::report::*;
     use catalyze_shared::reward::*;
@@ -49,5 +49,5 @@ pub fn __export_did_tmp_() -> String {
 // Method used to save the candid interface to a file
 #[test]
 pub fn candid() {
-    catalyze_shared::candid::save_candid_file("./candid/proxy.did", __export_did_tmp_());
+    catalyze_shared::candid::save_candid_file("../../candid/proxy.did", __export_did_tmp_());
 }

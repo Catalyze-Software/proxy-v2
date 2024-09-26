@@ -1,5 +1,5 @@
 use crate::{
-    helpers::guards::has_access,
+    helpers::guards::{_raw_has_access, has_access},
     logic::{friend_request_logic::FriendRequestCalls, profile_logic::ProfileCalls},
 };
 /// # Profile methods
@@ -77,7 +77,7 @@ pub async fn get_profiles(principals: Vec<Principal>) -> CanisterResult<Vec<Prof
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "is_not_anonymous")]
 pub async fn edit_profile(update_profile: UpdateProfile) -> CanisterResult<ProfileResponse> {
-    has_access().await?;
+    _raw_has_access().await?;
     ProfileCalls::update_profile(update_profile).await
 }
 
@@ -94,7 +94,7 @@ pub async fn edit_profile(update_profile: UpdateProfile) -> CanisterResult<Profi
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "is_not_anonymous")]
 pub async fn add_wallet_to_profile(wallet: PostWallet) -> CanisterResult<ProfileResponse> {
-    has_access().await?;
+    _raw_has_access().await?;
     ProfileCalls::add_wallet_to_profile(wallet).await
 }
 
@@ -109,7 +109,7 @@ pub async fn add_wallet_to_profile(wallet: PostWallet) -> CanisterResult<Profile
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "is_not_anonymous")]
 pub async fn set_wallet_as_primary(wallet_principal: Principal) -> CanisterResult<ProfileResponse> {
-    has_access().await?;
+    _raw_has_access().await?;
     ProfileCalls::set_wallet_as_primary(wallet_principal).await
 }
 
@@ -128,7 +128,7 @@ pub async fn set_wallet_as_primary(wallet_principal: Principal) -> CanisterResul
 pub async fn remove_wallet_from_profile(
     wallet_principal: Principal,
 ) -> CanisterResult<ProfileResponse> {
-    has_access().await?;
+    _raw_has_access().await?;
     ProfileCalls::remove_wallet_from_profile(wallet_principal).await
 }
 
@@ -143,7 +143,7 @@ pub async fn remove_wallet_from_profile(
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "is_not_anonymous")]
 pub async fn add_starred(subject: Subject) -> CanisterResult<ProfileResponse> {
-    has_access().await?;
+    _raw_has_access().await?;
     ProfileCalls::add_starred(subject).await
 }
 
@@ -158,7 +158,7 @@ pub async fn add_starred(subject: Subject) -> CanisterResult<ProfileResponse> {
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "is_not_anonymous")]
 pub async fn remove_starred(subject: Subject) -> CanisterResult<ProfileResponse> {
-    has_access().await?;
+    _raw_has_access().await?;
     ProfileCalls::remove_starred(subject).await
 }
 
@@ -186,7 +186,7 @@ pub async fn get_starred_by_subject_type(subject_type: SubjectType) -> CanisterR
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "is_not_anonymous")]
 pub async fn add_pinned(subject: Subject) -> CanisterResult<ProfileResponse> {
-    has_access().await?;
+    _raw_has_access().await?;
     ProfileCalls::add_pinned(subject).await
 }
 
@@ -201,7 +201,7 @@ pub async fn add_pinned(subject: Subject) -> CanisterResult<ProfileResponse> {
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "is_not_anonymous")]
 pub async fn remove_pinned(subject: Subject) -> CanisterResult<ProfileResponse> {
-    has_access().await?;
+    _raw_has_access().await?;
     ProfileCalls::remove_pinned(subject).await
 }
 
@@ -237,7 +237,7 @@ pub async fn add_friend_request(
     to: Principal,
     message: String,
 ) -> CanisterResult<FriendRequestResponse> {
-    has_access().await?;
+    _raw_has_access().await?;
     FriendRequestCalls::add_friend_request(to, message).await
 }
 
@@ -252,7 +252,7 @@ pub async fn add_friend_request(
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "is_not_anonymous")]
 pub async fn accept_friend_request(friend_request_id: u64) -> CanisterResult<bool> {
-    has_access().await?;
+    _raw_has_access().await?;
     FriendRequestCalls::accept_friend_request(friend_request_id).await
 }
 
@@ -267,7 +267,7 @@ pub async fn accept_friend_request(friend_request_id: u64) -> CanisterResult<boo
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "is_not_anonymous")]
 pub async fn remove_friend_request(friend_request_id: u64) -> CanisterResult<bool> {
-    has_access().await?;
+    _raw_has_access().await?;
     FriendRequestCalls::remove_friend_request(friend_request_id).await
 }
 
@@ -328,7 +328,7 @@ pub async fn get_outgoing_friend_requests_with_profile(
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "is_not_anonymous")]
 pub async fn decline_friend_request(friend_request_id: u64) -> CanisterResult<bool> {
-    has_access().await?;
+    _raw_has_access().await?;
     FriendRequestCalls::decline_friend_request(friend_request_id).await
 }
 
@@ -343,7 +343,7 @@ pub async fn decline_friend_request(friend_request_id: u64) -> CanisterResult<bo
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "is_not_anonymous")]
 pub async fn remove_friend(principal: Principal) -> CanisterResult<ProfileResponse> {
-    has_access().await?;
+    _raw_has_access().await?;
     ProfileCalls::remove_friend(principal).await
 }
 
@@ -359,7 +359,7 @@ pub async fn remove_friend(principal: Principal) -> CanisterResult<ProfileRespon
 /// TODO: Check full implementation for this
 #[update(guard = "is_not_anonymous")]
 pub async fn block_user(principal: Principal) -> CanisterResult<ProfileResponse> {
-    has_access().await?;
+    _raw_has_access().await?;
     ProfileCalls::block_user(principal).await
 }
 
@@ -375,7 +375,7 @@ pub async fn block_user(principal: Principal) -> CanisterResult<ProfileResponse>
 /// TODO: Check full implementation for this
 #[update(guard = "is_not_anonymous")]
 pub async fn unblock_user(principal: Principal) -> CanisterResult<ProfileResponse> {
-    has_access().await?;
+    _raw_has_access().await?;
     ProfileCalls::unblock_user(principal).await
 }
 
@@ -486,7 +486,7 @@ pub async fn get_relations_count_by_principal(
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "is_not_anonymous")]
 pub async fn approve_code_of_conduct(version: u64) -> CanisterResult<bool> {
-    has_access().await?;
+    _raw_has_access().await?;
     ProfileCalls::approve_code_of_conduct(version).await
 }
 
@@ -501,7 +501,7 @@ pub async fn approve_code_of_conduct(version: u64) -> CanisterResult<bool> {
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "is_not_anonymous")]
 pub async fn approve_privacy_policy(version: u64) -> CanisterResult<bool> {
-    has_access().await?;
+    _raw_has_access().await?;
     ProfileCalls::approve_privacy_policy(version).await
 }
 
@@ -516,6 +516,6 @@ pub async fn approve_privacy_policy(version: u64) -> CanisterResult<bool> {
 /// This function is guarded by the [`has_access`](has_access) function.
 #[update(guard = "is_not_anonymous")]
 pub async fn approve_terms_of_service(version: u64) -> CanisterResult<bool> {
-    has_access().await?;
+    _raw_has_access().await?;
     ProfileCalls::approve_terms_of_service(version).await
 }

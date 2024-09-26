@@ -21,6 +21,21 @@ pub async fn has_access() -> CanisterResult<()> {
     Err(ApiError::unauthorized().add_message("Blocked or banned"))
 }
 
+/// Checks if the caller has a profile and is not blocked or banned on the application level
+/// # Returns
+/// * `()` if the caller has a profile and is not blocked or banned
+/// # Errors
+/// * `ApiError` if the caller has no profile or is blocked or banned
+pub async fn _raw_has_access() -> CanisterResult<()> {
+    let (_, profile) = profiles()._raw_get(caller()).await?;
+
+    if ![ApplicationRole::Blocked, ApplicationRole::Banned].contains(&profile.application_role) {
+        return Ok(());
+    }
+
+    Err(ApiError::unauthorized().add_message("Blocked or banned"))
+}
+
 /// Checks if the caller is the monitor principal
 pub fn is_monitor() -> Result<(), String> {
     // monitor principal

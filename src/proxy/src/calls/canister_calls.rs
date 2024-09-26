@@ -5,11 +5,22 @@ use ic_cdk::{id, query, update};
 use crate::{
     helpers::guards::is_developer,
     storage::{
-        boost_canister, event_canister, friend_request_canister, group_canister, history_canister,
-        notification_canister, profile_canister, report_canister, topic_canister,
+        boost_canister, event_canister, friend_request_canister, global_canister, group_canister,
+        history_canister, notification_canister, profile_canister, report_canister, topic_canister,
         transaction_handler_canister,
     },
 };
+
+// Global canister
+#[query(guard = "is_developer")]
+fn _dev_get_global_canister() -> CanisterResult<Principal> {
+    global_canister().get()
+}
+
+#[update(guard = "is_developer")]
+fn _dev_set_global_canister(principal: Principal) -> CanisterResult<Principal> {
+    global_canister().set(principal)
+}
 
 // History canister
 #[query(guard = "is_developer")]
@@ -125,7 +136,7 @@ fn _dev_set_friend_request_canister(principal: Principal) -> CanisterResult<Prin
 pub fn _dev_canisters_init() {
     // not enviroment specific
     let _ = transaction_handler_canister()
-        .set(Principal::from_text("r4bli7-7iaaa-aaaap-ahd4a-cai").unwrap());
+        .set(Principal::from_text("4bli7-7iaaa-aaaap-ahd4a-cai").unwrap());
 
     // development
     if id().to_string().as_str() == "puwkw-6qaaa-aaaap-ahmvq-cai" {
@@ -142,6 +153,7 @@ pub fn _dev_canisters_init() {
         let _ = boost_canister().set(Principal::from_text("vyeaw-2yaaa-aaaap-ahw2a-cai").unwrap());
         let _ = friend_request_canister()
             .set(Principal::from_text("vwgn6-biaaa-aaaap-ahw3a-cai").unwrap());
+        let _ = global_canister().set(Principal::from_text("zurca-6yaaa-aaaap-akbla-cai").unwrap());
     }
 
     // TODO: Add staging and production canisters for correct initialization
